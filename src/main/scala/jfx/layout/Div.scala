@@ -1,6 +1,6 @@
 package jfx.layout
 
-import jfx.core.NativeComponent
+import jfx.core.component.NativeComponent
 import org.scalajs.dom.HTMLDivElement
 
 class Div extends NativeComponent[HTMLDivElement] {

@@ -1,4 +1,4 @@
-package jfx.state
+package jfx.core.state
 
 trait Disposable {
   

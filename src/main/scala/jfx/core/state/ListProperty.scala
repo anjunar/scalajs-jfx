@@ -1,9 +1,10 @@
-package jfx.state
+package jfx.core.state
 
 import org.scalajs.dom.console
 
 import scala.collection.mutable
 import scala.scalajs.js
+import scala.util.control.NonFatal
 
 class ListProperty[V](val underlying: js.Array[V] = js.Array[V]()) extends ReadOnlyProperty[js.Array[V]], mutable.Buffer[V] {
 
@@ -135,6 +136,69 @@ class ListProperty[V](val underlying: js.Array[V] = js.Array[V]()) extends ReadO
 }
 
 object ListProperty {
+
+  def subscribeBidirectional[V](a: ListProperty[V], b: ListProperty[V]): Disposable = {
+    if (a.eq(b)) return () => ()
+
+    resetFrom(b, a)
+
+    var settingA = false
+    var settingB = false
+
+    val da = a.observeChanges { change =>
+      if (!settingA) {
+        settingB = true
+        try applyChange(source = a, target = b, change = change)
+        finally settingB = false
+      }
+    }
+
+    val db = b.observeChanges { change =>
+      if (!settingB) {
+        settingA = true
+        try applyChange(source = b, target = a, change = change)
+        finally settingA = false
+      }
+    }
+
+    val composite = new CompositeDisposable()
+    composite.add(da)
+    composite.add(db)
+    composite
+  }
+
+  private def resetFrom[V](target: ListProperty[V], source: ListProperty[V]): Unit = {
+    val values = source.get.toSeq
+    target.underlying.splice(0, target.underlying.length, values*)
+    target.notifiend(Reset(target))
+  }
+
+  private def applyChange[V](source: ListProperty[V], target: ListProperty[V], change: Change[V]): Unit =
+    try
+      change match {
+        case Reset(_) =>
+          resetFrom(target, source)
+        case Add(element, _) =>
+          target.addOne(element)
+        case Insert(index, element, _) =>
+          target.insert(index, element)
+        case InsertAll(index, elements, _) =>
+          target.insertAll(index, elements.toSeq)
+        case RemoveAt(index, _, _) =>
+          target.remove(index)
+        case RemoveRange(index, elements, _) =>
+          target.remove(index, elements.length)
+        case UpdateAt(index, _, newElement, _) =>
+          target.update(index, newElement)
+        case Patch(from, removed, inserted, _) =>
+          target.patchInPlace(from, inserted.toSeq, removed.length)
+        case Clear(_, _) =>
+          target.clear()
+      }
+    catch {
+      case NonFatal(_) =>
+        resetFrom(target, source)
+    }
 
   trait Change[V] {
     def list: ListProperty[V]

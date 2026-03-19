@@ -1,89 +1,140 @@
-package jfx.core
+package jfx.core.component
 
+import jfx.core.state.ListProperty
+import jfx.core.state.ListProperty.*
 import jfx.form.{Control, Formular}
-import jfx.state.ListProperty
-import jfx.state.ListProperty.*
-import org.scalajs.dom.{HTMLElement, Node}
+import org.scalajs.dom.{Element, HTMLElement, Node}
 
-trait NativeComponent[E <: HTMLElement] extends ChildrenComponent[E] {
+trait NativeComponent[E <: Node] extends ChildrenComponent[E] {
 
   private val childrenObserver = childrenProperty.observeChanges(onChildrenChange)
 
   disposable.add(childrenObserver)
   
-  private def onChildrenChange(change: ListProperty.Change[Component[? <: HTMLElement]]): Unit =
+  private def enclosingFormOption(): Option[Formular] =
+    this match {
+      case form: Formular => Some(form)
+      case _ => findParentFormOption()
+    }
+
+  private def registerSubtree(component: Component[? <: Node]): Unit =
+    enclosingFormOption().foreach(form => registerSubtree(component, form))
+
+  private def registerSubtree(component: Component[? <: Node], form: Formular): Unit = {
+    component match {
+      case control: Control[?,?] => form.addControl(control)
+      case _ => ()
+    }
+
+    component match {
+      case children: ChildrenComponent[?] =>
+        children.childrenProperty.foreach(child => registerSubtree(child, form))
+      case _ => ()
+    }
+  }
+
+  private def unregisterSubtree(component: Component[? <: Node]): Unit =
+    enclosingFormOption().foreach(form => unregisterSubtree(component, form))
+
+  private def unregisterSubtree(component: Component[? <: Node], form: Formular): Unit = {
+    component match {
+      case control: Control[?,?] => form.removeControl(control)
+      case _ => ()
+    }
+
+    component match {
+      case children: ChildrenComponent[?] =>
+        children.childrenProperty.foreach(child => unregisterSubtree(child, form))
+      case _ => ()
+    }
+  }
+
+  private def onChildrenChange(change: ListProperty.Change[Component[? <: Node]]): Unit =
     change match {
       case Reset(_) =>
         removeAllDomChildren()
         childrenProperty.foreach(child => {
           element.appendChild(child.element)
           child.parent = Some(this)
-          
-          child match {
-            case control : Control => findParentForm().addControl(control)  
-          }
-          
+          registerSubtree(child)
         })
 
       case Add(child, _) =>
         element.appendChild(child.element)
         child.parent = Some(this)
+        registerSubtree(child)
 
       case Insert(index, child, _) =>
         insertDomAt(index, child.element)
         child.parent = Some(this)
+        registerSubtree(child)
 
       case InsertAll(index, children, _) =>
         insertAllDomAt(index, children.map(child => {
           child.parent = Some(this)
+          registerSubtree(child)
           child.element
         }))
 
       case RemoveAt(_, child, _) =>
         removeDomChild(child.element)
         child.parent = None
+        child.dispose()
+        unregisterSubtree(child)
 
       case RemoveRange(_, children, _) =>
         children.foreach(child => {
           removeDomChild(child.element)
           child.parent = None
+          child.dispose()
+          unregisterSubtree(child)
         })
 
       case UpdateAt(index, oldChild, newChild, _) =>
         replaceDomAt(index, oldChild.element, newChild.element)
         oldChild.parent = None
+        oldChild.dispose()
+        unregisterSubtree(oldChild)
         newChild.parent = Some(this)
+        registerSubtree(newChild)
 
       case Patch(from, removed, inserted, _) =>
         removed.foreach(child => {
           removeDomChild(child.element)
           child.parent = None
+          child.dispose()
+          unregisterSubtree(child)
         })
         insertAllDomAt(from, inserted.map(child => {
           child.parent = Some(this)
+          registerSubtree(child)
           child.element
         }))
 
       case Clear(removed, _) =>
         removed.foreach(child => {
           child.parent = None
+          child.dispose()
           removeDomChild(child.element)
+          unregisterSubtree(child)
         })
     }
 
-  private def referenceNodeAt(index: Int): Node | Null = {
-    if (index < 0) null
-    else if (index >= element.childElementCount) null
-    else element.children.item(index)
+  private def referenceNodeAt(index: Int): Node | Null = element match {
+    case element : HTMLElement =>
+      if (index < 0) null
+        else if (index >= element.childElementCount) null
+        else element.children.item(index) 
+    case _ => null
   }
 
-  private def insertDomAt(index: Int, childElement: HTMLElement): Unit = {
+  private def insertDomAt(index: Int, childElement: Node): Unit = {
     val ref = referenceNodeAt(index)
     if (ref == null) element.appendChild(childElement)
     else element.insertBefore(childElement, ref)
   }
 
-  private def insertAllDomAt(index: Int, childElements: scala.scalajs.js.Array[HTMLElement]): Unit = {
+  private def insertAllDomAt(index: Int, childElements: scala.scalajs.js.Array[Node]): Unit = {
     val ref = referenceNodeAt(index)
     if (ref == null) {
       childElements.foreach { child =>
@@ -98,7 +149,7 @@ trait NativeComponent[E <: HTMLElement] extends ChildrenComponent[E] {
     }
   }
 
-  private def replaceDomAt(index: Int, oldChildElement: HTMLElement, newChildElement: HTMLElement): Unit = {
+  private def replaceDomAt(index: Int, oldChildElement: Node, newChildElement: Node): Unit = {
     val oldParent = oldChildElement.parentNode
     if (oldParent == element) {
       element.replaceChild(newChildElement, oldChildElement)
@@ -112,7 +163,7 @@ trait NativeComponent[E <: HTMLElement] extends ChildrenComponent[E] {
     }
   }
 
-  private def removeDomChild(childElement: HTMLElement): Unit = {
+  private def removeDomChild(childElement: Node): Unit = {
     val parent = childElement.parentNode
     if (parent == element) {
       element.removeChild(childElement)
