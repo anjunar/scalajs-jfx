@@ -5,9 +5,10 @@ import org.scalajs.dom.Node
 
 trait FormSubtreeRegistration { self: NodeComponent[? <: Node] =>
 
-  protected def enclosingFormOption(): Option[Formular] =
+  protected def enclosingFormOption(): Option[Formular[?,?]] =
     this match {
-      case form: Formular => Some(form)
+      case _: FormRegistrationBoundary => None
+      case form: Formular[?,?] => Some(form)
       case _ => findParentFormOption()
     }
 
@@ -17,7 +18,7 @@ trait FormSubtreeRegistration { self: NodeComponent[? <: Node] =>
   protected final def unregisterSubtree(component: NodeComponent[? <: Node]): Unit =
     enclosingFormOption().foreach(form => unregisterSubtree(component, form))
 
-  private def registerSubtree(component: NodeComponent[? <: Node], form: Formular): Unit = {
+  private def registerSubtree(component: NodeComponent[? <: Node], form: Formular[?,?]): Unit = {
     component match {
       case control: Control[?, ?] => form.addControl(control)
       case _ => ()
@@ -30,7 +31,7 @@ trait FormSubtreeRegistration { self: NodeComponent[? <: Node] =>
     }
   }
 
-  private def unregisterSubtree(component: NodeComponent[? <: Node], form: Formular): Unit = {
+  private def unregisterSubtree(component: NodeComponent[? <: Node], form: Formular[?,?]): Unit = {
     component match {
       case control: Control[?, ?] => form.removeControl(control)
       case _ => ()
@@ -43,4 +44,3 @@ trait FormSubtreeRegistration { self: NodeComponent[? <: Node] =>
     }
   }
 }
-

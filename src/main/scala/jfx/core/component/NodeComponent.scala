@@ -1,7 +1,7 @@
 package jfx.core.component
 
 import jfx.core.state.{CompositeDisposable, Disposable}
-import jfx.form.Formular
+import jfx.form.{ArrayForm, Formular}
 import org.scalajs.dom.{Comment, Node}
 
 trait NodeComponent [E <: Node] extends Disposable {
@@ -10,19 +10,20 @@ trait NodeComponent [E <: Node] extends Disposable {
 
   var parent : Option[NodeComponent[? <: Node]] = None
 
-  def findParentFormOption(): Option[Formular] = {
+  def findParentFormOption(): Option[Formular[?,?]] = {
     @annotation.tailrec
-    def loop(current: Option[NodeComponent[? <: Node]]): Option[Formular] =
+    def loop(current: Option[NodeComponent[? <: Node]]): Option[Formular[?,?]] =
       current match {
         case None => None
-        case Some(form: Formular) => Some(form)
+        case Some(form: Formular[?,?]) => Some(form)
+        case Some(arrayForm : ArrayForm[?]) => Some(arrayForm)
         case Some(component) => loop(component.parent)
       }
 
     loop(parent)
   }
 
-  def findParentForm(): Formular =
+  def findParentForm(): Formular[?,?] =
     findParentFormOption().orNull
 
   def newComment(tag: String): Comment = org.scalajs.dom.document.createComment(tag)

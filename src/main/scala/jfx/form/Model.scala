@@ -1,6 +1,7 @@
 package jfx.form
 
 import jfx.core.state.PropertyAccess
+
 import scala.scalajs.js
 
 trait Model[M] {
