@@ -22,7 +22,6 @@ class Conditional(val condition: ReadOnlyProperty[Boolean]) extends NodeComponen
 
   override lazy val element: Comment = ifAnchor
 
-  private var rafId: Int = 0
   private var disposed: Boolean = false
   private var lastParent: Node | Null = null
 
@@ -41,23 +40,17 @@ class Conditional(val condition: ReadOnlyProperty[Boolean]) extends NodeComponen
   }
   disposable.add(elseObserver)
 
-  private val _mountWatcher: Unit = {
-    def tick(time: Double): Unit = {
-      if (disposed) return
+  override def onMount(): Unit = {
+    if (disposed) return
 
-      val parent = ifAnchor.parentNode
-      if (parent != lastParent) {
-        lastParent = parent
-        ensureScaffold()
-        render(condition.get)
-      } else if (parent != null) {
-        ensureScaffold()
-      }
-
-      rafId = window.requestAnimationFrame(( time: Double ) => tick( time))
+    val parent = ifAnchor.parentNode
+    if (parent != lastParent) {
+      lastParent = parent
+      ensureScaffold()
+      render(condition.get)
+    } else if (parent != null) {
+      ensureScaffold()
     }
-
-    rafId = window.requestAnimationFrame(( time: Double ) => tick( time))
   }
 
   def thenAdd(child: ElementComponent[? <: Node]): Unit =
@@ -68,7 +61,6 @@ class Conditional(val condition: ReadOnlyProperty[Boolean]) extends NodeComponen
 
   override def dispose(): Unit = {
     disposed = true
-    if (rafId != 0) window.cancelAnimationFrame(rafId)
 
     // detach from DOM & form first (without disposing branch components yet)
     forceDetachMounted()

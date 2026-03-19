@@ -18,22 +18,26 @@ trait NativeComponent[E <: Node] extends ChildrenComponent[E], FormSubtreeRegist
         childrenProperty.foreach(child => {
           element.appendChild(child.element)
           child.parent = Some(this)
+          child.onMount()
           registerSubtree(child)
         })
 
       case Add(child, _) =>
         element.appendChild(child.element)
         child.parent = Some(this)
+        child.onMount()
         registerSubtree(child)
 
       case Insert(index, child, _) =>
         insertDomAt(index, child.element)
         child.parent = Some(this)
+        child.onMount()
         registerSubtree(child)
 
       case InsertAll(index, children, _) =>
         insertAllDomAt(index, children.map(child => {
           child.parent = Some(this)
+          child.onMount()
           registerSubtree(child)
           child.element
         }))
@@ -58,6 +62,7 @@ trait NativeComponent[E <: Node] extends ChildrenComponent[E], FormSubtreeRegist
         oldChild.dispose()
         unregisterSubtree(oldChild)
         newChild.parent = Some(this)
+        newChild.onMount()
         registerSubtree(newChild)
 
       case Patch(from, removed, inserted, _) =>
@@ -69,6 +74,7 @@ trait NativeComponent[E <: Node] extends ChildrenComponent[E], FormSubtreeRegist
         })
         insertAllDomAt(from, inserted.map(child => {
           child.parent = Some(this)
+          child.onMount()
           registerSubtree(child)
           child.element
         }))

@@ -19,7 +19,6 @@ class ForEach[T](
 
   private var mounted: Vector[NodeComponent[? <: Node]] = Vector.empty
 
-  private var rafId: Int = 0
   private var disposed: Boolean = false
   private var lastParent: Node | Null = null
   private var dirtyWhileUnmounted: Boolean = false
@@ -27,37 +26,30 @@ class ForEach[T](
   private val itemsObserver = items.observeChanges(onItemsChange)
   disposable.add(itemsObserver)
 
-  private val _mountWatcher: Unit = {
-    lazy val tick: js.Function1[Double, Unit] = (_: Double) => {
-      if (!disposed) {
-        val parent = startAnchor.parentNode
-        if (parent != lastParent) {
-          lastParent = parent
-          if (parent == null) {
-            detachAll(removeEndAnchor = true, keepComponents = true)
-          } else {
-            ensureScaffold(parent)
-            if (dirtyWhileUnmounted || mounted.isEmpty) {
-              rebuildAll(parent)
-              dirtyWhileUnmounted = false
-            } else {
-              reattachAll(parent)
-            }
-          }
-        } else if (parent != null) {
+  override def onMount(): Unit = {
+    if (!disposed) {
+      val parent = startAnchor.parentNode
+      if (parent != lastParent) {
+        lastParent = parent
+        if (parent == null) {
+          detachAll(removeEndAnchor = true, keepComponents = true)
+        } else {
           ensureScaffold(parent)
+          if (dirtyWhileUnmounted || mounted.isEmpty) {
+            rebuildAll(parent)
+            dirtyWhileUnmounted = false
+          } else {
+            reattachAll(parent)
+          }
         }
-
-        rafId = window.requestAnimationFrame(tick)
+      } else if (parent != null) {
+        ensureScaffold(parent)
       }
     }
-
-    rafId = window.requestAnimationFrame(tick)
   }
 
   override def dispose(): Unit = {
     disposed = true
-    if (rafId != 0) window.cancelAnimationFrame(rafId)
 
     // stop observing first
     disposable.dispose()

@@ -25,6 +25,8 @@ trait NodeComponent [E <: Node] extends Disposable {
 
     loop(parent)
   }
+  
+  def onMount() : Unit = {}
 
   def findParentForm(): Formular[?,?] =
     findParentFormOption().orNull
