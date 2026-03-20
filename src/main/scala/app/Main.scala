@@ -39,6 +39,9 @@ object Main {
 
     try {
       val container = scope {
+        val personColor = Property("#ffffff")
+        val isVisible = Property(true)
+
         singleton[JsonRegistry] {
           new JsonRegistry {
             override val classes: js.Map[String, () => Any] =
@@ -91,7 +94,8 @@ object Main {
                 padding = "20px"
                 border = "1px solid #cbd5e1"
                 borderRadius = "10px"
-                backgroundColor = "#ffffff"
+                backgroundColor <-- personColor
+                opacity <-- isVisible.map(v => if (v) "1" else "0")
                 boxShadow = "0 10px 30px rgba(15, 23, 42, 0.08)"
               }
 
@@ -106,6 +110,7 @@ object Main {
                   placeholder = "Vorname"
 
                   style {
+                    width := "100%"
                     padding = "10px 12px"
                     border = "1px solid #cbd5e1"
                     borderRadius = "8px"

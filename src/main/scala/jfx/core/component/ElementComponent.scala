@@ -1,11 +1,14 @@
 package jfx.core.component
 
-import jfx.core.state.Property
+import jfx.core.state.{Property, ReadOnlyProperty}
 import org.scalajs.dom.{CSSStyleDeclaration, HTMLElement, Node}
+
+import scala.collection.mutable
 
 trait ElementComponent[E <: Node] extends NodeComponent[E] {
 
   val textContentProperty = new Property[String]("")
+  private val styleBindings = mutable.LinkedHashMap.empty[String, jfx.core.state.Disposable]
 
   def newElement(tag: String): E = org.scalajs.dom.document.createElement(tag).asInstanceOf[E]
 
@@ -17,6 +20,23 @@ trait ElementComponent[E <: Node] extends NodeComponent[E] {
     }
 
   def css: CSSStyleDeclaration = htmlElement.style
+
+  addDisposable(() => {
+    styleBindings.values.foreach(_.dispose())
+    styleBindings.clear()
+  })
+
+  private[jfx] final def bindStyleProperty(
+    name: String,
+    property: ReadOnlyProperty[String]
+  )(applyValue: String => Unit): Unit = {
+    clearStylePropertyBinding(name)
+    val binding = property.observe(applyValue)
+    styleBindings.update(name, binding)
+  }
+
+  private[jfx] final def clearStylePropertyBinding(name: String): Unit =
+    styleBindings.remove(name).foreach(_.dispose())
   
   private val textContentObserver = textContentProperty.observe { text => element.textContent = text }
 
