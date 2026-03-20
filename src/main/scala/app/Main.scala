@@ -17,10 +17,6 @@ object Main {
 
     val json = """{ "@type" : "Person", "firstName" : "Patrick", "lastName" : "Bittner", "address" : { "@type" : "Address" , "street" : "Schützenhof 28", "city" : "Hamburg" }, "emails" : [{"@type" : "Email", "value" : "anjunar@gmx.de" }] }"""
 
-    val address = Address(Property("Beim alten Schützenhof 28"), Property("Hamburg"))
-
-    val email = Email(Property("anjunar@gmx.de"))
-
     val jsonRegistry = new JsonRegistry {
       override val classes: js.Map[String, () => Any] = js.Map(("Person", () => new Person()), ("Address", () => new Address()), ("Email", () => new Email()))
     }
