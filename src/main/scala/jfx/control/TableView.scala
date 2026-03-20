@@ -280,11 +280,16 @@ class TableView[S] extends ElementComponent[HTMLDivElement], FormSubtreeRegistra
     val contentWidth = updateLayoutMetrics(columns, rowHeight, headerHeight, totalItemCount)
 
     refreshPlaceholder()
-    refreshVisibleRows(columns = columns, rowHeight = rowHeight, rowWidth = contentWidth, allowLazyLoad = false)
+    refreshVisibleRows(
+      columns = columns,
+      rowHeight = rowHeight,
+      rowWidth = contentWidth,
+      allowLazyLoad = shouldAutoEnsureVisibleRange
+    )
     syncHeaderScroll()
   }
 
-  private def refreshVisibleRows(allowLazyLoad: Boolean = false): Unit =
+  private def refreshVisibleRows(allowLazyLoad: Boolean = shouldAutoEnsureVisibleRange): Unit =
     refreshVisibleRows(
       columns = currentColumns,
       rowHeight = effectiveRowHeight,
@@ -663,6 +668,9 @@ class TableView[S] extends ElementComponent[HTMLDivElement], FormSubtreeRegistra
 
   private def currentRemoteItems: RemoteListProperty[S, ?] | Null =
     getItems.remotePropertyOrNull
+
+  private def shouldAutoEnsureVisibleRange: Boolean =
+    currentRemoteItems != null && currentRemoteItems.supportsRangeLoading
 
   private def currentContentWidth: Double = {
     val viewportWidth = math.max(viewport.clientWidth.toDouble, 0.0)
