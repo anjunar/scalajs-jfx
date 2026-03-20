@@ -5,12 +5,14 @@ import jfx.core.component.{ChildrenComponent, CompositeComponent, ElementCompone
 import jfx.core.state.ReadOnlyProperty
 import jfx.form.{Form, Formular, Input, Model, SubForm}
 import jfx.layout.Div
+import jfx.router.{Route, Router}
 import org.scalajs.dom.{CSSStyleDeclaration, Event, Node}
 
 import scala.Conversion
 import scala.annotation.targetName
 import scala.collection.mutable
 import scala.compiletime.summonFrom
+import scala.scalajs.js
 
 private[dsl] final case class ComponentContext(
   parent: Option[ChildrenComponent[? <: Node]],
@@ -160,6 +162,14 @@ inline def composite[C <: CompositeComponent[? <: Node]](component: C): C =
     given CompositeComponent.DslContext =
       CompositeComponent.DslContext(currentScope, currentContext.enclosingForm)
     component.renderComposite
+    attach(component, currentContext)
+    component
+  }
+
+inline def router(routes: js.Array[Route]): Router =
+  currentScope { _ =>
+    val currentContext = currentComponentContext()
+    val component = new Router(routes)
     attach(component, currentContext)
     component
   }
