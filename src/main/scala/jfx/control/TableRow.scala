@@ -98,16 +98,21 @@ class TableRow[S] extends NativeComponent[HTMLDivElement] {
   protected def updateItem(item: S | Null, empty: Boolean): Unit = ()
 
   protected def updateSelected(selected: Boolean): Unit = {
-    element.style.backgroundColor =
-      if (selected) "#dbeafe"
-      else if (placeholderProperty.get) {
-        if (math.abs(indexProperty.get) % 2 == 0) "#ffffff"
-        else "#f8fafc"
-      }
-      else if (emptyProperty.get) "transparent"
-      else if (math.abs(indexProperty.get) % 2 == 0) "#ffffff"
-      else "#f8fafc"
+    val rowIndex = indexProperty.get
+    val hasIndex = rowIndex >= 0
+    val isEvenRow = hasIndex && math.abs(rowIndex) % 2 == 0
+
+    setRowClass("jfx-table-row-selected", selected)
+    setRowClass("jfx-table-row-placeholder", placeholderProperty.get)
+    setRowClass("jfx-table-row-empty", emptyProperty.get)
+    setRowClass("jfx-table-row-even", isEvenRow)
+    setRowClass("jfx-table-row-odd", hasIndex && !isEvenRow)
+    element.setAttribute("aria-selected", selected.toString)
   }
+
+  private def setRowClass(className: String, enabled: Boolean): Unit =
+    if (enabled) element.classList.add(className)
+    else element.classList.remove(className)
 
   private[control] def rebuildCells(columns: Seq[TableColumn[S, ?]]): Unit = {
     cellSlots.foreach(_.disposeBinding())

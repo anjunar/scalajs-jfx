@@ -30,19 +30,28 @@ class TableCell[S, T] extends NativeComponent[HTMLDivElement] {
   def getTableColumn: TableColumn[S, T] | Null = tableColumnProperty.get
 
   protected def updateItem(item: T | Null, empty: Boolean): Unit = {
-    textContent = if (empty || item == null) "" else item.toString
+    val isEmptyCell = empty || item == null
+    if (isEmptyCell) element.classList.add("jfx-table-cell-empty")
+    else element.classList.remove("jfx-table-cell-empty")
+    textContent = if (isEmptyCell) "" else item.toString
     updatePlaceholderAppearance()
   }
 
-  protected def updateSelected(selected: Boolean): Unit = ()
+  protected def updateSelected(selected: Boolean): Unit = {
+    if (selected) element.classList.add("jfx-table-cell-selected")
+    else element.classList.remove("jfx-table-cell-selected")
+    element.setAttribute("aria-selected", selected.toString)
+  }
 
   private def updatePlaceholderAppearance(): Unit =
     if (loadingPlaceholder) {
       element.classList.add("jfx-table-cell-loading-placeholder")
       element.style.setProperty("--jfx-table-cell-placeholder-width", s"${placeholderWidthPercent}%")
+      element.setAttribute("aria-busy", "true")
     } else {
       element.classList.remove("jfx-table-cell-loading-placeholder")
       element.style.removeProperty("--jfx-table-cell-placeholder-width")
+      element.setAttribute("aria-busy", "false")
     }
 
   private def placeholderWidthPercent: Int = {

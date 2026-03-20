@@ -30,6 +30,24 @@ object Main {
             }
           }
 
+          button("table") {
+            buttonType = "button"
+            classes = "app-nav-button"
+
+            onClick { _ =>
+              inject[Router].navigate("/table")
+            }
+          }
+
+          button("form") {
+            buttonType = "button"
+            classes = "app-nav-button"
+
+            onClick { _ =>
+              inject[Router].navigate("/form")
+            }
+          }
+
           button("person") {
             buttonType = "button"
             classes = "app-nav-button"

@@ -373,6 +373,21 @@ class TableView[S] extends ElementComponent[HTMLDivElement], FormSubtreeRegistra
       cell.style.width = widthValue
       cell.style.minWidth = widthValue
       cell.style.maxWidth = widthValue
+      currentSortFor(column) match {
+        case Some(sort) =>
+          cell.classList.add("jfx-table-header-cell-sorted")
+          if (sort.ascending) {
+            cell.classList.add("jfx-table-header-cell-sorted-asc")
+            cell.classList.remove("jfx-table-header-cell-sorted-desc")
+          } else {
+            cell.classList.add("jfx-table-header-cell-sorted-desc")
+            cell.classList.remove("jfx-table-header-cell-sorted-asc")
+          }
+        case None =>
+          cell.classList.remove("jfx-table-header-cell-sorted")
+          cell.classList.remove("jfx-table-header-cell-sorted-asc")
+          cell.classList.remove("jfx-table-header-cell-sorted-desc")
+      }
       if (isRemoteSortable(column)) {
         cell.classList.add("jfx-table-header-cell-sortable")
         cell.onclick = _ => toggleRemoteSort(column)
@@ -411,7 +426,11 @@ class TableView[S] extends ElementComponent[HTMLDivElement], FormSubtreeRegistra
     updateDefaultPlaceholderText()
 
     val showPlaceholder = getItems.isEmpty
+    val remote = currentRemoteItems
     placeholderLayer.style.display = if (showPlaceholder) "flex" else "none"
+    setClass(element, "jfx-table-view-empty", showPlaceholder)
+    setClass(element, "jfx-table-view-loading", remote != null && remote.loadingProperty.get)
+    setClass(element, "jfx-table-view-error", remote != null && remote.errorProperty.get.nonEmpty)
 
     if (!showPlaceholder) {
       detachMountedPlaceholder()
@@ -504,12 +523,7 @@ class TableView[S] extends ElementComponent[HTMLDivElement], FormSubtreeRegistra
   }
 
   private def headerText(column: TableColumn[S, Any]): String =
-    currentSortFor(column) match {
-      case Some(sort) =>
-        s"${column.getText} ${if (sort.ascending) TableView.ascendingIndicator else TableView.descendingIndicator}"
-      case None =>
-        column.getText
-    }
+    column.getText
 
   private def toggleRemoteSort(column: TableColumn[S, Any]): Unit = {
     val remote = currentRemoteItems
@@ -632,6 +646,10 @@ class TableView[S] extends ElementComponent[HTMLDivElement], FormSubtreeRegistra
     val parent = node.parentNode
     if (parent != null) parent.removeChild(node)
   }
+
+  private def setClass(node: HTMLDivElement, className: String, enabled: Boolean): Unit =
+    if (enabled) node.classList.add(className)
+    else node.classList.remove(className)
 }
 
 object TableView {

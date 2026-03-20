@@ -35,6 +35,23 @@ html[data-theme="light"] {
     --glass-shadow: rgba(0, 0, 0, 0.1);
     --glass-blur: 12px;
 
+    --jfx-table-border: rgba(18, 18, 18, 0.08);
+    --jfx-table-shadow: none;
+    --jfx-table-surface: var(--color-background-primary);
+    --jfx-table-header-bg: transparent;
+    --jfx-table-header-text: var(--color-neutral-700);
+    --jfx-table-header-active: #6ea72f;
+    --jfx-table-row-even: transparent;
+    --jfx-table-row-odd: transparent;
+    --jfx-table-row-hover: rgba(18, 18, 18, 0.035);
+    --jfx-table-row-selected: rgba(135, 196, 64, 0.12);
+    --jfx-table-row-selected-text: var(--color-neutral-800);
+    --jfx-table-placeholder-overlay: rgba(255, 255, 255, 0.88);
+    --jfx-table-placeholder-text: var(--color-neutral-700);
+    --jfx-table-placeholder-shimmer-start: rgba(224, 224, 224, 0.52);
+    --jfx-table-placeholder-shimmer-mid: rgba(135, 196, 64, 0.22);
+    --jfx-table-focus-ring: rgba(135, 196, 64, 0.14);
+
     input {
         color-scheme: light;
     }
@@ -77,6 +94,23 @@ html[data-theme="dark"] {
     --glass-border: rgba(255, 255, 255, 0.08);
     --glass-shadow: rgba(0, 0, 0, 0.4);
     --glass-blur: 16px;
+
+    --jfx-table-border: rgba(245, 245, 245, 0.08);
+    --jfx-table-shadow: none;
+    --jfx-table-surface: var(--color-background-primary);
+    --jfx-table-header-bg: transparent;
+    --jfx-table-header-text: var(--color-neutral-300);
+    --jfx-table-header-active: var(--color-olive-500);
+    --jfx-table-row-even: transparent;
+    --jfx-table-row-odd: transparent;
+    --jfx-table-row-hover: rgba(245, 245, 245, 0.04);
+    --jfx-table-row-selected: rgba(164, 255, 79, 0.1);
+    --jfx-table-row-selected-text: var(--color-neutral-200);
+    --jfx-table-placeholder-overlay: rgba(14, 14, 14, 0.9);
+    --jfx-table-placeholder-text: var(--color-neutral-300);
+    --jfx-table-placeholder-shimmer-start: rgba(92, 98, 104, 0.46);
+    --jfx-table-placeholder-shimmer-mid: rgba(164, 255, 79, 0.18);
+    --jfx-table-focus-ring: rgba(164, 255, 79, 0.12);
 
     input {
         color-scheme: dark;

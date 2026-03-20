@@ -1,5 +1,6 @@
 package app
 
+import app.pages.{formPage, tablePage}
 import jfx.dsl.*
 import jfx.router.Route
 
@@ -18,6 +19,18 @@ object Routes {
         }
       },
       children = js.Array(
+        Route.scoped(
+          path = "/table",
+          factory = {
+            tablePage()
+          }
+        ),
+        Route.scoped(
+          path = "/form",
+          factory = {
+            formPage()
+          }
+        ),
         Route.scoped(
           path = "/person",
           factory = {
