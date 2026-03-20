@@ -2,8 +2,11 @@ package app
 
 import jfx.core.state.Property
 import jfx.dsl.*
+import jfx.json.{JsonMapper, JsonRegistry}
 import org.scalajs.dom.{console, document}
 
+import scala.scalajs.js
+import scala.scalajs.js.JSON
 import scala.util.control.NonFatal
 
 object Main {
@@ -17,6 +20,10 @@ object Main {
   }
 
   def main(args: Array[String]): Unit = {
+    val json =
+      """{ "@type" : "Person", "firstName" : "Patrick", "lastName" : "Bittner", "address" : { "@type" : "Address" , "street" : "Schuetzenhof 28", "city" : "Hamburg" }, "emails" : [{"@type" : "Email", "value" : "anjunar@gmx.de" }] }"""
+
+
     val mountTarget = Option(document.getElementById("app")).getOrElse(document.body)
     mountTarget.innerHTML = ""
 
@@ -32,8 +39,19 @@ object Main {
 
     try {
       val container = scope {
-        singleton[PersonFactory] {
-          new PersonFactory()
+        singleton[JsonRegistry] {
+          new JsonRegistry {
+            override val classes: js.Map[String, () => Any] =
+              js.Map(
+                "Person" -> (() => new Person()),
+                "Address" -> (() => new Address()),
+                "Email" -> (() => new Email())
+              )
+          }
+        }
+
+        singleton[JsonMapper] {
+          new JsonMapper(inject[JsonRegistry])
         }
 
         div {
@@ -60,7 +78,7 @@ object Main {
 
           scope {
             scoped[Person] {
-              inject[PersonFactory].create()
+              inject[JsonMapper].deserialize[Person](JSON.parse(json))
             }
 
             form(inject[Person]) {
@@ -85,8 +103,7 @@ object Main {
                 }
 
                 input("firstName") {
-                  val field = summon[jfx.form.Input]
-                  field.element.placeholder = "Vorname"
+                  placeholder = "Vorname"
 
                   style {
                     padding = "10px 12px"
@@ -96,9 +113,16 @@ object Main {
                   }
                 }
 
+                addressForm {
+
+                  div {
+                    text = "Address"
+                  }
+
+                }
+
                 input("lastName") {
-                  val field = summon[jfx.form.Input]
-                  field.element.placeholder = "Nachname"
+                  placeholder = "Nachname"
 
                   style {
                     padding = "10px 12px"

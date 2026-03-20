@@ -1,8 +1,8 @@
 package jfx.dsl
 
 import jfx.action.Button
-import jfx.core.component.{ChildrenComponent, ElementComponent, NodeComponent}
-import jfx.form.{Form, Formular, Input, Model}
+import jfx.core.component.{ChildrenComponent, CompositeComponent, ElementComponent, NodeComponent}
+import jfx.form.{Form, Formular, Input, Model, SubForm}
 import jfx.layout.Div
 import org.scalajs.dom.{CSSStyleDeclaration, Event, Node}
 
@@ -18,7 +18,7 @@ private[dsl] object ComponentContext {
   val root: ComponentContext = ComponentContext(None, None)
 }
 
-private[dsl] final case class StyleTarget(declaration: CSSStyleDeclaration)
+private[jfx] final case class StyleTarget(declaration: CSSStyleDeclaration)
 
 private val componentContextStack: mutable.ArrayBuffer[ComponentContext] =
   mutable.ArrayBuffer(ComponentContext.root)
@@ -71,6 +71,19 @@ inline def form[M <: Model[M]](model: M)(init: Form[M] ?=> Unit): Form[M] =
     component
   }
 
+inline def subForm[M <: Model[M]](name: String)(init: SubForm[M] ?=> Unit): SubForm[M] =
+  currentScope { currentScope =>
+    val currentContext = currentComponentContext()
+    val component = new SubForm[M](name)
+    withComponentContext(ComponentContext(Some(component), Some(component))) {
+      given Scope = currentScope
+      given SubForm[M] = component
+      init
+    }
+    attach(component, currentContext)
+    component
+  }
+
 inline def input(name: String): Input =
   input(name)({})
 
@@ -104,6 +117,16 @@ inline def button(label: String)(init: Button ?=> Unit): Button =
       given Button = component
       init
     }
+    attach(component, currentContext)
+    component
+  }
+
+inline def composite[C <: CompositeComponent[? <: Node]](component: C): C =
+  currentScope { currentScope =>
+    val currentContext = currentComponentContext()
+    given CompositeComponent.DslContext =
+      CompositeComponent.DslContext(currentScope, currentContext.enclosingForm)
+    component.renderComposite
     attach(component, currentContext)
     component
   }
@@ -245,4 +268,12 @@ private def withComponentContext[A](context: ComponentContext)(block: => A): A =
   componentContextStack += context
   try block
   finally componentContextStack.remove(componentContextStack.length - 1)
+}
+
+private[jfx] object DslRuntime {
+  def withCompositeContext[A](
+    parent: ChildrenComponent[? <: Node],
+    context: CompositeComponent.DslContext
+  )(block: => A): A =
+    withComponentContext(ComponentContext(Some(parent), context.enclosingForm))(block)
 }
