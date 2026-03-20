@@ -6,7 +6,7 @@ import jfx.form.Model
 
 import scala.scalajs.js
 
-class Address(var street: Property[String], var city: Property[String]) extends Model[Address] {
+class Address(var street: Property[String] = Property(""), var city: Property[String] = Property("")) extends Model[Address] {
   override def properties: js.Array[PropertyAccess[Address, ?]] = Address.properties
 }
 

@@ -3,22 +3,29 @@ package app
 import jfx.action.Button
 import jfx.core.state.{ListProperty, Property}
 import jfx.form.{ArrayForm, Form, Input, SubForm}
+import jfx.json.{JsonMapper, JsonRegistry}
 import jfx.layout.Div
 import jfx.statement.{Conditional, ForEach}
 import org.scalajs.dom
 
 import scala.scalajs.js
-import scala.scalajs.js.special.debugger
+import scala.scalajs.js.JSON
 
 object Main {
 
   def main(args: Array[String]): Unit = {
 
+    val json = """{ "@type" : "Person", "firstName" : "Patrick", "lastName" : "Bittner", "address" : { "@type" : "Address" , "street" : "Schützenhof 28", "city" : "Hamburg" }, "emails" : [{"@type" : "Email", "value" : "anjunar@gmx.de" }] }"""
+
     val address = Address(Property("Beim alten Schützenhof 28"), Property("Hamburg"))
 
     val email = Email(Property("anjunar@gmx.de"))
 
-    val person = Person(Property("John"), Property("Doe"), Property(address), ListProperty(js.Array(email)))
+    val jsonRegistry = new JsonRegistry {
+      override val classes: js.Map[String, () => Any] = js.Map(("Person", () => new Person()), ("Address", () => new Address()), ("Email", () => new Email()))
+    }
+
+    val person = new JsonMapper(jsonRegistry).deserialize[Person](JSON.parse(json))
 
     val opening = new Property(true)
 

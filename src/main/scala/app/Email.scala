@@ -6,7 +6,7 @@ import jfx.form.Model
 
 import scala.scalajs.js
 
-class Email(var value : Property[String]) extends Model[Email]{
+class Email(var value : Property[String] = new Property("")) extends Model[Email]{
   override def properties: js.Array[PropertyAccess[Email, ?]] = Email.properties
 }
 
