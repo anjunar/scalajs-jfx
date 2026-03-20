@@ -21,7 +21,7 @@ object Main {
   final case class PersonQuery(
     filter: String = "",
     sort: Seq[String] = Seq.empty,
-    page: Int = 0,
+    offset: Int = 0,
     size: Int = 20
   )
 
@@ -85,7 +85,13 @@ object Main {
       sortUpdater = Some((query, sorting) =>
         query.copy(
           sort = sorting.map(_.asQueryValue),
-          page = 0
+          offset = 0
+        )
+      ),
+      rangeQueryUpdater = Some((query, startIndex, visibleCount) =>
+        query.copy(
+          offset = startIndex,
+          size = math.max(query.size, visibleCount)
         )
       )
     )
@@ -97,7 +103,7 @@ object Main {
 
     def applyFilter(): Unit = {
       val filter = filterInput.value.trim
-      discard(remotePersons.reload(current => current.copy(filter = filter, page = 0)))
+      discard(remotePersons.reload(current => current.copy(filter = filter, offset = 0)))
     }
 
     def updateStatus(): Unit = {
@@ -114,13 +120,13 @@ object Main {
         .getOrElse("")
 
       status.textContent =
-        s"Loaded ${remotePersons.length} of $total rows | filter='${query.filter}' | sort=$sortText | pageSize=${query.size}$loadingText$errorText"
+        s"Loaded ${remotePersons.length} of $total rows | filter='${query.filter}' | sort=$sortText | offset=${query.offset} | pageSize=${query.size}$loadingText$errorText"
     }
 
     applyFilterButton.addClick(_ => applyFilter())
     clearFilterButton.addClick(_ => {
       filterInput.value = ""
-      discard(remotePersons.reload(current => current.copy(filter = "", page = 0)))
+      discard(remotePersons.reload(current => current.copy(filter = "", offset = 0)))
     })
     reloadButton.addClick(_ => discard(remotePersons.reload()))
 
@@ -203,11 +209,11 @@ object Main {
       throw RuntimeException("Simulated backend error. Use another filter value.")
     }
 
-    val normalizedPage = math.max(0, query.page)
+    val normalizedOffset = math.max(0, query.offset)
     val normalizedSize = math.max(1, query.size)
     val filtered = demoData.filter(matchesFilter(_, query.filter))
     val sorted = sortPersons(filtered, query.sort)
-    val fromIndex = normalizedPage * normalizedSize
+    val fromIndex = normalizedOffset
     val untilIndex = math.min(sorted.length, fromIndex + normalizedSize)
     val pageItems =
       if (fromIndex >= sorted.length) Vector.empty
@@ -216,7 +222,8 @@ object Main {
 
     ListProperty.RemotePage(
       items = pageItems,
-      nextQuery = Option.when(hasMore)(query.copy(page = normalizedPage + 1)),
+      offset = Some(fromIndex),
+      nextQuery = Option.when(hasMore)(query.copy(offset = untilIndex)),
       totalCount = Some(sorted.length),
       hasMore = Some(hasMore)
     )

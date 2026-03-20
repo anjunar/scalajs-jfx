@@ -160,9 +160,10 @@ object ListProperty {
     initialQuery: Query,
     underlying: js.Array[V] = js.Array[V](),
     executionContext: ExecutionContext = ExecutionContext.global,
-    sortUpdater: Option[(Query, Seq[RemoteSort]) => Query] = None
+    sortUpdater: Option[(Query, Seq[RemoteSort]) => Query] = None,
+    rangeQueryUpdater: Option[(Query, Int, Int) => Query] = None
   ): RemoteListProperty[V, Query] =
-    new RemoteListProperty[V, Query](loader, initialQuery, underlying, executionContext, sortUpdater)
+    new RemoteListProperty[V, Query](loader, initialQuery, underlying, executionContext, sortUpdater, rangeQueryUpdater)
 
   def subscribeBidirectional[V](a: ListProperty[V], b: ListProperty[V]): Disposable = {
     if (a.eq(b)) return () => ()
@@ -255,6 +256,7 @@ object ListProperty {
 
   final case class RemotePage[V, Query](
     items: Seq[V],
+    offset: Option[Int] = None,
     nextQuery: Option[Query] = None,
     totalCount: Option[Int] = None,
     hasMore: Option[Boolean] = None
@@ -269,11 +271,12 @@ object ListProperty {
 
     def fromArray[V, Query](
       items: js.Array[V],
+      offset: Option[Int] = None,
       nextQuery: Option[Query] = None,
       totalCount: Option[Int] = None,
       hasMore: Option[Boolean] = None
     ): RemotePage[V, Query] =
-      RemotePage(items.toSeq, nextQuery, totalCount, hasMore)
+      RemotePage(items.toSeq, offset, nextQuery, totalCount, hasMore)
   }
 
   final case class RestRequest(
@@ -385,10 +388,12 @@ class RemoteListProperty[V, Query](
   initialQuery: Query,
   underlying: js.Array[V] = js.Array[V](),
   executionContext: ExecutionContext = ExecutionContext.global,
-  sortUpdater: Option[(Query, Seq[ListProperty.RemoteSort]) => Query] = None
+  sortUpdater: Option[(Query, Seq[ListProperty.RemoteSort]) => Query] = None,
+  rangeQueryUpdater: Option[(Query, Int, Int) => Query] = None
 ) extends ListProperty[V](underlying) {
 
   private given ExecutionContext = executionContext
+  private val loadedItemsByIndex = mutable.Map[Int, V](underlying.iterator.zipWithIndex.map { case (value, index) => index -> value }.toSeq*)
 
   val queryProperty: Property[Query] = Property(initialQuery)
   val sortingProperty: Property[Vector[ListProperty.RemoteSort]] = Property(Vector.empty)
@@ -407,9 +412,23 @@ class RemoteListProperty[V, Query](
 
   def supportsSorting: Boolean = sortUpdater.nonEmpty
 
+  def supportsRangeLoading: Boolean = rangeQueryUpdater.nonEmpty
+
   def getSorting: Vector[ListProperty.RemoteSort] = sortingProperty.get
 
   override def totalLength: Int = totalCountProperty.get.getOrElse(length)
+
+  def isIndexLoaded(index: Int): Boolean =
+    loadedItemsByIndex.contains(index)
+
+  def getLoadedItem(index: Int): Option[V] =
+    loadedItemsByIndex.get(index)
+
+  def isRangeLoaded(fromIndex: Int, toExclusive: Int): Boolean = {
+    val normalizedFrom = math.max(0, fromIndex)
+    val normalizedTo = math.max(normalizedFrom, toExclusive)
+    (normalizedFrom until normalizedTo).forall(isIndexLoaded)
+  }
 
   def applySorting(sorting: Seq[ListProperty.RemoteSort]): js.Promise[js.Array[V]] =
     sortUpdater match {
@@ -432,7 +451,7 @@ class RemoteListProperty[V, Query](
 
   def loadMore(): js.Promise[js.Array[V]] =
     nextQueryProperty.get match {
-      case Some(nextQuery) => load(nextQuery, append = true)
+      case Some(nextQuery) => loadQuery(nextQuery, replaceExisting = false, expectedOffset = Some(length))
       case None            => js.Promise.resolve(get)
     }
 
@@ -442,7 +461,32 @@ class RemoteListProperty[V, Query](
   def loadMore(update: Query => Query): js.Promise[js.Array[V]] =
     loadMore(update(queryProperty.get))
 
+  def ensureRangeLoaded(fromIndex: Int, toExclusive: Int): js.Promise[js.Array[V]] =
+    if (isRangeLoaded(fromIndex, toExclusive)) {
+      js.Promise.resolve(get)
+    } else {
+      rangeQueryUpdater match {
+        case Some(updateRange) =>
+          val normalizedFrom = math.max(0, fromIndex)
+          val normalizedCount = math.max(1, toExclusive - normalizedFrom)
+          loadQuery(
+            updateRange(queryProperty.get, normalizedFrom, normalizedCount),
+            replaceExisting = false,
+            expectedOffset = Some(normalizedFrom)
+          )
+        case None =>
+          js.Promise.reject(IllegalStateException("This RemoteListProperty does not support range loading"))
+      }
+    }
+
   private def load(query: Query, append: Boolean): js.Promise[js.Array[V]] =
+    loadQuery(
+      query,
+      replaceExisting = !append,
+      expectedOffset = if (append) Some(length) else Some(0)
+    )
+
+  private def loadQuery(query: Query, replaceExisting: Boolean, expectedOffset: Option[Int]): js.Promise[js.Array[V]] =
     if (loadingProperty.get) {
       js.Promise.reject(ListProperty.alreadyLoadingFailure)
     } else {
@@ -454,7 +498,7 @@ class RemoteListProperty[V, Query](
         .load(query)
         .toFuture
         .map { page =>
-          applyPage(page, append)
+          applyPage(page, replaceExisting, expectedOffset)
           get
         }
         .recoverWith {
@@ -468,12 +512,29 @@ class RemoteListProperty[V, Query](
         .toJSPromise
     }
 
-  private def applyPage(page: ListProperty.RemotePage[V, Query], append: Boolean): Unit = {
-    if (append) {
-      insertAll(length, page.items)
-    } else {
-      setAll(page.items)
+  private def applyPage(
+    page: ListProperty.RemotePage[V, Query],
+    replaceExisting: Boolean,
+    expectedOffset: Option[Int]
+  ): Unit = {
+    if (replaceExisting) {
+      loadedItemsByIndex.clear()
     }
+
+    val pageOffset =
+      page.offset
+        .orElse(expectedOffset)
+        .getOrElse {
+        if (replaceExisting) 0
+        else loadedItemsByIndex.size
+      }
+
+    page.items.zipWithIndex.foreach { case (item, relativeIndex) =>
+      loadedItemsByIndex.update(pageOffset + relativeIndex, item)
+    }
+
+    val orderedLoadedItems = loadedItemsByIndex.toSeq.sortBy(_._1).map(_._2)
+    setAll(orderedLoadedItems)
 
     nextQueryProperty.set(page.nextQuery)
     totalCountProperty.set(page.totalCount)

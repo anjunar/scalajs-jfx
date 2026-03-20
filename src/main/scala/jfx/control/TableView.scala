@@ -90,7 +90,7 @@ class TableView[S] extends ElementComponent[HTMLDivElement], FormSubtreeRegistra
     if (itemCount == 0) return
     val clamped = math.max(0, math.min(itemCount - 1, index))
     viewport.scrollTop = clamped * effectiveRowHeight
-    refreshVisibleRows()
+    refreshVisibleRows(allowLazyLoad = true)
   }
 
   override def onMount(): Unit = scheduleRefresh()
@@ -175,7 +175,7 @@ class TableView[S] extends ElementComponent[HTMLDivElement], FormSubtreeRegistra
   private def initializeObservers(): Unit = {
     val scrollListener: js.Function1[Event, Unit] = _ => {
       syncHeaderScroll()
-      refreshVisibleRows()
+      refreshVisibleRows(allowLazyLoad = true)
     }
     viewport.addEventListener("scroll", scrollListener)
     disposable.add(() => viewport.removeEventListener("scroll", scrollListener))
@@ -280,27 +280,30 @@ class TableView[S] extends ElementComponent[HTMLDivElement], FormSubtreeRegistra
     val contentWidth = updateLayoutMetrics(columns, rowHeight, headerHeight, totalItemCount)
 
     refreshPlaceholder()
-    refreshVisibleRows(columns = columns, rowHeight = rowHeight, rowWidth = contentWidth)
+    refreshVisibleRows(columns = columns, rowHeight = rowHeight, rowWidth = contentWidth, allowLazyLoad = false)
     syncHeaderScroll()
   }
 
-  private def refreshVisibleRows(): Unit =
+  private def refreshVisibleRows(allowLazyLoad: Boolean = false): Unit =
     refreshVisibleRows(
       columns = currentColumns,
       rowHeight = effectiveRowHeight,
-      rowWidth = currentContentWidth
+      rowWidth = currentContentWidth,
+      allowLazyLoad = allowLazyLoad
     )
 
   private def refreshVisibleRows(
     columns: Seq[TableColumn[S, Any]],
     rowHeight: Double,
-    rowWidth: Double
+    rowWidth: Double,
+    allowLazyLoad: Boolean
   ): Unit = {
     if (disposed) return
 
     val items = getItems
     val loadedItemCount = items.length
     val totalItemCount = items.totalLength
+    val remote = currentRemoteItems
     if (totalItemCount == 0) {
       ensureRowPool(0, columns)
       return
@@ -319,29 +322,43 @@ class TableView[S] extends ElementComponent[HTMLDivElement], FormSubtreeRegistra
 
     rowPool.zipWithIndex.foreach { case (row, poolIndex) =>
       val rowIndex = startIndex + poolIndex
-      if (rowIndex < loadedItemCount) {
+      val maybeLoadedValue =
+        if (remote == null) {
+          if (rowIndex < loadedItemCount) Some(items(rowIndex)) else None
+        } else {
+          remote.getLoadedItem(rowIndex)
+        }
+
+      maybeLoadedValue match {
+        case Some(rowValue) =>
         row.bind(
           rowIndex = rowIndex,
-          rowValue = items(rowIndex),
+          rowValue = rowValue,
           tableView = this,
           columns = columns,
           rowHeight = rowHeight,
           rowWidth = rowWidth
         )
-      } else if (rowIndex < totalItemCount) {
-        row.showPlaceholder(
-          rowIndex = rowIndex,
-          tableView = this,
-          columns = columns,
-          rowHeight = rowHeight,
-          rowWidth = rowWidth
-        )
-      } else {
-        row.clear(rowHeight, rowWidth)
+        case None if rowIndex < totalItemCount =>
+          row.showPlaceholder(
+            rowIndex = rowIndex,
+            tableView = this,
+            columns = columns,
+            rowHeight = rowHeight,
+            rowWidth = rowWidth
+          )
+        case None =>
+          row.clear(rowHeight, rowWidth)
       }
     }
 
-    requestLazyLoadIfNecessary(loadedItemCount, visibleEndExclusive)
+    if (allowLazyLoad) {
+      requestLazyLoadIfNecessary(
+        loadedItemCount = loadedItemCount,
+        visibleStartIndex = startIndex,
+        visibleEndExclusive = math.min(totalItemCount, startIndex + requiredRows)
+      )
+    }
   }
 
   private def ensureRowPool(requiredRows: Int, columns: Seq[TableColumn[S, Any]]): Unit = {
@@ -501,14 +518,22 @@ class TableView[S] extends ElementComponent[HTMLDivElement], FormSubtreeRegistra
     }
   }
 
-  private def requestLazyLoadIfNecessary(itemCount: Int, visibleEndExclusive: Int): Unit = {
+  private def requestLazyLoadIfNecessary(loadedItemCount: Int, visibleStartIndex: Int, visibleEndExclusive: Int): Unit = {
     val remote = currentRemoteItems
     if (remote == null) return
     if (remote.loadingProperty.get) return
-    if (!remote.hasMoreProperty.get) return
     if (remote.errorProperty.get.nonEmpty) return
 
-    val remainingItems = math.max(0, itemCount - visibleEndExclusive)
+    if (remote.supportsRangeLoading) {
+      if (!remote.isRangeLoaded(visibleStartIndex, visibleEndExclusive)) {
+        discardPromise(remote.ensureRangeLoaded(visibleStartIndex, visibleEndExclusive))
+      }
+      return
+    }
+
+    if (!remote.hasMoreProperty.get) return
+
+    val remainingItems = math.max(0, loadedItemCount - visibleEndExclusive)
     if (remainingItems <= TableView.lazyLoadThresholdRows) {
       discardPromise(remote.loadMore())
     }
