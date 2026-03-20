@@ -1,0 +1,9 @@
+.app-header {
+    background-color: var(--color-background-secondary);
+    height: 32px;
+}
+
+.app-footer {
+    background-color: var(--color-background-secondary);
+    height: 32px;
+}

@@ -2,58 +2,27 @@ package jfx.dsl
 
 import jfx.action.Button
 import jfx.core.component.{ChildrenComponent, CompositeComponent, ElementComponent, NodeComponent}
-import jfx.core.state.ReadOnlyProperty
+import jfx.core.state.{Disposable, ListProperty, ReadOnlyProperty}
+import jfx.control.{TableCell, TableColumn, TableRow, TableView, TableViewSelectionModel}
 import jfx.form.{Form, Formular, Input, Model, SubForm}
-import jfx.layout.Div
+import jfx.layout.{Div, HBox, VBox}
 import jfx.router.{Route, Router}
-import org.scalajs.dom.{CSSStyleDeclaration, Event, Node}
+import jfx.statement.{Conditional, DynamicOutlet, ForEach}
+import org.scalajs.dom.{Event, Node}
 
-import scala.Conversion
-import scala.annotation.targetName
 import scala.collection.mutable
 import scala.compiletime.summonFrom
 import scala.scalajs.js
 
 private[dsl] final case class ComponentContext(
   parent: Option[ChildrenComponent[? <: Node]],
-  enclosingForm: Option[Formular[?, ?]]
+  enclosingForm: Option[Formular[?, ?]],
+  attachOverride: Option[NodeComponent[? <: Node] => Unit] = None
 )
 
 private[dsl] object ComponentContext {
   val root: ComponentContext = ComponentContext(None, None)
 }
-
-private[jfx] final case class StyleTarget(
-  component: ElementComponent[?],
-  declaration: CSSStyleDeclaration
-)
-
-final class StyleProperty private[jfx] (
-  private val currentValue: () => String,
-  private val assignValue: String => Unit,
-  private val bindValue: ReadOnlyProperty[String] => Unit
-) {
-
-  def value: String =
-    currentValue()
-
-  def apply(): String =
-    currentValue()
-
-  def :=(value: String): Unit =
-    assignValue(value)
-
-  @targetName("bindFromProperty")
-  def <--(property: ReadOnlyProperty[String]): Unit =
-    bindValue(property)
-
-  override def toString: String =
-    currentValue()
-}
-
-given Conversion[StyleProperty, String] with
-  def apply(value: StyleProperty): String =
-    value.value
 
 private val componentContextStack: mutable.ArrayBuffer[ComponentContext] =
   mutable.ArrayBuffer(ComponentContext.root)
@@ -92,6 +61,33 @@ inline def div(init: Div ?=> Unit): Div =
     attach(component, currentContext)
     component
   }
+
+inline def hbox(init: HBox ?=> Unit): HBox =
+  currentScope { currentScope =>
+    val currentContext = currentComponentContext()
+    val component = new HBox()
+    withComponentContext(ComponentContext(Some(component), currentContext.enclosingForm)) {
+      given Scope = currentScope
+      given HBox = component
+      init
+    }
+    attach(component, currentContext)
+    component
+  }
+
+inline def vbox(init: VBox ?=> Unit): VBox =
+  currentScope { currentScope =>
+    val currentContext = currentComponentContext()
+    val component = new VBox()
+    withComponentContext(ComponentContext(Some(component), currentContext.enclosingForm)) {
+      given Scope = currentScope
+      given VBox = component
+      init
+    }
+    attach(component, currentContext)
+    component
+  }
+
 
 inline def form[M <: Model[M]](model: M)(init: Form[M] ?=> Unit): Form[M] =
   currentScope { currentScope =>
@@ -156,6 +152,75 @@ inline def button(label: String)(init: Button ?=> Unit): Button =
     component
   }
 
+inline def tableView[S](init: TableView[S] ?=> Unit): TableView[S] =
+  currentScope { currentScope =>
+    val currentContext = currentComponentContext()
+    val component = new TableView[S]()
+    withComponentContext(ComponentContext(None, currentContext.enclosingForm)) {
+      given Scope = currentScope
+      given TableView[S] = component
+      init
+    }
+    attach(component, currentContext)
+    component
+  }
+
+inline def tableColumn[S, T](text: String): TableColumn[S, T] =
+  tableColumn(text)({})
+
+inline def tableColumn[S, T](text: String)(init: TableColumn[S, T] ?=> Unit): TableColumn[S, T] =
+  currentScope { currentScope =>
+    val component = new TableColumn[S, T](text)
+    given Scope = currentScope
+    given TableColumn[S, T] = component
+    init
+    summonFrom {
+      case given TableView[S] =>
+        summon[TableView[S]].columnsProperty += component
+      case _ =>
+        ()
+    }
+    component
+  }
+
+inline def column[S, T](text: String): TableColumn[S, T] =
+  tableColumn(text)
+
+inline def column[S, T](text: String)(init: TableColumn[S, T] ?=> Unit): TableColumn[S, T] =
+  tableColumn(text)(init)
+
+inline def tableRow[S](init: TableRow[S] ?=> Unit): TableRow[S] =
+  currentScope { currentScope =>
+    val currentContext = currentComponentContext()
+    val component = new TableRow[S]()
+    withComponentContext(ComponentContext(Some(component), currentContext.enclosingForm)) {
+      given Scope = currentScope
+      given TableRow[S] = component
+      init
+    }
+    attach(component, currentContext)
+    component
+  }
+
+inline def row[S](init: TableRow[S] ?=> Unit): TableRow[S] =
+  tableRow(init)
+
+inline def tableCell[S, T](init: TableCell[S, T] ?=> Unit): TableCell[S, T] =
+  currentScope { currentScope =>
+    val currentContext = currentComponentContext()
+    val component = new TableCell[S, T]()
+    withComponentContext(ComponentContext(Some(component), currentContext.enclosingForm)) {
+      given Scope = currentScope
+      given TableCell[S, T] = component
+      init
+    }
+    attach(component, currentContext)
+    component
+  }
+
+inline def cell[S, T](init: TableCell[S, T] ?=> Unit): TableCell[S, T] =
+  tableCell(init)
+
 inline def composite[C <: CompositeComponent[? <: Node]](component: C): C =
   currentScope { currentScope =>
     val currentContext = currentComponentContext()
@@ -167,12 +232,65 @@ inline def composite[C <: CompositeComponent[? <: Node]](component: C): C =
   }
 
 inline def router(routes: js.Array[Route]): Router =
-  currentScope { _ =>
+  router(routes)({})
+
+inline def router(routes: js.Array[Route])(init: Router ?=> Unit): Router =
+  currentScope { currentScope =>
     val currentContext = currentComponentContext()
     val component = new Router(routes)
+    withComponentContext(ComponentContext(None, currentContext.enclosingForm)) {
+      given Scope = currentScope
+      given Router = component
+      init
+    }
     attach(component, currentContext)
     component
   }
+
+inline def when(condition: ReadOnlyProperty[Boolean])(init: Conditional ?=> Unit): Conditional =
+  currentScope { currentScope =>
+    val currentContext = currentComponentContext()
+    val component = new Conditional(condition)
+    withComponentContext(branchContext(currentContext, "when", component.thenAdd)) {
+      given Scope = currentScope
+      given Conditional = component
+      init
+    }
+    attach(component, currentContext)
+    component
+  }
+
+inline def conditional(condition: ReadOnlyProperty[Boolean])(init: Conditional ?=> Unit): Conditional =
+  when(condition)(init)
+
+def otherwise(init: Conditional ?=> Unit)(using conditional: Conditional): Conditional =
+  appendConditionalBranch(conditional, "otherwise", conditional.elseAdd)(init)
+
+extension (conditional: Conditional)
+  inline def otherwise(init: Conditional ?=> Unit): Conditional =
+    appendConditionalBranch(conditional, "otherwise", conditional.elseAdd)(init)
+
+inline def forEach[T](items: ListProperty[T])(renderItem: (T, Int) => NodeComponent[? <: Node]): ForEach[T] =
+  currentScope { _ =>
+    val currentContext = currentComponentContext()
+    val component = new ForEach(items, renderItem)
+    attach(component, currentContext)
+    component
+  }
+
+inline def forEach[T](items: ListProperty[T])(renderItem: T => NodeComponent[? <: Node]): ForEach[T] =
+  forEach(items) { (item, _) => renderItem(item) }
+
+inline def outlet(content: ReadOnlyProperty[? <: NodeComponent[? <: Node] | Null]): DynamicOutlet =
+  currentScope { _ =>
+    val currentContext = currentComponentContext()
+    val component = new DynamicOutlet(content)
+    attach(component, currentContext)
+    component
+  }
+
+inline def dynamicOutlet(content: ReadOnlyProperty[? <: NodeComponent[? <: Node] | Null]): DynamicOutlet =
+  outlet(content)
 
 def text(using component: ElementComponent[?]): String =
   component.textContent
@@ -180,149 +298,219 @@ def text(using component: ElementComponent[?]): String =
 def text_=(value: String)(using component: ElementComponent[?]): Unit =
   component.textContent = value
 
+def classes(using component: ElementComponent[?]): ListProperty[String] =
+  component.classProperty
+
+def classes_=(value: String)(using component: ElementComponent[?]): Unit =
+  classes_=(Seq(value))
+
+def classes_=(value: IterableOnce[String])(using component: ElementComponent[?]): Unit =
+  component.classProperty.setAll(ElementComponent.normalizeClassNames(value))
+
+def addClass(value: String)(using component: ElementComponent[?]): Unit =
+  addClasses(Seq(value))
+
+def addClasses(values: IterableOnce[String])(using component: ElementComponent[?]): Unit = {
+  val additions = ElementComponent.normalizeClassNames(values)
+  if (additions.nonEmpty) {
+    updateClasses(component) { current =>
+      current ++ additions.filterNot(current.contains)
+    }
+  }
+}
+
+def removeClass(value: String)(using component: ElementComponent[?]): Unit =
+  removeClasses(Seq(value))
+
+def removeClasses(values: IterableOnce[String])(using component: ElementComponent[?]): Unit = {
+  val removed = ElementComponent.normalizeClassNames(values).toSet
+  if (removed.nonEmpty) {
+    updateClasses(component) { current =>
+      current.filterNot(removed.contains)
+    }
+  }
+}
+
+def header(using component: TableColumn[?, ?]): String =
+  component.getText
+
+def header_=(value: String)(using component: TableColumn[?, ?]): Unit =
+  component.setText(value)
+
 def placeholder(using component: Input): String =
   component.placeholder
 
 def placeholder_=(value: String)(using component: Input): Unit =
   component.placeholder = value
 
-def style(init: StyleTarget ?=> Unit)(using component: ElementComponent[?]): Unit = {
-  given StyleTarget = StyleTarget(component, component.css)
-  init
-}
+def placeholderNode(using tableView: TableView[?]): NodeComponent[? <: Node] | Null =
+  tableView.getPlaceholder
 
-def css(using component: ElementComponent[?]): CSSStyleDeclaration =
-  component.css
+def placeholder_=(value: NodeComponent[? <: Node] | Null)(using tableView: TableView[?]): Unit =
+  tableView.setPlaceholder(value)
 
-def setProperty(name: String, value: String)(using target: StyleTarget): Unit = {
-  target.component.clearStylePropertyBinding(name)
-  target.declaration.setProperty(name, value)
-}
+def value(using input: Input): String | Boolean | Double =
+  input.valueProperty.get
 
-def removeProperty(name: String)(using target: StyleTarget): String = {
-  target.component.clearStylePropertyBinding(name)
-  target.declaration.removeProperty(name)
-}
+def value_=(nextValue: String | Boolean | Double)(using input: Input): Unit =
+  input.valueProperty.set(nextValue)
 
-def getPropertyValue(name: String)(using target: StyleTarget): String =
-  target.declaration.getPropertyValue(name)
+def inputType(using input: Input): String =
+  input.element.`type`
 
-private def styleProperty(
-  bindingKey: String,
-  currentValue: => String,
-  applyValue: String => Unit
-)(using target: StyleTarget): StyleProperty =
-  new StyleProperty(
-    currentValue = () => currentValue,
-    assignValue = value => {
-      target.component.clearStylePropertyBinding(bindingKey)
-      applyValue(value)
-    },
-    bindValue = property =>
-      target.component.bindStyleProperty(bindingKey, property)(applyValue)
-  )
+def inputType_=(value: String)(using input: Input): Unit =
+  input.element.`type` = value
 
-def width(using target: StyleTarget): StyleProperty =
-  styleProperty("width", target.declaration.width, target.declaration.width = _)
+def buttonType(using button: Button): String =
+  button.buttonType
 
-def width_=(value: String)(using target: StyleTarget): Unit =
-  width := value
+def buttonType_=(value: String)(using button: Button): Unit =
+  button.buttonType = value
 
-def maxWidth(using target: StyleTarget): StyleProperty =
-  styleProperty("max-width", target.declaration.maxWidth, target.declaration.maxWidth = _)
+def onClick(listener: Event => Unit)(using button: Button): Disposable =
+  button.addClick(listener)
 
-def maxWidth_=(value: String)(using target: StyleTarget): Unit =
-  maxWidth := value
+def items[S](using tableView: TableView[S]): ListProperty[S] =
+  tableView.items
 
-def margin(using target: StyleTarget): StyleProperty =
-  styleProperty("margin", target.declaration.margin, target.declaration.margin = _)
+def items_=[S](value: ListProperty[S])(using tableView: TableView[S]): Unit =
+  tableView.items = value
 
-def margin_=(value: String)(using target: StyleTarget): Unit =
-  margin := value
+def fixedCellSize(using tableView: TableView[?]): Double =
+  tableView.getFixedCellSize
 
-def padding(using target: StyleTarget): StyleProperty =
-  styleProperty("padding", target.declaration.padding, target.declaration.padding = _)
+def fixedCellSize_=(value: Double)(using tableView: TableView[?]): Unit =
+  tableView.setFixedCellSize(value)
 
-def padding_=(value: String)(using target: StyleTarget): Unit =
-  padding := value
+def rowFactory[S](using tableView: TableView[S]): TableView[S] => TableRow[S] =
+  tableView.getRowFactory
 
-def display(using target: StyleTarget): StyleProperty =
-  styleProperty("display", target.declaration.display, target.declaration.display = _)
+def rowFactory_=[S](factory: TableView[S] => TableRow[S])(using tableView: TableView[S]): Unit =
+  tableView.setRowFactory(factory)
 
-def display_=(value: String)(using target: StyleTarget): Unit =
-  display := value
+def selectionModel[S](using tableView: TableView[S]): TableViewSelectionModel[S] =
+  tableView.getSelectionModel
 
-def fontFamily(using target: StyleTarget): StyleProperty =
-  styleProperty("font-family", target.declaration.fontFamily, target.declaration.fontFamily = _)
+def refresh(using tableView: TableView[?]): Unit =
+  tableView.refresh()
 
-def fontFamily_=(value: String)(using target: StyleTarget): Unit =
-  fontFamily := value
+def scrollTo(index: Int)(using tableView: TableView[?]): Unit =
+  tableView.scrollTo(index)
 
-def color(using target: StyleTarget): StyleProperty =
-  styleProperty("color", target.declaration.color, target.declaration.color = _)
+def prefWidth(using tableColumn: TableColumn[?, ?]): Double =
+  tableColumn.getPrefWidth
 
-def color_=(value: String)(using target: StyleTarget): Unit =
-  color := value
+def prefWidth_=(value: Double)(using tableColumn: TableColumn[?, ?]): Unit =
+  tableColumn.setPrefWidth(value)
 
-def fontSize(using target: StyleTarget): StyleProperty =
-  styleProperty("font-size", target.declaration.fontSize, target.declaration.fontSize = _)
+def columnMaxWidth(using tableColumn: TableColumn[?, ?]): Double =
+  tableColumn.getMaxWidth
 
-def fontSize_=(value: String)(using target: StyleTarget): Unit =
-  fontSize := value
+def sortable(using tableColumn: TableColumn[?, ?]): Boolean =
+  tableColumn.isSortable
 
-def fontWeight(using target: StyleTarget): StyleProperty =
-  styleProperty("font-weight", target.declaration.fontWeight, target.declaration.fontWeight = _)
+def sortable_=(value: Boolean)(using tableColumn: TableColumn[?, ?]): Unit =
+  tableColumn.setSortable(value)
 
-def fontWeight_=(value: String)(using target: StyleTarget): Unit =
-  fontWeight := value
+def sortKey(using tableColumn: TableColumn[?, ?]): String | Null =
+  tableColumn.getSortKey
 
-def lineHeight(using target: StyleTarget): StyleProperty =
-  styleProperty("line-height", target.declaration.lineHeight, target.declaration.lineHeight = _)
+def sortKey_=(value: String | Null)(using tableColumn: TableColumn[?, ?]): Unit =
+  tableColumn.setSortKey(value)
 
-def lineHeight_=(value: String)(using target: StyleTarget): Unit =
-  lineHeight := value
+def resizable(using tableColumn: TableColumn[?, ?]): Boolean =
+  tableColumn.isResizable
 
-def border(using target: StyleTarget): StyleProperty =
-  styleProperty("border", target.declaration.border, target.declaration.border = _)
+def resizable_=(value: Boolean)(using tableColumn: TableColumn[?, ?]): Unit =
+  tableColumn.setResizable(value)
 
-def border_=(value: String)(using target: StyleTarget): Unit =
-  border := value
+def cellValueFactory[S, T](using tableColumn: TableColumn[S, T]): TableColumn.CellDataFeatures[S, T] => ReadOnlyProperty[T] | Null =
+  tableColumn.getCellValueFactory
 
-def borderRadius(using target: StyleTarget): StyleProperty =
-  styleProperty("border-radius", target.declaration.borderRadius, target.declaration.borderRadius = _)
+def cellValueFactory_=[S, T](
+  factory: TableColumn.CellDataFeatures[S, T] => ReadOnlyProperty[T] | Null
+)(using tableColumn: TableColumn[S, T]): Unit =
+  tableColumn.setCellValueFactory(factory)
 
-def borderRadius_=(value: String)(using target: StyleTarget): Unit =
-  borderRadius := value
+def cellFactory[S, T](using tableColumn: TableColumn[S, T]): TableColumn[S, T] => TableCell[S, T] | Null =
+  tableColumn.getCellFactory
 
-def backgroundColor(using target: StyleTarget): StyleProperty =
-  styleProperty("background-color", target.declaration.backgroundColor, target.declaration.backgroundColor = _)
+def cellFactory_=[S, T](
+  factory: TableColumn[S, T] => TableCell[S, T] | Null
+)(using tableColumn: TableColumn[S, T]): Unit =
+  tableColumn.setCellFactory(factory)
 
-def backgroundColor_=(value: String)(using target: StyleTarget): Unit =
-  backgroundColor := value
+def rowItem[S](using tableRow: TableRow[S]): S | Null =
+  tableRow.getItem
 
-def boxShadow(using target: StyleTarget): StyleProperty =
-  styleProperty("box-shadow", target.declaration.boxShadow, target.declaration.boxShadow = _)
+def cellItem[S, T](using tableCell: TableCell[S, T]): T | Null =
+  tableCell.getItem
 
-def boxShadow_=(value: String)(using target: StyleTarget): Unit =
-  boxShadow := value
+def rowIndex(using tableRow: TableRow[?]): Int =
+  tableRow.getIndex
 
-def cursor(using target: StyleTarget): StyleProperty =
-  styleProperty("cursor", target.declaration.cursor, target.declaration.cursor = _)
+def cellIndex(using tableCell: TableCell[?, ?]): Int =
+  tableCell.getIndex
 
-def cursor_=(value: String)(using target: StyleTarget): Unit =
-  cursor := value
+def rowEmpty(using tableRow: TableRow[?]): Boolean =
+  tableRow.isEmpty
 
-def opacity(using target: StyleTarget): StyleProperty =
-  styleProperty("opacity", target.declaration.opacity, target.declaration.opacity = _)
+def cellEmpty(using tableCell: TableCell[?, ?]): Boolean =
+  tableCell.isEmpty
 
-def opacity_=(value: String)(using target: StyleTarget): Unit =
-  opacity := value
+def rowSelected(using tableRow: TableRow[?]): Boolean =
+  tableRow.isSelected
+
+def cellSelected(using tableCell: TableCell[?, ?]): Boolean =
+  tableCell.isSelected
+
+def rowPlaceholder(using tableRow: TableRow[?]): Boolean =
+  tableRow.isPlaceholder
+
+def routerContent(using router: Router): ReadOnlyProperty[NodeComponent[? <: Node] | Null] =
+  router.contentProperty
+
+def routerLoading(using router: Router): Boolean =
+  router.loadingProperty.get
+
+def routerError(using router: Router): Option[Throwable] =
+  router.errorProperty.get
+
+def routerState(using router: Router): jfx.router.RouterState =
+  router.state
+
+def navigate(path: String)(using router: Router): Unit =
+  router.navigate(path)
+
+def replace(path: String)(using router: Router): Unit =
+  router.replace(path)
+
+def reload(using router: Router): Unit =
+  router.reload()
+
+def conditionalCondition(using conditional: Conditional): ReadOnlyProperty[Boolean] =
+  conditional.condition
+
+def outletContent(using outlet: DynamicOutlet): ReadOnlyProperty[? <: NodeComponent[? <: Node] | Null] =
+  outlet.content
 
 def onSubmit(using form: Form[?]): Event => Unit =
   form.onSubmit
 
 def onSubmit_=(listener: Event => Unit)(using form: Form[?]): Unit =
   form.onSubmit = listener
+
+private def updateClasses(
+  component: ElementComponent[?]
+)(update: Vector[String] => Vector[String]): Unit = {
+  val currentRaw = component.classProperty.iterator.toVector
+  val current = ElementComponent.normalizeClassNames(currentRaw)
+  val next = ElementComponent.normalizeClassNames(update(current))
+
+  if (currentRaw != next) {
+    component.classProperty.setAll(next)
+  }
+}
 
 private inline def currentScope[A](block: Scope => A): A =
   summonFrom {
@@ -333,7 +521,12 @@ private inline def currentScope[A](block: Scope => A): A =
   }
 
 private def attach(component: NodeComponent[? <: Node], context: ComponentContext): Unit =
-  context.parent.foreach(_.addChild(component))
+  context.attachOverride match {
+    case Some(attachOverride) =>
+      attachOverride(component)
+    case None =>
+      context.parent.foreach(_.addChild(component))
+  }
 
 private def currentComponentContext(): ComponentContext =
   componentContextStack.last
@@ -343,6 +536,39 @@ private def withComponentContext[A](context: ComponentContext)(block: => A): A =
   try block
   finally componentContextStack.remove(componentContextStack.length - 1)
 }
+
+private def branchContext(
+  currentContext: ComponentContext,
+  branchName: String,
+  attachChild: ElementComponent[? <: Node] => Unit
+): ComponentContext =
+  ComponentContext(
+    parent = None,
+    enclosingForm = currentContext.enclosingForm,
+    attachOverride = Some {
+      case child: ElementComponent[?] =>
+        attachChild(child.asInstanceOf[ElementComponent[? <: Node]])
+      case child =>
+        throw IllegalStateException(
+          s"$branchName only accepts element components, but got ${child.getClass.getSimpleName}"
+        )
+    }
+  )
+
+private def appendConditionalBranch(
+  conditional: Conditional,
+  branchName: String,
+  attachChild: ElementComponent[? <: Node] => Unit
+)(init: Conditional ?=> Unit): Conditional =
+  currentScope { currentScope =>
+    val currentContext = currentComponentContext()
+    withComponentContext(branchContext(currentContext, branchName, attachChild)) {
+      given Scope = currentScope
+      given Conditional = conditional
+      init
+    }
+    conditional
+  }
 
 private[jfx] object DslRuntime {
   def withCompositeContext[A](

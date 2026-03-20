@@ -1,23 +1,34 @@
 package app
 
-import jfx.core.state.Property
 import jfx.dsl.*
-import jfx.json.{JsonMapper, JsonRegistry}
-import org.scalajs.dom.{console, document}
-
-import scala.scalajs.js
-import scala.scalajs.js.JSON
-import scala.util.control.NonFatal
+import org.scalajs.dom.document
 
 object Main {
 
   def main(args: Array[String]): Unit = {
 
-    div {
+    val container = vbox {
+      hbox {
+        classes = "app-header"
+      }
+
+      div {
+
+        style {
+          flex = "1"
+        }
+
+        router(Routes.routes)
+      }
 
 
-
+      hbox {
+        classes = "app-footer"
+      }
     }
+
+
+    document.getElementById("root").appendChild(container.element)
 
   }
 }

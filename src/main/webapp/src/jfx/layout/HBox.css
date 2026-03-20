@@ -1,0 +1,4 @@
+div.hbox {
+    display: flex;
+    flex-direction: row;
+}

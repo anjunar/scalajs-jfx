@@ -9,6 +9,7 @@ lazy val root = (project in file("."))
     name := "scala-js-jfx",
     scalaJSUseMainModuleInitializer := true,
     libraryDependencies += "org.scala-js" %%% "scalajs-dom" % "2.8.1",
+    libraryDependencies += ("org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0").cross(CrossVersion.for3Use2_13),
     scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.ESModule))
   )
 
