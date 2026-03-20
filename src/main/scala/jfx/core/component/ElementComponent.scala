@@ -16,7 +16,7 @@ trait ElementComponent[E <: Node] extends NodeComponent[E] {
         throw IllegalStateException(s"${getClass.getSimpleName} does not wrap an HTMLElement")
     }
 
-  def style: CSSStyleDeclaration = htmlElement.style
+  def css: CSSStyleDeclaration = htmlElement.style
   
   private val textContentObserver = textContentProperty.observe { text => element.textContent = text }
 

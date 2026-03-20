@@ -12,14 +12,14 @@ final class AddressForm(slot: AddressForm ?=> Unit = ()) extends CompositeCompon
     withDslContext {
       given AddressForm = this
 
-      jfx.dsl.style {
+      style {
         display = "flex"
         setProperty("flex-direction", "column")
         setProperty("gap", "10px")
       }
 
       subForm[Address]("address") {
-        jfx.dsl.style {
+        style {
           display = "flex"
           setProperty("flex-direction", "column")
           setProperty("gap", "10px")
@@ -32,8 +32,8 @@ final class AddressForm(slot: AddressForm ?=> Unit = ()) extends CompositeCompon
         slot
 
         input("street") {
-          placeholder = "Straße"
-          jfx.dsl.style {
+          placeholder = "Stra\u00DFe"
+          style {
             padding = "10px 12px"
             border = "1px solid #cbd5e1"
             borderRadius = "8px"
@@ -43,7 +43,7 @@ final class AddressForm(slot: AddressForm ?=> Unit = ()) extends CompositeCompon
 
         input("city") {
           placeholder = "Stadt"
-          jfx.dsl.style {
+          style {
             padding = "10px 12px"
             border = "1px solid #cbd5e1"
             borderRadius = "8px"

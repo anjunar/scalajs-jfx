@@ -144,12 +144,12 @@ def placeholder_=(value: String)(using component: Input): Unit =
   component.placeholder = value
 
 def style(init: StyleTarget ?=> Unit)(using component: ElementComponent[?]): Unit = {
-  given StyleTarget = StyleTarget(component.style)
+  given StyleTarget = StyleTarget(component.css)
   init
 }
 
 def css(using component: ElementComponent[?]): CSSStyleDeclaration =
-  component.style
+  component.css
 
 def setProperty(name: String, value: String)(using target: StyleTarget): Unit =
   target.declaration.setProperty(name, value)

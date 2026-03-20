@@ -2,7 +2,6 @@ package jfx.core.component
 
 import jfx.dsl.Scope
 import jfx.dsl.DslRuntime
-import jfx.dsl.StyleTarget
 import jfx.form.Formular
 import org.scalajs.dom.Node
 
@@ -22,9 +21,6 @@ trait CompositeComponent[N <: Node] extends NativeComponent[N] {
       given DslContext = context
       block
     }
-
-  protected final def style(init: StyleTarget ?=> Unit)(using DslContext): Unit =
-    jfx.dsl.style(init)(using this)
 
   protected final def dslContext(using context: DslContext): DslContext =
     context
