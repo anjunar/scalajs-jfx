@@ -1,6 +1,9 @@
 package app
 
+import jfx.core.state.Property
 import jfx.dsl.*
+import jfx.layout.Viewport
+import jfx.layout.Viewport.WindowConf
 import jfx.router.Router
 import org.scalajs.dom.document
 
@@ -13,86 +16,96 @@ object Main {
       }
 
       val container = drawer {
-        classes = "app-shell"
+          classes = "app-shell"
 
-        drawerNavigation {
-          div {
-            classes = "app-drawer-title"
-            text = "Navigation"
-          }
+          drawerNavigation {
+            div {
+              classes = "app-drawer-title"
+              text = "Navigation"
+            }
 
-          button("home") {
-            buttonType = "button"
-            classes = "app-nav-button"
+            button("home") {
+              buttonType = "button"
+              classes = "app-nav-button"
 
-            onClick { _ =>
-              inject[Router].navigate("/")
+              onClick { _ =>
+                inject[Router].navigate("/")
+              }
+            }
+
+            button("table") {
+              buttonType = "button"
+              classes = "app-nav-button"
+
+              onClick { _ =>
+                inject[Router].navigate("/table")
+              }
+            }
+
+            button("form") {
+              buttonType = "button"
+              classes = "app-nav-button"
+
+              onClick { _ =>
+                inject[Router].navigate("/form")
+              }
+            }
+
+            button("window") {
+              buttonType = "button"
+              classes = "app-nav-button"
+
+              onClick { _ =>
+                Viewport.addWindow(WindowConf(
+                  title = "Test",
+                  resizable = true,
+                  component = {
+                    div {
+                      text = "Test"
+                    }
+                  }
+                ))
+              }
             }
           }
 
-          button("table") {
-            buttonType = "button"
-            classes = "app-nav-button"
+          drawerContent {
+            vbox {
+              hbox {
+                classes = "app-header"
 
-            onClick { _ =>
-              inject[Router].navigate("/table")
-            }
-          }
+                button("menu") {
+                  buttonType = "button"
+                  classes = Seq("material-icons", "app-menu-button")
 
-          button("form") {
-            buttonType = "button"
-            classes = "app-nav-button"
+                  onClick { _ =>
+                    toggleDrawer
+                  }
+                }
 
-            onClick { _ =>
-              inject[Router].navigate("/form")
-            }
-          }
-
-          button("person") {
-            buttonType = "button"
-            classes = "app-nav-button"
-
-            onClick { _ =>
-              inject[Router].navigate("/person?id=1")
-            }
-          }
-        }
-
-        drawerContent {
-          vbox {
-            hbox {
-              classes = "app-header"
-
-              button("menu") {
-                buttonType = "button"
-                classes = Seq("material-icons", "app-menu-button")
-
-                onClick { _ =>
-                  toggleDrawer
+                div {
+                  classes = "app-header-title"
+                  text = "scala-js-jfx"
                 }
               }
 
               div {
-                classes = "app-header-title"
-                text = "scala-js-jfx"
+                classes = "app-content"
+
+                style {
+                  flex = "1"
+                  minHeight = "0"
+                }
+
+                viewport {
+                  mount(inject[Router])
+                }
+              }
+
+              hbox {
+                classes = "app-footer"
               }
             }
-
-            div {
-              classes = "app-content"
-
-              style {
-                flex = "1"
-                minHeight = "0"
-              }
-
-              mount(inject[Router])
-            }
-
-            hbox {
-              classes = "app-footer"
-            }
-          }
         }
       }
 

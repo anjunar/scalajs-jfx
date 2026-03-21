@@ -195,6 +195,7 @@ class ForEach[T](
 
     parent.insertBefore(child.element, before)
     child.parent = Some(this)
+    child.onMount()
     registerSubtree(child)
   }
 

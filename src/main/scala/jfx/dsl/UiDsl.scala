@@ -5,7 +5,7 @@ import jfx.core.component.{ChildrenComponent, CompositeComponent, ElementCompone
 import jfx.core.state.{Disposable, ListProperty, ReadOnlyProperty}
 import jfx.control.{TableCell, TableColumn, TableRow, TableView, TableViewSelectionModel}
 import jfx.form.{Form, Formular, Input, Model, SubForm}
-import jfx.layout.{Div, Drawer, HBox, HorizontalLine, Span, VBox}
+import jfx.layout.{Div, Drawer, HBox, HorizontalLine, Span, VBox, Viewport}
 import jfx.router.{Route, RouteContext, Router}
 import jfx.statement.{Conditional, DynamicOutlet, ForEach}
 import org.scalajs.dom.{Event, Node}
@@ -120,6 +120,9 @@ inline def vbox(init: VBox ?=> Unit): VBox =
 
 inline def drawer(init: Drawer ?=> Unit = {}): Drawer =
   composite(new Drawer(init))
+
+inline def viewport(init: Viewport ?=> Unit = {}): Viewport =
+  composite(new Viewport(init))
 
 def drawerNavigation(init: => Unit)(using drawer: Drawer): Unit =
   drawer.navigation(init)

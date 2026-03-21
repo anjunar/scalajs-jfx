@@ -143,6 +143,7 @@ class Conditional(val condition: ReadOnlyProperty[Boolean]) extends NodeComponen
       }
       parent.insertBefore(child.element, before)
       child.parent = Some(this)
+      child.onMount()
       registerSubtree(child)
     }
   }
