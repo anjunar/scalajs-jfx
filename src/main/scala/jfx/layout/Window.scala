@@ -3,6 +3,7 @@ package jfx.layout
 import jfx.action.Button
 import jfx.core.component.{ManagedElementComponent, NodeComponent}
 import jfx.core.state.Property
+import jfx.domain.Media
 import org.scalajs.dom.{Event, HTMLDivElement, HTMLElement, MouseEvent, Node, PointerEvent, window as browserWindow}
 
 import scala.scalajs.js.timers.{SetTimeoutHandle, clearTimeout, setTimeout}

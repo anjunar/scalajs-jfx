@@ -9,8 +9,10 @@ import jfx.dsl.*
 import jfx.dsl.Scope.{inject, scope, scoped, singleton}
 import jfx.action.Button.button
 import jfx.core.component.CompositeComponent.composite
+import jfx.domain.{Media, Thumbnail}
 import jfx.form.ComboBox.{comboBox, comboItem, comboItemSelected, comboRenderedSelectedItem, dropdownHeightPx, items, itemRenderer, rowHeightPx, valueRenderer}
 import jfx.form.Form.{form, onSubmit, onSubmit_=}
+import jfx.form.ImageCropper.*
 import jfx.form.Input.input
 import jfx.form.InputContainer.inputContainer
 import jfx.json.{JsonMapper, JsonRegistry}
@@ -40,7 +42,9 @@ class FormPage extends CompositeComponent[HTMLDivElement] {
               js.Map(
                 "Person" -> (() => new Person()),
                 "Address" -> (() => new Address()),
-                "Email" -> (() => new Email())
+                "Email" -> (() => new Email()),
+                "Media" -> (() => new Media()),
+                "Thumbnail" -> (() => new Thumbnail())
               )
           }
         }
@@ -202,6 +206,34 @@ class FormPage extends CompositeComponent[HTMLDivElement] {
                   }
                 }
               }
+
+              div {
+                classes = "form-page__media-field"
+
+                div {
+                  classes = "form-page__section-intro"
+
+                  div {
+                    classes = "form-page__section-title"
+                    text = "Bild und Thumbnail"
+                  }
+
+                  div {
+                    classes = "form-page__section-copy"
+                    text = "Der Cropper arbeitet auf Media als Quelle und zeigt daneben das live aktualisierte Thumbnail."
+                  }
+                }
+
+                imageCropper("media") {
+                  classes = "form-page__cropper"
+                  placeholder = "Noch kein Bild ausgewaehlt"
+                  windowTitle = "Bild zuschneiden"
+                  aspectRatio = 1.0
+                  outputMaxWidth = 512
+                  outputMaxHeight = 512
+                }
+
+              }
             }
 
             div {
@@ -243,4 +275,3 @@ object FormPage {
   def formPage(init: FormPage ?=> Unit = {}): FormPage =
     composite(new FormPage())
 }
-

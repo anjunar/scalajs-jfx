@@ -1,14 +1,8 @@
 .jfx-viewport {
 
     position: relative;
-
-    .jfx-viewport__windows, .jfx-viewport__overlays, .jfx-viewport__notifications {
-        position: absolute;
-        left : 0;
-        top : 0;
-        width : 100%;
-        height : 100%;
-    }
+    overflow: auto;
+    height: 100%;
 
     .jfx2-overlay {
         position : fixed;

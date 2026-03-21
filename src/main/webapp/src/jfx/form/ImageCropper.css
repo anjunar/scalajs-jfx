@@ -1,0 +1,41 @@
+.image-cropper-field {
+    width: 100%;
+}
+
+.image-cropper {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    .toolbar {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .canvas-wrap {
+        display: flex;
+        justify-content: flex-start;
+    }
+
+    canvas.canvas {
+        border: 1px solid var(--color-background-secondary);
+        background: var(--color-background-primary);
+        border-radius: 6px;
+        max-width: 100%;
+        height: auto;
+        cursor: crosshair;
+    }
+
+    img.preview {
+        flex : 1;
+        min-width: 0;
+        min-height: 0;
+        border: 1px solid var(--color-background-secondary);
+        border-radius: 6px;
+        object-fit: cover;
+        background: var(--color-background-primary);
+    }
+}
+
