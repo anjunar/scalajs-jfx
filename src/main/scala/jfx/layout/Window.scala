@@ -4,7 +4,7 @@ import jfx.action.Button
 import jfx.core.component.CompositeComponent
 import jfx.core.state.Property
 import jfx.dsl.{DslRuntime, Scope}
-import org.scalajs.dom.{Event, HTMLDivElement, HTMLElement, Node, PointerEvent, window as browserWindow}
+import org.scalajs.dom.{Event, HTMLDivElement, HTMLElement, MouseEvent, Node, PointerEvent, window as browserWindow}
 
 import scala.scalajs.js.timers.{SetTimeoutHandle, clearTimeout, setTimeout}
 import scala.util.control.NonFatal
@@ -422,8 +422,12 @@ final class Window(slot: Window ?=> Unit = {}) extends CompositeComponent[HTMLDi
 
     val moveListener: Event => Unit = {
       case event: PointerEvent if event.pointerId == startEvent.pointerId =>
-        event.preventDefault()
-        onMove(event)
+        if (pointerButtonsReleased(event)) {
+          stopActivePointerInteraction(persistState = true)
+        } else {
+          event.preventDefault()
+          onMove(event)
+        }
       case _ => ()
     }
 
@@ -435,10 +439,15 @@ final class Window(slot: Window ?=> Unit = {}) extends CompositeComponent[HTMLDi
     }
 
     val blurListener: Event => Unit = _ => stopActivePointerInteraction(persistState = true)
+    val mouseUpFallback: Event => Unit = {
+      case _: MouseEvent => stopActivePointerInteraction(persistState = true)
+      case _             => ()
+    }
 
-    captureTarget.addEventListener("pointermove", moveListener)
-    captureTarget.addEventListener("pointerup", finishListener)
-    captureTarget.addEventListener("pointercancel", finishListener)
+    browserWindow.addEventListener("pointermove", moveListener)
+    browserWindow.addEventListener("pointerup", finishListener)
+    browserWindow.addEventListener("pointercancel", finishListener)
+    browserWindow.addEventListener("mouseup", mouseUpFallback)
     captureTarget.addEventListener("lostpointercapture", finishListener)
     browserWindow.addEventListener("blur", blurListener)
 
@@ -449,9 +458,10 @@ final class Window(slot: Window ?=> Unit = {}) extends CompositeComponent[HTMLDi
     }
 
     activePointerCleanup = Some { persistState =>
-      captureTarget.removeEventListener("pointermove", moveListener)
-      captureTarget.removeEventListener("pointerup", finishListener)
-      captureTarget.removeEventListener("pointercancel", finishListener)
+      browserWindow.removeEventListener("pointermove", moveListener)
+      browserWindow.removeEventListener("pointerup", finishListener)
+      browserWindow.removeEventListener("pointercancel", finishListener)
+      browserWindow.removeEventListener("mouseup", mouseUpFallback)
       captureTarget.removeEventListener("lostpointercapture", finishListener)
       browserWindow.removeEventListener("blur", blurListener)
 
@@ -468,6 +478,9 @@ final class Window(slot: Window ?=> Unit = {}) extends CompositeComponent[HTMLDi
       }
     }
   }
+
+  private def pointerButtonsReleased(event: PointerEvent): Boolean =
+    event.buttons == 0
 
   private def isPrimaryPointerButton(event: PointerEvent): Boolean =
     event.button == 0
