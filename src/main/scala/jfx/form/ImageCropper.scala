@@ -15,13 +15,14 @@ import org.scalajs.dom.{
   HTMLDivElement,
   HTMLImageElement,
   HTMLInputElement,
-  MouseEvent,
   Node,
+  PointerEvent,
   document,
   window
 }
 
 import scala.math.{abs, max, min}
+import scala.util.control.NonFatal
 
 class ImageCropper(val name: String) extends Control[Media, HTMLDivElement] {
 
@@ -235,9 +236,9 @@ class ImageCropper(val name: String) extends Control[Media, HTMLDivElement] {
             dirtyProperty.set(session.initialDirty)
           }
         },
-        resizable = false,
-        draggable = false,
-        rememberSize = false
+        resizable = true,
+        draggable = true,
+        rememberSize = true
       )
 
     session.windowConf = conf
@@ -340,6 +341,7 @@ private final class ImageCropperDialog(
   private var crop: ImageCropperDialog.CropRect = null
   private var drag: ImageCropperDialog.DragState = null
   private var livePending = false
+  private var activePointerId: Double | Null = null
 
   private val outCanvas = document.createElement("canvas").asInstanceOf[HTMLCanvasElement]
 
@@ -577,9 +579,20 @@ private final class ImageCropperDialog(
   }
 
   private def wireCanvasDragging(): Unit = {
-    val onMouseDown: Event => Unit = {
-      case mouseEvent: MouseEvent if loadedImage != null =>
-        val point = canvasPoint(mouseEvent)
+    val onPointerDown: Event => Unit = {
+      case pointerEvent: PointerEvent if loadedImage != null && pointerEvent.button == 0 =>
+        pointerEvent.preventDefault()
+        pointerEvent.stopPropagation()
+
+        activePointerId = pointerEvent.pointerId
+
+        try {
+          canvas.setPointerCapture(pointerEvent.pointerId)
+        } catch {
+          case NonFatal(_) => ()
+        }
+
+        val point = canvasPoint(pointerEvent)
         val current = Option(crop).map(_.normalize()).orNull
         val mode = hitTest(current, point.x, point.y)
 
@@ -594,10 +607,13 @@ private final class ImageCropperDialog(
         ()
     }
 
-    val onMouseMove: Event => Unit = {
-      case mouseEvent: MouseEvent if drag != null && loadedImage != null =>
+    val onPointerMove: Event => Unit = {
+      case pointerEvent: PointerEvent if drag != null && loadedImage != null && activePointerId == pointerEvent.pointerId =>
+        pointerEvent.preventDefault()
+        pointerEvent.stopPropagation()
+
         val state = drag
-        val point = canvasPoint(mouseEvent)
+        val point = canvasPoint(pointerEvent)
         val canvasWidth = canvas.width.toDouble
         val canvasHeight = canvas.height.toDouble
         val minSize = 8.0
@@ -698,19 +714,52 @@ private final class ImageCropperDialog(
         ()
     }
 
-    val onMouseUp: Event => Unit = _ =>
-      if (drag != null) {
-        drag = null
-        render()
+    def finishPointerInteraction(event: PointerEvent): Unit = {
+      event.preventDefault()
+      event.stopPropagation()
+
+      if (activePointerId == event.pointerId) {
+        activePointerId = null
       }
 
-    canvas.addEventListener("mousedown", onMouseDown)
-    window.addEventListener("mousemove", onMouseMove)
-    window.addEventListener("mouseup", onMouseUp)
+      drag = null
 
-    addDisposable(() => canvas.removeEventListener("mousedown", onMouseDown))
-    addDisposable(() => window.removeEventListener("mousemove", onMouseMove))
-    addDisposable(() => window.removeEventListener("mouseup", onMouseUp))
+      try {
+        if (canvas.hasPointerCapture(event.pointerId)) {
+          canvas.releasePointerCapture(event.pointerId)
+        }
+      } catch {
+        case NonFatal(_) => ()
+      }
+
+      render()
+    }
+
+    val onPointerUp: Event => Unit = {
+      case pointerEvent: PointerEvent if activePointerId == pointerEvent.pointerId =>
+        finishPointerInteraction(pointerEvent)
+      case _ =>
+        ()
+    }
+
+    val onPointerCancel: Event => Unit = {
+      case pointerEvent: PointerEvent if activePointerId == pointerEvent.pointerId =>
+        finishPointerInteraction(pointerEvent)
+      case _ =>
+        ()
+    }
+
+    canvas.addEventListener("pointerdown", onPointerDown)
+    canvas.addEventListener("lostpointercapture", onPointerCancel)
+    window.addEventListener("pointermove", onPointerMove)
+    window.addEventListener("pointerup", onPointerUp)
+    window.addEventListener("pointercancel", onPointerCancel)
+
+    addDisposable(() => canvas.removeEventListener("pointerdown", onPointerDown))
+    addDisposable(() => canvas.removeEventListener("lostpointercapture", onPointerCancel))
+    addDisposable(() => window.removeEventListener("pointermove", onPointerMove))
+    addDisposable(() => window.removeEventListener("pointerup", onPointerUp))
+    addDisposable(() => window.removeEventListener("pointercancel", onPointerCancel))
   }
 
   private def hitTest(
@@ -742,7 +791,7 @@ private final class ImageCropperDialog(
     }
   }
 
-  private def canvasPoint(event: MouseEvent): ImageCropperDialog.Point = {
+  private def canvasPoint(event: PointerEvent): ImageCropperDialog.Point = {
     val rect = canvas.getBoundingClientRect()
     val scaleX = if (rect.width == 0.0) 1.0 else canvas.width.toDouble / rect.width
     val scaleY = if (rect.height == 0.0) 1.0 else canvas.height.toDouble / rect.height

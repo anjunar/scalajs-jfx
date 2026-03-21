@@ -177,7 +177,8 @@
 }
 
 .form-page__cropper {
-    width: 100%;
+    width: 512px;
+    height: 512px;
     max-width: none;
     padding: 0;
 }

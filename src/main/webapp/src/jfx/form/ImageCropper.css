@@ -26,6 +26,8 @@
         max-width: 100%;
         height: auto;
         cursor: crosshair;
+        touch-action: none;
+        user-select: none;
     }
 
     img.preview {
@@ -38,4 +40,3 @@
         background: var(--color-background-primary);
     }
 }
-

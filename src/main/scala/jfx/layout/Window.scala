@@ -34,6 +34,7 @@ final class Window extends ManagedElementComponent[HTMLDivElement] {
   private val headerHost = new Div()
   private val titleHost = new Span()
   private val actionsHost = new HBox()
+  private val surfaceHost = new Div()
   private val containerHost = new Div()
 
   private val minimizeButton = new Button()
@@ -52,6 +53,7 @@ final class Window extends ManagedElementComponent[HTMLDivElement] {
 
   private var structureInitialized = false
   private var didRunOpenSequence = false
+  private var activePointerId: Double | Null = null
   private var activePointerCleanup: Option[Boolean => Unit] = None
   private var openAnimationHandle: Option[SetTimeoutHandle] = None
 
@@ -260,6 +262,7 @@ final class Window extends ManagedElementComponent[HTMLDivElement] {
       headerHost.classProperty += "jfx-window__header"
       titleHost.classProperty += "jfx-window__title"
       actionsHost.classProperty ++= Seq("jfx-window__actions")
+      surfaceHost.classProperty += "jfx-window__surface"
       containerHost.classProperty += "jfx-window__container"
 
       actionsHost.addChild(minimizeButton)
@@ -268,8 +271,10 @@ final class Window extends ManagedElementComponent[HTMLDivElement] {
       headerHost.addChild(titleHost)
       headerHost.addChild(actionsHost)
 
-      addChild(headerHost)
-      addChild(containerHost)
+      surfaceHost.addChild(headerHost)
+      surfaceHost.addChild(containerHost)
+
+      addChild(surfaceHost)
 
       configureHeaderDrag()
       configureButtons()
@@ -414,6 +419,9 @@ final class Window extends ManagedElementComponent[HTMLDivElement] {
   )(onMove: PointerEvent => Unit): Unit = {
     stopActivePointerInteraction(persistState = false)
     startEvent.preventDefault()
+    startEvent.stopPropagation()
+
+    activePointerId = startEvent.pointerId
 
     val moveListener: Event => Unit = {
       case event: PointerEvent if event.pointerId == startEvent.pointerId =>
@@ -438,10 +446,19 @@ final class Window extends ManagedElementComponent[HTMLDivElement] {
       case _: MouseEvent => stopActivePointerInteraction(persistState = true)
       case _             => ()
     }
+    val nextPointerDownListener: Event => Unit = {
+      case event: PointerEvent if event.pointerId == startEvent.pointerId && event.target != startEvent.target =>
+        stopActivePointerInteraction(persistState = true)
+      case event: PointerEvent if activePointerId == startEvent.pointerId && event.pointerId != startEvent.pointerId =>
+        stopActivePointerInteraction(persistState = true)
+      case _ =>
+        ()
+    }
 
     browserWindow.addEventListener("pointermove", moveListener)
     browserWindow.addEventListener("pointerup", finishListener)
     browserWindow.addEventListener("pointercancel", finishListener)
+    browserWindow.addEventListener("pointerdown", nextPointerDownListener)
     browserWindow.addEventListener("mouseup", mouseUpFallback)
     captureTarget.addEventListener("lostpointercapture", finishListener)
     browserWindow.addEventListener("blur", blurListener)
@@ -453,9 +470,11 @@ final class Window extends ManagedElementComponent[HTMLDivElement] {
     }
 
     activePointerCleanup = Some { persistState =>
+      activePointerId = null
       browserWindow.removeEventListener("pointermove", moveListener)
       browserWindow.removeEventListener("pointerup", finishListener)
       browserWindow.removeEventListener("pointercancel", finishListener)
+      browserWindow.removeEventListener("pointerdown", nextPointerDownListener)
       browserWindow.removeEventListener("mouseup", mouseUpFallback)
       captureTarget.removeEventListener("lostpointercapture", finishListener)
       browserWindow.removeEventListener("blur", blurListener)

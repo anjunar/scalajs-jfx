@@ -5,17 +5,13 @@
 }
 
 .jfx-window {
-    display: block;
+    display: flex;
+    flex-direction: column;
     position: absolute;
-    overflow: hidden;
+    overflow: visible;
     max-height: 1024px;
-
-    background: var(--glass-bg);
-    backdrop-filter: blur(var(--glass-blur)) saturate(180%);
-    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
-    border: 1px solid var(--glass-border);
-    box-shadow: 0 6px 24px var(--glass-shadow);
-    border-radius: 1rem;
+    min-width: 0;
+    min-height: 0;
 
     transition:
             opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
@@ -24,8 +20,25 @@
     transform: scale(1);
     pointer-events: all;
 
+    .jfx-window__surface {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        min-width: 0;
+        min-height: 0;
+        overflow: hidden;
+
+        background: var(--glass-bg);
+        backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+        -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+        border: 1px solid var(--glass-border);
+        box-shadow: 0 6px 24px var(--glass-shadow);
+        border-radius: 1rem;
+    }
+
     .jfx-window__container {
-        height: calc(100% - 32px);
+        flex: 1 1 auto;
+        min-height: 0;
         overflow: auto;
     }
 
@@ -40,7 +53,7 @@
         width: 100%;
         overflow: hidden;
 
-        .title {
+        .jfx-window__title {
             padding-left: 10px;
         }
     }
@@ -49,72 +62,72 @@
         .jfx-window__handle--nw {
             position: absolute;
             cursor: nw-resize;
-            left : -10px;
-            top : -10px;
-            width : 20px;
-            height : 20px;
+            left : -12px;
+            top : -12px;
+            width : 12px;
+            height : 12px;
         }
 
         .jfx-window__handle--ne {
             position : absolute;
-            right: -10px;
-            top : -10px;
-            width: 20px;
-            height: 20px;
+            right: -12px;
+            top : -12px;
+            width: 12px;
+            height: 12px;
             cursor : ne-resize;
         }
 
         .jfx-window__handle--se {
             position : absolute;
-            right: -10px;
-            bottom: -10px;
-            width: 20px;
-            height: 20px;
+            right: -12px;
+            bottom: -12px;
+            width: 12px;
+            height: 12px;
             cursor : se-resize;
         }
 
         .jfx-window__handle--sw {
             position: absolute;
-            left : -10px;
-            bottom : -10px;
-            width : 20px;
-            height : 20px;
+            left : -12px;
+            bottom : -12px;
+            width : 12px;
+            height : 12px;
             cursor: sw-resize;
         }
 
         .jfx-window__handle--n {
             position : absolute;
-            left : 10px;
-            top: -10px;
-            width : calc(100% - 20px);
-            height : 20px;
+            left : 12px;
+            top: -12px;
+            width : calc(100% - 24px);
+            height : 12px;
             cursor : n-resize;
         }
 
         .jfx-window__handle--s {
             position : absolute;
-            left : 10px;
-            bottom: -10px;
-            width : calc(100% - 20px);
-            height : 20px;
+            left : 12px;
+            bottom: -12px;
+            width : calc(100% - 24px);
+            height : 12px;
             cursor : s-resize;
         }
 
         .jfx-window__handle--w {
             position: absolute;
-            left: -10px;
-            top : 10px;
-            width: 20px;
-            height: calc(100% - 20px);
+            left: -12px;
+            top : 12px;
+            width: 12px;
+            height: calc(100% - 24px);
             cursor: w-resize;
         }
 
         .jfx-window__handle--e {
             position: absolute;
-            right: -10px;
-            top: 10px;
-            width: 20px;
-            height: calc(100% - 20px);
+            right: -12px;
+            top: 12px;
+            width: 12px;
+            height: calc(100% - 24px);
             cursor: e-resize;
         }
     }
