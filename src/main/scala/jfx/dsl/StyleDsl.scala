@@ -8,7 +8,6 @@ import org.scalajs.dom.CSSStyleDeclaration
 import scala.Conversion
 import scala.annotation.targetName
 
-// Mirrors the style properties exposed by scalajs-dom's CSSStyleDeclaration facade.
 private[jfx] final case class StyleTarget(
   component: ElementComponent[?],
   declaration: CSSStyleDeclaration

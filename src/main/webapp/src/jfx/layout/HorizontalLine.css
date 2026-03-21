@@ -1,0 +1,7 @@
+hr {
+    border: 0;
+    border-top: 1px solid rgba(45,45,45,0.2);
+    margin: 0;
+    color: rgba(45,45,45,0.2);
+    background-color: rgba(45,45,45,0.2);
+}

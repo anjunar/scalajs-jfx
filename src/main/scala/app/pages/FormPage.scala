@@ -4,6 +4,7 @@ import app.component.addressForm
 import app.domain.{Address, Email, Person}
 import jfx.core.component.CompositeComponent
 import jfx.dsl.*
+import jfx.form.inputContainer
 import jfx.json.{JsonMapper, JsonRegistry}
 import org.scalajs.dom.HTMLDivElement
 
@@ -38,96 +39,79 @@ class FormPage extends CompositeComponent[HTMLDivElement] {
           new JsonMapper(inject[JsonRegistry])
         }
 
-        div {
-          style {
-            maxWidth = "720px"
-            margin = "40px auto"
-            padding = "24px"
-            display = "flex"
-            setProperty("flex-direction", "column")
-            setProperty("gap", "16px")
-            fontFamily = "Segoe UI, sans-serif"
-            color = "#0f172a"
-          }
+        classes = "form-page"
 
+        style {
+          maxWidth = "860px"
+          margin = "24px auto 40px"
+          padding = "0"
+          display = "flex"
+          flexDirection = "column"
+          gap = "24px"
+          color = "var(--color-text)"
+        }
+
+        div {
+          classes = "form-page__hero"
 
           div {
-            text = "Hallo Welt"
-            style {
-              fontSize = "28px"
-              fontWeight = "700"
-              lineHeight = "1.2"
-            }
+            classes = "form-page__eyebrow"
+            text = "Person"
           }
 
-          scope {
-            scoped[Person] {
-              inject[JsonMapper].deserialize[Person](JSON.parse(json))
-            }
+          div {
+            classes = "form-page__title"
+            text = "Kontakt bearbeiten"
+          }
 
-            form(inject[Person]) {
-              onSubmit = _ => println("submitted")
+          div {
+            classes = "form-page__subtitle"
+            text = "Flaches Material-Layout mit ruhigen Flaechen, klaren Eingaben und Farben aus dem aktiven Theme."
+          }
+        }
 
-              style {
-                display = "flex"
-                setProperty("flex-direction", "column")
-                setProperty("gap", "12px")
-                padding = "20px"
-                border = "1px solid #cbd5e1"
-                borderRadius = "10px"
-                backgroundColor = "#ffffff"
-                boxShadow = "0 10px 30px rgba(15, 23, 42, 0.08)"
+        scope {
+          scoped[Person] {
+            inject[JsonMapper].deserialize[Person](JSON.parse(json))
+          }
+
+          form(inject[Person]) {
+            onSubmit = _ => println("submitted")
+            classes = "form-page__form"
+
+            div {
+              classes = "form-page__field-grid"
+
+              inputContainer("Vorname") {
+                input("firstName")
               }
 
-              div {
-                style {
-                  display = "flex"
-                  setProperty("flex-direction", "column")
-                  setProperty("gap", "10px")
-                }
+              inputContainer("Nachname") {
+                input("lastName")
+              }
 
-                input("firstName") {
-                  placeholder = "Vorname"
-
-                  style {
-                    padding = "10px 12px"
-                    border = "1px solid #cbd5e1"
-                    borderRadius = "8px"
-                    fontSize = "15px"
-                  }
-                }
-
-                addressForm {
+              addressForm {
+                div {
+                  classes = "form-page__section-intro"
 
                   div {
-                    text = "Address"
+                    classes = "form-page__section-title"
+                    text = "Adresse"
                   }
 
-                }
-
-                input("lastName") {
-                  placeholder = "Nachname"
-
-                  style {
-                    padding = "10px 12px"
-                    border = "1px solid #cbd5e1"
-                    borderRadius = "8px"
-                    fontSize = "15px"
+                  div {
+                    classes = "form-page__section-copy"
+                    text = "Die Adressdaten bleiben im selben ruhigen, flachen Material-Stil."
                   }
                 }
+              }
+            }
 
-                button("save") {
-                  style {
-                    setProperty("align-self", "flex-start")
-                    padding = "10px 16px"
-                    border = "1px solid #0f172a"
-                    borderRadius = "8px"
-                    backgroundColor = "#0f172a"
-                    color = "#ffffff"
-                    cursor = "pointer"
-                    fontWeight = "600"
-                  }
-                }
+            div {
+              classes = "form-page__actions"
+
+              button("Speichern") {
+                classes = "form-page__submit"
               }
             }
           }

@@ -5,7 +5,7 @@ import jfx.core.component.{ChildrenComponent, CompositeComponent, ElementCompone
 import jfx.core.state.{Disposable, ListProperty, ReadOnlyProperty}
 import jfx.control.{TableCell, TableColumn, TableRow, TableView, TableViewSelectionModel}
 import jfx.form.{Form, Formular, Input, Model, SubForm}
-import jfx.layout.{Div, Drawer, HBox, VBox}
+import jfx.layout.{Div, Drawer, HBox, HorizontalLine, Span, VBox}
 import jfx.router.{Route, RouteContext, Router}
 import jfx.statement.{Conditional, DynamicOutlet, ForEach}
 import org.scalajs.dom.{Event, Node}
@@ -74,6 +74,36 @@ inline def hbox(init: HBox ?=> Unit): HBox =
     attach(component, currentContext)
     component
   }
+
+inline def hr()(init: HorizontalLine ?=> Unit): HorizontalLine =
+  currentScope { currentScope =>
+    val currentContext = currentComponentContext()
+    val component = new HorizontalLine()
+    withComponentContext(ComponentContext(None, currentContext.enclosingForm)) {
+      given Scope = currentScope
+      given HorizontalLine = component
+      init
+    }
+    attach(component, currentContext)
+    component
+  }
+
+inline def hr(): HorizontalLine =
+    hr()({})
+
+inline def span(init: Span ?=> Unit): Span =
+  currentScope { currentScope =>
+    val currentContext = currentComponentContext()
+    val component = new Span()
+    withComponentContext(ComponentContext(Some(component), currentContext.enclosingForm)) {
+      given Scope = currentScope
+      given Span = component
+      init
+    }
+    attach(component, currentContext)
+    component
+  }
+
 
 inline def vbox(init: VBox ?=> Unit): VBox =
   currentScope { currentScope =>
