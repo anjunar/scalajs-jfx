@@ -30,6 +30,15 @@ class Property[T](var value: T) extends ReadOnlyProperty[T] {
     () => listeners -= listener
   }
 
+  override def observeWithoutInitial(listener: (T) => Unit): Disposable = {
+    listeners += listener
+
+    if (listeners.size > 100) {
+      console.warn("Too many listeners on ${this::class.simpleName} : ${listeners.size}")
+    }
+
+    () => listeners -= listener
+  }
 
   override def toString = s"Property($get)"
 }

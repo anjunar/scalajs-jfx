@@ -21,7 +21,7 @@ class Conditional(val condition: ReadOnlyProperty[Boolean]) extends NodeComponen
   private var mountedThen: List[ElementComponent[? <: Node]] = Nil
   private var mountedElse: List[ElementComponent[? <: Node]] = Nil
 
-  override lazy val element: Comment = ifAnchor
+  override val element: Comment = ifAnchor
 
   private var disposed: Boolean = false
   private var lastParent: Node | Null = null
@@ -41,7 +41,7 @@ class Conditional(val condition: ReadOnlyProperty[Boolean]) extends NodeComponen
   }
   disposable.add(elseObserver)
 
-  override def onMount(): Unit = {
+  override protected def mountContent(): Unit = {
     if (disposed) return
 
     val parent = ifAnchor.parentNode
@@ -151,16 +151,22 @@ class Conditional(val condition: ReadOnlyProperty[Boolean]) extends NodeComponen
 
   private def unmountThen(): Unit = {
     mountedThen.foreach { child =>
-      if (child.parent.contains(this)) child.parent = None
-      unregisterSubtree(child)
+      if (child.parent.contains(this)) {
+        unregisterSubtree(child)
+        child.onUnmount()
+        child.parent = None
+      }
     }
     mountedThen = Nil
   }
 
   private def unmountElse(): Unit = {
     mountedElse.foreach { child =>
-      if (child.parent.contains(this)) child.parent = None
-      unregisterSubtree(child)
+      if (child.parent.contains(this)) {
+        unregisterSubtree(child)
+        child.onUnmount()
+        child.parent = None
+      }
     }
     mountedElse = Nil
   }
@@ -168,8 +174,11 @@ class Conditional(val condition: ReadOnlyProperty[Boolean]) extends NodeComponen
   private def forceDetachMounted(): Unit = {
     val allMounted = mountedThen ++ mountedElse
     allMounted.foreach { child =>
-      if (child.parent.contains(this)) child.parent = None
-      unregisterSubtree(child)
+      if (child.parent.contains(this)) {
+        unregisterSubtree(child)
+        child.onUnmount()
+        child.parent = None
+      }
       removeDomNode(child.element)
     }
     mountedThen = Nil

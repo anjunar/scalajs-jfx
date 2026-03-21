@@ -42,7 +42,7 @@ trait ElementComponent[E <: Node] extends NodeComponent[E] {
   private[jfx] final def clearStylePropertyBinding(name: String): Unit =
     styleBindings.remove(name).foreach(_.dispose())
 
-  private val textContentObserver = textContentProperty.observe { text => element.textContent = text }
+  private val textContentObserver = textContentProperty.observeWithoutInitial { text => element.textContent = text }
   addDisposable(textContentObserver)
 
   private val classObserver = classProperty.observe { classNames =>

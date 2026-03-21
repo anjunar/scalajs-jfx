@@ -120,6 +120,7 @@ object Main {
       }
 
       document.getElementById("root").appendChild(container.element)
+      container.onMount()
     }
   }
 }

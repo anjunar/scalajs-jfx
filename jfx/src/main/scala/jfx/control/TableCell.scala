@@ -16,7 +16,7 @@ class TableCell[S, T] extends ManagedElementComponent[HTMLDivElement] {
   val tableRowProperty: Property[TableRow[S] | Null] = Property(null)
   val tableColumnProperty: Property[TableColumn[S, T] | Null] = Property(null)
 
-  override lazy val element: HTMLDivElement = {
+  override val element: HTMLDivElement = {
     val div = newElement("div")
     div.className = "jfx-table-cell"
     div

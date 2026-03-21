@@ -28,7 +28,7 @@ import scala.util.control.NonFatal
 
 class TablePage extends CompositeComponent[HTMLDivElement] {
 
-  override lazy val element: HTMLDivElement = newElement("div")
+  override val element: HTMLDivElement = newElement("div")
 
   private given ExecutionContext = ExecutionContext.global
 

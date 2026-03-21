@@ -119,6 +119,7 @@ trait Formular[M <: Model[M], N <: Node] extends NodeComponent[N] {
         ()
       case _ =>
         if (domParent != null) domParent.removeChild(control.element)
+        control.onUnmount()
         control.parent = None
     }
   }

@@ -6,7 +6,7 @@ import org.scalajs.dom.HTMLDivElement
 
 class HBox extends NativeComponent[HTMLDivElement] {
 
-  lazy val element: HTMLDivElement = {
+  override val element: HTMLDivElement = {
     val divElement = newElement("div")
     divElement.classList.add("hbox")
     divElement

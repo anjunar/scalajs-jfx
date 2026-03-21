@@ -57,9 +57,13 @@ trait ManagedElementComponent[E <: Node]
         parent.removeChild(child.element)
       }
 
+      if (child.isMounted) {
+        unregisterSubtree(child)
+        child.onUnmount()
+      }
+
       child.parent = None
       child.dispose()
-      unregisterSubtree(child)
     }
   }
 

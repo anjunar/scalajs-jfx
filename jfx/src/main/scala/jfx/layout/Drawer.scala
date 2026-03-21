@@ -19,11 +19,14 @@ final class Drawer extends ManagedElementComponent[HTMLDivElement] {
 
   private var structureInitialized = false
 
-  override lazy val element: HTMLDivElement = {
+  override val element: HTMLDivElement = {
     val divElement = newElement("div")
     divElement.classList.add("jfx-drawer")
     divElement
   }
+
+  override protected def mountContent(): Unit =
+    ensureStructure()
 
   private val openObserver = openProperty.observe(syncOpenState)
   addDisposable(openObserver)
@@ -94,18 +97,11 @@ final class Drawer extends ManagedElementComponent[HTMLDivElement] {
       panel.addChild(navigationHost)
     }
 
-  private[jfx] def initializeStructure(): Unit =
-    ensureStructure()
-
-  private[jfx] def navigationHostComponent: Div = {
-    ensureStructure()
+  private[jfx] def navigationHostComponent: Div =
     navigationHost
-  }
 
-  private[jfx] def contentHostComponent: Div = {
-    ensureStructure()
+  private[jfx] def contentHostComponent: Div =
     contentHost
-  }
 
   private def syncOpenState(isOpen: Boolean): Unit =
     if (isOpen) {
@@ -121,7 +117,6 @@ object Drawer {
     DslRuntime.currentScope { currentScope =>
       val currentContext = DslRuntime.currentComponentContext()
       val component = new Drawer()
-      component.initializeStructure()
 
       DslRuntime.withComponentContext(ComponentContext(None, currentContext.enclosingForm)) {
         given Scope = currentScope

@@ -7,7 +7,7 @@ import org.scalajs.dom.{Event, HTMLButtonElement}
 
 class Button extends ElementComponent[HTMLButtonElement] {
 
-  override lazy val element: HTMLButtonElement = newElement("button")
+  override val element: HTMLButtonElement = newElement("button")
   
   def buttonType : String = element.`type`
   def buttonType_=(value: String) : Unit = element.`type` = value

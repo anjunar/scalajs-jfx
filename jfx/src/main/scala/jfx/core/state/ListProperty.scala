@@ -38,6 +38,16 @@ class ListProperty[V](val underlying: js.Array[V] = js.Array[V]()) extends ReadO
     () => listeners -= listener
   }
 
+  override def observeWithoutInitial(listener: js.Array[V] => Unit): Disposable = {
+    listeners += listener
+
+    if (listeners.size > 100) {
+      console.warn(s"Too many listeners on ${getClass.getSimpleName} : ${listeners.size}")
+    }
+
+    () => listeners -= listener
+  }
+
   def observeChanges(listener: ListProperty.Change[V] => Unit): Disposable = {
     changeListeners += listener
 

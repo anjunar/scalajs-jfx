@@ -8,6 +8,8 @@ trait ReadOnlyProperty[V] {
 
   def observe(observer : V => Unit) : Disposable
 
+  def observeWithoutInitial(observer : V => Unit) : Disposable
+
   def map[T](transform: V => T): ReadOnlyProperty[T] = {
     val source = this
     new ReadOnlyProperty[T] {
@@ -16,6 +18,9 @@ trait ReadOnlyProperty[V] {
 
       override def observe(observer: T => Unit): Disposable =
         source.observe(value => observer(transform(value)))
+
+      override def observeWithoutInitial(observer: T => Unit): Disposable =
+        source.observeWithoutInitial(value => observer(transform(value)))
     }
   }
 

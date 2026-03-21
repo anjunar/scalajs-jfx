@@ -8,14 +8,7 @@ class Input(val name: String) extends Control[String | Boolean | Double, HTMLInp
 
   override val valueProperty: Property[String | Boolean | Double] = Property(null)
 
-  private val valueObserver = valueProperty.observe(applyElementValue)
-  addDisposable(valueObserver)
-
-  private val placeholderObserver =
-    placeholderProperty.observe(value => element.placeholder = if (value == null) "" else value)
-  addDisposable(placeholderObserver)
-
-  override lazy val element: HTMLInputElement = {
+  override val element: HTMLInputElement = {
     val inputElement = newElement("input")
     inputElement.name = name
 
@@ -31,6 +24,13 @@ class Input(val name: String) extends Control[String | Boolean | Double, HTMLInp
 
     inputElement
   }
+
+  private val valueObserver = valueProperty.observe(applyElementValue)
+  addDisposable(valueObserver)
+
+  private val placeholderObserver =
+    placeholderProperty.observe(value => element.placeholder = if (value == null) "" else value)
+  addDisposable(placeholderObserver)
 
   private def applyElementValue(value: String | Boolean | Double): Unit =
     element.`type` match {

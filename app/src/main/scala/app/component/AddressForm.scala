@@ -12,7 +12,7 @@ import org.scalajs.dom.HTMLDivElement
 
 final class AddressForm(slot: AddressForm ?=> Unit = ()) extends CompositeComponent[HTMLDivElement] {
 
-  override lazy val element: HTMLDivElement = newElement("div")
+  override val element: HTMLDivElement = newElement("div")
 
   override protected def compose(using CompositeComponent.DslContext): Unit =
     withDslContext {

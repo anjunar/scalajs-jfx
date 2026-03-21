@@ -19,7 +19,12 @@ class InputContainer(val placeholder: String) extends ManagedElementComponent[HT
   private var structureInitialized = false
   private var controlBound = false
 
-  override lazy val element: HTMLDivElement = newElement("div")
+  override val element: HTMLDivElement = newElement("div")
+
+  override protected def mountContent(): Unit = {
+    ensureStructure()
+    bindMountedControl()
+  }
 
   private def ensureStructure(): Unit =
     if (!structureInitialized) {
@@ -43,13 +48,8 @@ class InputContainer(val placeholder: String) extends ManagedElementComponent[HT
       addChild(errorsHost)
     }
 
-  private[jfx] def initializeStructure(): Unit =
-    ensureStructure()
-
-  private[jfx] def slotHost: Div = {
-    ensureStructure()
+  private[jfx] def slotHost: Div =
     contentHost
-  }
 
   private[jfx] def bindMountedControl(): Unit =
     if (!controlBound) {
@@ -141,7 +141,6 @@ object InputContainer {
     DslRuntime.currentScope { currentScope =>
       val currentContext = DslRuntime.currentComponentContext()
       val component = new InputContainer(placeholder)
-      component.initializeStructure()
 
       DslRuntime.withComponentContext(ComponentContext(Some(component.slotHost), currentContext.enclosingForm)) {
         given Scope = currentScope
@@ -149,7 +148,6 @@ object InputContainer {
         init
       }
 
-      component.bindMountedControl()
       DslRuntime.attach(component, currentContext)
       component
     }

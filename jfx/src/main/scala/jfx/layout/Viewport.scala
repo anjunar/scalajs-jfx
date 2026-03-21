@@ -11,40 +11,36 @@ import scala.scalajs.js.timers.setTimeout
 
 final class Viewport extends ManagedElementComponent[HTMLDivElement] {
 
-  override lazy val element: HTMLDivElement = {
+  private var structureInitialized = false
+
+  override val element: HTMLDivElement = {
     val divElement = newElement("div")
     divElement.classList.add("jfx-viewport")
     divElement
   }
 
-  private def ensureStructure(): Unit = {
-    addChild(ForEach(Viewport.windows) { (conf, _) =>
-      buildWindow(conf)
-    })
-
-    addChild(ForEach(Viewport.overlays) { (conf, _) =>
-      new Viewport.Overlay(conf)
-    })
-
-    addChild(ForEach(Viewport.notifications) { (conf, _) =>
-      new Viewport.Notification(conf)
-    })
-  }
-
-  private[jfx] def initializeStructure(): Unit =
+  override protected def mountContent(): Unit =
     ensureStructure()
+
+  private def ensureStructure(): Unit =
+    if (!structureInitialized) {
+      structureInitialized = true
+
+      addChild(ForEach(Viewport.windows) { (conf, _) =>
+        buildWindow(conf)
+      })
+
+      addChild(ForEach(Viewport.overlays) { (conf, _) =>
+        new Viewport.Overlay(conf)
+      })
+
+      addChild(ForEach(Viewport.notifications) { (conf, _) =>
+        new Viewport.Notification(conf)
+      })
+    }
 
   private def buildWindow(conf: Viewport.WindowConf): Window = {
     val component = new Window()
-    component.initializeStructure()
-
-    val contentComponent = conf.component()
-    contentComponent match {
-      case closeAware: Viewport.CloseAware =>
-        closeAware.close_=( () => Viewport.closeWindowById(conf.id) )
-      case _ =>
-        ()
-    }
 
     component.title = conf.title
     component.draggable = conf.draggable
@@ -68,7 +64,16 @@ final class Viewport extends ManagedElementComponent[HTMLDivElement] {
     component.addDisposable(Property.subscribeBidirectional(component.zIndex, conf.zIndex))
     component.addDisposable(Property.subscribeBidirectional(component.maximized, conf.maximized))
     component.addDisposable(conf.zIndex.observe(_ => component.active = Viewport.isActive(conf)))
-    component.setContent(contentComponent)
+    component.setContentFactory(() => {
+      val contentComponent = conf.component()
+      contentComponent match {
+        case closeAware: Viewport.CloseAware =>
+          closeAware.close_=( () => Viewport.closeWindowById(conf.id) )
+        case _ =>
+          ()
+      }
+      contentComponent
+    })
 
     component
   }
@@ -80,7 +85,6 @@ object Viewport {
     DslRuntime.currentScope { currentScope =>
       val currentContext = DslRuntime.currentComponentContext()
       val component = new Viewport()
-      component.initializeStructure()
 
       DslRuntime.withComponentContext(ComponentContext(Some(component), currentContext.enclosingForm)) {
         given Scope = currentScope
@@ -233,9 +237,9 @@ object Viewport {
       extends ManagedElementComponent[HTMLDivElement] {
 
     private val stopClickListener: Event => Unit = _.stopPropagation()
-    private val contentComponent = conf.content()
+    private var contentInitialized = false
 
-    override lazy val element: HTMLDivElement = {
+    override val element: HTMLDivElement = {
       val divElement = newElement("div")
       divElement.classList.add("jfx-viewport-overlay")
       divElement.style.zIndex = conf.zIndex.toString
@@ -259,15 +263,20 @@ object Viewport {
       )
     )
 
-    if (contentComponent != null) {
-      addChild(contentComponent)
-    }
+    override protected def mountContent(): Unit =
+      if (!contentInitialized) {
+        contentInitialized = true
+        val contentComponent = conf.content()
+        if (contentComponent != null) {
+          addChild(contentComponent)
+        }
+      }
   }
 
   private final class Notification(conf: Viewport.NotificationConf)
       extends ElementComponent[HTMLDivElement] {
 
-    override lazy val element: HTMLDivElement = {
+    override val element: HTMLDivElement = {
       val divElement = newElement("div")
       divElement.classList.add("jfx-viewport-notification")
       divElement.classList.add(s"jfx-viewport-notification--${conf.kind.cssClass}")

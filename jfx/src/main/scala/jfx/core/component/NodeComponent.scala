@@ -7,7 +7,9 @@ import org.scalajs.dom.{Comment, HTMLFieldSetElement, Node}
 
 trait NodeComponent [E <: Node] extends Disposable {
 
-  lazy val element : E
+  val element : E
+
+  private var mounted: Boolean = false
 
   var parent : Option[NodeComponent[? <: Node]] = None
 
@@ -19,7 +21,7 @@ trait NodeComponent [E <: Node] extends Disposable {
         case Some(form: Formular[?,?]) => Some(form)
         case Some(arrayForm : ArrayForm[?]) => Some(new Formular[?, HTMLFieldSetElement] {
           override val name: String = arrayForm.name
-          override lazy val element: HTMLFieldSetElement = arrayForm.element
+          override val element: HTMLFieldSetElement = arrayForm.element
         })
         case Some(component) => loop(component.parent)
       }
@@ -27,7 +29,32 @@ trait NodeComponent [E <: Node] extends Disposable {
     loop(parent)
   }
   
-  def onMount() : Unit = {}
+  final def onMount() : Unit = {
+    mounted = true
+    mountContent()
+    afterMount()
+    childComponentsIterator.foreach { child =>
+      if (!child.isMounted) {
+        child.onMount()
+      }
+    }
+  }
+
+  protected def mountContent() : Unit = {}
+
+  protected def afterMount(): Unit = {}
+
+  private[jfx] final def onUnmount(): Unit = {
+    if (!mounted) return
+    mounted = false
+    childComponentsIterator.foreach(_.onUnmount())
+    afterUnmount()
+  }
+
+  protected def afterUnmount(): Unit = {}
+
+  private[jfx] final def isMounted: Boolean =
+    mounted
 
   def findParentForm(): Formular[?,?] =
     findParentFormOption().orNull

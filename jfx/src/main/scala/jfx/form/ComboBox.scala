@@ -41,7 +41,7 @@ class ComboBox[S](val name: String)
   private var updatingValueProperty = false
   private var disposed = false
 
-  override lazy val element: HTMLDivElement = {
+  override val element: HTMLDivElement = {
     val divElement = newElement("div")
     divElement.classList.add("jfx-combo-box")
     divElement.tabIndex = 0
@@ -62,6 +62,9 @@ class ComboBox[S](val name: String)
     divElement.onkeydown = event => handleKeyDown(event)
     divElement
   }
+
+  override protected def mountContent(): Unit =
+    ensureStructure()
 
   private val valueObserver =
     valueProperty.observe(_ => reconcileValue())
@@ -115,9 +118,6 @@ class ComboBox[S](val name: String)
       rerenderValueHost()
       syncOpenState(openProperty.get)
     }
-
-  private[jfx] def initializeStructure(): Unit =
-    ensureStructure()
 
   def itemsProperty: Property[ListProperty[S]] = itemsRefProperty
 
@@ -491,7 +491,7 @@ object ComboBox {
   private final class RenderHost(className: String)
       extends ManagedElementComponent[HTMLDivElement], FormRegistrationBoundary {
 
-    override lazy val element: HTMLDivElement = {
+    override val element: HTMLDivElement = {
       val divElement = newElement("div")
       divElement.className = className
       divElement
@@ -508,13 +508,19 @@ object ComboBox {
   private final class DropdownPanel[S](table: TableView[S])
       extends ManagedElementComponent[HTMLDivElement], FormRegistrationBoundary {
 
-    override lazy val element: HTMLDivElement = {
+    private var contentInitialized = false
+
+    override val element: HTMLDivElement = {
       val divElement = newElement("div")
       divElement.className = "jfx-combo-box__dropdown"
       divElement
     }
 
-    addChild(table)
+    override protected def mountContent(): Unit =
+      if (!contentInitialized) {
+        contentInitialized = true
+        addChild(table)
+      }
   }
 
   private final class ItemCell[S](comboBox: ComboBox[S]) extends TableCell[S, S] {
@@ -599,7 +605,6 @@ object ComboBox {
     DslRuntime.currentScope { currentScope =>
       val currentContext = DslRuntime.currentComponentContext()
       val component = new ComboBox[S](name)
-      component.initializeStructure()
 
       DslRuntime.withComponentContext(ComponentContext(None, currentContext.enclosingForm)) {
         given Scope = currentScope

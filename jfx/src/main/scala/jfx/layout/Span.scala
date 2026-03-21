@@ -6,7 +6,7 @@ import org.scalajs.dom.HTMLSpanElement
 
 class Span extends NativeComponent[HTMLSpanElement] {
   
-  lazy val element: HTMLSpanElement = newElement("span")
+  override val element: HTMLSpanElement = newElement("span")
 
 }
 

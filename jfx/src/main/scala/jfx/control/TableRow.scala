@@ -71,7 +71,7 @@ class TableRow[S] extends ManagedElementComponent[HTMLDivElement] {
 
   private var cellSlots: Vector[CellSlot] = Vector.empty
 
-  override lazy val element: HTMLDivElement = {
+  override val element: HTMLDivElement = {
     val div = newElement("div")
     div.className = "jfx-table-row"
     div.style.position = "absolute"

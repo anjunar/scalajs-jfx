@@ -37,7 +37,7 @@ class Router(val routes: js.Array[Route], private val scope: Scope) extends Node
   private var disposed: Boolean = false
   private var renderVersion: Int = 0
 
-  override lazy val element: Comment = outlet.element
+  override val element: Comment = outlet.element
 
   private val stateObserver = stateProperty.observe { state =>
     render(state)
@@ -86,7 +86,7 @@ class Router(val routes: js.Array[Route], private val scope: Scope) extends Node
   def reload(): Unit =
     syncWithLocation()
 
-  override def onMount(): Unit = {
+  override protected def mountContent(): Unit = {
     if (disposed) return
     syncWithLocation()
     outlet.onMount()

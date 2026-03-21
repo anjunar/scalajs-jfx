@@ -12,7 +12,7 @@ class DynamicOutlet(
   private val startAnchor: Comment = newComment("jfx:outlet")
   private val endAnchor: Comment = newComment("jfx:endoutlet")
 
-  override lazy val element: Comment = startAnchor
+  override val element: Comment = startAnchor
 
   private var mounted: NodeComponent[? <: Node] | Null = null
   private var disposed: Boolean = false
@@ -33,7 +33,7 @@ class DynamicOutlet(
   }
   disposable.add(contentObserver)
 
-  override def onMount(): Unit = {
+  override protected def mountContent(): Unit = {
     if (disposed) return
 
     val parent = startAnchor.parentNode
@@ -109,6 +109,7 @@ class DynamicOutlet(
     if (child != null) {
       if (child.parent.contains(this)) {
         unregisterSubtree(child)
+        child.onUnmount()
         child.parent = None
       }
       removeDomNode(child.element)

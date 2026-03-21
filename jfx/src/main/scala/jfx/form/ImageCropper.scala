@@ -56,7 +56,7 @@ class ImageCropper(val name: String) extends Control[Media, HTMLDivElement] {
   private var previewImg: HTMLImageElement = null
   private var previewPlaceholder: HTMLDivElement = null
 
-  override lazy val element: HTMLDivElement = {
+  override val element: HTMLDivElement = {
     val div = newElement("div")
     div.classList.add("image-cropper-field")
     div.classList.add("image-cropper")
@@ -64,7 +64,7 @@ class ImageCropper(val name: String) extends Control[Media, HTMLDivElement] {
     div
   }
   
-  override def onMount(): Unit = {
+  override protected def mountContent(): Unit = {
     ensureStructure()
   }
 
@@ -409,14 +409,14 @@ private final class ImageCropperDialog(
   private lazy val closeButton: HTMLButtonElement =
     newButton("Schliessen")
 
-  override lazy val element: HTMLDivElement = {
+  override val element: HTMLDivElement = {
     val div = newElement("div")
     div.classList.add("image-cropper")
     div.classList.add("image-cropper-dialog")
     div
   }
 
-  override def onMount(): Unit = {
+  override protected def mountContent(): Unit = {
     ensureStructure()
   }
 

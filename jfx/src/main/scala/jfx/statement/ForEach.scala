@@ -16,7 +16,7 @@ class ForEach[T](
   private val startAnchor: Comment = newComment("jfx:foreach")
   private val endAnchor: Comment = newComment("jfx:endforeach")
 
-  override lazy val element: Comment = startAnchor
+  override val element: Comment = startAnchor
 
   private var mounted: Vector[NodeComponent[? <: Node]] = Vector.empty
 
@@ -27,7 +27,7 @@ class ForEach[T](
   private val itemsObserver = items.observeChanges(onItemsChange)
   disposable.add(itemsObserver)
 
-  override def onMount(): Unit = {
+  override protected def mountContent(): Unit = {
     if (!disposed) {
       val parent = startAnchor.parentNode
       if (parent != lastParent) {
@@ -160,6 +160,7 @@ class ForEach[T](
 
     parent.insertBefore(newChild.element, oldChild.element)
     newChild.parent = Some(this)
+    newChild.onMount()
     registerSubtree(newChild)
 
     disposeChild(oldChild)
@@ -171,14 +172,18 @@ class ForEach[T](
     mounted.foreach { child =>
       parent.insertBefore(child.element, endAnchor)
       child.parent = Some(this)
+      child.onMount()
       registerSubtree(child)
     }
   }
 
   private def detachAll(removeEndAnchor: Boolean, keepComponents: Boolean): Unit = {
     mounted.foreach { child =>
-      if (child.parent.contains(this)) child.parent = None
-      unregisterSubtree(child)
+      if (child.parent.contains(this)) {
+        unregisterSubtree(child)
+        child.onUnmount()
+        child.parent = None
+      }
       removeDomNode(child.element)
       if (!keepComponents) child.dispose()
     }
@@ -201,8 +206,11 @@ class ForEach[T](
   }
 
   private def disposeChild(child: NodeComponent[? <: Node]): Unit = {
-    if (child.parent.contains(this)) child.parent = None
-    unregisterSubtree(child)
+    if (child.parent.contains(this)) {
+      unregisterSubtree(child)
+      child.onUnmount()
+      child.parent = None
+    }
     removeDomNode(child.element)
     child.dispose()
   }

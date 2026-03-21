@@ -25,7 +25,7 @@ import scala.scalajs.js.JSON
 
 class FormPage extends CompositeComponent[HTMLDivElement] {
 
-  override lazy val element: HTMLDivElement = newElement("div")
+  override val element: HTMLDivElement = newElement("div")
 
   override protected def compose(using CompositeComponent.DslContext): Unit = {
 

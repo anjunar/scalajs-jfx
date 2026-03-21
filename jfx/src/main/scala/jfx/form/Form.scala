@@ -13,7 +13,7 @@ class Form[M <: Model[M]](model : M) extends NativeComponent[HTMLFormElement], F
 
   private var submitHandler: Event => Unit = _ => ()
   
-  lazy val element: HTMLFormElement = {
+  override val element: HTMLFormElement = {
     val formElement = newElement("form")
     formElement.onsubmit = event => {
       event.preventDefault()

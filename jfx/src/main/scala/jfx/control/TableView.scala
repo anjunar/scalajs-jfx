@@ -37,16 +37,13 @@ class TableView[S] extends ElementComponent[HTMLDivElement], FormSubtreeRegistra
   private var columnObserver: Disposable = TableView.noopDisposable
   private var rowPool: Vector[TableRow[S]] = Vector.empty
   private var mountedPlaceholder: NodeComponent[? <: Node] | Null = null
+  private var lifecycleInitialized = false
 
-  override lazy val element: HTMLDivElement = {
+  override val element: HTMLDivElement = {
     val div = newElement("div")
     div.className = "jfx-table-view"
     div
   }
-
-  initializeStructure()
-  initializeDefaultPlaceholder()
-  initializeObservers()
 
   def itemsProperty: Property[ListProperty[S]] = itemsRefProperty
   def getItems: ListProperty[S] = itemsRefProperty.get
@@ -87,7 +84,10 @@ class TableView[S] extends ElementComponent[HTMLDivElement], FormSubtreeRegistra
     refreshVisibleRows(allowLazyLoad = true)
   }
 
-  override def onMount(): Unit = scheduleRefresh()
+  override protected def mountContent(): Unit = {
+    initializeLifecycle()
+    scheduleRefresh()
+  }
 
   override def dispose(): Unit = {
     if (disposed) return
@@ -185,6 +185,14 @@ class TableView[S] extends ElementComponent[HTMLDivElement], FormSubtreeRegistra
     scheduleRefresh()
     scheduleInitialRefresh(60)
   }
+
+  private def initializeLifecycle(): Unit =
+    if (!lifecycleInitialized) {
+      lifecycleInitialized = true
+      initializeStructure()
+      initializeDefaultPlaceholder()
+      initializeObservers()
+    }
 
   private def rewireItemsObserver(): Unit = {
     itemsObserver.dispose()
@@ -343,6 +351,7 @@ class TableView[S] extends ElementComponent[HTMLDivElement], FormSubtreeRegistra
       val row = rowPool.last
       rowPool = rowPool.dropRight(1)
       unregisterSubtree(row)
+      row.onUnmount()
       row.parent = None
       removeDomNode(row.element)
       row.dispose()
@@ -364,6 +373,7 @@ class TableView[S] extends ElementComponent[HTMLDivElement], FormSubtreeRegistra
   private def disposeRows(): Unit = {
     rowPool.foreach { row =>
       unregisterSubtree(row)
+      row.onUnmount()
       row.parent = None
       removeDomNode(row.element)
       row.dispose()
@@ -481,6 +491,7 @@ class TableView[S] extends ElementComponent[HTMLDivElement], FormSubtreeRegistra
     val placeholder = mountedPlaceholder
     if (placeholder != null) {
       unregisterSubtree(placeholder)
+      placeholder.onUnmount()
       if (placeholder.parent.contains(this)) placeholder.parent = None
       removeDomNode(placeholder.element)
       mountedPlaceholder = null

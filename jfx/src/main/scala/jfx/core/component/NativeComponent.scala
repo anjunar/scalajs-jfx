@@ -29,8 +29,8 @@ trait NativeComponent[E <: Node] extends ChildrenComponent[E], FormSubtreeRegist
         registerSubtree(child)
 
       case Insert(index, child, _) =>
-        insertDomAt(index, child.element)
         child.parent = Some(this)
+        insertDomAt(index, child.element)
         child.onMount()
         registerSubtree(child)
 
@@ -44,23 +44,32 @@ trait NativeComponent[E <: Node] extends ChildrenComponent[E], FormSubtreeRegist
 
       case RemoveAt(_, child, _) =>
         removeDomChild(child.element)
+        if (child.isMounted) {
+          unregisterSubtree(child)
+          child.onUnmount()
+        }
         child.parent = None
         child.dispose()
-        unregisterSubtree(child)
 
       case RemoveRange(_, children, _) =>
         children.foreach(child => {
           removeDomChild(child.element)
+          if (child.isMounted) {
+            unregisterSubtree(child)
+            child.onUnmount()
+          }
           child.parent = None
           child.dispose()
-          unregisterSubtree(child)
         })
 
       case UpdateAt(index, oldChild, newChild, _) =>
         replaceDomAt(index, oldChild.element, newChild.element)
+        if (oldChild.isMounted) {
+          unregisterSubtree(oldChild)
+          oldChild.onUnmount()
+        }
         oldChild.parent = None
         oldChild.dispose()
-        unregisterSubtree(oldChild)
         newChild.parent = Some(this)
         newChild.onMount()
         registerSubtree(newChild)
@@ -68,9 +77,12 @@ trait NativeComponent[E <: Node] extends ChildrenComponent[E], FormSubtreeRegist
       case Patch(from, removed, inserted, _) =>
         removed.foreach(child => {
           removeDomChild(child.element)
+          if (child.isMounted) {
+            unregisterSubtree(child)
+            child.onUnmount()
+          }
           child.parent = None
           child.dispose()
-          unregisterSubtree(child)
         })
         insertAllDomAt(from, inserted.map(child => {
           child.parent = Some(this)
@@ -81,10 +93,13 @@ trait NativeComponent[E <: Node] extends ChildrenComponent[E], FormSubtreeRegist
 
       case Clear(removed, _) =>
         removed.foreach(child => {
+          if (child.isMounted) {
+            unregisterSubtree(child)
+            child.onUnmount()
+          }
           child.parent = None
           child.dispose()
           removeDomChild(child.element)
-          unregisterSubtree(child)
         })
     }
 

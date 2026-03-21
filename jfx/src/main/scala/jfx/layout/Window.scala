@@ -53,11 +53,13 @@ final class Window extends ManagedElementComponent[HTMLDivElement] {
   )
 
   private var structureInitialized = false
+  private var contentInitialized = false
   private var didRunOpenSequence = false
   private var activePointerCleanup: Option[Boolean => Unit] = None
   private var openAnimationHandle: Option[SetTimeoutHandle] = None
+  private var contentFactory: () => NodeComponent[? <: Node] | Null = () => null
 
-  override lazy val element: HTMLDivElement = {
+  override val element: HTMLDivElement = {
     val divElement = newElement("div")
     divElement.classList.add("jfx-window")
     divElement
@@ -238,8 +240,9 @@ final class Window extends ManagedElementComponent[HTMLDivElement] {
     browserWindow.requestAnimationFrame(_ => attempt(5))
   }
 
-  override def onMount(): Unit = {
-    initializeStructure()
+  override protected def mountContent(): Unit = {
+    ensureStructure()
+    ensureContentMounted()
 
     if (!didRunOpenSequence) {
       didRunOpenSequence = true
@@ -286,14 +289,21 @@ final class Window extends ManagedElementComponent[HTMLDivElement] {
       syncActiveState()
     }
 
-  private[jfx] def initializeStructure(): Unit =
-    ensureStructure()
-
   private[jfx] def setContent(content: NodeComponent[? <: Node] | Null): Unit = {
-    ensureStructure()
+    setContentFactory(() => content)
+  }
+
+  private[jfx] def setContentFactory(factory: () => NodeComponent[? <: Node] | Null): Unit = {
+    contentFactory =
+      if (factory == null) (() => null)
+      else factory
+
+    contentInitialized = false
     containerHost.clearChildren()
-    if (content != null) {
-      containerHost.addChild(content)
+
+    if (isMounted) {
+      ensureStructure()
+      ensureContentMounted()
     }
   }
 
@@ -341,6 +351,16 @@ final class Window extends ManagedElementComponent[HTMLDivElement] {
 
       handle.element.addEventListener("pointerdown", pointerDownListener)
       addDisposable(() => handle.element.removeEventListener("pointerdown", pointerDownListener))
+    }
+
+  private def ensureContentMounted(): Unit =
+    if (!contentInitialized) {
+      contentInitialized = true
+      val content = contentFactory()
+      containerHost.clearChildren()
+      if (content != null) {
+        containerHost.addChild(content)
+      }
     }
 
   private def startDrag(event: PointerEvent, captureTarget: HTMLElement): Unit = {
