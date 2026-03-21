@@ -1,18 +1,15 @@
 package jfx.layout
 
-import jfx.core.component.CompositeComponent.composite
-import jfx.core.component.NodeComponent.mount
-
 import java.util.UUID
-import jfx.core.component.{CompositeComponent, NativeComponent, NodeComponent}
+import jfx.core.component.{ElementComponent, ManagedElementComponent, NodeComponent}
 import jfx.core.state.{Disposable, ListProperty, Property}
-import jfx.dsl.*
-import jfx.statement.ForEach.forEach
+import jfx.dsl.{ComponentContext, DslRuntime, Scope}
+import jfx.statement.ForEach
 import org.scalajs.dom.{Event, HTMLDivElement, HTMLElement, Node, window}
 
 import scala.scalajs.js.timers.setTimeout
 
-final class Viewport(slot: Viewport ?=> Unit = {}) extends CompositeComponent[HTMLDivElement] {
+final class Viewport extends ManagedElementComponent[HTMLDivElement] {
 
   override lazy val element: HTMLDivElement = {
     val divElement = newElement("div")
@@ -20,47 +17,34 @@ final class Viewport(slot: Viewport ?=> Unit = {}) extends CompositeComponent[HT
     divElement
   }
 
-  override protected def compose(using CompositeComponent.DslContext): Unit =
-    withDslContext {
-      given Viewport = this
-
-      slot
-
-      forEach(Viewport.windows) { conf =>
-        buildWindow(conf, dslContext)
-      }
-
-      forEach(Viewport.overlays) { conf =>
-        composite(new Viewport.Overlay(conf))
-      }
-
-      forEach(Viewport.notifications) { conf =>
-        new Viewport.Notification(conf)
-      }
-    }
-
-  private def buildWindow(
-    conf: Viewport.WindowConf,
-    currentContext: CompositeComponent.DslContext
-  ): Window = {
-    var contentComponent: NodeComponent[? <: Node] | Null = null
-
-    val component = new Window({
-      if (contentComponent == null) {
-        val built = conf.component(using currentContext.scope)
-
-        built match {
-          case closeAware: Viewport.CloseAware =>
-            closeAware.close_=( () => Viewport.closeWindowById(conf.id) )
-          case _ =>
-            ()
-        }
-
-        contentComponent = built
-      }
-
-      mount(contentComponent.nn)
+  private def ensureStructure(): Unit = {
+    addChild(ForEach(Viewport.windows) { (conf, _) =>
+      buildWindow(conf)
     })
+
+    addChild(ForEach(Viewport.overlays) { (conf, _) =>
+      new Viewport.Overlay(conf)
+    })
+
+    addChild(ForEach(Viewport.notifications) { (conf, _) =>
+      new Viewport.Notification(conf)
+    })
+  }
+
+  private[jfx] def initializeStructure(): Unit =
+    ensureStructure()
+
+  private def buildWindow(conf: Viewport.WindowConf): Window = {
+    val component = new Window()
+    component.initializeStructure()
+
+    val contentComponent = conf.component()
+    contentComponent match {
+      case closeAware: Viewport.CloseAware =>
+        closeAware.close_=( () => Viewport.closeWindowById(conf.id) )
+      case _ =>
+        ()
+    }
 
     component.title = conf.title
     component.draggable = conf.draggable
@@ -84,8 +68,7 @@ final class Viewport(slot: Viewport ?=> Unit = {}) extends CompositeComponent[HT
     component.addDisposable(Property.subscribeBidirectional(component.zIndex, conf.zIndex))
     component.addDisposable(Property.subscribeBidirectional(component.maximized, conf.maximized))
     component.addDisposable(conf.zIndex.observe(_ => component.active = Viewport.isActive(conf)))
-
-    component.renderComposite(using currentContext)
+    component.setContent(contentComponent)
 
     component
   }
@@ -94,7 +77,30 @@ final class Viewport(slot: Viewport ?=> Unit = {}) extends CompositeComponent[HT
 object Viewport {
 
   def viewport(init: Viewport ?=> Unit = {}): Viewport =
-    CompositeComponent.composite(new Viewport(init))
+    DslRuntime.currentScope { currentScope =>
+      val currentContext = DslRuntime.currentComponentContext()
+      val component = new Viewport()
+      component.initializeStructure()
+
+      DslRuntime.withComponentContext(ComponentContext(Some(component), currentContext.enclosingForm)) {
+        given Scope = currentScope
+        given Viewport = component
+        init
+      }
+
+      DslRuntime.attach(component, currentContext)
+      component
+    }
+
+  def captureComponent(
+    content: Scope ?=> NodeComponent[? <: Node] | Null
+  ): () => NodeComponent[? <: Node] | Null =
+    DslRuntime.currentScope { currentScope =>
+      () => {
+        given Scope = currentScope
+        content
+      }
+    }
 
   val windows: ListProperty[WindowConf] = ListProperty()
   val notifications: ListProperty[NotificationConf] = ListProperty()
@@ -124,7 +130,7 @@ object Viewport {
 
   final class WindowConf(
     val title: String,
-    val component: Scope ?=> NodeComponent[? <: Node],
+    val component: () => NodeComponent[? <: Node] | Null,
     val zIndex: Property[Int] = Property(0),
     val onClose: Option[Window => Unit] = None,
     val onClick: Option[Window => Unit] = None,
@@ -141,7 +147,7 @@ object Viewport {
 
   final class OverlayConf(
     val anchor: HTMLElement,
-    val content: Scope ?=> Unit,
+    val content: () => NodeComponent[? <: Node] | Null,
     val id: String = UUID.randomUUID().toString,
     val offsetXPx: Double = 0.0,
     val offsetYPx: Double = 0.0,
@@ -223,9 +229,11 @@ object Viewport {
   def closeWindowById(id: String): Unit =
     windows.find(_.id == id).foreach(windows -= _)
 
-  private final class Overlay(conf: Viewport.OverlayConf) extends CompositeComponent[HTMLDivElement] {
+  private final class Overlay(conf: Viewport.OverlayConf)
+      extends ManagedElementComponent[HTMLDivElement] {
 
     private val stopClickListener: Event => Unit = _.stopPropagation()
+    private val contentComponent = conf.content()
 
     override lazy val element: HTMLDivElement = {
       val divElement = newElement("div")
@@ -251,15 +259,13 @@ object Viewport {
       )
     )
 
-    override protected def compose(using CompositeComponent.DslContext): Unit =
-      withDslContext {
-        given Scope = dslContext.scope
-
-        conf.content
-      }
+    if (contentComponent != null) {
+      addChild(contentComponent)
+    }
   }
 
-  private final class Notification(conf: Viewport.NotificationConf) extends NativeComponent[HTMLDivElement] {
+  private final class Notification(conf: Viewport.NotificationConf)
+      extends ElementComponent[HTMLDivElement] {
 
     override lazy val element: HTMLDivElement = {
       val divElement = newElement("div")
@@ -284,16 +290,16 @@ object Viewport {
   }
 
   private def followAnchorFixed(
-                                 overlayElement: HTMLElement,
-                                 anchorElement: HTMLElement,
-                                 offsetXPx: Double,
-                                 offsetYPx: Double,
-                                 widthPx: Option[Double],
-                                 minWidthPx: Option[Double],
-                                 maxHeightPx: Option[Double],
-                                 marginViewportPx: Double,
-                                 flipY: Boolean
-                               ): Disposable = {
+    overlayElement: HTMLElement,
+    anchorElement: HTMLElement,
+    offsetXPx: Double,
+    offsetYPx: Double,
+    widthPx: Option[Double],
+    minWidthPx: Option[Double],
+    maxHeightPx: Option[Double],
+    marginViewportPx: Double,
+    flipY: Boolean
+  ): Disposable = {
     var disposed = false
     var rafId: Option[Int] = None
 
@@ -370,5 +376,4 @@ object Viewport {
       rafId.foreach(window.cancelAnimationFrame)
     }
   }
-
 }

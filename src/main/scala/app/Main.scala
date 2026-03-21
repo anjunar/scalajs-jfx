@@ -69,7 +69,7 @@ object Main {
                 Viewport.addWindow(WindowConf(
                   title = "Test",
                   resizable = true,
-                  component = {
+                  component = Viewport.captureComponent {
                     div {
                       text = "Test"
                     }

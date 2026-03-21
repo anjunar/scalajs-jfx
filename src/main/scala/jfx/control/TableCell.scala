@@ -1,11 +1,11 @@
 package jfx.control
 
-import jfx.core.component.NativeComponent
+import jfx.core.component.ManagedElementComponent
 import jfx.core.state.Property
 import jfx.dsl.{ComponentContext, DslRuntime, Scope}
 import org.scalajs.dom.HTMLDivElement
 
-class TableCell[S, T] extends NativeComponent[HTMLDivElement] {
+class TableCell[S, T] extends ManagedElementComponent[HTMLDivElement] {
   private var loadingPlaceholder = false
 
   val itemProperty: Property[T | Null] = Property(null)

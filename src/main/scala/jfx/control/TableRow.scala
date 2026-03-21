@@ -1,11 +1,11 @@
 package jfx.control
 
-import jfx.core.component.NativeComponent
+import jfx.core.component.ManagedElementComponent
 import jfx.core.state.{Disposable, Property}
 import jfx.dsl.{ComponentContext, DslRuntime, Scope}
 import org.scalajs.dom.HTMLDivElement
 
-class TableRow[S] extends NativeComponent[HTMLDivElement] {
+class TableRow[S] extends ManagedElementComponent[HTMLDivElement] {
 
   private final class CellSlot(
     val column: TableColumn[S, Any],

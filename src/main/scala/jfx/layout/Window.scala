@@ -1,15 +1,14 @@
 package jfx.layout
 
 import jfx.action.Button
-import jfx.core.component.CompositeComponent
+import jfx.core.component.{ManagedElementComponent, NodeComponent}
 import jfx.core.state.Property
-import jfx.dsl.{DslRuntime, Scope}
 import org.scalajs.dom.{Event, HTMLDivElement, HTMLElement, MouseEvent, Node, PointerEvent, window as browserWindow}
 
 import scala.scalajs.js.timers.{SetTimeoutHandle, clearTimeout, setTimeout}
 import scala.util.control.NonFatal
 
-final class Window(slot: Window ?=> Unit = {}) extends CompositeComponent[HTMLDivElement] {
+final class Window extends ManagedElementComponent[HTMLDivElement] {
 
   val maximized: Property[Boolean] = Property(false)
   val zIndex: Property[Int] = Property(0)
@@ -51,7 +50,6 @@ final class Window(slot: Window ?=> Unit = {}) extends CompositeComponent[HTMLDi
   )
 
   private var structureInitialized = false
-  private var slotRendered = false
   private var didRunOpenSequence = false
   private var activePointerCleanup: Option[Boolean => Unit] = None
   private var openAnimationHandle: Option[SetTimeoutHandle] = None
@@ -237,25 +235,9 @@ final class Window(slot: Window ?=> Unit = {}) extends CompositeComponent[HTMLDi
     browserWindow.requestAnimationFrame(_ => attempt(5))
   }
 
-  override protected def compose(using CompositeComponent.DslContext): Unit =
-    withDslContext {
-      given Window = this
-      initializeStructure()
+  override def onMount(): Unit = {
+    initializeStructure()
 
-      if (!slotRendered) {
-        slotRendered = true
-
-        DslRuntime.withCompositeContext(containerHost, dslContext) {
-          given CompositeComponent.DslContext = dslContext
-          given Scope = dslContext.scope
-          given Div = containerHost
-          given Window = this
-          slot
-        }
-      }
-    }
-
-  override def onMount(): Unit =
     if (!didRunOpenSequence) {
       didRunOpenSequence = true
 
@@ -268,8 +250,9 @@ final class Window(slot: Window ?=> Unit = {}) extends CompositeComponent[HTMLDi
         centerInViewport()
       }
     }
+  }
 
-  private def initializeStructure()(using CompositeComponent.DslContext): Unit =
+  private def ensureStructure(): Unit =
     if (!structureInitialized) {
       structureInitialized = true
 
@@ -296,6 +279,17 @@ final class Window(slot: Window ?=> Unit = {}) extends CompositeComponent[HTMLDi
       syncResizableState()
       syncActiveState()
     }
+
+  private[jfx] def initializeStructure(): Unit =
+    ensureStructure()
+
+  private[jfx] def setContent(content: NodeComponent[? <: Node] | Null): Unit = {
+    ensureStructure()
+    containerHost.clearChildren()
+    if (content != null) {
+      containerHost.addChild(content)
+    }
+  }
 
   private def configureHeaderDrag(): Unit = {
     val pointerDownListener: Event => Unit = {

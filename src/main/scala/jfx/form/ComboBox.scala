@@ -1,22 +1,18 @@
 package jfx.form
 
 import jfx.control.{TableCell, TableColumn, TableRow, TableView}
-import jfx.core.component.{CompositeComponent, FormRegistrationBoundary, NativeComponent}
-import jfx.core.component.ElementComponent.{classes_=, text_=}
-import jfx.core.component.NodeComponent.mount
+import jfx.core.component.{FormRegistrationBoundary, ManagedElementComponent, NodeComponent}
 import jfx.core.state.{Disposable, ListProperty, Property, ReadOnlyProperty}
 import jfx.dsl.{ComponentContext, DslRuntime, Scope}
-import jfx.layout.Span.span
+import jfx.layout.Span
 import jfx.layout.Viewport
 import org.scalajs.dom.{Event, HTMLDivElement, HTMLSpanElement, KeyboardEvent, Node, document}
 
 import scala.scalajs.js
 import scala.scalajs.js.timers.{SetTimeoutHandle, clearTimeout, setTimeout}
 
-class ComboBox[S](
-  val name: String,
-  private val renderScope: Scope
-) extends CompositeComponent[HTMLDivElement], Control[js.Array[S], HTMLDivElement] {
+class ComboBox[S](val name: String)
+    extends ManagedElementComponent[HTMLDivElement], Control[js.Array[S], HTMLDivElement] {
 
   override val valueProperty: ListProperty[S] = ListProperty()
 
@@ -36,6 +32,7 @@ class ComboBox[S](
 
   private var valueHost: ComboBox.RenderHost | Null = null
   private var indicatorElement: HTMLSpanElement | Null = null
+  private var structureInitialized = false
   private var itemsObserver: Disposable = ComboBox.noopDisposable
   private var overlayConf: Viewport.OverlayConf | Null = null
   private var popupListenerCleanup: Disposable = ComboBox.noopDisposable
@@ -100,21 +97,27 @@ class ComboBox[S](
     openProperty.observe(syncOpenState)
   addDisposable(openObserver)
 
-  override protected def compose(using CompositeComponent.DslContext): Unit = {
-    val host = new ComboBox.RenderHost(renderScope, "jfx-combo-box__value")
-    valueHost = host
-    addChild(host)
+  private def ensureStructure(): Unit =
+    if (!structureInitialized) {
+      structureInitialized = true
 
-    val icon = document.createElement("span").asInstanceOf[HTMLSpanElement]
-    icon.classList.add("material-icons")
-    icon.classList.add("jfx-combo-box__indicator")
-    icon.textContent = "expand_more"
-    indicatorElement = icon
-    element.appendChild(icon)
+      val host = new ComboBox.RenderHost("jfx-combo-box__value")
+      valueHost = host
+      addChild(host)
 
-    rerenderValueHost()
-    syncOpenState(openProperty.get)
-  }
+      val icon = document.createElement("span").asInstanceOf[HTMLSpanElement]
+      icon.classList.add("material-icons")
+      icon.classList.add("jfx-combo-box__indicator")
+      icon.textContent = "expand_more"
+      indicatorElement = icon
+      element.appendChild(icon)
+
+      rerenderValueHost()
+      syncOpenState(openProperty.get)
+    }
+
+  private[jfx] def initializeStructure(): Unit =
+    ensureStructure()
 
   def itemsProperty: Property[ListProperty[S]] = itemsRefProperty
 
@@ -155,13 +158,13 @@ class ComboBox[S](
 
   def open(): Unit =
     if (!isOpen) {
+      ensureStructure()
+
       val table = buildDropdownTable()
       val anchorWidth = math.max(element.getBoundingClientRect().width, 120.0)
       val overlay = new Viewport.OverlayConf(
         anchor = element,
-        content = {
-          mount(new ComboBox.DropdownPanel(table))
-        },
+        content = () => new ComboBox.DropdownPanel(table),
         offsetYPx = 6.0,
         widthPx = Some(anchorWidth),
         minWidthPx = Some(anchorWidth),
@@ -352,12 +355,10 @@ class ComboBox[S](
 
   private def rerenderValueHost(): Unit =
     Option(valueHost).foreach { host =>
-      host.rerender {
-        renderValueContent()
-      }
+      host.setContent(renderValueContent())
     }
 
-  private def renderValueContent()(using Scope): Unit = {
+  private def renderValueContent(): NodeComponent[? <: Node] | Null = {
     given ComboBox.ValueRenderContext[S] =
       ComboBox.ValueRenderContext(
         comboBox = this,
@@ -377,7 +378,7 @@ class ComboBox[S](
     item: S,
     index: Int,
     selected: Boolean
-  )(using Scope): Unit = {
+  ): NodeComponent[? <: Node] | Null = {
     given ComboBox.ItemRenderContext[S] =
       ComboBox.ItemRenderContext(
         comboBox = this,
@@ -404,7 +405,7 @@ class ComboBox[S](
     column.setMaxWidth(dropdownWidth)
     column.setResizable(false)
     column.setCellValueFactory(features => Property(features.getValue))
-    column.setCellFactory(_ => new ComboBox.ItemCell(this, renderScope))
+    column.setCellFactory(_ => new ComboBox.ItemCell(this))
 
     table.element.classList.add("jfx-combo-box__table")
     table.element.setAttribute("role", "listbox")
@@ -461,32 +462,34 @@ object ComboBox {
     selectedItem: S | Null
   )
 
-  final class ItemRenderer[S] private (private val run: ItemRenderContext[S] => Unit) {
-    def render(using context: ItemRenderContext[S]): Unit =
+  final class ItemRenderer[S](
+    private val run: ItemRenderContext[S] => NodeComponent[? <: Node] | Null
+  ) {
+    def render(using context: ItemRenderContext[S]): NodeComponent[? <: Node] | Null =
       run(context)
   }
 
   object ItemRenderer {
-    def apply[S](renderer: ItemRenderContext[S] ?=> Unit): ItemRenderer[S] =
+    def apply[S](renderer: ItemRenderContext[S] ?=> NodeComponent[? <: Node] | Null): ItemRenderer[S] =
       new ItemRenderer[S](context => renderer(using context))
   }
 
-  final class ValueRenderer[S] private (private val run: ValueRenderContext[S] => Unit) {
-    def render(using context: ValueRenderContext[S]): Unit =
+  final class ValueRenderer[S](
+    private val run: ValueRenderContext[S] => NodeComponent[? <: Node] | Null
+  ) {
+    def render(using context: ValueRenderContext[S]): NodeComponent[? <: Node] | Null =
       run(context)
   }
 
   object ValueRenderer {
-    def apply[S](renderer: ValueRenderContext[S] ?=> Unit): ValueRenderer[S] =
+    def apply[S](renderer: ValueRenderContext[S] ?=> NodeComponent[? <: Node] | Null): ValueRenderer[S] =
       new ValueRenderer[S](context => renderer(using context))
   }
 
   private val noopDisposable: Disposable = () => ()
 
-  private final class RenderHost(
-    renderScope: Scope,
-    className: String
-  ) extends NativeComponent[HTMLDivElement], FormRegistrationBoundary {
+  private final class RenderHost(className: String)
+      extends ManagedElementComponent[HTMLDivElement], FormRegistrationBoundary {
 
     override lazy val element: HTMLDivElement = {
       val divElement = newElement("div")
@@ -494,17 +497,16 @@ object ComboBox {
       divElement
     }
 
-    def rerender(content: Scope ?=> Unit): Unit = {
+    def setContent(content: NodeComponent[? <: Node] | Null): Unit = {
       clearChildren()
-      DslRuntime.withComponentContext(ComponentContext(Some(this), None)) {
-        given Scope = renderScope
-        content
+      if (content != null) {
+        addChild(content)
       }
     }
   }
 
   private final class DropdownPanel[S](table: TableView[S])
-      extends NativeComponent[HTMLDivElement], FormRegistrationBoundary {
+      extends ManagedElementComponent[HTMLDivElement], FormRegistrationBoundary {
 
     override lazy val element: HTMLDivElement = {
       val divElement = newElement("div")
@@ -515,12 +517,9 @@ object ComboBox {
     addChild(table)
   }
 
-  private final class ItemCell[S](
-    comboBox: ComboBox[S],
-    renderScope: Scope
-  ) extends TableCell[S, S] {
+  private final class ItemCell[S](comboBox: ComboBox[S]) extends TableCell[S, S] {
 
-    private val host = new RenderHost(renderScope, "jfx-combo-box__item")
+    private val host = new RenderHost("jfx-combo-box__item")
     addChild(host)
 
     override protected def updateItem(item: S | Null, empty: Boolean): Unit = {
@@ -528,13 +527,9 @@ object ComboBox {
       setCellClass("jfx-table-cell-empty", isEmptyCell)
 
       if (isEmptyCell) {
-        host.rerender {
-          ()
-        }
+        host.setContent(null)
       } else {
-        host.rerender {
-          comboBox.renderItemContent(item.asInstanceOf[S], getIndex, isSelected)
-        }
+        host.setContent(comboBox.renderItemContent(item.asInstanceOf[S], getIndex, isSelected))
       }
     }
 
@@ -543,9 +538,7 @@ object ComboBox {
 
       val item = getItem
       if (!isEmpty && item != null) {
-        host.rerender {
-          comboBox.renderItemContent(item.asInstanceOf[S], getIndex, selected)
-        }
+        host.setContent(comboBox.renderItemContent(item.asInstanceOf[S], getIndex, selected))
       }
     }
 
@@ -575,13 +568,14 @@ object ComboBox {
     if (value == null) ""
     else value.toString
 
-  private[form] def defaultItemRenderer[S]()(using context: ItemRenderContext[S], scope: Scope): Unit =
-    span {
-      classes_=("jfx-combo-box__item-text")
-      text_=(displayText(context.item))
-    }
+  private[form] def defaultItemRenderer[S]()(using context: ItemRenderContext[S]): NodeComponent[? <: Node] | Null = {
+    val component = new Span()
+    component.classProperty += "jfx-combo-box__item-text"
+    component.textContent = displayText(context.item)
+    component
+  }
 
-  private[form] def defaultValueRenderer[S]()(using context: ValueRenderContext[S], scope: Scope): Unit = {
+  private[form] def defaultValueRenderer[S]()(using context: ValueRenderContext[S]): NodeComponent[? <: Node] | Null = {
     val selectedItem = context.selectedItem
     val isEmpty = selectedItem == null
     val label =
@@ -591,10 +585,11 @@ object ComboBox {
         displayText(selectedItem)
       }
 
-    span {
-      classes_=(Vector("jfx-combo-box__value-text") ++ Option.when(isEmpty)("is-placeholder").toSeq)
-      text_=(label)
-    }
+    val component = new Span()
+    component.classProperty ++=
+      (Vector("jfx-combo-box__value-text") ++ Option.when(isEmpty)("is-placeholder").toSeq)
+    component.textContent = label
+    component
   }
 
   def comboBox[S](name: String): ComboBox[S] =
@@ -603,12 +598,15 @@ object ComboBox {
   def comboBox[S](name: String)(init: ComboBox[S] ?=> Unit): ComboBox[S] =
     DslRuntime.currentScope { currentScope =>
       val currentContext = DslRuntime.currentComponentContext()
-      val component = new ComboBox[S](name, currentScope)
+      val component = new ComboBox[S](name)
+      component.initializeStructure()
+
       DslRuntime.withComponentContext(ComponentContext(None, currentContext.enclosingForm)) {
         given Scope = currentScope
         given ComboBox[S] = component
         init
       }
+
       DslRuntime.attach(component, currentContext)
       component
     }
@@ -646,14 +644,34 @@ object ComboBox {
   def itemRenderer[S](using comboBox: ComboBox[S]): ItemRenderer[S] | Null =
     comboBox.getItemRenderer
 
-  def itemRenderer_=[S](renderer: ItemRenderContext[S] ?=> Unit)(using comboBox: ComboBox[S]): Unit =
-    comboBox.setItemRenderer(ItemRenderer(renderer))
+  def itemRenderer_=[S](
+    renderer: ItemRenderContext[S] ?=> NodeComponent[? <: Node] | Null
+  )(using comboBox: ComboBox[S]): Unit =
+    DslRuntime.currentScope { currentScope =>
+      comboBox.setItemRenderer(
+        new ItemRenderer[S](context => {
+          given ItemRenderContext[S] = context
+          given Scope = currentScope
+          renderer
+        })
+      )
+    }
 
   def valueRenderer[S](using comboBox: ComboBox[S]): ValueRenderer[S] | Null =
     comboBox.getValueRenderer
 
-  def valueRenderer_=[S](renderer: ValueRenderContext[S] ?=> Unit)(using comboBox: ComboBox[S]): Unit =
-    comboBox.setValueRenderer(ValueRenderer(renderer))
+  def valueRenderer_=[S](
+    renderer: ValueRenderContext[S] ?=> NodeComponent[? <: Node] | Null
+  )(using comboBox: ComboBox[S]): Unit =
+    DslRuntime.currentScope { currentScope =>
+      comboBox.setValueRenderer(
+        new ValueRenderer[S](context => {
+          given ValueRenderContext[S] = context
+          given Scope = currentScope
+          renderer
+        })
+      )
+    }
 
   def open(using comboBox: ComboBox[?]): Unit =
     comboBox.open()

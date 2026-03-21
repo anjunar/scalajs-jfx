@@ -1,58 +1,59 @@
 package jfx.form
 
-import jfx.core.component.{ChildrenComponent, CompositeComponent, NodeComponent}
-import jfx.core.component.CompositeComponent.composite
-import jfx.core.component.ElementComponent.{classes, classes_=, text, text_=}
-import jfx.layout.Div.div
-import jfx.layout.HorizontalLine.hr
-import jfx.layout.Span.span
+import jfx.core.component.{ManagedElementComponent, NodeComponent}
+import jfx.dsl.{ComponentContext, DslRuntime, Scope}
 import jfx.layout.{Div, HorizontalLine, Span}
 import org.scalajs.dom.{Element, HTMLDivElement, HTMLElement, Node}
 
-import scala.compiletime.uninitialized
 import scala.scalajs.js
-import scala.scalajs.js.JSConverters.*
 
-class InputContainer(
-  val placeholder: String,
-  slot: InputContainer ?=> Unit = ()
-) extends CompositeComponent[HTMLDivElement] {
+class InputContainer(val placeholder: String) extends ManagedElementComponent[HTMLDivElement] {
 
-  private var contentHost: Div = uninitialized
-  private var placeholderSpan: Span = uninitialized
-  private var divider: HorizontalLine = uninitialized
-  private var errorsSpan: Span = uninitialized
+  private val labelHost = new Div()
+  private val contentHost = new Div()
+  private val placeholderSpan = new Span()
+  private val divider = new HorizontalLine()
+  private val errorsHost = new Div()
+  private val errorsSpan = new Span()
+
+  private var structureInitialized = false
+  private var controlBound = false
 
   override lazy val element: HTMLDivElement = newElement("div")
 
-  override protected def compose(using CompositeComponent.DslContext): Unit =
-    withDslContext {
-      given InputContainer = this
+  private def ensureStructure(): Unit =
+    if (!structureInitialized) {
+      structureInitialized = true
 
+      classProperty += "input-container"
 
-      classes = "input-container"
+      labelHost.classProperty += "label"
+      placeholderSpan.classProperty += "placeholder"
+      placeholderSpan.textContent = placeholder
+      labelHost.addChild(placeholderSpan)
 
-      div {
-        classes = "label"
+      contentHost.classProperty += "control"
 
-        placeholderSpan = span {
-          classes = "placeholder"
-          text = placeholder
-        }
-      }
+      errorsHost.classProperty += "errors"
+      errorsHost.addChild(errorsSpan)
 
-      contentHost = div {
-        classes = "control"
-        slot
-      }
+      addChild(labelHost)
+      addChild(contentHost)
+      addChild(divider)
+      addChild(errorsHost)
+    }
 
-      divider = hr()
+  private[jfx] def initializeStructure(): Unit =
+    ensureStructure()
 
-      div {
-        classes = "errors"
-        errorsSpan = span {}
-      }
+  private[jfx] def slotHost: Div = {
+    ensureStructure()
+    contentHost
+  }
 
+  private[jfx] def bindMountedControl(): Unit =
+    if (!controlBound) {
+      controlBound = true
       bind(resolveControl())
     }
 
@@ -137,7 +138,21 @@ class InputContainer(
 object InputContainer {
 
   def inputContainer(placeholder: String)(init: InputContainer ?=> Unit = {}): InputContainer =
-    composite(new InputContainer(placeholder, init))
+    DslRuntime.currentScope { currentScope =>
+      val currentContext = DslRuntime.currentComponentContext()
+      val component = new InputContainer(placeholder)
+      component.initializeStructure()
+
+      DslRuntime.withComponentContext(ComponentContext(Some(component.slotHost), currentContext.enclosingForm)) {
+        given Scope = currentScope
+        given InputContainer = component
+        init
+      }
+
+      component.bindMountedControl()
+      DslRuntime.attach(component, currentContext)
+      component
+    }
 
   def inputContainer(
     placeholder: String,

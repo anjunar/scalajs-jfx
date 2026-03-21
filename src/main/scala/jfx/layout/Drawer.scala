@@ -1,11 +1,11 @@
 package jfx.layout
 
-import jfx.core.component.CompositeComponent
+import jfx.core.component.ManagedElementComponent
 import jfx.core.state.Property
-import jfx.dsl.DslRuntime
+import jfx.dsl.{ComponentContext, DslRuntime, Scope}
 import org.scalajs.dom.{Event, HTMLDivElement, KeyboardEvent, window}
 
-final class Drawer(slot: Drawer ?=> Unit = {}) extends CompositeComponent[HTMLDivElement] {
+final class Drawer extends ManagedElementComponent[HTMLDivElement] {
 
   val openProperty: Property[Boolean] = Property(false)
   val widthProperty: Property[String] = Property("280px")
@@ -17,7 +17,6 @@ final class Drawer(slot: Drawer ?=> Unit = {}) extends CompositeComponent[HTMLDi
   private val navigationHost = new Div()
   private val contentHost = new Div()
 
-  private var activeDslContext: CompositeComponent.DslContext | Null = null
   private var structureInitialized = false
 
   override lazy val element: HTMLDivElement = {
@@ -50,15 +49,6 @@ final class Drawer(slot: Drawer ?=> Unit = {}) extends CompositeComponent[HTMLDi
   window.addEventListener("keydown", keyDownListener)
   addDisposable(() => window.removeEventListener("keydown", keyDownListener))
 
-  override protected def compose(using CompositeComponent.DslContext): Unit =
-    withDslContext {
-      given Drawer = this
-      initializeStructure()
-      activeDslContext = summon[CompositeComponent.DslContext]
-      try slot
-      finally activeDslContext = null
-    }
-
   def isOpen: Boolean =
     openProperty.get
 
@@ -86,13 +76,7 @@ final class Drawer(slot: Drawer ?=> Unit = {}) extends CompositeComponent[HTMLDi
   def toggle(): Unit =
     openProperty.set(!openProperty.get)
 
-  def navigation(init: => Unit): Unit =
-    withSection(navigationHost)(init)
-
-  def content(init: => Unit): Unit =
-    withSection(contentHost)(init)
-
-  private def initializeStructure()(using CompositeComponent.DslContext): Unit =
+  private def ensureStructure(): Unit =
     if (!structureInitialized) {
       structureInitialized = true
 
@@ -110,38 +94,50 @@ final class Drawer(slot: Drawer ?=> Unit = {}) extends CompositeComponent[HTMLDi
       panel.addChild(navigationHost)
     }
 
+  private[jfx] def initializeStructure(): Unit =
+    ensureStructure()
+
+  private[jfx] def navigationHostComponent: Div = {
+    ensureStructure()
+    navigationHost
+  }
+
+  private[jfx] def contentHostComponent: Div = {
+    ensureStructure()
+    contentHost
+  }
+
   private def syncOpenState(isOpen: Boolean): Unit =
     if (isOpen) {
       element.classList.add("jfx-drawer--open")
     } else {
       element.classList.remove("jfx-drawer--open")
     }
-
-  private def withSection(host: Div)(init: => Unit): Unit = {
-    val context = activeDslContext
-    if (context == null) {
-      throw IllegalStateException("Drawer sections can only be declared while the drawer is composing")
-    }
-
-    DslRuntime.withCompositeContext(host, context) {
-      given CompositeComponent.DslContext = context
-      given Div = host
-      init
-    }
-  }
-
 }
 
 object Drawer {
 
   def drawer(init: Drawer ?=> Unit = {}): Drawer =
-    CompositeComponent.composite(new Drawer(init))
+    DslRuntime.currentScope { currentScope =>
+      val currentContext = DslRuntime.currentComponentContext()
+      val component = new Drawer()
+      component.initializeStructure()
+
+      DslRuntime.withComponentContext(ComponentContext(None, currentContext.enclosingForm)) {
+        given Scope = currentScope
+        given Drawer = component
+        init
+      }
+
+      DslRuntime.attach(component, currentContext)
+      component
+    }
 
   def drawerNavigation(init: => Unit)(using drawer: Drawer): Unit =
-    drawer.navigation(init)
+    renderSection(drawer.navigationHostComponent)(init)
 
   def drawerContent(init: => Unit)(using drawer: Drawer): Unit =
-    drawer.content(init)
+    renderSection(drawer.contentHostComponent)(init)
 
   def drawerOpen(using drawer: Drawer): Boolean =
     drawer.isOpen
@@ -169,4 +165,14 @@ object Drawer {
 
   def toggleDrawer(using drawer: Drawer): Unit =
     drawer.toggle()
+
+  private def renderSection(host: Div)(init: => Unit): Unit =
+    DslRuntime.currentScope { currentScope =>
+      val currentContext = DslRuntime.currentComponentContext()
+      DslRuntime.withComponentContext(ComponentContext(Some(host), currentContext.enclosingForm)) {
+        given Scope = currentScope
+        given Div = host
+        init
+      }
+    }
 }

@@ -2,7 +2,7 @@ package jfx.layout
 
 import jfx.core.component.NativeComponent
 import jfx.dsl.{ComponentContext, DslRuntime, Scope}
-import org.scalajs.dom.{HTMLDivElement, HTMLSpanElement}
+import org.scalajs.dom.HTMLSpanElement
 
 class Span extends NativeComponent[HTMLSpanElement] {
   
