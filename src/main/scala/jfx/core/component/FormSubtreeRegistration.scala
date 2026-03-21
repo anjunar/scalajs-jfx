@@ -28,6 +28,7 @@ trait FormSubtreeRegistration { self: NodeComponent[? <: Node] =>
       component match {
         case _: ArrayForm[?] => false
         case _: Formular[?, ?] => false
+        case _: FormRegistrationBoundary => false
         case _ => true
       }
 
@@ -46,6 +47,7 @@ trait FormSubtreeRegistration { self: NodeComponent[? <: Node] =>
       component match {
         case _: ArrayForm[?] => false
         case _: Formular[?, ?] => false
+        case _: FormRegistrationBoundary => false
         case _ => true
       }
 

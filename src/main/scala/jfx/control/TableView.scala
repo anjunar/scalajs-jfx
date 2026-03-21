@@ -24,6 +24,7 @@ class TableView[S] extends ElementComponent[HTMLDivElement], FormSubtreeRegistra
   private val itemsRefProperty: Property[ListProperty[S]] = Property(new ListProperty[S]())
   val columnsProperty: ListProperty[TableColumn[S, ?]] = new ListProperty[TableColumn[S, ?]]()
   val fixedCellSizeProperty: Property[Double] = Property(28.0)
+  val showHeaderProperty: Property[Boolean] = Property(true)
   val placeholderProperty: Property[NodeComponent[? <: Node] | Null] = Property(null)
   val rowFactoryProperty: Property[TableView[S] => TableRow[S]] = Property(_ => new TableRow[S]())
 
@@ -62,6 +63,9 @@ class TableView[S] extends ElementComponent[HTMLDivElement], FormSubtreeRegistra
 
   def getFixedCellSize: Double = fixedCellSizeProperty.get
   def setFixedCellSize(value: Double): Unit = fixedCellSizeProperty.set(value)
+
+  def isShowHeader: Boolean = showHeaderProperty.get
+  def setShowHeader(value: Boolean): Unit = showHeaderProperty.set(value)
 
   def getPlaceholder: NodeComponent[? <: Node] | Null = placeholderProperty.get
   def setPlaceholder(value: NodeComponent[? <: Node] | Null): Unit = placeholderProperty.set(value)
@@ -153,6 +157,12 @@ class TableView[S] extends ElementComponent[HTMLDivElement], FormSubtreeRegistra
       scheduleRefresh()
     }
     disposable.add(fixedCellObserver)
+
+    val showHeaderObserver = showHeaderProperty.observe { _ =>
+      rebuildHeader()
+      scheduleRefresh()
+    }
+    disposable.add(showHeaderObserver)
 
     val placeholderObserver = placeholderProperty.observe { _ =>
       refreshPlaceholder()
@@ -363,6 +373,9 @@ class TableView[S] extends ElementComponent[HTMLDivElement], FormSubtreeRegistra
 
   private def rebuildHeader(): Unit = {
     removeAllChildren(headerContent)
+    setClass(element, "jfx-table-view-header-hidden", !showHeaderProperty.get)
+
+    if (!showHeaderProperty.get) return
 
     currentColumns.zipWithIndex.foreach { case (column, index) =>
       val cell = newElement("div")
@@ -406,11 +419,13 @@ class TableView[S] extends ElementComponent[HTMLDivElement], FormSubtreeRegistra
     headerHeight: Double,
     itemCount: Int
   ): Double = {
+    val showHeader = showHeaderProperty.get
     val viewportWidth = math.max(viewport.clientWidth.toDouble, 0.0)
     val columnWidth = columns.foldLeft(0.0)(_ + _.effectiveWidth)
     val contentWidth = math.max(columnWidth, viewportWidth)
     val contentHeight = math.max(0.0, itemCount * rowHeight)
 
+    headerViewport.style.display = if (showHeader) "block" else "none"
     headerViewport.style.height = s"${headerHeight}px"
     headerContent.style.height = s"${headerHeight}px"
     headerContent.style.width = s"${contentWidth}px"
@@ -618,7 +633,7 @@ class TableView[S] extends ElementComponent[HTMLDivElement], FormSubtreeRegistra
   }
 
   private def effectiveHeaderHeight(rowHeight: Double): Double =
-    math.max(30.0, rowHeight)
+    if (showHeaderProperty.get) math.max(30.0, rowHeight) else 0.0
 
   private def currentColumns: Vector[TableColumn[S, Any]] =
     columnsProperty.iterator.map(_.asInstanceOf[TableColumn[S, Any]]).toVector
@@ -686,6 +701,12 @@ object TableView {
 
   def fixedCellSize_=(value: Double)(using tableView: TableView[?]): Unit =
     tableView.setFixedCellSize(value)
+
+  def showHeader(using tableView: TableView[?]): Boolean =
+    tableView.isShowHeader
+
+  def showHeader_=(value: Boolean)(using tableView: TableView[?]): Unit =
+    tableView.setShowHeader(value)
 
   def rowFactory[S](using tableView: TableView[S]): TableView[S] => TableRow[S] =
     tableView.getRowFactory
