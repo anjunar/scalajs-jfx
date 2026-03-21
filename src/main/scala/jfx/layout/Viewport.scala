@@ -11,11 +11,6 @@ import scala.scalajs.js.timers.setTimeout
 
 final class Viewport(slot: Viewport ?=> Unit = {}) extends CompositeComponent[HTMLDivElement] {
 
-  private val contentHost = new Div()
-  private val windowHost = new Div()
-  private val overlayHost = new Div()
-  private val notificationHost = new Div()
-
   private var activeDslContext: CompositeComponent.DslContext | Null = null
   private var structureInitialized = false
 
@@ -31,47 +26,22 @@ final class Viewport(slot: Viewport ?=> Unit = {}) extends CompositeComponent[HT
       activeDslContext = summon[CompositeComponent.DslContext]
 
       try {
-        initializeStructure()
+        slot
 
-        withSection(contentHost) {
-          slot
+        forEach(Viewport.windows) { conf =>
+          buildWindow(conf, dslContext)
         }
 
-        withSection(windowHost) {
-          forEach(Viewport.windows) { conf =>
-            buildWindow(conf, dslContext)
-          }
+        forEach(Viewport.overlays) { conf =>
+          composite(new ViewportOverlay(conf))
         }
 
-        withSection(overlayHost) {
-          forEach(Viewport.overlays) { conf =>
-            composite(new ViewportOverlay(conf))
-          }
-        }
-
-        withSection(notificationHost) {
-          forEach(Viewport.notifications) { conf =>
-            new ViewportNotification(conf)
-          }
+        forEach(Viewport.notifications) { conf =>
+          new ViewportNotification(conf)
         }
       } finally {
         activeDslContext = null
       }
-    }
-
-  private def initializeStructure(): Unit =
-    if (!structureInitialized) {
-      structureInitialized = true
-
-      contentHost.classProperty += "jfx-viewport__content"
-      windowHost.classProperty += "jfx-viewport__windows"
-      overlayHost.classProperty += "jfx-viewport__overlays"
-      notificationHost.classProperty += "jfx-viewport__notifications"
-
-      addChild(contentHost)
-      addChild(windowHost)
-      addChild(overlayHost)
-      addChild(notificationHost)
     }
 
   private def withSection(host: Div)(init: => Unit): Unit = {
