@@ -58,6 +58,91 @@
     min-width: 0;
 }
 
+.form-page__combo-field {
+    grid-column: 1 / -1;
+}
+
+.form-page__combo-field .control {
+    padding: 4px 0 8px;
+}
+
+.form-page__combo-control {
+    min-height: 52px;
+    align-items: flex-start;
+    padding: 6px 0 2px;
+}
+
+.form-page__combo-control .jfx-combo-box__indicator {
+    margin-top: 6px;
+}
+
+.form-page__combo-control.jfx-combo-box-open .form-page__combo-label,
+.form-page__combo-control:focus-visible .form-page__combo-label {
+    color: var(--color-selected);
+}
+
+.form-page__combo-value,
+.form-page__combo-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    min-width: 0;
+}
+
+.form-page__combo-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.form-page__combo-label {
+    line-height: 1.25;
+    font-weight: 600;
+}
+
+.form-page__combo-note {
+    font-size: 0.83rem;
+    line-height: 1.45;
+    color: var(--color-neutral-500);
+}
+
+.form-page__combo-pill {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--color-selected);
+    background-color: var(--jfx-table-row-selected);
+}
+
+.form-page__combo-value.is-placeholder .form-page__combo-label {
+    font-weight: 500;
+    color: var(--color-neutral-500);
+}
+
+.form-page__combo-value.is-placeholder .form-page__combo-note {
+    color: var(--color-neutral-500);
+}
+
+.form-page__combo-item.is-selected .form-page__combo-label {
+    color: var(--color-selected);
+}
+
+.form-page__combo-item.is-selected .form-page__combo-pill {
+    color: var(--color-background-primary);
+    background-color: var(--color-selected);
+}
+
 .address-form {
     grid-column: 1 / -1;
 }
@@ -160,5 +245,11 @@
     .form-page__field-grid,
     .address-form__card {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    .form-page__combo-value,
+    .form-page__combo-item {
+        flex-direction: column;
+        align-items: flex-start;
     }
 }

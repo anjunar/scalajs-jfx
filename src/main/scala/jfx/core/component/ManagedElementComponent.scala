@@ -71,10 +71,10 @@ trait ManagedElementComponent[E <: Node]
     super.dispose()
   }
 
-  override protected def attachChild(child: NodeComponent[? <: Node]): Unit =
+  override private[jfx] def attachChild(child: NodeComponent[? <: Node]): Unit =
     addChild(child)
 
-  override protected def detachChild(child: NodeComponent[? <: Node]): Boolean = {
+  override private[jfx] def detachChild(child: NodeComponent[? <: Node]): Boolean = {
     val contains = managedChildren.exists(_ eq child)
     if (contains) {
       removeChild(child)

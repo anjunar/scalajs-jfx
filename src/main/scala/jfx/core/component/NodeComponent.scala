@@ -40,13 +40,13 @@ trait NodeComponent [E <: Node] extends Disposable {
 
   override def dispose(): Unit = disposable.dispose()
 
-  protected def attachChild(child: NodeComponent[? <: Node]): Unit =
+  private[jfx] def attachChild(child: NodeComponent[? <: Node]): Unit =
     throw IllegalStateException(s"${getClass.getSimpleName} does not accept child components")
 
-  protected def detachChild(child: NodeComponent[? <: Node]): Boolean =
+  private[jfx] def detachChild(child: NodeComponent[? <: Node]): Boolean =
     false
 
-  protected def childComponentsIterator: Iterator[NodeComponent[? <: Node]] =
+  private[jfx] def childComponentsIterator: Iterator[NodeComponent[? <: Node]] =
     Iterator.empty
 
 }

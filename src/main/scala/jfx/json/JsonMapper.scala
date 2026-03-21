@@ -19,9 +19,8 @@ class JsonMapper(val registry : JsonRegistry) {
       if (value.selectDynamic("@type") == undefined) {
         if (value.isInstanceOf[js.Array[?]]) {
           val property = entity.findProperty[ListProperty[Any]](key)
-          value.asInstanceOf[js.Array[Dynamic]].foreach(elem => {
-            val deserializedObject : M = deserialize(elem)
-            property.addOne(deserializedObject)
+          value.asInstanceOf[js.Array[js.Any]].foreach(elem => {
+            property.addOne(deserializeArrayElement(elem))
           })
         } else {
           val property = entity.findProperty[Property[Any]](key)
@@ -37,6 +36,19 @@ class JsonMapper(val registry : JsonRegistry) {
 
     entity
   }
+
+  private def deserializeArrayElement(value: js.Any): Any =
+    if (value == null || js.isUndefined(value)) {
+      value
+    } else {
+      val dynamicValue = value.asInstanceOf[Dynamic]
+
+      if (dynamicValue.selectDynamic("@type") == undefined) {
+        value
+      } else {
+        deserialize(dynamicValue)
+      }
+    }
 
   def serialize(model : Model[?]): Dynamic = {
     val out = js.Dictionary[js.Any]()
