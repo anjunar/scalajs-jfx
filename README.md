@@ -1,6 +1,26 @@
 # scala-js-jfx
 
-`scala-js-jfx` is a Scala 3 UI library for Scala.js applications. It provides a small declarative DSL for building DOM trees, managing reactive state, wiring forms to model properties, and rendering route-driven views in the browser.
+`scala-js-jfx` is a reactive UI framework for Scala.js with a strong focus on structured state, lifecycle control, and composable UI DSLs.
+
+It provides a declarative, JavaFX-inspired DSL for building DOM trees, managing reactive state, wiring forms to model properties, and rendering route-driven views in the browser.
+
+## Why This Library?
+
+Most Scala.js UI frameworks focus either on functional reactivity or simple DOM composition. They often lack:
+
+- explicit lifecycle control
+- structured component boundaries
+- safe resource disposal
+- scalable UI composition for complex applications
+
+`scala-js-jfx` addresses these gaps by combining:
+
+- a `NodeScope` / `Dispose` model for precise lifecycle management
+- a browser-focused DSL inspired by JavaFX
+- reactive state bindings without hidden magic
+- strong support for virtualized and dynamic UIs
+
+This makes it especially suitable for larger frontend applications, not just small demos.
 
 The library is organized around a few core ideas:
 
@@ -9,6 +29,45 @@ The library is organized around a few core ideas:
 - scoped dependency injection with `Scope`
 - form binding and validation based on model structure
 - asynchronous routing for browser-driven navigation
+
+## Core Concepts
+
+### NodeScope And Lifecycle
+
+Every UI subtree lives in a controlled scope. That gives you:
+
+- deterministic cleanup
+- safer resource handling
+- safe reuse in virtualized components
+
+### Reactive State
+
+State is explicit and observable:
+
+- no hidden reactivity layers
+- predictable updates
+- composable bindings
+
+### Layout DSL
+
+UI is declared with composable building blocks instead of ad-hoc DOM wiring:
+
+```scala
+vbox(
+  hbox(
+    button("Click"),
+    label("Status")
+  )
+)
+```
+
+### Forms And Binding
+
+The framework includes built-in support for:
+
+- bidirectional binding
+- validation
+- structured form models
 
 ## Module
 
@@ -36,6 +95,14 @@ The current build uses:
 - Scala `3.8.3`
 - Scala.js DOM `2.8.1`
 - ES module output targeting `ES2021`
+
+## Minimal Example
+
+```scala
+div(
+  text("Hello World")
+)
+```
 
 ## Quick Start
 
@@ -333,6 +400,19 @@ val windowedRoot = viewport {
 
 `WindowRouter` opens matched routes inside managed windows and keeps browser navigation in sync with active windows.
 
+## When Should You Use It?
+
+Use `scala-js-jfx` if:
+
+- you build complex UIs such as tables, editors, or dashboards
+- you need precise lifecycle control
+- you want a structured DSL instead of ad-hoc DOM code
+
+Do not use it if:
+
+- you want minimal boilerplate for very small apps
+- you prefer purely functional reactive programming models
+
 ## JSON Mapping
 
 `JsonMapper` serializes and deserializes Scala models using reflection metadata. It supports primitives, options, collections, maps, `Property`, `ListProperty`, and polymorphic types.
@@ -356,6 +436,14 @@ val copy = mapper.deserialize[Person](json)
 println(json.firstName.asInstanceOf[String])
 println(copy.age.get)
 ```
+
+## Positioning
+
+Compared to other approaches:
+
+- vs Laminar: more structured lifecycle control, less implicit magic
+- vs React-style frameworks: stronger type safety and no virtual DOM overhead
+- vs raw Scala.js DOM: much better composability and maintainability
 
 ## Development
 
