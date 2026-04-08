@@ -455,3 +455,41 @@ sbt jfx/test
 ```
 
 If you want to work on the library inside this repository, focus on the `jfx` module. The `app` module is only a consumer/demo and is not required to use the library itself.
+
+## Publishing To Maven Central
+
+The `jfx` module is configured for publishing via the Sonatype Central Portal with native `sbt` Central support.
+
+Required local setup:
+
+- create `~/.sbt/1.0/credentials.sbt`
+- create `~/.sbt/sonatype_central_credentials`
+- configure a working GPG installation so `sbt-pgp` can sign artifacts
+
+Example `~/.sbt/1.0/credentials.sbt`:
+
+```scala
+credentials += Credentials(Path.userHome / ".sbt" / "sonatype_central_credentials")
+```
+
+Example `~/.sbt/sonatype_central_credentials`:
+
+```properties
+host=central.sonatype.com
+user=<sonatype-user>
+password=<sonatype-token>
+```
+
+Release commands:
+
+```bash
+sbt "; project jfx" "; publishSigned" "; sonaUpload"
+sbt "; project jfx" "; publishSigned" "; sonaRelease"
+```
+
+Notes:
+
+- snapshots are published to `https://central.sonatype.com/repository/maven-snapshots/`
+- releases use `localStaging` and are then uploaded via `sonaUpload`
+- only the `jfx` module is intended for Maven Central publication; `app` and `root` are skipped
+- run Central commands from the `jfx` project context so the deployment is not started from `root`
