@@ -1,24 +1,17 @@
 package jfx.domain
 
-import jfx.core.macros.property
-import jfx.core.state.{Property, PropertyAccess}
-import jfx.form.Model
+import jfx.core.state.Property
 
+import java.util.UUID
 import scala.scalajs.js
 
 class Thumbnail(
-    var name: Property[String] = Property(""),
-    var contentType: Property[String] = Property(""),
-    var data: Property[String] = Property("")
-) extends Model[Thumbnail] {
-
-  override def properties: js.Array[PropertyAccess[Thumbnail, ?]] = Thumbnail.properties
-}
+    val id: Property[UUID] = Property(UUID.randomUUID()),
+    val name: Property[String] = Property(""),
+    val contentType: Property[String] = Property(""),
+    val data: Property[String] = Property("")
+)
 
 object Thumbnail {
-  val properties: js.Array[PropertyAccess[Thumbnail, ?]] = js.Array(
-    property(_.name),
-    property(_.contentType),
-    property(_.data)
-  )
+
 }

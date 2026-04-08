@@ -17,21 +17,33 @@ private[jfx] object ComponentContext {
   val root: ComponentContext = ComponentContext(None, None)
 }
 
-private[jfx] object DslRuntime {
+object DslRuntime {
 
   private val componentContextStack: mutable.ArrayBuffer[ComponentContext] =
     mutable.ArrayBuffer(ComponentContext.root)
+  private val scopeStack: mutable.ArrayBuffer[Scope] =
+    mutable.ArrayBuffer.empty
 
   inline def currentScope[A](block: Scope => A): A =
     summonFrom {
       case given Scope =>
         block(summon[Scope])
       case _ =>
-        block(Scope.root())
+        if (scopeStack.nonEmpty) block(scopeStack.last)
+        else {
+          println("WARNING: No current scope found. Using root scope.")
+          block(Scope.root())
+        }
     }
 
   def currentComponentContext(): ComponentContext =
     componentContextStack.last
+
+  def withScope[A](scope: Scope)(block: => A): A = {
+    scopeStack += scope
+    try block
+    finally scopeStack.remove(scopeStack.length - 1)
+  }
 
   def attach(component: NodeComponent[? <: Node], context: ComponentContext): Unit =
     context.attachOverride match {
@@ -69,5 +81,7 @@ private[jfx] object DslRuntime {
     parent: NodeComponent[? <: Node],
     context: CompositeComponent.DslContext
   )(block: => A): A =
-    withComponentContext(ComponentContext(Some(parent), context.enclosingForm))(block)
+    withScope(context.scope) {
+      withComponentContext(ComponentContext(Some(parent), context.enclosingForm))(block)
+    }
 }

@@ -1,6 +1,51 @@
 button {
-    border: none;
-    background-color: transparent;
-    color: var(--color-text);
     cursor: pointer;
+    background-color: inherit;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    /*padding: 10px 14px;*/
+
+    color: var(--color-text);
+    transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.18s ease, color 0.18s ease;
+
+    &.active {
+        color: var(--color-selected);
+    }
+
+    &[disabled] {
+        color: var(--color-background-secondary);
+        opacity: 0.65;
+    }
+
+    &.container {
+        display : flex;
+        align-items : center;
+        justify-content : flex-start;
+        gap : 5px
+    }
+
+    &.hover {
+        &:not([disabled]):hover {
+            background-color: var(--color-selected);
+            color: var(--color-background-primary);
+        }
+    }
+
+    &.btn-secondary {
+        width: 200px;
+        background-color: var(--color-surface-hover);
+        border : 1px solid var(--glass-border);
+    }
+
+    &.btn-danger {
+        width: 200px;
+        background-color: var(--color-error);
+        border : 1px solid transparent;
+    }
+
+    &:not([disabled]):hover {
+        transform: translateY(-1px);
+    }
 }

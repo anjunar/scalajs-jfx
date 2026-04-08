@@ -19,11 +19,12 @@ class TableRow[S] extends ManagedElementComponent[HTMLDivElement] {
       rowValue: S,
       rowIndex: Int,
       selected: Boolean,
+      columnWidth: Double,
       lastColumn: Boolean
     ): Unit = {
       valueObserver.dispose()
       cell.setLoadingPlaceholder(false)
-      cell.setColumnWidth(column.effectiveWidth, lastColumn)
+      cell.setColumnWidth(columnWidth, lastColumn)
       cell.applyContext(tableView, row, column, rowIndex, selected)
       val observableValue = column.resolveCellValue(tableView, rowValue, rowIndex)
       if (observableValue == null) {
@@ -46,12 +47,13 @@ class TableRow[S] extends ManagedElementComponent[HTMLDivElement] {
       tableView: TableView[S],
       row: TableRow[S],
       rowIndex: Int,
+      columnWidth: Double,
       lastColumn: Boolean
     ): Unit = {
       valueObserver.dispose()
       valueObserver = TableRow.noopDisposable
       cell.setLoadingPlaceholder(true)
-      cell.setColumnWidth(column.effectiveWidth, lastColumn)
+      cell.setColumnWidth(columnWidth, lastColumn)
       cell.applyContext(tableView, row, column, rowIndex, selected = false)
       cell.applyRenderedItem(null, empty = true)
     }
@@ -133,7 +135,8 @@ class TableRow[S] extends ManagedElementComponent[HTMLDivElement] {
     tableView: TableView[S],
     columns: Seq[TableColumn[S, ?]],
     rowHeight: Double,
-    rowWidth: Double
+    rowWidth: Double,
+    columnWidths: Seq[Double]
   ): Unit = {
     if (cellSlots.length != columns.length) rebuildCells(columns)
 
@@ -161,6 +164,7 @@ class TableRow[S] extends ManagedElementComponent[HTMLDivElement] {
         rowValue = rowValue,
         rowIndex = rowIndex,
         selected = selected,
+        columnWidth = columnWidths.lift(index).getOrElse(slot.column.effectiveWidth),
         lastColumn = index == cellSlots.length - 1
       )
     }
@@ -189,7 +193,8 @@ class TableRow[S] extends ManagedElementComponent[HTMLDivElement] {
     tableView: TableView[S],
     columns: Seq[TableColumn[S, ?]],
     rowHeight: Double,
-    rowWidth: Double
+    rowWidth: Double,
+    columnWidths: Seq[Double]
   ): Unit = {
     if (cellSlots.length != columns.length) rebuildCells(columns)
 
@@ -213,6 +218,7 @@ class TableRow[S] extends ManagedElementComponent[HTMLDivElement] {
         tableView = tableView,
         row = this,
         rowIndex = rowIndex,
+        columnWidth = columnWidths.lift(index).getOrElse(slot.column.effectiveWidth),
         lastColumn = index == cellSlots.length - 1
       )
     }

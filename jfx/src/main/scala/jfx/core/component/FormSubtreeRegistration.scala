@@ -19,7 +19,9 @@ trait FormSubtreeRegistration { self: NodeComponent[? <: Node] =>
     enclosingFormOption().foreach(form => unregisterSubtree(component, form))
 
   private def registerSubtree(component: NodeComponent[? <: Node], form: Formular[?,?]): Unit = {
+
     component match {
+      case control: Control[?,?] if control.standalone => return
       case control: Control[?, ?] => form.addControl(control)
       case _ => ()
     }

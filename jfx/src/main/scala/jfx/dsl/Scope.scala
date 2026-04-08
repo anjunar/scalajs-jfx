@@ -3,7 +3,7 @@ package jfx.dsl
 import scala.collection.mutable
 import scala.reflect.ClassTag
 
-final class Scope private (val parent: Option[Scope]) {
+final class Scope (val parent: Option[Scope]) {
 
   import Scope.Binding
   import Scope.Lifetime
@@ -72,7 +72,9 @@ object Scope {
       if (currentScope == null) Scope.root()
       else currentScope.child()
 
-    block(using nextScope)
+    DslRuntime.withScope(nextScope) {
+      block(using nextScope)
+    }
 
   def singleton[T](provider: Scope ?=> T)(using scope: Scope, key: Scope.ServiceKey[T]): Unit =
     scope.singleton(provider)

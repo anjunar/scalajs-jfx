@@ -10,7 +10,7 @@
   border: none;
   border-radius: 0;
   background: transparent;
-  box-shadow: var(--jfx-table-shadow);
+  box-shadow: var(--color-data-shadow);
   color: var(--color-text);
   isolation: isolate;
 }
@@ -19,8 +19,8 @@
   position: relative;
   overflow: hidden;
   flex: 0 0 auto;
-  border-bottom: 1px solid var(--jfx-table-border);
-  background: var(--jfx-table-header-bg);
+  border-bottom: 1px solid var(--color-data-border);
+  background: var(--color-data-header);
 }
 
 .jfx-table-header-content {
@@ -65,13 +65,12 @@
   justify-content: center;
   padding: 16px;
   box-sizing: border-box;
-  background: var(--jfx-table-placeholder-overlay);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 }
 
 .jfx-table-default-placeholder {
-  color: var(--jfx-table-placeholder-text);
+  color: var(--color-data-placeholder-text);
   font-size: 14px;
   text-align: center;
   line-height: 1.5;
@@ -79,7 +78,7 @@
 }
 
 .jfx-table-view.jfx-table-view-loading .jfx-table-default-placeholder {
-  color: var(--jfx-table-header-active);
+  color: var(--color-data-header-active);
 }
 
 .jfx-table-view.jfx-table-view-error .jfx-table-default-placeholder {
@@ -99,7 +98,7 @@
   font-weight: 500;
   letter-spacing: 0;
   text-transform: none;
-  color: var(--jfx-table-header-text);
+  color: var(--color-data-header-text);
   border-right: none;
   cursor: default;
   transition: color 160ms ease;
@@ -118,7 +117,7 @@
 }
 
 .jfx-table-header-cell.jfx-table-header-cell-sorted {
-  color: var(--jfx-table-header-active);
+  color: var(--color-data-header-active);
 }
 
 .jfx-table-header-cell.jfx-table-header-cell-sorted::before {
@@ -149,12 +148,12 @@
 
 .jfx-table-row {
   color: var(--color-text);
-  background-color: var(--jfx-table-row-even);
+  background-color: var(--color-data-row-even);
   transition: background-color 160ms ease, color 160ms ease;
 }
 
 .jfx-table-row.jfx-table-row-odd {
-  background-color: var(--jfx-table-row-odd);
+  background-color: var(--color-data-row-odd);
 }
 
 .jfx-table-row.jfx-table-row-empty {
@@ -162,15 +161,15 @@
 }
 
 .jfx-table-row.jfx-table-row-placeholder {
-  color: var(--jfx-table-placeholder-text);
+  color: var(--color-data-placeholder-text);
 }
 
 .jfx-table-row:not(.jfx-table-row-empty):not(.jfx-table-row-placeholder):not(.jfx-table-row-selected):hover {
-  background-color: var(--jfx-table-row-hover);
+  background-color: var(--color-data-row-hover);
 }
 
 .jfx-table-row.jfx-table-row-selected {
-  background-color: var(--jfx-table-row-selected);
-  color: var(--jfx-table-row-selected-text);
-  box-shadow: inset 0 0 0 1px var(--jfx-table-focus-ring);
+  background-color: var(--color-data-row-selected);
+  color: var(--color-data-row-selected-text);
+  box-shadow: inset 0 0 0 1px var(--color-data-focus-ring);
 }

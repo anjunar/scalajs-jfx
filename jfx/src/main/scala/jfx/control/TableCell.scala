@@ -47,11 +47,11 @@ class TableCell[S, T] extends ManagedElementComponent[HTMLDivElement] {
   private def updatePlaceholderAppearance(): Unit =
     if (loadingPlaceholder) {
       element.classList.add("jfx-table-cell-loading-placeholder")
-      element.style.setProperty("--jfx-table-cell-placeholder-width", s"${placeholderWidthPercent}%")
+      element.style.backgroundSize = s"${placeholderWidthPercent}% 10px"
       element.setAttribute("aria-busy", "true")
     } else {
       element.classList.remove("jfx-table-cell-loading-placeholder")
-      element.style.removeProperty("--jfx-table-cell-placeholder-width")
+      element.style.removeProperty("background-size")
       element.setAttribute("aria-busy", "false")
     }
 

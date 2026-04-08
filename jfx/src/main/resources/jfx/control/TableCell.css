@@ -9,7 +9,7 @@
   text-overflow: ellipsis;
   color: inherit;
   border-right: none;
-  border-bottom: 1px solid var(--jfx-table-border);
+  border-bottom: 1px solid var(--color-data-border);
   background-color: transparent;
   background-origin: content-box;
   transition: color 160ms ease, border-color 160ms ease, opacity 160ms ease;
@@ -31,14 +31,14 @@
   background-image: linear-gradient(
     90deg,
     transparent 0%,
-    var(--jfx-table-placeholder-shimmer-start) 18%,
-    var(--jfx-table-placeholder-shimmer-mid) 50%,
-    var(--jfx-table-placeholder-shimmer-start) 82%,
+    var(--color-data-placeholder-shimmer-start) 18%,
+    var(--color-data-placeholder-shimmer-mid) 50%,
+    var(--color-data-placeholder-shimmer-start) 82%,
     transparent 100%
   );
   background-position: 16px center;
   background-repeat: no-repeat;
-  background-size: var(--jfx-table-cell-placeholder-width, 56%) 10px;
+  background-size: 56% 10px;
   animation: jfx-table-cell-loading 1.6s ease-in-out infinite;
 }
 

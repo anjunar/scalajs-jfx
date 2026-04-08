@@ -6,8 +6,22 @@ import scala.scalajs.js
 
 class Property[T](var value: T) extends ReadOnlyProperty[T] {
   private val listeners = js.Array[(T) => Unit]()
+  private var disposableOwner: CompositeDisposable | Null = null
 
   override def get: T = value
+
+  def registerDisposableOwner(owner: CompositeDisposable): this.type = {
+    disposableOwner = owner
+    this
+  }
+
+  private[state] def autoRegister(disposable: Disposable): Unit =
+    if (disposableOwner != null) {
+      disposableOwner.add(disposable)
+    }
+
+  private[state] def hasSameDisposableOwnerAs(other: Property[?]): Boolean =
+    disposableOwner != null && disposableOwner.eq(other.disposableOwner)
 
   def set(newValue: T) : Unit = {
     if (newValue == value) return
@@ -47,6 +61,9 @@ object Property {
 
   def apply[T](value: T): Property[T] = new Property[T](value)
 
+  def owned[T](owner: CompositeDisposable, value: T): Property[T] =
+    new Property[T](value).registerDisposableOwner(owner)
+
   def subscribeBidirectional[T](a: Property[T], b: Property[T]): Disposable = {
     if (a.eq(b)) return () => ()
 
@@ -74,6 +91,10 @@ object Property {
     val composite = new CompositeDisposable()
     composite.add(da)
     composite.add(db)
+    a.autoRegister(composite)
+    if ((b ne a) && !a.hasSameDisposableOwnerAs(b)) {
+      b.autoRegister(composite)
+    }
     composite
   }
 }

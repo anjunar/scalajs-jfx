@@ -1,5 +1,6 @@
 package app
 
+import app.domain.DomainRegistry
 import jfx.action.Button.*
 import jfx.core.component.ElementComponent.*
 import jfx.core.component.NodeComponent.mount
@@ -20,6 +21,9 @@ import org.scalajs.dom.document
 object Main {
 
   def main(args: Array[String]): Unit = {
+    
+    DomainRegistry.init()
+    
     scope {
       singleton[Router] {
         Router(Routes.routes)

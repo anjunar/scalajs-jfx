@@ -76,26 +76,25 @@ class ForEach[T](
         rebuildAll(parent)
 
       case Add(_, _) =>
-        // only the last index is new; keep everything else
         addAtEnd(parent)
 
       case Insert(index, _, _) =>
-        rebuildFrom(parent, index)
+        insertAt(parent, index)
 
-      case InsertAll(index, _, _) =>
-        rebuildFrom(parent, index)
+      case InsertAll(index, elements, _) =>
+        insertAllAt(parent, index, elements.length)
 
       case RemoveAt(index, _, _) =>
-        rebuildFrom(parent, index)
+        removeAt(index)
 
-      case RemoveRange(index, _, _) =>
-        rebuildFrom(parent, index)
+      case RemoveRange(index, removed, _) =>
+        removeRange(index, removed.length)
 
       case UpdateAt(index, _, _, _) =>
         replaceAt(parent, index)
 
-      case Patch(from, _, _, _) =>
-        rebuildFrom(parent, from)
+      case Patch(from, removed, inserted, _) =>
+        patchAt(parent, from, removed.length, inserted.length)
 
       case Clear(_, _) =>
         rebuildAll(parent)
@@ -125,6 +124,39 @@ class ForEach[T](
     mounted = mounted :+ child
   }
 
+  private def insertAt(parent: Node, index: Int): Unit = {
+    val clampedIndex = math.max(0, math.min(index, items.length - 1))
+    if (mounted.length != items.length - 1) {
+      rebuildAll(parent)
+      return
+    }
+
+    val child = renderItem(items(clampedIndex), clampedIndex)
+    val before = mounted.lift(clampedIndex).map(_.element).getOrElse(endAnchor)
+    mountChild(parent, before = before, child = child)
+    mounted = mounted.patch(clampedIndex, Seq(child), 0)
+  }
+
+  private def insertAllAt(parent: Node, index: Int, count: Int): Unit = {
+    if (count <= 0) return
+    if (mounted.length != items.length - count) {
+      rebuildAll(parent)
+      return
+    }
+
+    val clampedIndex = math.max(0, math.min(index, items.length))
+    val before = mounted.lift(clampedIndex).map(_.element).getOrElse(endAnchor)
+    val inserted =
+      (0 until count).map { offset =>
+        val currentIndex = clampedIndex + offset
+        val child = renderItem(items(currentIndex), currentIndex)
+        mountChild(parent, before = before, child = child)
+        child
+      }
+
+    mounted = mounted.patch(clampedIndex, inserted, 0)
+  }
+
   private def rebuildAll(parent: Node): Unit =
     rebuildFrom(parent, 0)
 
@@ -146,6 +178,36 @@ class ForEach[T](
       mounted = mounted :+ child
       i += 1
     }
+  }
+
+  private def removeAt(index: Int): Unit = {
+    if (index < 0 || index >= mounted.length) {
+      return
+    }
+
+    disposeChild(mounted(index))
+    mounted = mounted.patch(index, Nil, 1)
+  }
+
+  private def removeRange(index: Int, count: Int): Unit = {
+    if (count <= 0 || index < 0 || index >= mounted.length) return
+
+    val clampedCount = math.min(count, mounted.length - index)
+    mounted.slice(index, index + clampedCount).foreach(disposeChild)
+    mounted = mounted.patch(index, Nil, clampedCount)
+  }
+
+  private def patchAt(parent: Node, from: Int, removedCount: Int, insertedCount: Int): Unit = {
+    val canApplyIncrementally =
+      mounted.length == items.length - insertedCount + removedCount
+
+    if (!canApplyIncrementally) {
+      rebuildFrom(parent, from)
+      return
+    }
+
+    removeRange(from, removedCount)
+    insertAllAt(parent, from, insertedCount)
   }
 
   private def replaceAt(parent: Node, index: Int): Unit = {

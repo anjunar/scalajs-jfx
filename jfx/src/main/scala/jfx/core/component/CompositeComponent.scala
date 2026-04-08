@@ -19,7 +19,9 @@ trait CompositeComponent[N <: Node]
   private[jfx] final def renderComposite(using context: DslContext): Unit =
     compose
 
-  // Runs nested DSL code with this composite as the current parent and the current DI scope available.
+  protected given dslScope(using context: DslContext): Scope =
+    context.scope
+
   protected final def withDslContext[A](block: => A)(using context: DslContext): A =
     DslRuntime.withCompositeContext(this, context) {
       given Scope = context.scope
@@ -30,7 +32,7 @@ trait CompositeComponent[N <: Node]
   protected final def dslContext(using context: DslContext): DslContext =
     context
 
-  protected final def injectFromDsl[T](using context: DslContext, key: Scope.ServiceKey[T]): T =
+  protected final def inject[T](using context: DslContext, key: Scope.ServiceKey[T]): T =
     context.scope.inject[T]
 
   protected final def addChild(child: NodeComponent[? <: Node]): Unit = {
@@ -99,14 +101,18 @@ object CompositeComponent {
     enclosingForm: Option[Formular[?, ?]]
   )
 
-  def composite[C <: CompositeComponent[? <: Node]](component: C): C =
+  inline def composite[C <: CompositeComponent[? <: Node]](component: C): C =
     DslRuntime.currentScope { currentScope =>
-      val currentContext = DslRuntime.currentComponentContext()
-      given DslContext =
-        DslContext(currentScope, currentContext.enclosingForm)
-      component.renderComposite
-      DslRuntime.attach(component, currentContext)
-      component
+      compositeInternal(component, currentScope)
     }
+
+  private[jfx] def compositeInternal[C <: CompositeComponent[? <: Node]](component: C, currentScope: Scope): C = {
+    val currentContext = DslRuntime.currentComponentContext()
+    given DslContext =
+      DslContext(currentScope, currentContext.enclosingForm)
+    component.renderComposite
+    DslRuntime.attach(component, currentContext)
+    component
+  }
 
 }

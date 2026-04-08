@@ -1,0 +1,17 @@
+a {
+    cursor: pointer;
+    color: var(--color-text);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--color-selected);
+}
+
+a:visited {
+    color: var(--color-text);
+}
+
+a:active {
+    color: var(--color-selected);
+}

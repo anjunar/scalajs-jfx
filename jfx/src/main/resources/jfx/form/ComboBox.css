@@ -29,12 +29,12 @@
 }
 
 .jfx-combo-box__value-text.is-placeholder {
-  color: var(--color-neutral-500);
+  color: var(--color-text-muted);
 }
 
 .jfx-combo-box__indicator {
   flex: 0 0 auto;
-  color: var(--color-neutral-500);
+  color: var(--color-text-muted);
   font-size: 20px;
   line-height: 1;
   transition: transform 160ms ease, color 160ms ease;
@@ -55,7 +55,11 @@
 }
 
 .jfx-combo-box__dropdown {
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
+  width: 100%;
+  box-sizing: border-box;
   border: 1px solid var(--glass-border);
   border-radius: 0.9rem;
   background: var(--glass-bg);
@@ -68,6 +72,15 @@
   border: none;
   background: transparent;
   box-shadow: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.jfx-combo-box__footer {
+  width: 100%;
+  min-width: 0;
+  flex: 0 0 auto;
+  box-sizing: border-box;
 }
 
 .jfx-combo-box__table .jfx-table-body-wrapper,
@@ -94,4 +107,29 @@
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+
+.jfx-combo-box__footer-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--glass-border);
+  color: var(--color-selected);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.jfx-combo-box__footer-link:hover {
+  background: var(--color-accent-ghost);
+}
+
+.jfx-combo-box__footer-link::after {
+  content: "north_east";
+  font-family: "Material Icons", sans-serif;
+  font-size: 18px;
+  line-height: 1;
 }

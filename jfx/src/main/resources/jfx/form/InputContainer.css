@@ -1,12 +1,16 @@
 .input-container {
+    padding: 10px 0 6px;
 
     .label {
         height: 12px;
-        margin-bottom: 4px;
+        margin-bottom: 6px;
 
         span.placeholder {
             display: inline;
-            font-size: 10px;
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            opacity: 0.72;
         }
     }
 
@@ -33,7 +37,7 @@
 
     hr {
         border : 0;
-        height : 1px;
+        height : 2px;
         margin : 0;
         padding : 0
     }
@@ -51,7 +55,7 @@
     }
 
     .errors {
-        margin-top: 2px;
+        margin-top: 6px;
         color: var(--color-error);
         font-size: 10px;
         height: 12px;

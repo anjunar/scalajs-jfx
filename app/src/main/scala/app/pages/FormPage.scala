@@ -15,7 +15,7 @@ import jfx.form.Form.{form, onSubmit, onSubmit_=}
 import jfx.form.ImageCropper.*
 import jfx.form.Input.input
 import jfx.form.InputContainer.inputContainer
-import jfx.json.{JsonMapper, JsonRegistry}
+import jfx.json.JsonMapper
 import jfx.layout.Div.div
 import jfx.layout.Span.span
 import org.scalajs.dom.HTMLDivElement
@@ -36,21 +36,9 @@ class FormPage extends CompositeComponent[HTMLDivElement] {
         """{ "@type" : "Person", "firstName" : "Patrick", "lastName" : "Bittner", "team" : ["Platform Engineering"], "address" : { "@type" : "Address" , "street" : "Schuetzenhof 28", "city" : "Hamburg" }, "emails" : [{"@type" : "Email", "value" : "anjunar@gmx.de" }] }"""
 
       scope {
-        singleton[JsonRegistry] {
-          new JsonRegistry {
-            override val classes: js.Map[String, () => Any] =
-              js.Map(
-                "Person" -> (() => new Person()),
-                "Address" -> (() => new Address()),
-                "Email" -> (() => new Email()),
-                "Media" -> (() => new Media()),
-                "Thumbnail" -> (() => new Thumbnail())
-              )
-          }
-        }
 
         singleton[JsonMapper] {
-          new JsonMapper(inject[JsonRegistry])
+          new JsonMapper()
         }
 
         classes = "form-page"

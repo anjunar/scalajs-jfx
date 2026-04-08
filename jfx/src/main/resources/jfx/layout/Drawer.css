@@ -1,5 +1,4 @@
 div.jfx-drawer {
-    --drawer-width: 280px;
     position: relative;
     display: flex;
     min-width: 0;
@@ -13,40 +12,58 @@ div.jfx-drawer > .jfx-drawer__scrim {
 }
 
 div.jfx-drawer > .jfx-drawer__panel-shell {
+    align-self: stretch;
     position: relative;
     flex: 0 0 auto;
     width: 0;
+    height: 100%;
+    min-height: 0;
     overflow: hidden;
     transition: width 180ms ease;
     z-index: 2;
 }
 
+div.jfx-drawer.jfx-drawer--end > .jfx-drawer__panel-shell {
+    order: 2;
+}
+
 div.jfx-drawer > .jfx-drawer__panel-shell > .jfx-drawer__panel {
     box-sizing: border-box;
-    width: var(--drawer-width);
+    width: 280px;
     height: 100%;
+    min-height: 0;
     overflow-y: auto;
-    background-color: var(--color-background-secondary);
+    background: var(--glass-bg);
     color: var(--color-text);
-    border-right: 1px solid var(--color-background-tertiary);
+    border-right: 1px solid var(--glass-border);
+    backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
     transform: translateX(-100%);
     transition: transform 180ms ease, box-shadow 180ms ease;
     box-shadow: none;
 }
 
+div.jfx-drawer.jfx-drawer--end > .jfx-drawer__panel-shell > .jfx-drawer__panel {
+    border-right: none;
+    border-left: 1px solid var(--glass-border);
+    transform: translateX(100%);
+}
+
 div.jfx-drawer.jfx-drawer--open > .jfx-drawer__panel-shell {
-    width: var(--drawer-width);
+    width: 280px;
 }
 
 div.jfx-drawer.jfx-drawer--open > .jfx-drawer__panel-shell > .jfx-drawer__panel {
     transform: translateX(0);
-    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.16);
+    box-shadow: 0 16px 32px var(--color-shadow-medium);
 }
 
 div.jfx-drawer .jfx-drawer__navigation {
     display: flex;
+    flex: 1 1 auto;
     flex-direction: column;
-    min-height: 100%;
+    min-height: 0;
+    height: 100%;
     box-sizing: border-box;
 }
 
@@ -61,6 +78,10 @@ div.jfx-drawer > .jfx-drawer__content {
     z-index: 1;
 }
 
+div.jfx-drawer.jfx-drawer--end > .jfx-drawer__content {
+    order: 1;
+}
+
 @media (max-width: 767px) {
     div.jfx-drawer {
         display: block;
@@ -70,7 +91,7 @@ div.jfx-drawer > .jfx-drawer__content {
         position: absolute;
         inset: 0;
         display: block;
-        background: rgba(0, 0, 0, 0.32);
+        background: var(--color-surface-backdrop);
         opacity: 0;
         pointer-events: none;
         transition: opacity 180ms ease;
@@ -83,15 +104,21 @@ div.jfx-drawer > .jfx-drawer__content {
         top: 0;
         bottom: 0;
         left: 0;
-        width: min(84vw, var(--drawer-width));
+        width: min(92vw, 280px);
         max-width: 100%;
         overflow: visible;
         pointer-events: none;
         z-index: 20;
     }
 
+    div.jfx-drawer.jfx-drawer--end > .jfx-drawer__panel-shell,
+    div.jfx-drawer.jfx-drawer--end.jfx-drawer--open > .jfx-drawer__panel-shell {
+        left: auto;
+        right: 0;
+    }
+
     div.jfx-drawer > .jfx-drawer__panel-shell > .jfx-drawer__panel {
-        width: min(84vw, var(--drawer-width));
+        width: min(92vw, 280px);
     }
 
     div.jfx-drawer.jfx-drawer--open > .jfx-drawer__scrim {

@@ -1,18 +1,7 @@
 package app.domain
 
-import jfx.core.macros.property
-import jfx.core.state.{Property, PropertyAccess}
-import jfx.form.Model
+import jfx.core.state.Property
 
 import scala.scalajs.js
 
-class Address(var street: Property[String] = Property(""), var city: Property[String] = Property("")) extends Model[Address] {
-  override def properties: js.Array[PropertyAccess[Address, ?]] = Address.properties
-}
-
-object Address {
-  val properties: js.Array[PropertyAccess[Address, ?]] = js.Array(
-    property(_.street),
-    property(_.city)
-  )
-}
+class Address(var street: Property[String] = Property(""), var city: Property[String] = Property(""))

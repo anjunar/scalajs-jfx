@@ -6,15 +6,16 @@ import jfx.core.state.{Disposable, ListProperty, Property, ReadOnlyProperty}
 import jfx.dsl.{ComponentContext, DslRuntime, Scope}
 import jfx.layout.Span
 import jfx.layout.Viewport
-import org.scalajs.dom.{Event, HTMLDivElement, HTMLSpanElement, KeyboardEvent, Node, document}
+import org.scalajs.dom.{Event, HTMLDivElement, HTMLElement, HTMLSpanElement, KeyboardEvent, Node, document}
 
 import scala.scalajs.js
 import scala.scalajs.js.timers.{SetTimeoutHandle, clearTimeout, setTimeout}
 
-class ComboBox[S](val name: String)
+class ComboBox[S](val name: String, override val standalone: Boolean = false)
     extends ManagedElementComponent[HTMLDivElement], Control[js.Array[S], HTMLDivElement] {
 
   override val valueProperty: ListProperty[S] = ListProperty()
+  initControlValidation()
 
   private val itemsRefProperty: Property[ListProperty[S]] = Property(ListProperty())
   private val openProperty: Property[Boolean] = Property(false)
@@ -25,8 +26,15 @@ class ComboBox[S](val name: String)
   val valueRendererProperty: Property[ComboBox.ValueRenderer[S] | Null] =
     Property[ComboBox.ValueRenderer[S] | Null](null)
 
+  val dropdownFooterRendererProperty: Property[ComboBox.DropdownFooterRenderer[S] | Null] =
+    Property[ComboBox.DropdownFooterRenderer[S] | Null](null)
+
+  val identityByProperty: Property[ComboBox.IdentityBy[S] | Null] =
+    Property[ComboBox.IdentityBy[S] | Null](null)
+
   val selectedItemProperty: Property[S | Null] = Property(null)
   val selectedIndexProperty: Property[Int] = Property(-1)
+  val multipleSelectionProperty: Property[Boolean] = Property(false)
   val dropdownHeightPxProperty: Property[Double] = Property(240.0)
   val rowHeightPxProperty: Property[Double] = Property(36.0)
 
@@ -96,6 +104,13 @@ class ComboBox[S](val name: String)
     }
   addDisposable(placeholderObserver)
 
+  private val multipleSelectionObserver =
+    multipleSelectionProperty.observe { _ =>
+      reconcileValue()
+      Option(dropdownTable).foreach(_.refresh())
+    }
+  addDisposable(multipleSelectionObserver)
+
   private val openObserver =
     openProperty.observe(syncOpenState)
   addDisposable(openObserver)
@@ -144,31 +159,53 @@ class ComboBox[S](val name: String)
   def setValueRenderer(renderer: ComboBox.ValueRenderer[S] | Null): Unit =
     valueRendererProperty.set(renderer)
 
+  def getDropdownFooterRenderer: ComboBox.DropdownFooterRenderer[S] | Null =
+    dropdownFooterRendererProperty.get
+
+  def setDropdownFooterRenderer(renderer: ComboBox.DropdownFooterRenderer[S] | Null): Unit =
+    dropdownFooterRendererProperty.set(renderer)
+
+  def getIdentityBy: ComboBox.IdentityBy[S] | Null =
+    identityByProperty.get
+
+  def setIdentityBy(identityBy: ComboBox.IdentityBy[S] | Null): Unit =
+    identityByProperty.set(identityBy)
+
   def getSelectedItem: S | Null =
     selectedItemProperty.get
 
   def setSelectedItem(item: S | Null): Unit =
-    updateSelection(item, markDirty = false, closeAfter = false)
+    applySelection(Option(item).toSeq, preferredSelectedItem = item, markDirty = false, closeAfter = false)
 
   def getSelectedIndex: Int =
     selectedIndexProperty.get
 
   def clearSelection(): Unit =
-    updateSelection(null, markDirty = false, closeAfter = false)
+    applySelection(Vector.empty, preferredSelectedItem = null, markDirty = false, closeAfter = false)
+
+  def isMultipleSelection: Boolean =
+    multipleSelectionProperty.get
+
+  def setMultipleSelection(value: Boolean): Unit =
+    multipleSelectionProperty.set(value)
 
   def open(): Unit =
     if (!isOpen) {
       ensureStructure()
 
       val table = buildDropdownTable()
+      val footerContent = renderDropdownFooterContent()
+      val panel = new ComboBox.DropdownPanel(this, table, footerContent)
       val anchorWidth = math.max(element.getBoundingClientRect().width, 120.0)
+      val maxDropdownHeight =
+        normalizedDropdownHeight + Option.when(footerContent != null)(54.0).getOrElse(2.0)
       val overlay = new Viewport.OverlayConf(
         anchor = element,
-        content = () => new ComboBox.DropdownPanel(table),
+        content = () => panel,
         offsetYPx = 6.0,
         widthPx = Some(anchorWidth),
         minWidthPx = Some(anchorWidth),
-        maxHeightPx = Some(normalizedDropdownHeight + 2.0)
+        maxHeightPx = Some(maxDropdownHeight)
       )
 
       dropdownTable = table
@@ -193,6 +230,9 @@ class ComboBox[S](val name: String)
 
       if (refocus && element.isConnected) {
         element.focus()
+      } else if (document.activeElement == element) {
+        element.blur()
+        focusedProperty.set(false)
       }
     }
 
@@ -283,26 +323,20 @@ class ComboBox[S](val name: String)
   private def reconcileValue(): Unit = {
     if (updatingValueProperty) return
 
+    val currentValues = valueProperty.iterator.map(_.asInstanceOf[S | Null]).toVector
+    val normalizedValues = normalizeSelection(currentValues)
+
+    if (!sameSelection(currentValues, normalizedValues)) {
+      updatingValueProperty = true
+      try valueProperty.setAll(normalizedValues)
+      finally updatingValueProperty = false
+    }
+
     val normalizedSelectedItem =
-      if (valueProperty.isEmpty) {
-        null
-      } else {
-        val head = valueProperty(0).asInstanceOf[S | Null]
-        val normalizedValues =
-          if (head == null) {
-            Vector.empty
-          } else {
-            Vector(head.asInstanceOf[S])
-          }
-
-        if (head == null || valueProperty.lengthCompare(1) != 0) {
-          updatingValueProperty = true
-          try valueProperty.setAll(normalizedValues)
-          finally updatingValueProperty = false
-        }
-
-        head
-      }
+      Option(selectedItemProperty.get)
+        .flatMap(item => normalizedValues.find(current => sameItem(current, item)))
+        .orElse(normalizedValues.headOption)
+        .orNull
 
     selectedItemProperty.set(normalizedSelectedItem)
     syncSelectedIndex()
@@ -313,7 +347,7 @@ class ComboBox[S](val name: String)
     val selectedItem = selectedItemProperty.get
     val index =
       if (selectedItem == null) -1
-      else getItems.indexOf(selectedItem.asInstanceOf[S])
+      else getItems.indexWhere(item => sameItem(item, selectedItem))
 
     selectedIndexProperty.set(index)
     syncDropdownSelection()
@@ -329,28 +363,11 @@ class ComboBox[S](val name: String)
         table.getSelectionModel.select(selectedIndex)
         table.scrollTo(selectedIndex)
       }
+      table.refresh()
     }
 
   private def updateSelection(item: S | Null, markDirty: Boolean, closeAfter: Boolean): Unit = {
-    val normalizedValues =
-      if (item == null) Vector.empty
-      else Vector(item.asInstanceOf[S])
-
-    updatingValueProperty = true
-    try valueProperty.setAll(normalizedValues)
-    finally updatingValueProperty = false
-
-    selectedItemProperty.set(item)
-    syncSelectedIndex()
-    rerenderValueHost()
-
-    if (markDirty) {
-      dirtyProperty.set(true)
-    }
-
-    if (closeAfter) {
-      close(refocus = true)
-    }
+    applySelection(Option(item).toSeq, preferredSelectedItem = item, markDirty = markDirty, closeAfter = closeAfter)
   }
 
   private def rerenderValueHost(): Unit =
@@ -369,6 +386,22 @@ class ComboBox[S](val name: String)
     val renderer = valueRendererProperty.get
     if (renderer == null) {
       ComboBox.defaultValueRenderer()
+    } else {
+      renderer.render
+    }
+  }
+
+  private def renderDropdownFooterContent(): NodeComponent[? <: Node] | Null = {
+    given ComboBox.DropdownFooterRenderContext[S] =
+      ComboBox.DropdownFooterRenderContext(
+        comboBox = this,
+        selectedItems = valueProperty,
+        selectedItem = selectedItemProperty.get
+      )
+
+    val renderer = dropdownFooterRendererProperty.get
+    if (renderer == null) {
+      null
     } else {
       renderer.render
     }
@@ -418,6 +451,32 @@ class ComboBox[S](val name: String)
     table
   }
 
+  private[form] def toggleSelection(item: S): Unit =
+    if (isMultipleSelection) {
+      val currentValues = normalizeSelection(valueProperty.iterator.map(_.asInstanceOf[S | Null]).toVector)
+      val nextValues =
+        if (currentValues.exists(current => sameItem(current, item))) {
+          currentValues.filterNot(current => sameItem(current, item))
+        }
+        else currentValues :+ item
+
+      val preferredSelectedItem =
+        if (nextValues.exists(current => sameItem(current, item))) item
+        else null
+
+      applySelection(
+        nextValues,
+        preferredSelectedItem = preferredSelectedItem,
+        markDirty = true,
+        closeAfter = false
+      )
+    } else {
+      updateSelection(item, markDirty = true, closeAfter = true)
+    }
+
+  private[form] def isItemSelected(item: S): Boolean =
+    valueProperty.iterator.exists(current => sameItem(current, item))
+
   private def syncOpenState(open: Boolean): Unit = {
     element.setAttribute("aria-expanded", open.toString)
     toggleClass("jfx-combo-box-open", open)
@@ -445,9 +504,81 @@ class ComboBox[S](val name: String)
 
   private def normalizedRowHeight: Double =
     math.max(28.0, rowHeightPxProperty.get)
+
+  private def applySelection(
+    values: IterableOnce[S | Null],
+    preferredSelectedItem: S | Null,
+    markDirty: Boolean,
+    closeAfter: Boolean
+  ): Unit = {
+    val normalizedValues = normalizeSelection(values)
+
+    updatingValueProperty = true
+    try valueProperty.setAll(normalizedValues)
+    finally updatingValueProperty = false
+
+    val resolvedSelectedItem =
+      Option(preferredSelectedItem)
+        .flatMap(item => normalizedValues.find(current => sameItem(current, item)))
+        .orElse(normalizedValues.headOption)
+        .orNull
+
+    selectedItemProperty.set(resolvedSelectedItem)
+    syncSelectedIndex()
+    rerenderValueHost()
+
+    if (markDirty) {
+      dirtyProperty.set(true)
+    }
+
+    if (closeAfter) {
+      close(refocus = true)
+    }
+  }
+
+  private def normalizeSelection(values: IterableOnce[S | Null]): Vector[S] = {
+    val normalized = Vector.newBuilder[S]
+    var collected = Vector.empty[S]
+
+    values.iterator.foreach { value =>
+      if (value != null) {
+        val current = value.asInstanceOf[S]
+        if (!collected.exists(existing => sameItem(existing, current))) {
+          collected = collected :+ current
+        }
+      }
+    }
+
+    normalized ++= collected
+    val result = normalized.result()
+    if (isMultipleSelection) result else result.headOption.toVector
+  }
+
+  private def sameSelection(current: Seq[S | Null], normalized: Seq[S]): Boolean =
+    current.lengthCompare(normalized.length) == 0 &&
+      current.iterator.zip(normalized.iterator).forall { case (left, right) => sameItem(left, right) }
+
+  private def sameItem(left: S | Null, right: S | Null): Boolean =
+    if (left == null || right == null) left == right
+    else identityOf(left) == identityOf(right)
+
+  private def identityOf(item: S | Null): Any =
+    if (item == null) null
+    else {
+      val current = item.asInstanceOf[S]
+      val provider = identityByProperty.get
+      if (provider == null) current.asInstanceOf[Any]
+      else {
+        val identity = provider(current)
+        if (identity == null) current.asInstanceOf[Any]
+        else identity
+      }
+    }
 }
 
 object ComboBox {
+
+  type IdentityBy[S] = S => Any
 
   final case class ItemRenderContext[S](
     comboBox: ComboBox[S],
@@ -457,6 +588,12 @@ object ComboBox {
   )
 
   final case class ValueRenderContext[S](
+    comboBox: ComboBox[S],
+    selectedItems: ReadOnlyProperty[js.Array[S]],
+    selectedItem: S | Null
+  )
+
+  final case class DropdownFooterRenderContext[S](
     comboBox: ComboBox[S],
     selectedItems: ReadOnlyProperty[js.Array[S]],
     selectedItem: S | Null
@@ -486,6 +623,20 @@ object ComboBox {
       new ValueRenderer[S](context => renderer(using context))
   }
 
+  final class DropdownFooterRenderer[S](
+    private val run: DropdownFooterRenderContext[S] => NodeComponent[? <: Node] | Null
+  ) {
+    def render(using context: DropdownFooterRenderContext[S]): NodeComponent[? <: Node] | Null =
+      run(context)
+  }
+
+  object DropdownFooterRenderer {
+    def apply[S](
+      renderer: DropdownFooterRenderContext[S] ?=> NodeComponent[? <: Node] | Null
+    ): DropdownFooterRenderer[S] =
+      new DropdownFooterRenderer[S](context => renderer(using context))
+  }
+
   private val noopDisposable: Disposable = () => ()
 
   private final class RenderHost(className: String)
@@ -505,10 +656,15 @@ object ComboBox {
     }
   }
 
-  private final class DropdownPanel[S](table: TableView[S])
+  private final class DropdownPanel[S](
+    comboBox: ComboBox[S],
+    table: TableView[S],
+    footerContent: NodeComponent[? <: Node] | Null
+  )
       extends ManagedElementComponent[HTMLDivElement], FormRegistrationBoundary {
 
     private var contentInitialized = false
+    private val footerHost = new RenderHost("jfx-combo-box__footer")
 
     override val element: HTMLDivElement = {
       val divElement = newElement("div")
@@ -516,11 +672,46 @@ object ComboBox {
       divElement
     }
 
+    private val actionClickListener: Event => Unit = event => {
+      if (containsComboBoxAction(event.target)) {
+        comboBox.close(refocus = false)
+      }
+    }
+
+    element.addEventListener("click", actionClickListener)
+    addDisposable(() => element.removeEventListener("click", actionClickListener))
+
     override protected def mountContent(): Unit =
       if (!contentInitialized) {
         contentInitialized = true
         addChild(table)
+        if (footerContent != null) {
+          footerHost.setContent(footerContent)
+          addChild(footerHost)
+        }
+      } else {
+        ()
       }
+
+    private def containsComboBoxAction(target: Any): Boolean = {
+      var currentNode =
+        target match {
+          case element: HTMLElement => element.asInstanceOf[Node | Null]
+          case node: Node           => node
+          case _                    => null
+        }
+
+      while (currentNode != null && currentNode != element) {
+        currentNode match {
+          case htmlElement: HTMLElement if htmlElement.hasAttribute("data-jfx-combo-box-action") =>
+            return true
+          case _ =>
+            currentNode = currentNode.parentNode
+        }
+      }
+
+      false
+    }
   }
 
   private final class ItemCell[S](comboBox: ComboBox[S]) extends TableCell[S, S] {
@@ -535,7 +726,8 @@ object ComboBox {
       if (isEmptyCell) {
         host.setContent(null)
       } else {
-        host.setContent(comboBox.renderItemContent(item.asInstanceOf[S], getIndex, isSelected))
+        val currentItem = item.asInstanceOf[S]
+        host.setContent(comboBox.renderItemContent(currentItem, getIndex, comboBox.isItemSelected(currentItem)))
       }
     }
 
@@ -544,7 +736,8 @@ object ComboBox {
 
       val item = getItem
       if (!isEmpty && item != null) {
-        host.setContent(comboBox.renderItemContent(item.asInstanceOf[S], getIndex, selected))
+        val currentItem = item.asInstanceOf[S]
+        host.setContent(comboBox.renderItemContent(currentItem, getIndex, comboBox.isItemSelected(currentItem)))
       }
     }
 
@@ -565,8 +758,17 @@ object ComboBox {
 
       val item = getItem
       if (!isEmpty && item != null) {
-        comboBox.updateSelection(item.asInstanceOf[S], markDirty = true, closeAfter = true)
+        comboBox.toggleSelection(item.asInstanceOf[S])
       }
+    }
+
+    override protected def updateSelected(selected: Boolean): Unit = {
+      val item = getItem
+      val effectiveSelected =
+        if (isEmpty || item == null) false
+        else comboBox.isItemSelected(item.asInstanceOf[S])
+
+      super.updateSelected(effectiveSelected)
     }
   }
 
@@ -598,13 +800,10 @@ object ComboBox {
     component
   }
 
-  def comboBox[S](name: String): ComboBox[S] =
-    comboBox(name)({})
-
-  def comboBox[S](name: String)(init: ComboBox[S] ?=> Unit): ComboBox[S] =
+  def comboBox[S](name: String, standalone: Boolean = false)(init: ComboBox[S] ?=> Unit): ComboBox[S] =
     DslRuntime.currentScope { currentScope =>
       val currentContext = DslRuntime.currentComponentContext()
-      val component = new ComboBox[S](name)
+      val component = new ComboBox[S](name, standalone)
 
       DslRuntime.withComponentContext(ComponentContext(None, currentContext.enclosingForm)) {
         given Scope = currentScope
@@ -633,6 +832,18 @@ object ComboBox {
 
   def selectedIndex(using comboBox: ComboBox[?]): Int =
     comboBox.getSelectedIndex
+
+  def identityBy[S](using comboBox: ComboBox[S]): IdentityBy[S] | Null =
+    comboBox.getIdentityBy
+
+  def identityBy_=[S](value: IdentityBy[S] | Null)(using comboBox: ComboBox[S]): Unit =
+    comboBox.setIdentityBy(value)
+
+  def multipleSelection(using comboBox: ComboBox[?]): Boolean =
+    comboBox.isMultipleSelection
+
+  def multipleSelection_=(value: Boolean)(using comboBox: ComboBox[?]): Unit =
+    comboBox.setMultipleSelection(value)
 
   def dropdownHeightPx(using comboBox: ComboBox[?]): Double =
     comboBox.dropdownHeightPxProperty.get
@@ -678,6 +889,22 @@ object ComboBox {
       )
     }
 
+  def dropdownFooterRenderer[S](using comboBox: ComboBox[S]): DropdownFooterRenderer[S] | Null =
+    comboBox.getDropdownFooterRenderer
+
+  def dropdownFooterRenderer_=[S](
+    renderer: DropdownFooterRenderContext[S] ?=> NodeComponent[? <: Node] | Null
+  )(using comboBox: ComboBox[S]): Unit =
+    DslRuntime.currentScope { currentScope =>
+      comboBox.setDropdownFooterRenderer(
+        new DropdownFooterRenderer[S](context => {
+          given DropdownFooterRenderContext[S] = context
+          given Scope = currentScope
+          renderer
+        })
+      )
+    }
+
   def open(using comboBox: ComboBox[?]): Unit =
     comboBox.open()
 
@@ -697,5 +924,11 @@ object ComboBox {
     context.selectedItems.get
 
   def comboRenderedSelectedItem[S](using context: ValueRenderContext[S]): S | Null =
+    context.selectedItem
+
+  def comboFooterSelectedItems[S](using context: DropdownFooterRenderContext[S]): js.Array[S] =
+    context.selectedItems.get
+
+  def comboFooterRenderedSelectedItem[S](using context: DropdownFooterRenderContext[S]): S | Null =
     context.selectedItem
 }

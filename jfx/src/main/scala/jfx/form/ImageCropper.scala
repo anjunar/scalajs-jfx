@@ -5,33 +5,20 @@ import jfx.core.state.{Disposable, ListProperty, Property}
 import jfx.domain.{Media, Thumbnail}
 import jfx.dsl.{ComponentContext, DslRuntime, Scope}
 import jfx.layout.Viewport
-import org.scalajs.dom.{
-  CanvasRenderingContext2D,
-  Event,
-  File,
-  FileReader,
-  HTMLButtonElement,
-  HTMLCanvasElement,
-  HTMLDivElement,
-  HTMLImageElement,
-  HTMLInputElement,
-  Node,
-  PointerEvent,
-  document,
-  window
-}
+import org.scalajs.dom.{CanvasRenderingContext2D, Event, File, FileReader, HTMLButtonElement, HTMLCanvasElement, HTMLDivElement, HTMLImageElement, HTMLInputElement, Node, PointerEvent, document, window}
 
+import scala.compiletime.uninitialized
 import scala.math.{abs, max, min}
 import scala.util.control.NonFatal
 
-class ImageCropper(val name: String) extends Control[Media, HTMLDivElement] {
+class ImageCropper(val name: String, override val standalone: Boolean = false) extends Control[Media, HTMLDivElement] {
 
   override val valueProperty: Property[Media] = Property(null)
+  initControlValidation()
 
   val sourceProperty: Property[Media] = Property(null)
   val fileProperty: Property[File] = Property(null)
   val validatorsProperty: ListProperty[ImageCropper.Validator] = ListProperty()
-  val editableProperty: Property[Boolean] = Property(true)
 
   var aspectRatio: Option[Double] = None
   var previewMaxWidth: Int = 480
@@ -48,13 +35,14 @@ class ImageCropper(val name: String) extends Control[Media, HTMLDivElement] {
 
   private var structureInitialized = false
 
-  private var fileInput: HTMLInputElement = null
-  private var uploadButton: HTMLButtonElement = null
-  private var cropButton: HTMLButtonElement = null
-  private var clearButton: HTMLButtonElement = null
-  private var previewFrame: HTMLDivElement = null
-  private var previewImg: HTMLImageElement = null
-  private var previewPlaceholder: HTMLDivElement = null
+  private var fileInput: HTMLInputElement = uninitialized
+  private var uploadButton: HTMLButtonElement = uninitialized
+  private var cropButton: HTMLButtonElement = uninitialized
+  private var clearButton: HTMLButtonElement = uninitialized
+  private var previewFrame: HTMLDivElement = uninitialized
+  private var previewImg: HTMLImageElement = uninitialized
+  private var previewPlaceholder: HTMLDivElement = uninitialized
+
 
   override val element: HTMLDivElement = {
     val div = newElement("div")
@@ -154,7 +142,7 @@ class ImageCropper(val name: String) extends Control[Media, HTMLDivElement] {
       previewPlaceholder.style.setProperty("justify-content", "center")
       previewPlaceholder.style.textAlign = "center"
       previewPlaceholder.style.padding = "16px"
-      previewPlaceholder.style.color = "var(--color-neutral-500)"
+      previewPlaceholder.style.color = "var(--color-text-muted)"
 
       syncPlaceholder(placeholderProperty.get)
 
@@ -330,10 +318,12 @@ class ImageCropper(val name: String) extends Control[Media, HTMLDivElement] {
     val hasValue = valueProperty.get != null
     val hasSource = currentSource().nonEmpty
 
-    fileInput.disabled = !editable
-    uploadButton.disabled = !editable
-    cropButton.disabled = !editable || !hasSource
-    clearButton.disabled = !editable || !hasValue
+    fileInput.style.display = if editable then "block" else "none"
+    uploadButton.style.display = if editable then "block" else "none"
+    cropButton.style.display = if editable then "block" else "none"
+    clearButton.style.display = if editable then "block" else "none"
+    cropButton.disabled = !hasSource
+    clearButton.disabled = !hasValue
     uploadButton.textContent = if (hasValue) "Bild ersetzen" else "Bild waehlen"
   }
 
@@ -384,7 +374,7 @@ private final class ImageCropperDialog(
 
   private var structureInitialized = false
   private var previewScale = 1.0
-  private var loadedImage: HTMLImageElement = null
+  private var loadedImage: HTMLImageElement = uninitialized
   private var crop: ImageCropperDialog.CropRect = null
   private var drag: ImageCropperDialog.DragState = null
   private var livePending = false
@@ -590,7 +580,7 @@ private final class ImageCropperDialog(
 
     Option(crop).map(_.normalize()) match {
       case Some(rect) if rect.w > 0.0 && rect.h > 0.0 =>
-        context.fillStyle = "rgba(0,0,0,0.40)"
+        context.fillStyle = ImageCropper.themeColor("--color-surface-backdrop", "rgba(0, 0, 0, 0.32)")
         context.fillRect(0.0, 0.0, canvasWidth, canvasHeight)
 
         context.save()
@@ -600,7 +590,7 @@ private final class ImageCropperDialog(
         context.drawImage(image, 0.0, 0.0, canvasWidth, canvasHeight)
         context.restore()
 
-        context.strokeStyle = "rgba(255,255,255,0.92)"
+        context.strokeStyle = ImageCropper.themeColor("--color-text-inverse", "rgba(255, 255, 255, 0.94)")
         context.lineWidth = 1.0
         context.strokeRect(rect.x + 0.5, rect.y + 0.5, max(0.0, rect.w - 1.0), max(0.0, rect.h - 1.0))
 
@@ -609,9 +599,9 @@ private final class ImageCropperDialog(
         def drawHandle(centerX: Double, centerY: Double): Unit = {
           val x = centerX - handleSize / 2.0
           val y = centerY - handleSize / 2.0
-          context.fillStyle = "rgba(255,255,255,0.92)"
+          context.fillStyle = ImageCropper.themeColor("--color-text-inverse", "rgba(255, 255, 255, 0.94)")
           context.fillRect(x, y, handleSize, handleSize)
-          context.strokeStyle = "rgba(0,0,0,0.55)"
+          context.strokeStyle = ImageCropper.themeColor("--color-surface-scrim", "rgba(0, 0, 0, 0.22)")
           context.strokeRect(x + 0.5, y + 0.5, handleSize - 1.0, handleSize - 1.0)
         }
 
@@ -979,13 +969,10 @@ object ImageCropper {
       }
   }
 
-  def imageCropper(name: String): ImageCropper =
-    imageCropper(name)({})
-
-  def imageCropper(name: String)(init: ImageCropper ?=> Unit): ImageCropper =
+  def imageCropper(name: String, standalone: Boolean = false)(init: ImageCropper ?=> Unit): ImageCropper =
     DslRuntime.currentScope { currentScope =>
       val currentContext = DslRuntime.currentComponentContext()
-      val component = new ImageCropper(name)
+      val component = new ImageCropper(name, standalone)
 
       DslRuntime.withComponentContext(ComponentContext(None, currentContext.enclosingForm)) {
         given Scope = currentScope
@@ -1008,12 +995,6 @@ object ImageCropper {
 
   def placeholder_=(value: String)(using cropper: ImageCropper): Unit =
     cropper.placeholder = value
-
-  def editable(using cropper: ImageCropper): Boolean =
-    cropper.editableProperty.get
-
-  def editable_=(value: Boolean)(using cropper: ImageCropper): Unit =
-    cropper.editableProperty.set(value)
 
   def disabled(using cropper: ImageCropper): Boolean =
     cropper.disabled
@@ -1130,4 +1111,13 @@ object ImageCropper {
 
   private[form] def context2d(canvas: HTMLCanvasElement): CanvasRenderingContext2D =
     Option(canvas.getContext("2d")).map(_.asInstanceOf[CanvasRenderingContext2D]).orNull
+
+  private[form] def themeColor(name: String, fallback: String): String = {
+    val resolved =
+      Option(window.getComputedStyle(document.documentElement).getPropertyValue(name))
+        .map(_.trim)
+        .filter(_.nonEmpty)
+
+    resolved.getOrElse(fallback)
+  }
 }

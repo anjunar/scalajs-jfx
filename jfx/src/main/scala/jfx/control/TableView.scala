@@ -36,6 +36,7 @@ class TableView[S] extends ElementComponent[HTMLDivElement], FormSubtreeRegistra
   private var remoteItemsObserver: Disposable = TableView.noopDisposable
   private var columnObserver: Disposable = TableView.noopDisposable
   private var rowPool: Vector[TableRow[S]] = Vector.empty
+  private var renderedColumnWidths: Vector[Double] = Vector.empty
   private var mountedPlaceholder: NodeComponent[? <: Node] | Null = null
   private var lifecycleInitialized = false
 
@@ -248,13 +249,15 @@ class TableView[S] extends ElementComponent[HTMLDivElement], FormSubtreeRegistra
     val rowHeight = effectiveRowHeight
     val headerHeight = effectiveHeaderHeight(rowHeight)
     val totalItemCount = getItems.totalLength
-    val contentWidth = updateLayoutMetrics(columns, rowHeight, headerHeight, totalItemCount)
+    val layout = updateLayoutMetrics(columns, rowHeight, headerHeight, totalItemCount)
+    syncHeaderCellWidths(columns, layout.columnWidths)
 
     refreshPlaceholder()
     refreshVisibleRows(
       columns = columns,
       rowHeight = rowHeight,
-      rowWidth = contentWidth,
+      rowWidth = layout.contentWidth,
+      columnWidths = layout.columnWidths,
       allowLazyLoad = shouldAutoEnsureVisibleRange
     )
     syncHeaderScroll()
@@ -265,6 +268,7 @@ class TableView[S] extends ElementComponent[HTMLDivElement], FormSubtreeRegistra
       columns = currentColumns,
       rowHeight = effectiveRowHeight,
       rowWidth = currentContentWidth,
+      columnWidths = currentRenderedColumnWidths,
       allowLazyLoad = allowLazyLoad
     )
 
@@ -272,6 +276,7 @@ class TableView[S] extends ElementComponent[HTMLDivElement], FormSubtreeRegistra
     columns: Seq[TableColumn[S, Any]],
     rowHeight: Double,
     rowWidth: Double,
+    columnWidths: Seq[Double],
     allowLazyLoad: Boolean
   ): Unit = {
     if (disposed) return
@@ -313,7 +318,8 @@ class TableView[S] extends ElementComponent[HTMLDivElement], FormSubtreeRegistra
           tableView = this,
           columns = columns,
           rowHeight = rowHeight,
-          rowWidth = rowWidth
+          rowWidth = rowWidth,
+          columnWidths = columnWidths
         )
         case None if rowIndex < totalItemCount =>
           row.showPlaceholder(
@@ -321,7 +327,8 @@ class TableView[S] extends ElementComponent[HTMLDivElement], FormSubtreeRegistra
             tableView = this,
             columns = columns,
             rowHeight = rowHeight,
-            rowWidth = rowWidth
+            rowWidth = rowWidth,
+            columnWidths = columnWidths
           )
         case None =>
           row.clear(rowHeight, rowWidth)
@@ -392,7 +399,8 @@ class TableView[S] extends ElementComponent[HTMLDivElement], FormSubtreeRegistra
       cell.className = "jfx-table-header-cell"
       cell.textContent = headerText(column)
       if (index == currentColumns.length - 1) cell.classList.add("jfx-table-header-cell-last")
-      val widthValue = s"${column.effectiveWidth}px"
+      val width = renderedWidthAt(index, column)
+      val widthValue = s"${width}px"
       cell.style.setProperty("flex", s"0 0 $widthValue")
       cell.style.width = widthValue
       cell.style.minWidth = widthValue
@@ -423,16 +431,36 @@ class TableView[S] extends ElementComponent[HTMLDivElement], FormSubtreeRegistra
     }
   }
 
+  private def syncHeaderCellWidths(columns: Seq[TableColumn[S, Any]], columnWidths: Seq[Double]): Unit = {
+    if (!showHeaderProperty.get) return
+
+    val headerCells = headerContent.children
+    if (headerCells.length != columns.length) {
+      rebuildHeader()
+      return
+    }
+
+    columns.indices.foreach { index =>
+      val cell = headerCells.item(index).asInstanceOf[HTMLDivElement]
+      val widthValue = s"${columnWidths.lift(index).getOrElse(columns(index).effectiveWidth)}px"
+      cell.style.setProperty("flex", s"0 0 $widthValue")
+      cell.style.width = widthValue
+      cell.style.minWidth = widthValue
+      cell.style.maxWidth = widthValue
+    }
+  }
+
   private def updateLayoutMetrics(
     columns: Seq[TableColumn[S, Any]],
     rowHeight: Double,
     headerHeight: Double,
     itemCount: Int
-  ): Double = {
+  ): TableView.LayoutMetrics = {
     val showHeader = showHeaderProperty.get
     val viewportWidth = math.max(viewport.clientWidth.toDouble, 0.0)
-    val columnWidth = columns.foldLeft(0.0)(_ + _.effectiveWidth)
-    val contentWidth = math.max(columnWidth, viewportWidth)
+    val columnWidths = resolveRenderedColumnWidths(columns, viewportWidth)
+    renderedColumnWidths = columnWidths
+    val contentWidth = columnWidths.sum
     val contentHeight = math.max(0.0, itemCount * rowHeight)
 
     headerViewport.style.display = if (showHeader) "block" else "none"
@@ -445,7 +473,7 @@ class TableView[S] extends ElementComponent[HTMLDivElement], FormSubtreeRegistra
     content.style.minWidth = s"${contentWidth}px"
     content.style.height = s"${contentHeight}px"
 
-    contentWidth
+    TableView.LayoutMetrics(contentWidth, renderedColumnWidths)
   }
 
   private def refreshPlaceholder(): Unit = {
@@ -656,9 +684,136 @@ class TableView[S] extends ElementComponent[HTMLDivElement], FormSubtreeRegistra
     currentRemoteItems != null && currentRemoteItems.supportsRangeLoading
 
   private def currentContentWidth: Double = {
-    val viewportWidth = math.max(viewport.clientWidth.toDouble, 0.0)
-    math.max(currentColumns.foldLeft(0.0)(_ + _.effectiveWidth), viewportWidth)
+    currentRenderedColumnWidths.sum
   }
+
+  private def currentRenderedColumnWidths: Vector[Double] = {
+    val columns = currentColumns
+    if (renderedColumnWidths.length == columns.length) renderedColumnWidths
+    else resolveRenderedColumnWidths(columns, math.max(viewport.clientWidth.toDouble, 0.0))
+  }
+
+  private def renderedWidthAt(index: Int, column: TableColumn[S, Any]): Double =
+    currentRenderedColumnWidths.lift(index).getOrElse(column.effectiveWidth)
+
+  private def resolveRenderedColumnWidths(
+    columns: Seq[TableColumn[S, Any]],
+    viewportWidth: Double
+  ): Vector[Double] = {
+    if (columns.isEmpty) return Vector.empty
+
+    val baseWidths = columns.map(_.effectiveWidth).toVector
+    val minWidths = columns.map(_.getMinWidth).toVector
+    val maxWidths = columns.map(column => math.max(column.getMinWidth, column.getMaxWidth)).toVector
+    val resizableIndices = columns.zipWithIndex.collect { case (column, index) if column.isResizable => index }.toVector
+
+    val minTotal = minWidths.sum
+    val maxTotal =
+      if (maxWidths.exists(_.isPosInfinity)) Double.PositiveInfinity
+      else maxWidths.sum
+    val desiredTotal = math.max(0.0, viewportWidth)
+    val targetTotal = math.max(minTotal, math.min(desiredTotal, maxTotal))
+
+    if (resizableIndices.isEmpty) {
+      return baseWidths
+    }
+
+    val delta = targetTotal - baseWidths.sum
+    if (math.abs(delta) < 0.5) return baseWidths
+
+    val adjusted =
+      if (delta > 0) {
+        distributeWidthDelta(
+          widths = baseWidths,
+          indices = resizableIndices,
+          lowerBounds = minWidths,
+          upperBounds = maxWidths,
+          delta = delta,
+          weight = index => math.max(1.0, baseWidths(index))
+        )
+      } else {
+        distributeWidthDelta(
+          widths = baseWidths,
+          indices = resizableIndices,
+          lowerBounds = minWidths,
+          upperBounds = maxWidths,
+          delta = delta,
+          weight = index => math.max(1.0, baseWidths(index) - minWidths(index))
+        )
+      }
+
+    normalizeWidths(adjusted, resizableIndices, minWidths, maxWidths, targetTotal)
+  }
+
+  private def distributeWidthDelta(
+    widths: Vector[Double],
+    indices: Vector[Int],
+    lowerBounds: Vector[Double],
+    upperBounds: Vector[Double],
+    delta: Double,
+    weight: Int => Double
+  ): Vector[Double] = {
+    val buffer = widths.toArray
+    var remaining = delta
+    var active = indices
+    var iterations = 0
+
+    while (active.nonEmpty && math.abs(remaining) > 0.5 && iterations < 12) {
+      iterations += 1
+      val direction = math.signum(remaining)
+      val boundedActive = active.filter { index =>
+        if (direction > 0) buffer(index) + 0.5 < upperBounds(index)
+        else buffer(index) - 0.5 > lowerBounds(index)
+      }
+      active = boundedActive
+      if (active.isEmpty) {
+        remaining = 0.0
+      } else {
+        val totalWeight = active.map(index => math.max(0.0001, weight(index))).sum
+        var consumed = 0.0
+        active.foreach { index =>
+          val share = remaining * math.max(0.0001, weight(index)) / totalWeight
+          val updated = clampWidth(buffer(index) + share, lowerBounds(index), upperBounds(index))
+          val actual = updated - buffer(index)
+          buffer(index) = updated
+          consumed += actual
+        }
+        if (math.abs(consumed) < 0.1) remaining = 0.0
+        else remaining -= consumed
+      }
+    }
+
+    buffer.toVector
+  }
+
+  private def normalizeWidths(
+    widths: Vector[Double],
+    resizableIndices: Vector[Int],
+    minWidths: Vector[Double],
+    maxWidths: Vector[Double],
+    targetTotal: Double
+  ): Vector[Double] = {
+    if (widths.isEmpty || resizableIndices.isEmpty) return widths
+
+    val difference = targetTotal - widths.sum
+    if (math.abs(difference) < 0.5) return widths
+
+    val buffer = widths.toArray
+    val direction = math.signum(difference)
+    val adjustable = resizableIndices.filter { index =>
+      if (direction > 0) buffer(index) + 0.5 < maxWidths(index)
+      else buffer(index) - 0.5 > minWidths(index)
+    }
+
+    if (adjustable.isEmpty) return widths
+
+    val targetIndex = adjustable.maxBy(buffer)
+    buffer(targetIndex) = clampWidth(buffer(targetIndex) + difference, minWidths(targetIndex), maxWidths(targetIndex))
+    buffer.toVector
+  }
+
+  private def clampWidth(value: Double, minWidth: Double, maxWidth: Double): Double =
+    math.max(minWidth, math.min(value, maxWidth))
 
   private def removeAllChildren(node: Node): Unit = {
     var maybeChild = node.firstChild
@@ -680,6 +835,7 @@ class TableView[S] extends ElementComponent[HTMLDivElement], FormSubtreeRegistra
 }
 
 object TableView {
+  private final case class LayoutMetrics(contentWidth: Double, columnWidths: Vector[Double])
   private[control] val overscanRows = 6
   private[control] val lazyLoadThresholdRows = 3
   private[control] val ascendingIndicator = "\u2191"

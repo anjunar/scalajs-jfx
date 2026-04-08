@@ -13,8 +13,22 @@ class ListProperty[V](val underlying: js.Array[V] = js.Array[V]()) extends ReadO
 
   private val listeners = js.Array[js.Array[V] => Unit]()
   private val changeListeners = js.Array[ListProperty.Change[V] => Unit]()
+  private var disposableOwner: CompositeDisposable | Null = null
 
   override def get: js.Array[V] = underlying
+
+  def registerDisposableOwner(owner: CompositeDisposable): this.type = {
+    disposableOwner = owner
+    this
+  }
+
+  private[state] def autoRegister(disposable: Disposable): Unit =
+    if (disposableOwner != null) {
+      disposableOwner.add(disposable)
+    }
+
+  private[state] def hasSameDisposableOwnerAs(other: ListProperty[?]): Boolean =
+    disposableOwner != null && disposableOwner.eq(other.disposableOwner)
 
   private def notifyListeners(): Unit =
     listeners.toList.foreach(listener => listener(get))
@@ -165,6 +179,9 @@ object ListProperty {
   def apply[V](underlying: js.Array[V] = js.Array[V]()): ListProperty[V] =
     new ListProperty[V](underlying)
 
+  def owned[V](owner: CompositeDisposable, underlying: js.Array[V] = js.Array[V]()): ListProperty[V] =
+    new ListProperty[V](underlying).registerDisposableOwner(owner)
+
   def remote[V, Query](
     loader: RemoteLoader[V, Query],
     initialQuery: Query,
@@ -202,6 +219,10 @@ object ListProperty {
     val composite = new CompositeDisposable()
     composite.add(da)
     composite.add(db)
+    a.autoRegister(composite)
+    if ((b ne a) && !a.hasSameDisposableOwnerAs(b)) {
+      b.autoRegister(composite)
+    }
     composite
   }
 
@@ -404,6 +425,7 @@ class RemoteListProperty[V, Query](
 
   private given ExecutionContext = executionContext
   private val loadedItemsByIndex = mutable.Map[Int, V](underlying.iterator.zipWithIndex.map { case (value, index) => index -> value }.toSeq*)
+  private var applyingRemotePage = false
 
   val queryProperty: Property[Query] = Property(initialQuery)
   val sortingProperty: Property[Vector[ListProperty.RemoteSort]] = Property(Vector.empty)
@@ -486,8 +508,56 @@ class RemoteListProperty[V, Query](
           )
         case None =>
           js.Promise.reject(IllegalStateException("This RemoteListProperty does not support range loading"))
+        }
       }
+
+  override def addOne(elem: V): RemoteListProperty.this.type = {
+    val previousTotalLength = totalLength
+    val absoluteIndex =
+      totalCountProperty.get match {
+        case Some(count) => math.max(0, count)
+        case None        => nextSequentialAbsoluteIndex
+      }
+
+    super.addOne(elem)
+    if (!applyingRemotePage) {
+      loadedItemsByIndex.update(absoluteIndex, elem)
+      totalCountProperty.set(Some(previousTotalLength + 1))
     }
+    this
+  }
+
+  override def update(idx: Int, elem: V): Unit = {
+    val absoluteIndex = absoluteIndexForLoadedPosition(idx)
+    super.update(idx, elem)
+    if (!applyingRemotePage) {
+      loadedItemsByIndex.update(absoluteIndex, elem)
+    }
+  }
+
+  override def remove(idx: Int): V = {
+    val previousTotalLength = totalLength
+    val absoluteIndex = absoluteIndexForLoadedPosition(idx)
+    val removed = super.remove(idx)
+
+    if (!applyingRemotePage) {
+      loadedItemsByIndex.remove(absoluteIndex)
+      shiftLoadedIndicesAfterRemoval(absoluteIndex)
+      totalCountProperty.set(Some(math.max(0, previousTotalLength - 1)))
+    }
+
+    removed
+  }
+
+  override def clear(): Unit = {
+    super.clear()
+    if (!applyingRemotePage) {
+      loadedItemsByIndex.clear()
+      totalCountProperty.set(Some(0))
+      nextQueryProperty.set(None)
+      hasMoreProperty.set(false)
+    }
+  }
 
   private def load(query: Query, append: Boolean): js.Promise[js.Array[V]] =
     loadQuery(
@@ -544,10 +614,35 @@ class RemoteListProperty[V, Query](
     }
 
     val orderedLoadedItems = loadedItemsByIndex.toSeq.sortBy(_._1).map(_._2)
-    setAll(orderedLoadedItems)
+    applyingRemotePage = true
+    try setAll(orderedLoadedItems)
+    finally applyingRemotePage = false
 
     nextQueryProperty.set(page.nextQuery)
     totalCountProperty.set(page.totalCount)
     hasMoreProperty.set(page.hasMore.getOrElse(page.nextQuery.nonEmpty))
+  }
+
+  private def absoluteIndexForLoadedPosition(position: Int): Int = {
+    val sortedEntries = loadedItemsByIndex.toSeq.sortBy(_._1)
+    if (position < 0 || position >= sortedEntries.length) {
+      throw IndexOutOfBoundsException(s"$position")
+    }
+    sortedEntries(position)._1
+  }
+
+  private def nextSequentialAbsoluteIndex: Int =
+    if (loadedItemsByIndex.isEmpty) 0
+    else loadedItemsByIndex.keys.max + 1
+
+  private def shiftLoadedIndicesAfterRemoval(removedIndex: Int): Unit = {
+    val updatedEntries =
+      loadedItemsByIndex.toSeq.map { case (index, value) =>
+        if (index > removedIndex) (index - 1) -> value
+        else index -> value
+      }
+
+    loadedItemsByIndex.clear()
+    loadedItemsByIndex.addAll(updatedEntries)
   }
 }
