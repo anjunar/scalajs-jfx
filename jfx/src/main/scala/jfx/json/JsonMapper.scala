@@ -326,7 +326,7 @@ object JsonMapper {
       case "scala.Char" | "char" =>
         value.toString.headOption.getOrElse('\u0000')
       case "java.util.UUID" =>
-        UUID.fromString(value.toString)
+        UUID.fromString(extractUuidString(value.toString))
       case _ =>
         value
     }
@@ -673,4 +673,10 @@ object JsonMapper {
   private def asJsArray(value: js.Any): js.Array[js.Any] =
     if (js.Array.isArray(value)) value.asInstanceOf[js.Array[js.Any]]
     else throw new IllegalArgumentException(s"Expected JSON array, got ${js.typeOf(value)}")
+
+  private def extractUuidString(raw: String): String = {
+    val value = Option(raw).getOrElse("").trim
+    if (value.contains("/")) value.split('/').lastOption.getOrElse(value)
+    else value
+  }
 }
