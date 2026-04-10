@@ -141,8 +141,10 @@ class Router(val routes: js.Array[Route], private val scope: Scope) extends Node
 
     try {
       val renderPromise =
-        DslRuntime.withComponentContext(ComponentContext(None, None)) {
-          routeMatch.route.factory(context, scope)
+        DslRuntime.withScope(scope) {
+          DslRuntime.withComponentContext(ComponentContext(None, None)) {
+            routeMatch.route.factory(context, scope)
+          }
         }
       renderPromise
         .toFuture

@@ -333,9 +333,11 @@ class VirtualListView[T](
   }
 
   private def buildRenderedContent(item: T | Null, index: Int): NodeComponent[? <: Node] | Null =
-    DslRuntime.withComponentContext(ComponentContext(None, renderEnclosingForm)) {
-      given Scope = renderScope
-      renderer(item, index)
+    DslRuntime.withScope(renderScope) {
+      DslRuntime.withComponentContext(ComponentContext(None, renderEnclosingForm)) {
+        given Scope = renderScope
+        renderer(item, index)
+      }
     }
 
   private def scheduleRender(): Unit = {

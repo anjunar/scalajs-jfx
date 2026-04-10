@@ -3,14 +3,16 @@ package jfx.statement
 import jfx.core.component.{FormSubtreeRegistration, NodeComponent}
 import jfx.core.state.ListProperty
 import jfx.core.state.ListProperty.*
-import jfx.dsl.DslRuntime
+import jfx.dsl.{ComponentContext, DslRuntime, Scope}
 import org.scalajs.dom.{Comment, Node, console, window}
 
 import scala.scalajs.js
 
 class ForEach[T](
   val items: ListProperty[T],
-  val renderItem: (T, Int) => NodeComponent[? <: Node]
+  val renderItem: (T, Int) => NodeComponent[? <: Node],
+  private val renderScope: Scope,
+  private val renderContext: ComponentContext
 ) extends NodeComponent[Comment], FormSubtreeRegistration {
 
   private val startAnchor: Comment = newComment("jfx:foreach")
@@ -119,7 +121,7 @@ class ForEach[T](
       return
     }
 
-    val child = renderItem(items(index), index)
+    val child = buildChild(items(index), index)
     mountChild(parent, before = endAnchor, child = child)
     mounted = mounted :+ child
   }
@@ -131,7 +133,7 @@ class ForEach[T](
       return
     }
 
-    val child = renderItem(items(clampedIndex), clampedIndex)
+    val child = buildChild(items(clampedIndex), clampedIndex)
     val before = mounted.lift(clampedIndex).map(_.element).getOrElse(endAnchor)
     mountChild(parent, before = before, child = child)
     mounted = mounted.patch(clampedIndex, Seq(child), 0)
@@ -149,7 +151,7 @@ class ForEach[T](
     val inserted =
       (0 until count).map { offset =>
         val currentIndex = clampedIndex + offset
-        val child = renderItem(items(currentIndex), currentIndex)
+        val child = buildChild(items(currentIndex), currentIndex)
         mountChild(parent, before = before, child = child)
         child
       }
@@ -173,7 +175,7 @@ class ForEach[T](
     val n = items.length
     var i = clampedFrom
     while (i < n) {
-      val child = renderItem(items(i), i)
+      val child = buildChild(items(i), i)
       mountChild(parent, before = endAnchor, child = child)
       mounted = mounted :+ child
       i += 1
@@ -218,7 +220,7 @@ class ForEach[T](
     }
 
     val oldChild = mounted(index)
-    val newChild = renderItem(items(index), index)
+    val newChild = buildChild(items(index), index)
 
     parent.insertBefore(newChild.element, oldChild.element)
     newChild.parent = Some(this)
@@ -254,6 +256,13 @@ class ForEach[T](
 
     if (removeEndAnchor) removeDomNode(endAnchor)
   }
+
+  private def buildChild(item: T, index: Int): NodeComponent[? <: Node] =
+    DslRuntime.withScope(renderScope) {
+      DslRuntime.withComponentContext(ComponentContext(None, renderContext.enclosingForm)) {
+        renderItem(item, index)
+      }
+    }
 
   private def mountChild(parent: Node, before: Node, child: NodeComponent[? <: Node]): Unit = {
     val oldParent = child.parent
@@ -294,12 +303,26 @@ class ForEach[T](
 
 object ForEach {
   def apply[T](items: ListProperty[T])(renderItem: (T, Int) => NodeComponent[? <: Node]): ForEach[T] =
-    new ForEach(items, renderItem)
+    DslRuntime.currentScope { currentScope =>
+      val currentContext = DslRuntime.currentComponentContext()
+      new ForEach(
+        items,
+        renderItem,
+        currentScope,
+        ComponentContext(None, currentContext.enclosingForm)
+      )
+    }
 
   def forEach[T](items: ListProperty[T])(renderItem: (T, Int) => NodeComponent[? <: Node]): ForEach[T] =
-    DslRuntime.currentScope { _ =>
+    DslRuntime.currentScope { currentScope =>
       val currentContext = DslRuntime.currentComponentContext()
-      val component = new ForEach(items, renderItem)
+      val component =
+        new ForEach(
+          items,
+          renderItem,
+          currentScope,
+          ComponentContext(None, currentContext.enclosingForm)
+        )
       DslRuntime.attach(component, currentContext)
       component
     }

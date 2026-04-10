@@ -1,11 +1,9 @@
 package app.pages
 
-import app.component.AddressForm
-import app.domain.{Address, Email, Person}
+import app.ClarityState
+import app.domain.InsightRecord
 import jfx.action.Button.*
-import jfx.control.{TableColumn, TableView}
-import jfx.control.TableColumn.*
-import jfx.control.TableView.*
+import jfx.control.{TableCell, TableColumn, TableRow, TableView}
 import jfx.control.cell.PropertyValueFactory
 import jfx.core.component.CompositeComponent
 import jfx.core.component.CompositeComponent.composite
@@ -14,9 +12,11 @@ import jfx.core.state.{ListProperty, Property}
 import jfx.dsl.*
 import jfx.form.Input
 import jfx.form.Input.{input, placeholder, placeholder_=}
-import jfx.layout.Div
 import jfx.layout.Div.div
 import jfx.layout.HBox.hbox
+import jfx.layout.Viewport
+import jfx.layout.Viewport.WindowConf
+import jfx.statement.ObserveRender.observeRender
 import org.scalajs.dom
 import org.scalajs.dom.{HTMLDivElement, KeyboardEvent}
 
@@ -32,42 +32,77 @@ class TablePage extends CompositeComponent[HTMLDivElement] {
 
   private given ExecutionContext = ExecutionContext.global
 
-  final case class PersonQuery(
-    filter: String = "",
-    sort: Seq[String] = Seq.empty,
+  final case class InsightQuery(
+    search: String = "",
+    stage: Option[String] = None,
+    sort: Seq[String] = Seq("tension,desc"),
     offset: Int = 0,
-    size: Int = 20
+    size: Int = 18
   )
 
-  private val firstNames =
-    Vector("Alice", "Bob", "Carla", "David", "Elena", "Frank", "Grace", "Henry", "Isla", "Jonas")
-  private val lastNames =
-    Vector("Anderson", "Bauer", "Clark", "Diaz", "Evans", "Fischer", "Garcia", "Hughes", "Ivanov", "Johnson")
-  private val cities =
-    Vector("Berlin", "Hamburg", "Munich", "Cologne", "Leipzig", "Dresden", "Bremen", "Stuttgart")
-  private val streetNames =
-    Vector("Oak Street", "River Road", "Hill Avenue", "Sunset Lane", "Market Street", "Park Row")
+  private final case class QueueTelemetry(
+    filteredCount: Int,
+    totalCount: Int,
+    loadedCount: Int,
+    loading: Boolean,
+    error: Option[String],
+    activeSort: String,
+    query: InsightQuery,
+    stageCounts: Map[String, Int]
+  )
 
-  private val demoData: Vector[Person] = buildDemoData(total = 240)
+  private val themes = Vector(
+    "Onboarding voice",
+    "Viewport memory",
+    "Form trust boundary",
+    "Archive discoverability",
+    "Clarification prompts",
+    "Window persistence",
+    "List maturity signal",
+    "Routing narrative",
+    "Field note continuity",
+    "Docs package context"
+  )
+  private val stewards = Vector(
+    "Runtime Systems",
+    "Research",
+    "Design Systems",
+    "Documentation",
+    "Product Strategy",
+    "Forms Infrastructure"
+  )
+  private val summaries = Vector(
+    "Conflicting notes are still present and should remain legible.",
+    "The current implementation works, but the context around it is still incomplete.",
+    "Several routes point at the same concern and need a calmer narrative.",
+    "The framework primitive is stable, yet its place in the showcase still needs refinement."
+  )
+  private val nextSteps = Map(
+    ClarityState.Raw.label -> "Keep the intake protected until the record has enough shape to be questioned.",
+    ClarityState.Clarification.label -> "Make contradiction visible and name the next question precisely.",
+    ClarityState.Condensed.label -> "Reduce the structure without hiding the tensions that created it.",
+    ClarityState.Archived.label -> "Keep the reference stable and reopen it only when context changes."
+  )
+
+  private val demoData: Vector[InsightRecord] = buildDemoData(total = 192)
 
   override protected def compose(using CompositeComponent.DslContext): Unit =
     withDslContext {
       given TablePage = this
 
+      classes = "clarity-page table-page"
+
       style {
-        maxWidth = "980px"
-        margin = "24px auto"
-        padding = "24px"
         display = "flex"
         flexDirection = "column"
-        gap = "14px"
-        fontFamily = "inherit"
-        color = "var(--color-text)"
+        gap = "20px"
+        maxWidth = "1240px"
+        margin = "0 auto"
       }
 
-      val remotePersons = ListProperty.remote[Person, PersonQuery](
+      val remoteRecords = ListProperty.remote[InsightRecord, InsightQuery](
         loader = ListProperty.RemoteLoader(query => delayedRemotePage(query)),
-        initialQuery = PersonQuery(),
+        initialQuery = InsightQuery(),
         sortUpdater = Some((query, sorting) =>
           query.copy(
             sort = sorting.map(_.asQueryValue),
@@ -82,11 +117,16 @@ class TablePage extends CompositeComponent[HTMLDivElement] {
         )
       )
 
-      val filterDebounceMs = 280
+      val selectedRecord = Property[InsightRecord | Null](null)
+      val telemetry = Property(computeTelemetry(remoteRecords.query, remoteRecords))
+
+      val filterDebounceMs = 260
       var pendingFilterHandle: Option[SetTimeoutHandle] = None
       var queuedFilterReload: Option[String] = None
       var filterInput: Input | Null = null
-      var status: Div | Null = null
+
+      def refreshTelemetry(): Unit =
+        telemetry.setAlways(computeTelemetry(remoteRecords.query, remoteRecords))
 
       def currentFilterValue: String =
         Option(filterInput).map(_.element.value.trim).getOrElse("")
@@ -96,275 +136,487 @@ class TablePage extends CompositeComponent[HTMLDivElement] {
         pendingFilterHandle = None
       }
 
-      def shouldReloadFilter(filter: String): Boolean = {
-        val currentQuery = remotePersons.query
-        currentQuery.filter != filter ||
+      def shouldReloadSearch(search: String): Boolean = {
+        val currentQuery = remoteRecords.query
+        currentQuery.search != search ||
         currentQuery.offset != 0 ||
-        remotePersons.errorProperty.get.nonEmpty
+        remoteRecords.errorProperty.get.nonEmpty
       }
 
-      def updateStatus(): Unit = {
-        val total = remotePersons.totalCountProperty.get.map(_.toString).getOrElse("?")
-        val query = remotePersons.query
-        val sortText =
-          if (remotePersons.getSorting.isEmpty) "none"
-          else remotePersons.getSorting.map(_.asQueryValue).mkString(", ")
-        val loadingText = if (remotePersons.loadingProperty.get) " | loading..." else ""
-        val errorText = remotePersons.errorProperty.get
-          .flatMap(error => Option(error.getMessage))
-          .filter(_.nonEmpty)
-          .map(message => s" | error: $message")
-          .getOrElse("")
-
-        Option(status).foreach { currentStatus =>
-          currentStatus.textContent =
-            s"Loaded ${remotePersons.length} of $total rows | filter='${query.filter}' | sort=$sortText | offset=${query.offset} | pageSize=${query.size}$loadingText$errorText"
-        }
-      }
-
-      def runFilterReload(filter: String): Unit = {
+      def runSearchReload(search: String): Unit = {
         queuedFilterReload = None
-        if (shouldReloadFilter(filter)) {
-          discard(remotePersons.reload(current => current.copy(filter = filter, offset = 0)))
+        if (shouldReloadSearch(search)) {
+          discard(remoteRecords.reload(current => current.copy(search = search, offset = 0)))
         } else {
-          updateStatus()
+          refreshTelemetry()
         }
       }
 
-      def requestFilterReload(filter: String): Unit =
-        if (remotePersons.loadingProperty.get) {
-          queuedFilterReload = Some(filter)
+      def requestSearchReload(search: String): Unit =
+        if (remoteRecords.loadingProperty.get) {
+          queuedFilterReload = Some(search)
         } else {
-          runFilterReload(filter)
+          runSearchReload(search)
         }
 
-      def scheduleFilterReload(): Unit = {
-        val filter = currentFilterValue
+      def scheduleSearchReload(): Unit = {
+        val nextValue = currentFilterValue
         cancelPendingFilterReload()
         pendingFilterHandle = Some(setTimeout(filterDebounceMs) {
           pendingFilterHandle = None
-          requestFilterReload(filter)
+          requestSearchReload(nextValue)
         })
       }
 
-      def applyFilter(): Unit = {
+      def applyStageFilter(stage: Option[String]): Unit = {
         cancelPendingFilterReload()
-        requestFilterReload(currentFilterValue)
+        queuedFilterReload = None
+        discard(remoteRecords.reload(current =>
+          current.copy(
+            search = currentFilterValue,
+            stage = stage,
+            offset = 0
+          )
+        ))
       }
+
+      def clearFilters(): Unit = {
+        cancelPendingFilterReload()
+        queuedFilterReload = None
+        Option(filterInput).foreach(_.element.value = "")
+        discard(remoteRecords.reload(current => current.copy(search = "", stage = None, offset = 0)))
+      }
+
+      def openSelectedWindow(): Unit =
+        Option(selectedRecord.get) match
+          case Some(record) =>
+            Viewport.addWindow(
+              WindowConf(
+                title = record.title.get,
+                width = 480,
+                height = 320,
+                resizable = true,
+                component = Viewport.captureComponent {
+                  div {
+                    classes = "window-demo-card window-demo-card--record"
+
+                    div {
+                      classes = Seq("clarity-state-chip", s"is-${stateCss(record.state.get)}")
+                      text = record.state.get
+                    }
+
+                    div {
+                      classes = "window-demo-card__title"
+                      text = record.title.get
+                    }
+
+                    div {
+                      classes = "window-demo-card__copy"
+                      text = record.summary.get
+                    }
+
+                    div {
+                      classes = "window-demo-card__meta"
+                      text = s"Next step: ${record.nextStep.get}"
+                    }
+                  }
+                }
+              )
+            )
+          case None =>
+            Viewport.notify(
+              message = "Select a row before opening a focused context window.",
+              kind = Viewport.NotificationKind.Info,
+              durationMs = 2400
+            )
 
       div {
-        classes = "showcase-page-hero"
+        classes = "clarity-hero clarity-hero--clarification"
 
         div {
-          classes = "showcase-page-hero__eyebrow"
-          text = "Remote Data Showcase"
+          classes = "clarity-hero__eyebrow"
+          text = "Clarification Queue"
         }
 
         div {
-          classes = "showcase-page-hero__title"
-          text = "A table demo that feels like a product feature, not a toy example."
+          classes = "clarity-hero__title"
+          text = "Remote data becomes a meaning field when rows carry state, maturity and tension."
         }
 
         div {
-          classes = "showcase-page-hero__copy"
-          text =
-            "This page shows the kind of workflow people expect from real apps: debounced filtering, lazy loading, remote sorting and long-list rendering."
-        }
-
-        hbox {
-          classes = "showcase-page-hero__badges"
-
-          div {
-            classes = "showcase-page-hero__badge"
-            text = "RemoteListProperty"
-          }
-
-          div {
-            classes = "showcase-page-hero__badge"
-            text = "Virtualized Rows"
-          }
-
-          div {
-            classes = "showcase-page-hero__badge"
-            text = "Server-Like Sorting"
-          }
+          classes = "clarity-hero__copy"
+          text = "The queue keeps conflict visible instead of flattening every record into the same neutral table row. Filtering, sorting and lazy loading still behave like a real application surface."
         }
       }
+
+      val table = buildTable(remoteRecords)
 
       div {
-        text =
-          "Type into the filter for debounced reloads, click the headers for sort state, and scroll into unloaded areas to fetch rows on demand."
+        classes = "table-page__layout"
 
-        style {
-          color = "var(--color-neutral-500)"
-          lineHeight = "1.5"
-        }
-      }
+        div {
+          classes = "table-page__main"
 
-      hbox {
-        style {
-          alignItems = "center"
-          flexWrap = "wrap"
-          gap = "10px"
-        }
+          div {
+            classes = "clarity-zone table-page__surface"
 
-        filterInput = input("person-filter") {
-          placeholder = "Filter by first name, last name or city"
+            div {
+              classes = "clarity-zone-heading"
 
-          style {
-            minWidth = "320px"
-            padding = "9px 12px"
-            color = "var(--color-text)"
-            backgroundColor = "var(--color-background-secondary)"
-            border = "1px solid var(--jfx-table-border)"
-            borderRadius = "10px"
-            fontSize = "14px"
-          }
+              div {
+                classes = "clarity-zone-heading__label"
+                text = "Work Surface"
+              }
 
-          element.oninput = _ => scheduleFilterReload()
-          element.onkeydown = (event: KeyboardEvent) =>
-            if (event.key == "Enter") {
-              event.preventDefault()
-              applyFilter()
+              div {
+                classes = "clarity-zone-heading__title"
+                text = "Filter the queue, keep state visible and select one record for deeper context."
+              }
             }
+
+            hbox {
+              classes = "table-page__toolbar"
+
+              filterInput = input("queue-filter") {
+                placeholder = "Search title, steward or unresolved summary"
+                classes = "table-page__search"
+
+                element.oninput = _ => scheduleSearchReload()
+                element.onkeydown = (event: KeyboardEvent) =>
+                  if (event.key == "Enter") {
+                    event.preventDefault()
+                    cancelPendingFilterReload()
+                    requestSearchReload(currentFilterValue)
+                  }
+              }
+
+              button("Reset") {
+                buttonType = "button"
+                classes = Seq("calm-action", "calm-action--quiet")
+
+                onClick { _ =>
+                  clearFilters()
+                }
+              }
+
+              button("Sort by tension") {
+                buttonType = "button"
+                classes = Seq("calm-action", "calm-action--quiet")
+
+                onClick { _ =>
+                  discard(remoteRecords.applySorting(Seq(ListProperty.RemoteSort("tension", ascending = false))))
+                }
+              }
+
+              button("Sort by revisions") {
+                buttonType = "button"
+                classes = Seq("calm-action", "calm-action--quiet")
+
+                onClick { _ =>
+                  discard(remoteRecords.applySorting(Seq(ListProperty.RemoteSort("revisions", ascending = false))))
+                }
+              }
+            }
+
+            observeRender(telemetry) { current =>
+              div {
+                classes = "table-page__state-filter"
+
+                stageFilterButton("All states", None, current.query.stage)(applyStageFilter)
+                ClarityState.ordered.foreach { state =>
+                  stageFilterButton(state.label, Some(state.label), current.query.stage)(applyStageFilter)
+                }
+              }
+            }
+
+            observeRender(telemetry) { current =>
+              div {
+                classes = "table-page__status"
+                text = queueStatusCopy(current)
+              }
+            }
+
+            table
+          }
         }
 
-        button("Apply Filter") {
-          buttonType = "button"
+        div {
+          classes = "table-page__aside"
 
-          style {
-            padding = "9px 12px"
-            color = "var(--color-text)"
-            border = "1px solid var(--jfx-table-border)"
-            borderRadius = "10px"
-            backgroundColor = "var(--color-background-secondary)"
-            cursor = "pointer"
+          observeRender(telemetry) { current =>
+            div {
+              classes = "clarity-zone"
+
+              div {
+                classes = "clarity-zone-heading"
+
+                div {
+                  classes = "clarity-zone-heading__label"
+                  text = "Queue Reading"
+                }
+
+                div {
+                  classes = "clarity-zone-heading__title"
+                  text = s"${current.filteredCount} relevant records out of ${current.totalCount}"
+                }
+
+                div {
+                  classes = "clarity-zone-heading__copy"
+                  text = s"Loaded ${current.loadedCount}. Sort: ${current.activeSort}."
+                }
+              }
+
+              div {
+                classes = "table-page__count-grid"
+
+                ClarityState.ordered.foreach { state =>
+                  div {
+                    classes = "table-page__count-card"
+
+                    div {
+                      classes = Seq("clarity-state-chip", s"is-${state.cssName}")
+                      text = state.label
+                    }
+
+                    div {
+                      classes = "table-page__count-value"
+                      text = current.stageCounts.getOrElse(state.label, 0).toString
+                    }
+
+                    div {
+                      classes = "table-page__count-copy"
+                      text = state.discipline
+                    }
+                  }
+                }
+              }
+            }
           }
 
-          onClick { _ =>
-            applyFilter()
-          }
-        }
+          observeRender(selectedRecord) { maybeRecord =>
+            div {
+              classes = "clarity-zone"
 
-        button("Clear Filter") {
-          buttonType = "button"
+              div {
+                classes = "clarity-zone-heading"
 
-          style {
-            padding = "9px 12px"
-            color = "var(--color-text)"
-            border = "1px solid var(--jfx-table-border)"
-            borderRadius = "10px"
-            backgroundColor = "var(--color-background-secondary)"
-            cursor = "pointer"
-          }
+                div {
+                  classes = "clarity-zone-heading__label"
+                  text = "Selected Record"
+                }
 
-          onClick { _ =>
-            cancelPendingFilterReload()
-            queuedFilterReload = None
-            Option(filterInput).foreach(_.element.value = "")
-            requestFilterReload("")
-          }
-        }
+                div {
+                  classes = "clarity-zone-heading__title"
+                  text = Option(maybeRecord).map(_.title.get).getOrElse("No record selected yet")
+                }
 
-        button("Reload") {
-          buttonType = "button"
+                div {
+                  classes = "clarity-zone-heading__copy"
+                  text = Option(maybeRecord).map(_.summary.get).getOrElse("Pick a row to inspect the current tension, stewardship and next step.")
+                }
+              }
 
-          style {
-            padding = "9px 12px"
-            color = "var(--color-text)"
-            border = "1px solid var(--jfx-table-border)"
-            borderRadius = "10px"
-            backgroundColor = "var(--color-background-secondary)"
-            cursor = "pointer"
-          }
+              Option(maybeRecord) match
+                case Some(record) =>
+                  div {
+                    classes = "table-page__detail-list"
 
-          onClick { _ =>
-            cancelPendingFilterReload()
-            queuedFilterReload = None
-            discard(remotePersons.reload())
+                    detailRow("State", record.state.get, record.state.get)
+                    detailRow("Steward", record.steward.get)
+                    detailRow("Tension", tensionLabel(record.tension.get))
+                    detailRow("Revisions", record.revisions.get.toString)
+                    detailRow("Updated", record.updatedAt.get)
+                  }
+
+                  div {
+                    classes = "table-page__detail-next"
+                    text = s"Next step: ${record.nextStep.get}"
+                  }
+
+                  button("Open Focus Window") {
+                    buttonType = "button"
+                    classes = Seq("calm-action", "calm-action--secondary")
+
+                    onClick { _ =>
+                      openSelectedWindow()
+                    }
+                  }
+
+                case None =>
+                  div {
+                    classes = "table-page__detail-next"
+                    text = "A focused window can open once a specific queue record is selected."
+                  }
+            }
           }
         }
       }
 
-      status = div {
-        style {
-          padding = "10px 12px"
-          color = "var(--color-text)"
-          backgroundColor = "var(--color-background-primary)"
-          border = "1px solid var(--jfx-table-border)"
-          borderRadius = "10px"
-          fontFamily = "Consolas, monospace"
-          fontSize = "13px"
-        }
-      }
-
-      buildTable(remotePersons)
-
-      addDisposable(remotePersons.observe(_ => updateStatus()))
-      addDisposable(remotePersons.loadingProperty.observe { loading =>
-        updateStatus()
+      addDisposable(table.getSelectionModel.selectedItemProperty.observe(item => selectedRecord.set(item)))
+      addDisposable(remoteRecords.observe(_ => refreshTelemetry()))
+      addDisposable(remoteRecords.queryProperty.observe(_ => refreshTelemetry()))
+      addDisposable(remoteRecords.loadingProperty.observe { loading =>
+        refreshTelemetry()
         if (!loading) {
-          queuedFilterReload.foreach { filter =>
+          queuedFilterReload.foreach { search =>
             queuedFilterReload = None
             setTimeout(0) {
-              requestFilterReload(filter)
+              requestSearchReload(search)
             }
           }
         }
       })
-      addDisposable(remotePersons.errorProperty.observe(_ => updateStatus()))
-      addDisposable(remotePersons.totalCountProperty.observe(_ => updateStatus()))
-      addDisposable(remotePersons.sortingProperty.observe(_ => updateStatus()))
+      addDisposable(remoteRecords.errorProperty.observe(_ => refreshTelemetry()))
+      addDisposable(remoteRecords.totalCountProperty.observe(_ => refreshTelemetry()))
+      addDisposable(remoteRecords.sortingProperty.observe(_ => refreshTelemetry()))
     }
 
+  private def buildTable(remoteRecords: ListProperty[InsightRecord]): TableView[InsightRecord] =
+    TableView.tableView[InsightRecord] {
+      val table = summon[TableView[InsightRecord]]
+      table.items = remoteRecords
+      table.setFixedCellSize(44)
+      table.setRowFactory(_ => new InsightRow())
+      table.setPlaceholder(
+        div {
+          classes = "clarity-empty-state"
 
-  private def buildTable(remotePersons: ListProperty[Person]): TableView[Person] =
-    tableView[Person] {
-      items = remotePersons
-      fixedCellSize = 34
+          div {
+            classes = "clarity-empty-state__title"
+            text = "No records match the current lens"
+          }
+
+          div {
+            classes = "clarity-empty-state__copy"
+            text = "Try another search term or move back to all states. The queue keeps conflict visible, so empty results are treated as information."
+          }
+        }
+      )
+
+      classes = "table-page__table"
 
       style {
-        height = "360px"
+        height = "560px"
       }
 
-      column[Person, String]("First Name") {
-        cellValueFactory = new PropertyValueFactory[Person, String]("firstName")
-        prefWidth = 180
-        sortable = true
-        sortKey = "firstName"
+      TableColumn.column[InsightRecord, String]("State") {
+        val currentColumn = summon[TableColumn[InsightRecord, String]]
+        currentColumn.setCellValueFactory(new PropertyValueFactory[InsightRecord, String]("state"))
+        currentColumn.prefWidth = 160
+        currentColumn.setSortable(true)
+        currentColumn.setSortKey("state")
+        currentColumn.setResizable(false)
+        currentColumn.setCellFactory(_ => new InsightStateCell())
       }
 
-      column[Person, String]("Last Name") {
-        cellValueFactory = new PropertyValueFactory[Person, String]("lastName")
-        prefWidth = 180
-        sortable = true
-        sortKey = "lastName"
+      TableColumn.column[InsightRecord, String]("Thought Field") {
+        val currentColumn = summon[TableColumn[InsightRecord, String]]
+        currentColumn.setCellValueFactory(new PropertyValueFactory[InsightRecord, String]("title"))
+        currentColumn.prefWidth = 360
+        currentColumn.setSortable(true)
+        currentColumn.setSortKey("title")
       }
 
-      column[Person, String]("City") {
-        cellValueFactory = (features: TableColumn.CellDataFeatures[Person, String]) => {
-          val address = features.getValue.address.get
-          if (address == null) Property("")
-          else address.city
-        }
-        prefWidth = 180
-        sortable = true
-        sortKey = "city"
+      TableColumn.column[InsightRecord, String]("Steward") {
+        val currentColumn = summon[TableColumn[InsightRecord, String]]
+        currentColumn.setCellValueFactory(new PropertyValueFactory[InsightRecord, String]("steward"))
+        currentColumn.prefWidth = 190
+        currentColumn.setSortable(true)
+        currentColumn.setSortKey("steward")
       }
 
-      column[Person, Int]("Emails") {
-        cellValueFactory = (features: TableColumn.CellDataFeatures[Person, Int]) =>
-          Property(features.getValue.emails.length)
-        prefWidth = 90
-        sortable = true
-        sortKey = "emails"
+      TableColumn.column[InsightRecord, Int]("Tension") {
+        val currentColumn = summon[TableColumn[InsightRecord, Int]]
+        currentColumn.setCellValueFactory(new PropertyValueFactory[InsightRecord, Int]("tension"))
+        currentColumn.prefWidth = 120
+        currentColumn.setSortable(true)
+        currentColumn.setSortKey("tension")
+        currentColumn.setResizable(false)
+        currentColumn.setCellFactory(_ => new InsightTensionCell())
+      }
+
+      TableColumn.column[InsightRecord, Int]("Revisions") {
+        val currentColumn = summon[TableColumn[InsightRecord, Int]]
+        currentColumn.setCellValueFactory(new PropertyValueFactory[InsightRecord, Int]("revisions"))
+        currentColumn.prefWidth = 120
+        currentColumn.setSortable(true)
+        currentColumn.setSortKey("revisions")
+        currentColumn.setResizable(false)
       }
     }
 
-  private def delayedRemotePage(query: PersonQuery): js.Promise[ListProperty.RemotePage[Person, PersonQuery]] = {
-    val promise = Promise[ListProperty.RemotePage[Person, PersonQuery]]()
+  private def computeTelemetry(query: InsightQuery, remoteRecords: ListProperty[InsightRecord]): QueueTelemetry = {
+    val filtered = filteredData(query)
+    val remote = remoteRecords.remotePropertyOrNull
+    val activeSort =
+      query.sort.headOption
+        .flatMap(parseSort)
+        .map { case (field, ascending) =>
+          val label =
+            field match
+              case "state" => "state"
+              case "title" => "title"
+              case "steward" => "steward"
+              case "tension" => "tension"
+              case "revisions" => "revisions"
+              case other => other
+          s"$label ${if (ascending) "ascending" else "descending"}"
+        }
+        .getOrElse("manual")
 
-    setTimeout(350) {
+    QueueTelemetry(
+      filteredCount = filtered.length,
+      totalCount = demoData.length,
+      loadedCount = remoteRecords.length,
+      loading = remote.loadingProperty.get,
+      error = remote.errorProperty.get.flatMap(error => Option(error.getMessage)).filter(_.nonEmpty),
+      activeSort = activeSort,
+      query = query,
+      stageCounts = ClarityState.ordered.iterator.map(state => state.label -> filtered.count(_.state.get == state.label)).toMap
+    )
+  }
+
+  private def queueStatusCopy(current: QueueTelemetry): String = {
+    val stageLabel = current.query.stage.getOrElse("all states")
+    val loadingCopy = if (current.loading) " Refresh in progress." else ""
+    val errorCopy = current.error.map(message => s" Issue: $message").getOrElse("")
+    s"Viewing $stageLabel with ${current.filteredCount} relevant records. Loaded ${current.loadedCount}. Sorted by ${current.activeSort}.$loadingCopy$errorCopy"
+  }
+
+  private def stageFilterButton(
+    label: String,
+    stage: Option[String],
+    activeStage: Option[String]
+  )(onPick: Option[String] => Unit): Unit =
+    button(label) {
+      buttonType = "button"
+      classes = Vector("table-page__filter-chip") ++ Option.when(stage == activeStage)("is-active")
+
+      onClick { _ =>
+        onPick(stage)
+      }
+    }
+
+  private def detailRow(label: String, value: String, stateValue: String = ""): Unit =
+    div {
+      classes = "table-page__detail-row"
+
+      div {
+        classes = "table-page__detail-label"
+        text = label
+      }
+
+      div {
+        classes =
+          Vector("table-page__detail-value") ++ Option.when(stateValue.nonEmpty)(s"is-${stateCss(stateValue)}")
+        text = value
+      }
+    }
+
+  private def delayedRemotePage(query: InsightQuery): js.Promise[ListProperty.RemotePage[InsightRecord, InsightQuery]] = {
+    val promise = Promise[ListProperty.RemotePage[InsightRecord, InsightQuery]]()
+
+    setTimeout(320) {
       try {
         promise.success(loadRemotePage(query))
       } catch {
@@ -376,106 +628,177 @@ class TablePage extends CompositeComponent[HTMLDivElement] {
     promise.future.toJSPromise
   }
 
-  private def loadRemotePage(query: PersonQuery): ListProperty.RemotePage[Person, PersonQuery] = {
-    if (query.filter.equalsIgnoreCase("error")) {
-      throw RuntimeException("Simulated backend error. Use another filter value.")
+  private def loadRemotePage(query: InsightQuery): ListProperty.RemotePage[InsightRecord, InsightQuery] = {
+    if (query.search.equalsIgnoreCase("stalled")) {
+      throw RuntimeException("The queue could not refresh. Remove the 'stalled' filter and try again.")
     }
 
     val normalizedOffset = math.max(0, query.offset)
     val normalizedSize = math.max(1, query.size)
-    val filtered = demoData.filter(matchesFilter(_, query.filter))
-    val sorted = sortPersons(filtered, query.sort)
-    val fromIndex = normalizedOffset
-    val untilIndex = math.min(sorted.length, fromIndex + normalizedSize)
+    val filtered = filteredData(query)
+    val sorted = sortRecords(filtered, query.sort)
+    val untilIndex = math.min(sorted.length, normalizedOffset + normalizedSize)
     val pageItems =
-      if (fromIndex >= sorted.length) Vector.empty
-      else sorted.slice(fromIndex, untilIndex)
+      if (normalizedOffset >= sorted.length) Vector.empty
+      else sorted.slice(normalizedOffset, untilIndex)
     val hasMore = untilIndex < sorted.length
 
     ListProperty.RemotePage(
       items = pageItems,
-      offset = Some(fromIndex),
+      offset = Some(normalizedOffset),
       nextQuery = Option.when(hasMore)(query.copy(offset = untilIndex)),
       totalCount = Some(sorted.length),
       hasMore = Some(hasMore)
     )
   }
 
-  private def matchesFilter(person: Person, filter: String): Boolean = {
-    val normalizedFilter = filter.trim.toLowerCase
-    if (normalizedFilter.isEmpty) {
-      true
-    } else {
-      Seq(
-        person.firstName.get,
-        person.lastName.get,
-        cityOf(person)
-      ).exists(value => normalize(value).contains(normalizedFilter))
-    }
-  }
+  private def filteredData(query: InsightQuery): Vector[InsightRecord] =
+    demoData.filter { record =>
+      val stageMatches = query.stage.forall(_ == record.state.get)
+      val search = normalize(query.search)
+      val searchMatches =
+        if (search.isEmpty) true
+        else {
+          Seq(record.title.get, record.steward.get, record.summary.get)
+            .exists(value => normalize(value).contains(search))
+        }
 
-  private def sortPersons(persons: Vector[Person], sort: Seq[String]): Vector[Person] =
-    sort.headOption.flatMap(parseSort) match {
-      case Some(("firstName", ascending)) =>
-        sortByString(persons, _.firstName.get, ascending)
-      case Some(("lastName", ascending)) =>
-        sortByString(persons, _.lastName.get, ascending)
-      case Some(("city", ascending)) =>
-        sortByString(persons, cityOf, ascending)
-      case Some(("emails", ascending)) =>
-        val ordering = Ordering.by[Person, Int](_.emails.length)
-        persons.sorted(using if (ascending) ordering else ordering.reverse)
+      stageMatches && searchMatches
+    }
+
+  private def sortRecords(records: Vector[InsightRecord], sort: Seq[String]): Vector[InsightRecord] =
+    sort.headOption.flatMap(parseSort) match
+      case Some(("state", ascending)) =>
+        sortBy(records, record => stateRank(record.state.get), ascending)
+      case Some(("title", ascending)) =>
+        sortBy(records, record => normalize(record.title.get), ascending)
+      case Some(("steward", ascending)) =>
+        sortBy(records, record => normalize(record.steward.get), ascending)
+      case Some(("tension", ascending)) =>
+        sortBy(records, _.tension.get, ascending)
+      case Some(("revisions", ascending)) =>
+        sortBy(records, _.revisions.get, ascending)
       case _ =>
-        persons
-    }
+        records
 
-  private def sortByString(persons: Vector[Person], valueFor: Person => String, ascending: Boolean): Vector[Person] = {
-    val ordering = Ordering.by[Person, String](person => normalize(valueFor(person)))
-    persons.sorted(using if (ascending) ordering else ordering.reverse)
+  private def sortBy[A: Ordering](records: Vector[InsightRecord], valueFor: InsightRecord => A, ascending: Boolean): Vector[InsightRecord] = {
+    val ordering = Ordering.by[InsightRecord, A](valueFor)
+    records.sorted(using if (ascending) ordering else ordering.reverse)
   }
 
   private def parseSort(sortValue: String): Option[(String, Boolean)] = {
     val parts = sortValue.split(",", 2).map(_.trim)
-    if (parts.isEmpty || parts(0).isEmpty) {
-      None
-    } else {
-      val ascending = parts.length < 2 || !parts(1).equalsIgnoreCase("desc")
-      Some(parts(0) -> ascending)
-    }
+    if (parts.isEmpty || parts(0).isEmpty) None
+    else Some(parts(0) -> (parts.length < 2 || !parts(1).equalsIgnoreCase("desc")))
   }
 
-  private def cityOf(person: Person): String = {
-    val address = person.address.get
-    if (address == null) "" else address.city.get
-  }
+  private def buildDemoData(total: Int): Vector[InsightRecord] =
+    Vector.tabulate(total) { index =>
+      val state =
+        index % 4 match
+          case 0 => ClarityState.Raw
+          case 1 => ClarityState.Clarification
+          case 2 => ClarityState.Condensed
+          case _ => ClarityState.Archived
+      val theme = themes(index % themes.length)
+      val steward = stewards((index / 2) % stewards.length)
+      val summary = summaries((index / 3) % summaries.length)
+      val tension =
+        state match
+          case ClarityState.Raw => 5 - (index % 2)
+          case ClarityState.Clarification => 3 + (index % 3)
+          case ClarityState.Condensed => 2 + (index % 2)
+          case ClarityState.Archived => 1 + (index % 2)
+      val revisions =
+        state match
+          case ClarityState.Raw => 1 + (index % 2)
+          case ClarityState.Clarification => 2 + (index % 4)
+          case ClarityState.Condensed => 4 + (index % 4)
+          case ClarityState.Archived => 6 + (index % 3)
+
+      new InsightRecord(
+        title = Property(s"$theme ${index + 1}"),
+        state = Property(state.label),
+        steward = Property(steward),
+        tension = Property(tension),
+        revisions = Property(revisions),
+        summary = Property(summary),
+        nextStep = Property(nextSteps(state.label)),
+        updatedAt = Property(f"2026-04-${(index % 9) + 1}%02d")
+      )
+    }
 
   private def normalize(value: String | Null): String =
-    Option(value).map(_.toLowerCase).getOrElse("")
+    Option(value).map(_.trim.toLowerCase).getOrElse("")
 
-  private def buildDemoData(total: Int): Vector[Person] =
-    Vector.tabulate(total) { index =>
-      val firstName = firstNames(index % firstNames.length)
-      val lastName = lastNames((index / 2) % lastNames.length)
-      val city = cities((index / 3) % cities.length)
-      val street = s"${streetNames(index % streetNames.length)} ${10 + (index % 80)}"
-      val emailCount = 1 + (index % 3)
-      val emails = js.Array(
-        (0 until emailCount).map { emailIndex =>
-          new Email(Property(s"${normalize(firstName)}.${normalize(lastName)}.${index + 1}.${emailIndex + 1}@demo.dev"))
-        } *
-      )
+  private def stateRank(label: String): Int =
+    ClarityState.ordered.indexWhere(_.label == label) match
+      case -1 => ClarityState.ordered.length
+      case rank => rank
 
-      new Person(
-        firstName = Property(firstName),
-        lastName = Property(lastName),
-        address = Property(new Address(Property(street), Property(city))),
-        emails = ListProperty(emails)
-      )
-    }
+  private def stateCss(label: String): String =
+    label.trim.toLowerCase
+
+  private def tensionLabel(value: Int): String =
+    value match
+      case 1 => "Quiet"
+      case 2 => "Held"
+      case 3 => "Active"
+      case 4 => "Sharp"
+      case _ => "Critical"
 
   private def discard(promise: js.Promise[?]): Unit = {
     promise.toFuture.recover { case NonFatal(error) => dom.console.error(error.getMessage) }
     ()
+  }
+
+  private final class InsightRow extends TableRow[InsightRecord] {
+    this.element.classList.add("clarity-table__row")
+
+    override protected def updateItem(item: InsightRecord | Null, empty: Boolean): Unit = {
+      this.element.classList.remove("is-raw")
+      this.element.classList.remove("is-clarification")
+      this.element.classList.remove("is-condensed")
+      this.element.classList.remove("is-archived")
+      if (!empty && item != null) {
+        this.element.classList.add(s"is-${stateCss(item.state.get)}")
+        this.element.setAttribute("data-tension", item.tension.get.toString)
+      } else {
+        this.element.removeAttribute("data-tension")
+      }
+    }
+  }
+
+  private final class InsightStateCell extends TableCell[InsightRecord, String] {
+    this.element.classList.add("clarity-table__state-cell")
+
+    override protected def updateItem(item: String | Null, empty: Boolean): Unit = {
+      super.updateItem(item, empty)
+      this.element.classList.remove("is-raw")
+      this.element.classList.remove("is-clarification")
+      this.element.classList.remove("is-condensed")
+      this.element.classList.remove("is-archived")
+      if (!empty && item != null) {
+        this.element.classList.add(s"is-${stateCss(item)}")
+      }
+    }
+  }
+
+  private final class InsightTensionCell extends TableCell[InsightRecord, Int] {
+    this.element.classList.add("clarity-table__tension-cell")
+
+    override protected def updateItem(item: Int | Null, empty: Boolean): Unit = {
+      this.element.classList.remove("is-sharp")
+      this.element.classList.remove("is-critical")
+      if (empty || item == null) {
+        super.updateItem(item, empty)
+      } else {
+        val value = item.asInstanceOf[Int]
+        textContent = tensionLabel(value)
+        if (value >= 4) this.element.classList.add("is-sharp")
+        if (value >= 5) this.element.classList.add("is-critical")
+      }
+    }
   }
 }
 

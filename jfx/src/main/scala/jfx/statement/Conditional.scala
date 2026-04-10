@@ -280,12 +280,14 @@ object Conditional {
       val currentContext = DslRuntime.currentComponentContext()
 
       conditional.registerThenBuilder(() =>
-        DslRuntime.withComponentContext(
-          DslRuntime.branchContext(currentContext, "then", conditional.thenAdd)
-        ) {
-          given Scope = currentScope
-          given Conditional = conditional
-          init
+        DslRuntime.withScope(currentScope) {
+          DslRuntime.withComponentContext(
+            DslRuntime.branchContext(currentContext, "then", conditional.thenAdd)
+          ) {
+            given Scope = currentScope
+            given Conditional = conditional
+            init
+          }
         }
       )
 
@@ -297,12 +299,14 @@ object Conditional {
       val currentContext = DslRuntime.currentComponentContext()
 
       conditional.registerElseBuilder(() =>
-        DslRuntime.withComponentContext(
-          DslRuntime.branchContext(currentContext, "else", conditional.elseAdd)
-        ) {
-          given Scope = currentScope
-          given Conditional = conditional
-          init
+        DslRuntime.withScope(currentScope) {
+          DslRuntime.withComponentContext(
+            DslRuntime.branchContext(currentContext, "else", conditional.elseAdd)
+          ) {
+            given Scope = currentScope
+            given Conditional = conditional
+            init
+          }
         }
       )
 

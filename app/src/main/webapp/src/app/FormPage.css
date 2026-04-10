@@ -1,51 +1,41 @@
-.form-page {
-    width: min(100%, 860px);
-    box-sizing: border-box;
-}
-
-.form-page__hero {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 28px;
-    border: 1px solid var(--jfx-table-border);
-    border-radius: 28px;
-    background: linear-gradient(
-        135deg,
-        var(--color-background-secondary) 0%,
-        var(--color-background-primary) 72%
-    );
-}
-
-.form-page__eyebrow {
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--color-selected);
-}
-
-.form-page__title {
-    font-size: clamp(1.9rem, 4vw, 2.6rem);
-    font-weight: 700;
-    line-height: 1.05;
-    letter-spacing: -0.04em;
-}
-
-.form-page__subtitle {
-    max-width: 56ch;
-    line-height: 1.6;
-    color: var(--color-neutral-500);
-}
-
+.form-page__state-strip,
 .form-page__form {
+    gap: 18px;
+}
+
+.form-page__transition-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.form-page__transition-button {
+    min-height: 38px;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: 999px;
+    background: var(--color-surface-soft);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+}
+
+.form-page__transition-button.is-active {
+    border-color: var(--color-accent);
+    background: var(--color-accent-ghost);
+    color: var(--color-accent-strong);
+}
+
+.form-page__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.9fr);
+    gap: 18px;
+}
+
+.form-page__workspace,
+.form-page__context {
     display: flex;
     flex-direction: column;
-    gap: 22px;
-    padding: 28px;
-    border: 1px solid var(--jfx-table-border);
-    border-radius: 28px;
-    background-color: var(--color-background-primary);
+    gap: 18px;
 }
 
 .form-page__field-grid {
@@ -58,147 +48,10 @@
     min-width: 0;
 }
 
-.form-page__combo-field {
-    grid-column: 1 / -1;
-}
-
-.form-page__combo-field .control {
-    padding: 4px 0 8px;
-}
-
-.form-page__combo-control {
-    min-height: 52px;
-    align-items: flex-start;
-    padding: 6px 0 2px;
-}
-
-.form-page__combo-control .jfx-combo-box__indicator {
-    margin-top: 6px;
-}
-
-.form-page__combo-control.jfx-combo-box-open .form-page__combo-label,
-.form-page__combo-control:focus-visible .form-page__combo-label {
-    color: var(--color-selected);
-}
-
-.form-page__combo-value,
-.form-page__combo-item {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-    width: 100%;
-    min-width: 0;
-}
-
-.form-page__combo-copy {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    min-width: 0;
-}
-
-.form-page__combo-label {
-    line-height: 1.25;
-    font-weight: 600;
-}
-
-.form-page__combo-note {
-    font-size: 0.83rem;
-    line-height: 1.45;
-    color: var(--color-neutral-500);
-}
-
-.form-page__combo-pill {
-    flex: 0 0 auto;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 4px 10px;
-    border-radius: 999px;
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    white-space: nowrap;
-    color: var(--color-selected);
-    background-color: var(--jfx-table-row-selected);
-}
-
-.form-page__combo-value.is-placeholder .form-page__combo-label {
-    font-weight: 500;
-    color: var(--color-neutral-500);
-}
-
-.form-page__combo-value.is-placeholder .form-page__combo-note {
-    color: var(--color-neutral-500);
-}
-
-.form-page__combo-item.is-selected .form-page__combo-label {
-    color: var(--color-selected);
-}
-
-.form-page__combo-item.is-selected .form-page__combo-pill {
-    color: var(--color-background-primary);
-    background-color: var(--color-selected);
-}
-
-.address-form {
-    grid-column: 1 / -1;
-}
-
-.address-form__card {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
-    padding: 20px;
-    border: 1px solid var(--jfx-table-border);
-    border-radius: 24px;
-    background-color: var(--color-background-primary);
-}
-
-.address-form__card > * {
-    min-width: 0;
-}
-
+.form-page__combo-field,
+.address-form,
 .form-page__media-field {
     grid-column: 1 / -1;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    padding: 20px;
-    border: 1px solid var(--jfx-table-border);
-    border-radius: 24px;
-    background: linear-gradient(
-        180deg,
-        var(--color-background-primary) 0%,
-        var(--color-background-secondary) 100%
-    );
-}
-
-.form-page__cropper {
-    width: 512px;
-    height: 512px;
-    max-width: none;
-    padding: 0;
-}
-
-.form-page__section-intro {
-    grid-column: 1 / -1;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.form-page__section-title {
-    font-size: 1rem;
-    font-weight: 700;
-    line-height: 1.3;
-}
-
-.form-page__section-copy {
-    line-height: 1.5;
-    color: var(--color-neutral-500);
 }
 
 .form-page .input-container {
@@ -220,58 +73,209 @@
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--color-neutral-500);
+    color: var(--color-text-muted);
 }
 
-.form-page__text-input::placeholder,
+.form-page .input-container .control {
+    padding: 10px 12px;
+    border: 1px solid var(--color-border-strong);
+    border-radius: 16px;
+    background: var(--color-surface-overlay);
+}
+
 .form-page .input-container .control input::placeholder {
-    color: var(--color-neutral-500);
+    color: var(--color-text-muted);
     opacity: 1;
+}
+
+.form-page__combo-control {
+    min-height: 54px;
+    align-items: flex-start;
+    padding: 2px 0;
+}
+
+.form-page__combo-control .jfx-combo-box__indicator {
+    margin-top: 6px;
+}
+
+.form-page__combo-value,
+.form-page__combo-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    min-width: 0;
+}
+
+.form-page__combo-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.form-page__combo-label {
+    font-weight: 650;
+    line-height: 1.3;
+}
+
+.form-page__combo-note {
+    color: var(--color-text-secondary);
+    font-size: 0.84rem;
+    line-height: 1.45;
+}
+
+.form-page__combo-pill {
+    flex: 0 0 auto;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: var(--color-accent-ghost);
+    color: var(--color-accent-strong);
+}
+
+.form-page__combo-item.is-selected,
+.form-page__combo-value:not(.is-placeholder) {
+    border-color: transparent;
+}
+
+.form-page__combo-item.is-selected .form-page__combo-pill {
+    background: var(--color-accent);
+    color: var(--color-text-inverse);
+}
+
+.form-page__combo-value.is-placeholder .form-page__combo-label {
+    color: var(--color-text-muted);
+}
+
+.address-form__card,
+.form-page__media-field,
+.form-page__ledger-entry,
+.form-page__prompt {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 18px;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: 20px;
+    background: var(--color-surface-overlay);
+}
+
+.address-form__card {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.form-page__section-intro {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.form-page__section-title,
+.form-page__ledger-title,
+.form-page__prompt-title {
+    font-size: 0.98rem;
+    font-weight: 700;
+}
+
+.form-page__section-copy,
+.form-page__ledger-copy,
+.form-page__prompt-copy,
+.form-page__context-item {
+    color: var(--color-text-secondary);
+    line-height: 1.55;
+}
+
+.form-page__cropper {
+    width: min(100%, 512px);
+    height: 512px;
+    max-width: 100%;
+    padding: 0;
 }
 
 .form-page__actions {
     display: flex;
+    flex-wrap: wrap;
     justify-content: flex-end;
+    gap: 10px;
 }
 
-.form-page__submit {
-    padding: 12px 20px;
-    border-radius: 999px;
-    font: inherit;
-    font-weight: 700;
-    letter-spacing: 0.01em;
-    color: var(--color-neutral-900);
-    background-color: var(--color-selected);
-    transition:
-        filter 160ms ease,
-        transform 160ms ease;
+.form-page__context-list,
+.form-page__ledger {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
-.form-page__submit:hover {
-    filter: brightness(0.98);
-    transform: translateY(-1px);
+.form-page__context-item {
+    padding-top: 10px;
+    border-top: 1px solid var(--color-border-subtle);
 }
 
-.form-page__submit:active {
-    filter: brightness(0.94);
-    transform: translateY(0);
+.form-page__context-item:first-of-type {
+    padding-top: 0;
+    border-top: 0;
+}
+
+.form-page__ledger-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.form-page__ledger-stamp {
+    font-size: 0.76rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+}
+
+.form-page__snapshot {
+    padding: 16px;
+    border-radius: 18px;
+    background: #17201c;
+    color: #d9e6db;
+    font-family: "Consolas", "SFMono-Regular", monospace;
+    font-size: 0.88rem;
+    line-height: 1.65;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+@media (max-width: 1080px) {
+    .form-page__layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
 }
 
 @media (max-width: 720px) {
-    .form-page__hero,
-    .form-page__form {
-        padding: 22px;
-        border-radius: 24px;
-    }
-
     .form-page__field-grid,
     .address-form__card {
         grid-template-columns: minmax(0, 1fr);
     }
 
+    .form-page__transition-row,
+    .form-page__actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
     .form-page__combo-value,
-    .form-page__combo-item {
+    .form-page__combo-item,
+    .form-page__ledger-meta {
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    .form-page__cropper {
+        height: 360px;
     }
 }

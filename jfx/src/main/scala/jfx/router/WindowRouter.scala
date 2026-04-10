@@ -68,7 +68,9 @@ final class WindowRouter(val routes: js.Array[Route])
           )
 
           loadingProperty.set(true)
-          routeMatch.route.factory(context, summon[Scope]).toFuture.onComplete {
+          DslRuntime.withScope(summon[Scope]) {
+            routeMatch.route.factory(context, summon[Scope])
+          }.toFuture.onComplete {
             case Success(component) if component != null =>
               val pageInfo =
                 component match {

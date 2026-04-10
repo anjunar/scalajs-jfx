@@ -1,5 +1,6 @@
 package app.pages
 
+import app.ClarityState
 import app.domain.{Address, Email, Person}
 import jfx.action.Button.{button, onClick}
 import jfx.control.TableColumn
@@ -43,21 +44,21 @@ class ComponentDocPage(entry: DocEntry) extends CompositeComponent[HTMLDivElemen
     withDslContext {
       given ComponentDocPage = this
 
-      classes = "component-doc"
+      classes = "clarity-page component-doc"
 
       style {
         display = "flex"
         flexDirection = "column"
-        gap = "24px"
+        gap = "20px"
         maxWidth = "1080px"
         margin = "0 auto"
       }
 
       div {
-        classes = "docs-hero"
+        classes = "clarity-hero clarity-hero--archived"
 
         div {
-          classes = "docs-hero__eyebrow"
+          classes = "clarity-hero__eyebrow"
           text = entry.category
         }
 
@@ -72,7 +73,7 @@ class ComponentDocPage(entry: DocEntry) extends CompositeComponent[HTMLDivElemen
         }
 
         div {
-          classes = "docs-hero__copy"
+          classes = "clarity-hero__copy"
           text = entry.tagline + " " + entry.summary
         }
 
@@ -80,9 +81,16 @@ class ComponentDocPage(entry: DocEntry) extends CompositeComponent[HTMLDivElemen
           classes = "docs-hero__actions"
 
           button("Back To Docs") {
-            classes = Seq("showcase-button", "showcase-button--secondary")
+            classes = Seq("calm-action", "calm-action--secondary")
             onClick { _ =>
               inject[Router].navigate("/docs")
+            }
+          }
+
+          button("Open Live Workspace") {
+            classes = Seq("calm-action", "calm-action--quiet")
+            onClick { _ =>
+              inject[Router].navigate(liveWorkspacePath(entry.slug))
             }
           }
 
@@ -97,7 +105,7 @@ class ComponentDocPage(entry: DocEntry) extends CompositeComponent[HTMLDivElemen
 
           div {
             classes = "component-doc__panel-title"
-            text = "Why You Would Use It"
+            text = "Operational Fit"
           }
 
           entry.bullets.foreach { bullet =>
@@ -139,7 +147,7 @@ class ComponentDocPage(entry: DocEntry) extends CompositeComponent[HTMLDivElemen
 
         div {
           classes = "component-doc__panel-title"
-          text = "Import"
+          text = "Import Surface"
         }
 
         div {
@@ -153,7 +161,7 @@ class ComponentDocPage(entry: DocEntry) extends CompositeComponent[HTMLDivElemen
 
         div {
           classes = "component-doc__panel-title"
-          text = "Usage Preview"
+          text = "Usage Skeleton"
         }
 
         div {
@@ -167,7 +175,7 @@ class ComponentDocPage(entry: DocEntry) extends CompositeComponent[HTMLDivElemen
 
         div {
           classes = "component-doc__panel-title"
-          text = "Usage Patterns"
+          text = "Integration Patterns"
         }
 
         div {
@@ -196,7 +204,7 @@ class ComponentDocPage(entry: DocEntry) extends CompositeComponent[HTMLDivElemen
 
         div {
           classes = "component-doc__panel-title"
-          text = "Try It"
+          text = "Live Sandbox"
         }
 
         div {
@@ -471,7 +479,7 @@ class ComponentDocPage(entry: DocEntry) extends CompositeComponent[HTMLDivElemen
 
       actions.foreach { case (label, run) =>
         button(label) {
-          classes = Seq("showcase-button", "showcase-button--inline")
+          classes = Seq("calm-action", "calm-action--quiet")
           onClick { _ =>
             run()
           }
@@ -578,21 +586,21 @@ class ComponentDocPage(entry: DocEntry) extends CompositeComponent[HTMLDivElemen
       classes = "component-doc__action-row"
 
       button("Reload") {
-        classes = Seq("showcase-button", "showcase-button--inline")
+        classes = Seq("calm-action", "calm-action--quiet")
         onClick { _ =>
           discard(remotePeople.reload())
         }
       }
 
       button("Sort By City") {
-        classes = Seq("showcase-button", "showcase-button--inline")
+        classes = Seq("calm-action", "calm-action--quiet")
         onClick { _ =>
           discard(remotePeople.applySorting(Seq(ListProperty.RemoteSort("city", ascending = true))))
         }
       }
 
       button("Load More") {
-        classes = Seq("showcase-button", "showcase-button--inline")
+        classes = Seq("calm-action", "calm-action--quiet")
         onClick { _ =>
           discard(remotePeople.loadMore())
         }
@@ -697,6 +705,15 @@ class ComponentDocPage(entry: DocEntry) extends CompositeComponent[HTMLDivElemen
       address = Property(new Address(Property(street), Property(city))),
       emails = ListProperty(js.Array(new Email(Property(s"${firstName.toLowerCase}.${lastName.toLowerCase}@docs.dev"))))
     )
+
+  private def liveWorkspacePath(slug: String): String =
+    slug match {
+      case "router" => "/"
+      case "table-view" | "remote-list-property" => "/table"
+      case "form" | "input-container" | "combo-box" | "image-cropper" => "/form"
+      case "viewport" => "/window"
+      case _ => "/docs"
+    }
 
   private def discard(promise: js.Promise[?]): Unit = {
     promise.toFuture.recover { case NonFatal(_) => () }

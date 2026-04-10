@@ -4,6 +4,7 @@ import jfx.control.{TableCell, TableColumn, TableRow, TableView}
 import jfx.core.component.{FormRegistrationBoundary, ManagedElementComponent, NodeComponent}
 import jfx.core.state.{Disposable, ListProperty, Property, ReadOnlyProperty}
 import jfx.dsl.{ComponentContext, DslRuntime, Scope}
+import jfx.form.Formular
 import jfx.layout.Span
 import jfx.layout.Viewport
 import org.scalajs.dom.{Event, HTMLDivElement, HTMLElement, HTMLSpanElement, KeyboardEvent, Node, document}
@@ -48,6 +49,8 @@ class ComboBox[S](val name: String, override val standalone: Boolean = false)
   private var dropdownTable: TableView[S] | Null = null
   private var updatingValueProperty = false
   private var disposed = false
+  private var renderScope: Scope = Scope.root()
+  private var renderEnclosingForm: Option[Formular[?, ?]] = None
 
   override val element: HTMLDivElement = {
     val divElement = newElement("div")
@@ -73,6 +76,11 @@ class ComboBox[S](val name: String, override val standalone: Boolean = false)
 
   override protected def mountContent(): Unit =
     ensureStructure()
+
+  private[jfx] def captureRenderContext(scope: Scope, enclosingForm: Option[Formular[?, ?]]): Unit = {
+    renderScope = scope
+    renderEnclosingForm = enclosingForm
+  }
 
   private val valueObserver =
     valueProperty.observe(_ => reconcileValue())
@@ -376,34 +384,38 @@ class ComboBox[S](val name: String, override val standalone: Boolean = false)
     }
 
   private def renderValueContent(): NodeComponent[? <: Node] | Null = {
-    given ComboBox.ValueRenderContext[S] =
-      ComboBox.ValueRenderContext(
-        comboBox = this,
-        selectedItems = valueProperty,
-        selectedItem = selectedItemProperty.get
-      )
+    withRenderContext {
+      given ComboBox.ValueRenderContext[S] =
+        ComboBox.ValueRenderContext(
+          comboBox = this,
+          selectedItems = valueProperty,
+          selectedItem = selectedItemProperty.get
+        )
 
-    val renderer = valueRendererProperty.get
-    if (renderer == null) {
-      ComboBox.defaultValueRenderer()
-    } else {
-      renderer.render
+      val renderer = valueRendererProperty.get
+      if (renderer == null) {
+        ComboBox.defaultValueRenderer()
+      } else {
+        renderer.render
+      }
     }
   }
 
   private def renderDropdownFooterContent(): NodeComponent[? <: Node] | Null = {
-    given ComboBox.DropdownFooterRenderContext[S] =
-      ComboBox.DropdownFooterRenderContext(
-        comboBox = this,
-        selectedItems = valueProperty,
-        selectedItem = selectedItemProperty.get
-      )
+    withRenderContext {
+      given ComboBox.DropdownFooterRenderContext[S] =
+        ComboBox.DropdownFooterRenderContext(
+          comboBox = this,
+          selectedItems = valueProperty,
+          selectedItem = selectedItemProperty.get
+        )
 
-    val renderer = dropdownFooterRendererProperty.get
-    if (renderer == null) {
-      null
-    } else {
-      renderer.render
+      val renderer = dropdownFooterRendererProperty.get
+      if (renderer == null) {
+        null
+      } else {
+        renderer.render
+      }
     }
   }
 
@@ -412,21 +424,30 @@ class ComboBox[S](val name: String, override val standalone: Boolean = false)
     index: Int,
     selected: Boolean
   ): NodeComponent[? <: Node] | Null = {
-    given ComboBox.ItemRenderContext[S] =
-      ComboBox.ItemRenderContext(
-        comboBox = this,
-        item = item,
-        index = index,
-        selected = selected
-      )
+    withRenderContext {
+      given ComboBox.ItemRenderContext[S] =
+        ComboBox.ItemRenderContext(
+          comboBox = this,
+          item = item,
+          index = index,
+          selected = selected
+        )
 
-    val renderer = itemRendererProperty.get
-    if (renderer == null) {
-      ComboBox.defaultItemRenderer()
-    } else {
-      renderer.render
+      val renderer = itemRendererProperty.get
+      if (renderer == null) {
+        ComboBox.defaultItemRenderer()
+      } else {
+        renderer.render
+      }
     }
   }
+
+  private def withRenderContext[A](block: => A): A =
+    DslRuntime.withScope(renderScope) {
+      DslRuntime.withComponentContext(ComponentContext(None, renderEnclosingForm)) {
+        block
+      }
+    }
 
   private def buildDropdownTable(): TableView[S] = {
     val table = new TableView[S]()
@@ -804,6 +825,7 @@ object ComboBox {
     DslRuntime.currentScope { currentScope =>
       val currentContext = DslRuntime.currentComponentContext()
       val component = new ComboBox[S](name, standalone)
+      component.captureRenderContext(currentScope, currentContext.enclosingForm)
 
       DslRuntime.withComponentContext(ComponentContext(None, currentContext.enclosingForm)) {
         given Scope = currentScope

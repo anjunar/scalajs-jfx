@@ -1,5 +1,6 @@
 package app.pages
 
+import app.ClarityState
 import jfx.action.Button.{button, onClick}
 import jfx.core.component.CompositeComponent
 import jfx.core.component.CompositeComponent.composite
@@ -19,107 +20,199 @@ class WindowPage extends CompositeComponent[HTMLDivElement] {
     withDslContext {
       given WindowPage = this
 
-      classes = "window-page"
+      classes = "clarity-page window-page"
 
       style {
         display = "flex"
         flexDirection = "column"
-        gap = "22px"
-        maxWidth = "1020px"
+        gap = "20px"
+        maxWidth = "1180px"
         margin = "0 auto"
       }
 
       div {
-        classes = "window-page__hero"
+        classes = "clarity-hero clarity-hero--condensed"
 
         div {
-          classes = "window-page__eyebrow"
-          text = "Windows And Overlays"
+          classes = "clarity-hero__eyebrow"
+          text = "Condensed Context"
         }
 
         div {
-          classes = "window-page__title"
-          text = "A desktop-style interaction layer inside the same Scala.js app."
+          classes = "clarity-hero__title"
+          text = "Windows hold secondary work without tearing the main surface apart."
         }
 
         div {
-          classes = "window-page__copy"
-          text =
-            "Open windows, stack them, send notifications and keep the same framework primitives for state, routing and composition."
+          classes = "clarity-hero__copy"
+          text = "The viewport becomes a contextual layer for clarification support, condensed summaries and archive previews. Motion stays calm and only appears when understanding benefits from it."
         }
 
         hbox {
-          classes = "window-page__actions"
+          classes = "clarity-action-row"
 
-          button("Open Profile Window") {
-            classes = Seq("showcase-button", "showcase-button--primary")
+          button("Open Clarification Map") {
+            classes = Seq("calm-action", "calm-action--primary")
             onClick { _ =>
-              Viewport.addWindow(windowConf("Profile Editor", "A floating workspace for forms, editors or drill-down tasks."))
+              Viewport.addWindow(workspaceWindow(
+                state = ClarityState.Clarification,
+                title = "Clarification Map",
+                body = "Collect contradictions, competing notes and open questions without leaving the current route.",
+                nextStep = "Keep the tension visible until the next explicit decision is ready."
+              ))
             }
           }
 
-          button("Open Metrics Window") {
-            classes = Seq("showcase-button", "showcase-button--secondary")
+          button("Open Revision Ledger") {
+            classes = Seq("calm-action", "calm-action--secondary")
             onClick { _ =>
-              Viewport.addWindow(windowConf("Release Metrics", "Useful for dashboards, inspectors and data-heavy tooling views."))
+              Viewport.addWindow(workspaceWindow(
+                state = ClarityState.Condensed,
+                title = "Revision Ledger",
+                body = "Review the latest transitions, snapshots and explanatory notes as one quiet side surface.",
+                nextStep = "Use this layer when the main page needs to remain visually calm."
+              ))
             }
           }
 
-          button("Show Notification") {
-            classes = Seq("showcase-button", "showcase-button--ghost")
+          button("Stack All Views") {
+            classes = Seq("calm-action", "calm-action--quiet")
             onClick { _ =>
+              Viewport.addWindow(workspaceWindow(
+                state = ClarityState.Raw,
+                title = "Protected Intake",
+                body = "A temporary side room for unfinished notes and partial drafts.",
+                nextStep = "Return to the main work surface when the record has enough shape for clarification."
+              ))
+              Viewport.addWindow(workspaceWindow(
+                state = ClarityState.Clarification,
+                title = "Conflict Notes",
+                body = "A focused panel for contradictions, context mismatch and unresolved meaning.",
+                nextStep = "Escalate only what truly requires a new interpretation."
+              ))
+              Viewport.addWindow(workspaceWindow(
+                state = ClarityState.Archived,
+                title = "Archive Preview",
+                body = "A stable view that shows what the current record would look like once it becomes reference material.",
+                nextStep = "Archive only after condensation is complete."
+              ))
               Viewport.notify(
-                message = "Notifications share the same viewport layer as windows and overlays.",
+                message = "Three contextual layers are open. Notice how the main route remains intact.",
                 kind = Viewport.NotificationKind.Success,
-                durationMs = 2600
+                durationMs = 2800
               )
             }
           }
         }
       }
 
-      hbox {
-        classes = "window-page__capabilities"
+      div {
+        classes = "window-page__launch-grid"
 
-        capabilityCard("Window stacking", "Bring windows to the front and keep transient work visible without breaking the app shell.")
-        capabilityCard("Reusable content", "Captured DSL components can be mounted into floating windows when the workflow needs more space.")
-        capabilityCard("Product fit", "Ideal for admin tools, editors, inspectors, dashboards and multi-step flows.")
+        launchCard(
+          state = ClarityState.Raw,
+          title = "Protected intake",
+          body = "Use a floating window when unfinished material should stay present, but out of the main reading flow."
+        ) {
+          Viewport.addWindow(workspaceWindow(
+            state = ClarityState.Raw,
+            title = "Protected Intake",
+            body = "This window holds early notes that should not yet become part of the stable layout.",
+            nextStep = "Move to clarification only when the record can tolerate evaluation."
+          ))
+        }
+
+        launchCard(
+          state = ClarityState.Clarification,
+          title = "Conflict support",
+          body = "Keep contradictions, questions and context mismatch nearby without collapsing them into the main page."
+        ) {
+          Viewport.addWindow(workspaceWindow(
+            state = ClarityState.Clarification,
+            title = "Conflict Support",
+            body = "This surface is useful for inspection, synthesis and other secondary decision layers.",
+            nextStep = "Keep only the information that improves understanding in motion."
+          ))
+        }
+
+        launchCard(
+          state = ClarityState.Archived,
+          title = "Archive preview",
+          body = "Preview how a record will read once it becomes stable reference material."
+        ) {
+          Viewport.addWindow(workspaceWindow(
+            state = ClarityState.Archived,
+            title = "Archive Preview",
+            body = "The archived layer should feel stable, quiet and minimally interactive.",
+            nextStep = "Reopen only when context changes, not when attention wanders."
+          ))
+        }
       }
 
       div {
-        classes = "window-page__panel"
+        classes = "clarity-grid clarity-grid--two"
 
         div {
-          classes = "window-page__panel-title"
-          text = "Suggested API docs expansion"
+          classes = "clarity-zone"
+
+          div {
+            classes = "clarity-zone-heading"
+
+            div {
+              classes = "clarity-zone-heading__label"
+              text = "Viewport Capabilities"
+            }
+
+            div {
+              classes = "clarity-zone-heading__title"
+              text = "The same runtime can host calm overlays, windows and notifications."
+            }
+          }
+
+          capabilityCard("Captured DSL content", "Each window reuses the same component model as the page itself.")
+          capabilityCard("Context without rupture", "Floating surfaces support inspection and revision while the main shell stays stable.")
+          capabilityCard("Deliberate motion", "Windows animate only enough to preserve spatial continuity.")
         }
 
         div {
-          classes = "window-page__panel-copy"
-          text =
-            "This page can later evolve into dedicated docs for Viewport, WindowConf, overlays, notifications and content capture patterns."
-        }
+          classes = "clarity-zone"
 
-        div {
-          classes = "window-page__roadmap"
+          div {
+            classes = "clarity-zone-heading"
 
-          roadmapRow("Viewport", "Root layer for windows, overlays and toast-like notifications.")
-          roadmapRow("WindowConf", "Declarative configuration for title, sizing, content and close behaviour.")
-          roadmapRow("captureComponent", "Render an existing DSL subtree into a floating workspace.")
-          roadmapRow("Notifications", "Short-lived feedback that feels native to the shell.")
+            div {
+              classes = "clarity-zone-heading__label"
+              text = "Reference Expansion"
+            }
+
+            div {
+              classes = "clarity-zone-heading__title"
+              text = "A future docs page can split the viewport API into quiet reference slices."
+            }
+          }
+
+          roadmapRow("Viewport", "Root layer for windows, overlays and calm runtime feedback.")
+          roadmapRow("WindowConf", "Declarative configuration for title, sizing, memory and close behavior.")
+          roadmapRow("captureComponent", "Reuse any DSL subtree as floating contextual content.")
+          roadmapRow("Notifications", "Short, precise next-step messages that avoid panic signaling.")
         }
       }
     }
 
-  private def windowConf(title: String, body: String): WindowConf =
+  private def workspaceWindow(state: ClarityState, title: String, body: String, nextStep: String): WindowConf =
     WindowConf(
       title = title,
       resizable = true,
-      width = 420,
-      height = 260,
+      width = 440,
+      height = 300,
       component = Viewport.captureComponent {
         div {
           classes = "window-demo-card"
+
+          div {
+            classes = Seq("clarity-state-chip", s"is-${state.cssName}")
+            text = state.label
+          }
 
           div {
             classes = "window-demo-card__title"
@@ -133,11 +226,38 @@ class WindowPage extends CompositeComponent[HTMLDivElement] {
 
           div {
             classes = "window-demo-card__meta"
-            text = "This content is rendered by the same DSL you use for regular pages."
+            text = s"Next step: $nextStep"
           }
         }
       }
     )
+
+  private def launchCard(state: ClarityState, title: String, body: String)(run: => Unit): Unit =
+    div {
+      classes = "window-page__launch-card"
+
+      div {
+        classes = Seq("clarity-state-chip", s"is-${state.cssName}")
+        text = state.label
+      }
+
+      div {
+        classes = "window-page__launch-title"
+        text = title
+      }
+
+      div {
+        classes = "window-page__launch-copy"
+        text = body
+      }
+
+      button("Open") {
+        classes = Seq("calm-action", "calm-action--quiet")
+        onClick { _ =>
+          run
+        }
+      }
+    }
 
   private def capabilityCard(title: String, body: String): Unit =
     div {

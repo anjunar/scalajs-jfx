@@ -1,149 +1,293 @@
 .app-shell {
+    min-height: 100%;
     background:
-        radial-gradient(circle at top left, rgba(135, 196, 64, 0.12), transparent 24%),
-        radial-gradient(circle at bottom right, rgba(255, 196, 87, 0.12), transparent 22%),
-        linear-gradient(180deg, var(--color-background-primary) 0%, var(--color-background-secondary) 100%);
+        radial-gradient(circle at top left, rgba(109, 123, 99, 0.1), transparent 18%),
+        radial-gradient(circle at bottom right, rgba(93, 115, 128, 0.08), transparent 18%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 24%);
 }
 
 .app-shell .jfx-drawer__navigation {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 24px 18px 28px;
+    border-right: 1px solid var(--color-border-strong);
+    background: var(--gradient-chrome-top);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+}
+
+.app-shell .jfx-drawer__content {
+    min-width: 0;
+    background: transparent;
+}
+
+.app-frame {
+    min-height: 100%;
+}
+
+.app-nav-intro {
+    display: flex;
+    flex-direction: column;
     gap: 10px;
-    padding: 18px 16px;
-    border-right: 1px solid var(--jfx-table-border);
-    background: rgba(255, 255, 255, 0.72);
-    backdrop-filter: blur(20px);
+    padding: 16px;
+    border: 1px solid var(--color-border-strong);
+    border-radius: 22px;
+    background: var(--gradient-surface-strong);
+    box-shadow: 0 18px 36px var(--color-shadow-soft);
 }
 
-html[data-theme="dark"] .app-shell .jfx-drawer__navigation {
-    background: rgba(23, 26, 28, 0.82);
+.app-nav-intro__title {
+    font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+    font-size: 1.35rem;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
 }
 
-.app-drawer-title {
-    padding: 6px 12px 0;
-    font-size: 0.75rem;
+.app-nav-intro__copy {
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+}
+
+.app-zone-heading__label {
+    font-size: 0.72rem;
     font-weight: 700;
     letter-spacing: 0.16em;
     text-transform: uppercase;
-    color: var(--color-neutral-500);
+    color: var(--color-text-muted);
 }
 
-.app-drawer-title--spaced {
-    margin-top: 10px;
+.app-nav-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
-.app-drawer-copy {
-    padding: 0 12px 10px;
-    line-height: 1.5;
-    color: var(--color-neutral-500);
-}
-
-.app-nav-button {
-    width: 100%;
-    padding: 12px 14px;
-    border-radius: 14px;
-    font: inherit;
-    text-align: left;
-    font-weight: 650;
-    color: var(--color-text);
+.app-nav-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px 16px;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: 18px;
+    background: var(--color-surface-raised);
+    box-shadow: 0 12px 28px var(--color-shadow-soft);
+    cursor: pointer;
     transition:
-        transform 160ms ease,
-        background-color 160ms ease,
-        box-shadow 160ms ease;
+        transform 180ms ease,
+        border-color 180ms ease,
+        background-color 180ms ease,
+        box-shadow 180ms ease;
 }
 
-.app-nav-button:hover {
-    background-color: var(--color-background-tertiary);
-    transform: translateX(2px);
-    box-shadow: inset 0 0 0 1px var(--jfx-table-border);
+.app-nav-card:hover,
+.app-nav-card:focus-visible {
+    transform: translateY(-1px);
+    border-color: var(--color-border-strong);
+    background: var(--color-surface-overlay);
+    outline: none;
+}
+
+.app-nav-card.is-active {
+    border-color: var(--color-accent);
+    background: linear-gradient(180deg, var(--color-surface-overlay), var(--color-accent-ghost));
+    box-shadow: inset 0 0 0 1px var(--color-accent-ring);
+}
+
+.app-nav-card__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.app-nav-card__zone {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+}
+
+.app-nav-card__title {
+    font-size: 1rem;
+    font-weight: 680;
+    line-height: 1.2;
+}
+
+.app-nav-card__copy,
+.app-state-rail__copy {
+    color: var(--color-text-secondary);
+    line-height: 1.55;
+}
+
+.app-state-rail {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: 22px;
+    background: var(--color-surface-raised);
+}
+
+.app-state-rail__item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 0 0;
+    border-top: 1px solid var(--color-border-subtle);
+}
+
+.app-state-rail__item:first-of-type {
+    padding-top: 0;
+    border-top: 0;
 }
 
 .app-header {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px 24px 16px;
+    border-bottom: 1px solid var(--color-border-strong);
+    background: var(--gradient-chrome-top);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+}
+
+.app-header__bar {
     align-items: center;
     justify-content: space-between;
     gap: 14px;
-    padding: 14px 18px;
-    border-bottom: 1px solid var(--jfx-table-border);
-    background: rgba(255, 255, 255, 0.74);
-    backdrop-filter: blur(20px);
-    min-height: 72px;
-    box-sizing: border-box;
 }
 
-.app-header-brand {
+.app-header__brand {
+    flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 2px;
 }
 
-.app-header-title {
-    font-size: 1.08rem;
-    font-weight: 760;
-    letter-spacing: -0.02em;
+.app-header__title {
+    font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+    font-size: 1.22rem;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
 }
 
-.app-header-subtitle {
-    line-height: 1.5;
-    color: var(--color-neutral-500);
+.app-header__subtitle,
+.app-footer__copy,
+.app-route-bar__summary,
+.app-route-bar__note {
+    color: var(--color-text-secondary);
 }
 
-.app-header-pill {
-    flex: 0 0 auto;
+.app-header__rule {
     padding: 8px 12px;
-    border: 1px solid var(--jfx-table-border);
+    border: 1px solid var(--color-border-strong);
     border-radius: 999px;
     font-size: 0.78rem;
-    font-weight: 800;
+    font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--color-selected);
-    background: var(--jfx-table-row-selected);
+    background: var(--color-surface-soft);
 }
 
 .app-menu-button {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
     flex: 0 0 auto;
+    border: 1px solid var(--color-border-subtle);
+    background: var(--color-surface-raised);
 }
 
 .app-menu-button:hover {
-    background-color: var(--color-background-tertiary);
+    background: var(--color-surface-overlay);
+}
+
+.app-route-bar {
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 16px;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: 20px;
+    background: var(--gradient-surface-soft);
+    box-shadow: 0 14px 30px var(--color-shadow-soft);
+}
+
+.app-route-bar__copy {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.app-route-bar__title {
+    font-size: 1.04rem;
+    font-weight: 700;
+}
+
+.app-route-bar__summary {
+    line-height: 1.55;
+}
+
+.app-route-bar__note {
+    max-width: 28ch;
+    font-size: 0.9rem;
+    line-height: 1.55;
 }
 
 .app-content {
     flex: 1 1 auto;
     min-width: 0;
     min-height: 0;
-    padding: 28px 24px 36px;
-    box-sizing: border-box;
+    padding: 24px;
+}
+
+.app-content > .jfx-viewport {
+    min-height: 100%;
 }
 
 .app-footer {
-    align-items: center;
-    min-height: 44px;
-    padding: 10px 18px 18px;
-    box-sizing: border-box;
+    padding: 0 24px 22px;
 }
 
-.app-footer-copy {
-    line-height: 1.5;
-    color: var(--color-neutral-500);
+.app-footer__copy {
+    line-height: 1.6;
 }
 
-html[data-theme="dark"] .app-header {
-    background: rgba(23, 26, 28, 0.78);
+@media (max-width: 960px) {
+    .app-route-bar {
+        flex-direction: column;
+    }
+
+    .app-route-bar__note {
+        max-width: none;
+    }
 }
 
 @media (max-width: 720px) {
+    .app-shell .jfx-drawer__navigation {
+        padding: 18px 14px 22px;
+    }
+
     .app-header {
+        padding: 16px;
+    }
+
+    .app-header__bar {
         align-items: flex-start;
         flex-wrap: wrap;
     }
 
-    .app-header-pill {
-        order: 3;
+    .app-content {
+        padding: 16px;
     }
 
-    .app-content {
-        padding: 18px 16px 24px;
+    .app-footer {
+        padding: 0 16px 18px;
     }
 }

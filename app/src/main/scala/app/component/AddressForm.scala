@@ -25,11 +25,11 @@ final class AddressForm(slot: AddressForm ?=> Unit = ()) extends CompositeCompon
 
         slot
 
-        inputContainer("Strasse") {
+        inputContainer("Street") {
           input("street")
         }
 
-        inputContainer("Stadt") {
+        inputContainer("City") {
           input("city")
         }
       }

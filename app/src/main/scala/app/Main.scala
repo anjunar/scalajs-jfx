@@ -10,93 +10,90 @@ import jfx.layout.Div.div
 import jfx.layout.Drawer.*
 import jfx.layout.HBox.hbox
 import jfx.layout.VBox.vbox
-import jfx.layout.Viewport
-import jfx.layout.Viewport.WindowConf
 import jfx.layout.Viewport.viewport
 import jfx.router.Router
-import org.scalajs.dom.document
-
+import jfx.statement.ObserveRender.observeRender
+import org.scalajs.dom.{KeyboardEvent, document}
 
 object Main {
 
   def main(args: Array[String]): Unit = {
-    
     DomainRegistry.init()
-    
+
     scope {
       singleton[Router] {
         Router(Routes.routes)
       }
 
+      val router = inject[Router]
+
       val container = drawer {
-          classes = "app-shell"
+        classes = "app-shell"
+        drawerWidth = "320px"
 
-          drawerNavigation {
+        drawerNavigation {
+          div {
+            classes = "app-nav-intro"
+
             div {
-              classes = "app-drawer-title"
-              text = "Showcase"
-            }
-
-            div {
-              classes = "app-drawer-copy"
-              text = "Live demos first. API pages next."
-            }
-
-            button("overview") {
-              buttonType = "button"
-              classes = "app-nav-button"
-
-              onClick { _ =>
-                inject[Router].navigate("/")
-              }
-            }
-
-            button("data table") {
-              buttonType = "button"
-              classes = "app-nav-button"
-
-              onClick { _ =>
-                inject[Router].navigate("/table")
-              }
-            }
-
-            button("form builder") {
-              buttonType = "button"
-              classes = "app-nav-button"
-
-              onClick { _ =>
-                inject[Router].navigate("/form")
-              }
-            }
-
-            button("window system") {
-              buttonType = "button"
-              classes = "app-nav-button"
-
-              onClick { _ =>
-                inject[Router].navigate("/window")
-              }
+              classes = Seq("app-state-chip", "is-clarification")
+              text = "Manifest der Stille"
             }
 
             div {
-              classes = "app-drawer-title app-drawer-title--spaced"
-              text = "Docs"
+              classes = "app-nav-intro__title"
+              text = "Technology Speaks"
             }
 
-            button("component docs") {
-              buttonType = "button"
-              classes = "app-nav-button"
-
-              onClick { _ =>
-                inject[Router].navigate("/docs")
-              }
+            div {
+              classes = "app-nav-intro__copy"
+              text = "A framework showcase that treats state, revision and calm orientation as first-class structure."
             }
           }
 
-          drawerContent {
-            vbox {
+          observeRender(router.stateProperty) { state =>
+            val activePath = state.path
+
+            navGroup("Manifest", Vector(ShowcaseCatalog.manifest), activePath, router)
+            navGroup("Workspaces", ShowcaseCatalog.workspaceRoutes.take(3), activePath, router)
+            navGroup("Reference", Vector(ShowcaseCatalog.referenceAtlas), activePath, router)
+          }
+
+          div {
+            classes = "app-state-rail"
+
+            div {
+              classes = "app-zone-heading__label"
+              text = "Canonical States"
+            }
+
+            ClarityState.ordered.foreach { state =>
+              div {
+                classes = "app-state-rail__item"
+
+                div {
+                  classes = Seq("app-state-chip", s"is-${state.cssName}")
+                  text = state.label
+                }
+
+                div {
+                  classes = "app-state-rail__copy"
+                  text = state.discipline
+                }
+              }
+            }
+          }
+        }
+
+        drawerContent {
+          vbox {
+            classes = "app-frame"
+
+            div {
+              classes = "app-header"
+
               hbox {
-                classes = "app-header"
+                classes = "app-header__bar"
 
                 button("menu") {
                   buttonType = "button"
@@ -108,52 +105,154 @@ object Main {
                 }
 
                 div {
-                  classes = "app-header-brand"
+                  classes = "app-header__brand"
 
                   div {
-                    classes = "app-header-title"
+                    classes = "app-header__title"
                     text = "scala-js-jfx"
                   }
 
                   div {
-                    classes = "app-header-subtitle"
-                    text = "Interactive showcase for the framework"
+                    classes = "app-header__subtitle"
+                    text = "Clarity-driven framework showcase"
                   }
                 }
 
-                div {
-                  classes = "app-header-pill"
-                  text = "Docs-ready demo"
-                }
               }
 
-              div {
-                classes = "app-content"
+              /*observeRender(router.stateProperty) { state =>
+                val descriptor = ShowcaseCatalog.descriptorFor(state.path)
 
-                style {
-                  flex = "1"
-                  minHeight = "0"
-                }
+                hbox {
+                  classes = "app-route-bar"
 
-                viewport {
-                  mount(inject[Router])
+                  div {
+                    classes = Seq("app-state-chip", s"is-${descriptor.state.cssName}")
+                    text = descriptor.state.label
+                  }
+
+                  div {
+                    classes = "app-route-bar__copy"
+
+                    div {
+                      classes = "app-route-bar__title"
+                      text = descriptor.title
+                    }
+
+                    div {
+                      classes = "app-route-bar__summary"
+                      text = descriptor.summary
+                    }
+                  }
+
+                  div {
+                    classes = "app-route-bar__note"
+                    text = descriptor.note
+                  }
                 }
+              }*/
+            }
+
+            div {
+              classes = "app-content"
+
+              style {
+                flex = "1"
+                minHeight = "0"
               }
 
-              hbox {
-                classes = "app-footer"
-
-                div {
-                  classes = "app-footer-copy"
-                  text = "Built as the future GitHub Pages showcase: product story first, focused API pages next."
-                }
+              viewport {
+                mount(router)
               }
             }
+
+            hbox {
+              classes = "app-footer"
+
+              div {
+                classes = "app-footer__copy"
+                text = "Explicit state, revision first and quiet reference layers are all demonstrated inside one runtime."
+              }
+            }
+          }
         }
       }
+
+      container.addDisposable(
+        router.stateProperty.observe { state =>
+          val descriptor = ShowcaseCatalog.descriptorFor(state.path)
+          document.title = s"${descriptor.title} | Technology Speaks"
+        }
+      )
 
       document.getElementById("root").appendChild(container.element)
       container.onMount()
     }
   }
+
+  private def navGroup(
+    title: String,
+    entries: Vector[ShowcaseRoute],
+    activePath: String,
+    router: Router
+  ): Unit =
+    div {
+      classes = "app-nav-group"
+
+      div {
+        classes = "app-zone-heading__label"
+        text = title
+      }
+
+      entries.foreach { entry =>
+        navCard(entry, activePath, router)
+      }
+    }
+
+  private def navCard(entry: ShowcaseRoute, activePath: String, router: Router): Unit = {
+    val card = div {
+      classes =
+        Vector("app-nav-card") ++ Option.when(isRouteActive(entry.path, activePath))("is-active")
+
+      div {
+        classes = "app-nav-card__meta"
+
+        div {
+          classes = Seq("app-state-chip", s"is-${entry.state.cssName}")
+          text = entry.state.label
+        }
+
+        div {
+          classes = "app-nav-card__zone"
+          text = entry.zone
+        }
+      }
+
+      div {
+        classes = "app-nav-card__title"
+        text = entry.title
+      }
+
+      div {
+        classes = "app-nav-card__copy"
+        text = entry.summary
+      }
+    }
+
+    card.element.tabIndex = 0
+    card.element.setAttribute("role", "button")
+    card.element.onclick = _ => openRoute(entry.path, router)
+    card.element.onkeydown = (event: KeyboardEvent) =>
+      if (event.key == "Enter" || event.key == " ") {
+        event.preventDefault()
+        openRoute(entry.path, router)
+      }
+  }
+
+  private def isRouteActive(routePath: String, activePath: String): Boolean =
+    if (routePath == "/docs") activePath == "/docs" || activePath.startsWith("/docs/")
+    else routePath == activePath
+
+  private def openRoute(path: String, router: Router): Unit =
+    router.navigate(path)
 }

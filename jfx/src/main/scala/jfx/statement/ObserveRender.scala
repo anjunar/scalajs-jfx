@@ -89,11 +89,13 @@ class ObserveRender[T](
   private def buildChildren(value: T): List[ElementComponent[? <: Node]] = {
     val children = mutable.ListBuffer.empty[ElementComponent[? <: Node]]
 
-    DslRuntime.withComponentContext(
-      DslRuntime.branchContext(renderContext, "observeRender", child => children += child)
-    ) {
-      given Scope = renderScope
-      renderBlock(value)
+    DslRuntime.withScope(renderScope) {
+      DslRuntime.withComponentContext(
+        DslRuntime.branchContext(renderContext, "observeRender", child => children += child)
+      ) {
+        given Scope = renderScope
+        renderBlock(value)
+      }
     }
 
     children.toList

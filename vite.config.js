@@ -4,7 +4,12 @@ import { resolve } from "node:path"
 
 export default defineConfig({
     root: "app/src/main/webapp/",
-    plugins: [scalaJSPlugin()],
+    plugins: [
+        scalaJSPlugin({
+            cwd: ".",
+            projectID: "scala-js-jfx-demo",
+        }),
+    ],
     resolve: {
         alias: {
             "@jfx-css": resolve(__dirname, "./jfx/src/main/resources/jfx/index.css")
