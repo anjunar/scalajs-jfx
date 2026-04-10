@@ -1,6 +1,6 @@
 package app.pages
 
-import app.{ClarityState, ShowcaseCatalog, ShowcaseRoute}
+import app.{ShowcaseCatalog, ShowcaseRoute}
 import jfx.action.Button.{button, onClick}
 import jfx.core.component.CompositeComponent
 import jfx.core.component.CompositeComponent.composite
@@ -46,7 +46,7 @@ class HomePage extends CompositeComponent[HTMLDivElement] {
         div {
           classes = "clarity-hero__copy"
           text =
-            "This showcase is no longer a gallery of unrelated demos. Each route now occupies a clear role in the system: protected intake, clarification queue, condensed context and archived reference."
+            "This showcase is no longer a gallery of unrelated demos. Each route now carries one clear responsibility, so the framework reads as one calm system instead of a pile of isolated examples."
         }
 
         hbox {
@@ -76,51 +76,28 @@ class HomePage extends CompositeComponent[HTMLDivElement] {
       }
 
       div {
-        classes = "clarity-grid clarity-grid--two"
+        classes = "clarity-zone"
 
-        div {
-          classes = "clarity-zone"
+        zoneHeading(
+          label = "Operating Rules",
+          title = "The shell follows the manifesto structurally, not decoratively.",
+          copy = "Navigation, workspaces and reference pages stay calm, direct and intentionally spare."
+        )
 
-          zoneHeading(
-            label = "Canonical States",
-            title = "Every major route now maps to an explicit lifecycle state.",
-            copy = "The showcase makes the state model legible before any one component API is explored."
-          )
+        principleCard(
+          title = "Separation before beauty",
+          body = "Orientation, work and context are split into explicit surfaces with hard boundaries and soft internal composition."
+        )
 
-          div {
-            classes = "clarity-state-lanes"
+        principleCard(
+          title = "Clarity before speed",
+          body = "The primary actions stay deliberate. They do not chase stimulation or instant feedback."
+        )
 
-            stateLane(ClarityState.Raw, ShowcaseCatalog.formWorkspace)
-            stateLane(ClarityState.Clarification, ShowcaseCatalog.clarificationQueue)
-            stateLane(ClarityState.Condensed, ShowcaseCatalog.condensedContext)
-            stateLane(ClarityState.Archived, ShowcaseCatalog.referenceAtlas)
-          }
-        }
-
-        div {
-          classes = "clarity-zone"
-
-          zoneHeading(
-            label = "Operating Rules",
-            title = "The shell follows the manifesto structurally, not decoratively.",
-            copy = "Each rule below is expressed through navigation, layout separation and the shape of the demos themselves."
-          )
-
-          principleCard(
-            title = "Separation before beauty",
-            body = "Orientation, work and context are split into explicit surfaces with hard boundaries and soft internal composition."
-          )
-
-          principleCard(
-            title = "Clarity before speed",
-            body = "The primary actions move a record through states. They do not chase stimulation or instant feedback."
-          )
-
-          principleCard(
-            title = "Revision before overwrite",
-            body = "The form workspace records revisions, the queue shows maturity, and the docs keep archived knowledge connected to live runtime behavior."
-          )
-        }
+        principleCard(
+          title = "Revision before overwrite",
+          body = "The form workspace records revisions, the queue shows maturity, and the docs keep archived knowledge connected to live runtime behavior."
+        )
       }
 
       div {
@@ -204,31 +181,6 @@ class HomePage extends CompositeComponent[HTMLDivElement] {
       div {
         classes = "clarity-zone-heading__copy"
         text = copy
-      }
-    }
-
-  private def stateLane(state: ClarityState, route: ShowcaseRoute): Unit =
-    div {
-      classes = "clarity-state-lane"
-
-      div {
-        classes = Seq("clarity-state-chip", s"is-${state.cssName}")
-        text = state.label
-      }
-
-      div {
-        classes = "clarity-state-lane__title"
-        text = route.title
-      }
-
-      div {
-        classes = "clarity-state-lane__copy"
-        text = state.summary
-      }
-
-      div {
-        classes = "clarity-state-lane__note"
-        text = route.note
       }
     }
 

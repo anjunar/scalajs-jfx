@@ -264,7 +264,6 @@
     color: var(--color-text-secondary);
 }
 
-.clarity-state-lanes,
 .clarity-route-grid,
 .window-page__launch-grid,
 .docs-index__meta-grid {
@@ -273,7 +272,6 @@
     gap: 16px;
 }
 
-.clarity-state-lane,
 .clarity-principle-card,
 .clarity-route-card,
 .clarity-timeline-step {
@@ -286,7 +284,6 @@
     background: var(--color-surface-overlay);
 }
 
-.clarity-state-lane__title,
 .clarity-principle-card__title,
 .clarity-route-card__title,
 .clarity-timeline-step__title {
@@ -294,8 +291,6 @@
     font-weight: 700;
 }
 
-.clarity-state-lane__copy,
-.clarity-state-lane__note,
 .clarity-principle-card__copy,
 .clarity-route-card__copy,
 .clarity-route-card__note,
@@ -688,7 +683,6 @@
 }
 
 @media (max-width: 820px) {
-    .clarity-state-lanes,
     .clarity-route-grid,
     .window-page__launch-grid,
     .docs-index__meta-grid,

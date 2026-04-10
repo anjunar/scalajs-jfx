@@ -58,31 +58,6 @@ object Main {
             navGroup("Workspaces", ShowcaseCatalog.workspaceRoutes.take(3), activePath, router)
             navGroup("Reference", Vector(ShowcaseCatalog.referenceAtlas), activePath, router)
           }
-
-          div {
-            classes = "app-state-rail"
-
-            div {
-              classes = "app-zone-heading__label"
-              text = "Canonical States"
-            }
-
-            ClarityState.ordered.foreach { state =>
-              div {
-                classes = "app-state-rail__item"
-
-                div {
-                  classes = Seq("app-state-chip", s"is-${state.cssName}")
-                  text = state.label
-                }
-
-                div {
-                  classes = "app-state-rail__copy"
-                  text = state.discipline
-                }
-              }
-            }
-          }
         }
 
         drawerContent {

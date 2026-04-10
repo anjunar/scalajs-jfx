@@ -112,33 +112,9 @@
     line-height: 1.2;
 }
 
-.app-nav-card__copy,
-.app-state-rail__copy {
+.app-nav-card__copy {
     color: var(--color-text-secondary);
     line-height: 1.55;
-}
-
-.app-state-rail {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 16px;
-    border: 1px solid var(--color-border-subtle);
-    border-radius: 22px;
-    background: var(--color-surface-raised);
-}
-
-.app-state-rail__item {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 12px 0 0;
-    border-top: 1px solid var(--color-border-subtle);
-}
-
-.app-state-rail__item:first-of-type {
-    padding-top: 0;
-    border-top: 0;
 }
 
 .app-header {
