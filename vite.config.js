@@ -3,6 +3,7 @@ import scalaJSPlugin from "@scala-js/vite-plugin-scalajs";
 import { resolve } from "node:path"
 
 export default defineConfig({
+    base: "./",
     root: "app/src/main/webapp/",
     plugins: [
         scalaJSPlugin({
