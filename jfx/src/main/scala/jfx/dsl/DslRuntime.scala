@@ -36,6 +36,9 @@ object DslRuntime {
         }
     }
 
+  def activeScopeOption(): Option[Scope] =
+    scopeStack.lastOption
+
   def currentComponentContext(): ComponentContext =
     componentContextStack.last
 

@@ -4,7 +4,6 @@ import app.domain.DomainRegistry
 import jfx.action.Button.*
 import jfx.core.component.ElementComponent.*
 import jfx.core.component.NodeComponent.mount
-import jfx.core.state.Property
 import jfx.dsl.*
 import jfx.dsl.Scope.{inject, scope, singleton}
 import jfx.layout.Div.div
@@ -35,10 +34,15 @@ object Main {
           drawerNavigation {
             div {
               classes = "app-drawer-title"
-              text = "Navigation"
+              text = "Showcase"
             }
 
-            button("home") {
+            div {
+              classes = "app-drawer-copy"
+              text = "Live demos first. API pages next."
+            }
+
+            button("overview") {
               buttonType = "button"
               classes = "app-nav-button"
 
@@ -47,7 +51,7 @@ object Main {
               }
             }
 
-            button("table") {
+            button("data table") {
               buttonType = "button"
               classes = "app-nav-button"
 
@@ -56,7 +60,7 @@ object Main {
               }
             }
 
-            button("form") {
+            button("form builder") {
               buttonType = "button"
               classes = "app-nav-button"
 
@@ -65,20 +69,26 @@ object Main {
               }
             }
 
-            button("window") {
+            button("window system") {
               buttonType = "button"
               classes = "app-nav-button"
 
               onClick { _ =>
-                Viewport.addWindow(WindowConf(
-                  title = "Test",
-                  resizable = true,
-                  component = Viewport.captureComponent {
-                    div {
-                      text = "Test"
-                    }
-                  }
-                ))
+                inject[Router].navigate("/window")
+              }
+            }
+
+            div {
+              classes = "app-drawer-title app-drawer-title--spaced"
+              text = "Docs"
+            }
+
+            button("component docs") {
+              buttonType = "button"
+              classes = "app-nav-button"
+
+              onClick { _ =>
+                inject[Router].navigate("/docs")
               }
             }
           }
@@ -98,8 +108,22 @@ object Main {
                 }
 
                 div {
-                  classes = "app-header-title"
-                  text = "scala-js-jfx"
+                  classes = "app-header-brand"
+
+                  div {
+                    classes = "app-header-title"
+                    text = "scala-js-jfx"
+                  }
+
+                  div {
+                    classes = "app-header-subtitle"
+                    text = "Interactive showcase for the framework"
+                  }
+                }
+
+                div {
+                  classes = "app-header-pill"
+                  text = "Docs-ready demo"
                 }
               }
 
@@ -118,6 +142,11 @@ object Main {
 
               hbox {
                 classes = "app-footer"
+
+                div {
+                  classes = "app-footer-copy"
+                  text = "Built as the future GitHub Pages showcase: product story first, focused API pages next."
+                }
               }
             }
         }

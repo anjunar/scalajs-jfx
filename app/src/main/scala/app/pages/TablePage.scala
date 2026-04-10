@@ -153,17 +153,47 @@ class TablePage extends CompositeComponent[HTMLDivElement] {
       }
 
       div {
-        text = "RemoteListProperty Demo"
+        classes = "showcase-page-hero"
 
-        style {
-          fontSize = "28px"
-          fontWeight = "700"
+        div {
+          classes = "showcase-page-hero__eyebrow"
+          text = "Remote Data Showcase"
+        }
+
+        div {
+          classes = "showcase-page-hero__title"
+          text = "A table demo that feels like a product feature, not a toy example."
+        }
+
+        div {
+          classes = "showcase-page-hero__copy"
+          text =
+            "This page shows the kind of workflow people expect from real apps: debounced filtering, lazy loading, remote sorting and long-list rendering."
+        }
+
+        hbox {
+          classes = "showcase-page-hero__badges"
+
+          div {
+            classes = "showcase-page-hero__badge"
+            text = "RemoteListProperty"
+          }
+
+          div {
+            classes = "showcase-page-hero__badge"
+            text = "Virtualized Rows"
+          }
+
+          div {
+            classes = "showcase-page-hero__badge"
+            text = "Server-Like Sorting"
+          }
         }
       }
 
       div {
         text =
-          "Type into the filter for debounced server reloads, click the column headers for server sorting, and scroll into unloaded areas to fetch rows on demand."
+          "Type into the filter for debounced reloads, click the headers for sort state, and scroll into unloaded areas to fetch rows on demand."
 
         style {
           color = "var(--color-neutral-500)"
@@ -260,7 +290,7 @@ class TablePage extends CompositeComponent[HTMLDivElement] {
         style {
           padding = "10px 12px"
           color = "var(--color-text)"
-          backgroundColor = "var(--color-background-secondary)"
+          backgroundColor = "var(--color-background-primary)"
           border = "1px solid var(--jfx-table-border)"
           borderRadius = "10px"
           fontFamily = "Consolas, monospace"

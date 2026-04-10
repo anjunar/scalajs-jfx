@@ -32,8 +32,10 @@ trait CompositeComponent[N <: Node]
   protected final def dslContext(using context: DslContext): DslContext =
     context
 
-  protected final def inject[T](using context: DslContext, scope: Scope, key: Scope.ServiceKey[T]): T =
-    scope.inject[T]
+  protected final def inject[T](using context: DslContext, key: Scope.ServiceKey[T]): T = {
+    val resolvedScope = DslRuntime.activeScopeOption().getOrElse(context.scope)
+    resolvedScope.inject[T]
+  }
 
   protected final def addChild(child: NodeComponent[? <: Node]): Unit = {
     if (compositeChildren.exists(_ eq child)) {

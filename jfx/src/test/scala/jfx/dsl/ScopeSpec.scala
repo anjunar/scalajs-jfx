@@ -56,4 +56,29 @@ class ScopeSpec extends AnyFlatSpec with Matchers {
 
     resolved should not be null
   }
+
+  it should "resolve services from composite callbacks without an active runtime scope" in {
+    final class CallbackComposite extends CompositeComponent[Node] {
+      override val element: Node = null.asInstanceOf[Node]
+
+      override protected def compose(using CompositeComponent.DslContext): Unit = ()
+
+      def callback()(using CompositeComponent.DslContext): () => RootService =
+        () => inject[RootService]
+    }
+
+    given Scope = Scope.root()
+
+    Scope.singleton[RootService] {
+      new RootService()
+    }
+
+    given CompositeComponent.DslContext =
+      CompositeComponent.DslContext(summon[Scope], None)
+
+    val component = new CallbackComposite()
+    val resolver = component.callback()
+
+    resolver() shouldBe a[RootService]
+  }
 }

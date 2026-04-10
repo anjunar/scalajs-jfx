@@ -58,17 +58,17 @@ class FormPage extends CompositeComponent[HTMLDivElement] {
 
           div {
             classes = "form-page__eyebrow"
-            text = "Person"
+            text = "Form Builder Showcase"
           }
 
           div {
             classes = "form-page__title"
-            text = "Kontakt bearbeiten"
+            text = "Typed forms, nested models and richer inputs in one coherent flow."
           }
 
           div {
             classes = "form-page__subtitle"
-            text = "Flaches Material-Layout mit ruhigen Flaechen, klaren Eingaben und Farben aus dem aktiven Theme."
+            text = "The form demo combines scoped model injection, nested address editing, custom combo rendering and image workflows without switching mental models."
           }
         }
 
@@ -165,12 +165,12 @@ class FormPage extends CompositeComponent[HTMLDivElement] {
 
                             div {
                               classes = "form-page__combo-label"
-                              text = "Team auswaehlen"
+                              text = "Choose a team"
                             }
 
                             div {
                               classes = "form-page__combo-note"
-                              text = "Vier Beispielteams mit unterschiedlichen Schwerpunkten."
+                              text = "Four example teams with different product and platform priorities."
                             }
                           }
                         }
@@ -185,12 +185,12 @@ class FormPage extends CompositeComponent[HTMLDivElement] {
 
                   div {
                     classes = "form-page__section-title"
-                    text = "Adresse"
+                    text = "Address"
                   }
 
                   div {
                     classes = "form-page__section-copy"
-                    text = "Die Adressdaten bleiben im selben ruhigen, flachen Material-Stil."
+                    text = "Nested subforms stay visually calm while still binding into the same typed model."
                   }
                 }
               }
@@ -203,12 +203,12 @@ class FormPage extends CompositeComponent[HTMLDivElement] {
 
                   div {
                     classes = "form-page__section-title"
-                    text = "Bild und Thumbnail"
+                    text = "Image And Thumbnail"
                   }
 
                   div {
                     classes = "form-page__section-copy"
-                    text = "Der Cropper arbeitet auf Media als Quelle und zeigt daneben das live aktualisierte Thumbnail."
+                    text = "The cropper uses Media as its backing value and keeps the thumbnail workflow inside the same form experience."
                   }
                 }
 
@@ -227,7 +227,7 @@ class FormPage extends CompositeComponent[HTMLDivElement] {
             div {
               classes = "form-page__actions"
 
-              button("Speichern") {
+              button("Serialize Form State") {
                 classes = "form-page__submit"
               }
             }

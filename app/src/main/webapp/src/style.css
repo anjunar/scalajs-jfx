@@ -182,8 +182,21 @@ html, body, #root {
 }
 
 html {
-    font-family: Helvetica, serif;
+    font-family: "Aptos", "Segoe UI Variable Text", "Trebuchet MS", sans-serif;
     font-size: 16px;
-    background-color: var(--color-background-primary);
+    background:
+        radial-gradient(circle at top left, rgba(135, 196, 64, 0.12), transparent 20%),
+        linear-gradient(180deg, var(--color-background-primary) 0%, var(--color-background-secondary) 100%);
     color: var(--color-text);
+}
+
+body {
+    min-height: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+    font: inherit;
 }
