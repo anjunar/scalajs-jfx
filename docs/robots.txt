@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://anjunar.github.io/scala-js-jfx/sitemap.xml

@@ -155,8 +155,7 @@ object Main {
 
       container.addDisposable(
         router.stateProperty.observe { state =>
-          val descriptor = ShowcaseCatalog.descriptorFor(state.path)
-          document.title = s"${descriptor.title} | Technology Speaks"
+          Seo(state.path)
         }
       )
 
