@@ -1,6 +1,8 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const root = resolve(scriptDir, "..");
@@ -8,6 +10,8 @@ const outDir = join(root, "docs");
 const siteBase = "https://anjunar.github.io/scala-js-jfx";
 const indexPath = join(outDir, "index.html");
 const docsCatalogPath = join(root, "app", "src", "main", "scala", "app", "pages", "DocsCatalog.scala");
+const ssrRouteScript = join(scriptDir, "render-ssr-route.mjs");
+const execFileAsync = promisify(execFile);
 
 const defaultDescription =
   "scala-js-jfx is a reactive Scala.js UI framework with structured state, lifecycle control, typed forms, routing, tables and a composable JavaFX-inspired DSL.";
@@ -59,9 +63,12 @@ const docRoutes = [...docsCatalog.matchAll(
 
 const routes = [...fixedRoutes, ...docRoutes];
 const lastmod = new Date().toISOString().slice(0, 10);
+const ssrEntryPath = await findSsrEntryPath();
+const ssrTempDir = join(outDir, ".ssr");
 
 for (const route of routes) {
-  const html = withRouteMeta(indexHtml, route);
+  const ssrHtml = await renderRoute(route, ssrEntryPath, ssrTempDir);
+  const html = withSsrRoot(withRouteMeta(indexHtml, route), ssrHtml);
   const routeIndexPath = route.path === "/"
     ? indexPath
     : join(outDir, route.path.replace(/^\/|\/$/g, ""), "index.html");
@@ -71,6 +78,7 @@ for (const route of routes) {
 }
 
 await writeFile(join(outDir, "sitemap.xml"), sitemap(routes, lastmod));
+await rm(ssrTempDir, { recursive: true, force: true });
 
 function withRouteMeta(html, route) {
   const canonicalUrl = `${siteBase}${route.path}`;
@@ -99,6 +107,43 @@ function withRouteMeta(html, route) {
     .replace(/(<meta\s+name="twitter:description"\s+content=")[^"]*("\s*\/?>)/, `$1${escapeAttribute(route.description)}$2`)
     .replace(/(<meta\s+name="twitter:image"\s+content=")[^"]*("\s*\/?>)/, `$1${imageUrl}$2`)
     .replace("</head>", `    <script id="route-structured-data" type="application/ld+json">${JSON.stringify(jsonLd)}</script>\n  </head>`);
+}
+
+function withSsrRoot(html, rootHtml) {
+  return html.replace('<div id="root"></div>', `<div id="root">${rootHtml}</div>`);
+}
+
+async function findSsrEntryPath() {
+  const assetsDir = join(outDir, "assets");
+  const files = await readdir(assetsDir);
+  const entry = files.find(file => /^index-[A-Za-z0-9_-]+\.js$/.test(file));
+
+  if (!entry) {
+    throw new Error(`Could not find built SSR entry in ${assetsDir}`);
+  }
+
+  return join(assetsDir, entry);
+}
+
+async function renderRoute(route, entryPath, tempDir) {
+  await mkdir(tempDir, { recursive: true });
+  const routeName =
+    route.path === "/"
+      ? "root"
+      : route.path.replace(/^\/|\/$/g, "").replaceAll("/", "__");
+  const outputPath = join(tempDir, `${routeName}.html`);
+
+  await execFileAsync(
+    process.execPath,
+    [ssrRouteScript, entryPath, route.path, outputPath],
+    {
+      cwd: root,
+      timeout: 30000,
+      maxBuffer: 1024 * 1024 * 8,
+    }
+  );
+
+  return readFile(outputPath, "utf8");
 }
 
 function sitemap(routes, lastmod) {

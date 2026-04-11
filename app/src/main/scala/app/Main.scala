@@ -159,7 +159,9 @@ object Main {
         }
       )
 
-      document.getElementById("root").appendChild(container.element)
+      val root = document.getElementById("root")
+      root.textContent = ""
+      root.appendChild(container.element)
       container.onMount()
     }
   }
