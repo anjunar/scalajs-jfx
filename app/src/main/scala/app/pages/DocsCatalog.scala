@@ -287,7 +287,7 @@ object DocsCatalog {
       usageCode =
         """inputContainer("Avatar") {
           |  imageCropper("media") {
-          |    placeholder = "Noch kein Bild ausgewaehlt"
+          |    placeholder = "Noch kein Bild ausgewählt"
           |    windowTitle = "Bild zuschneiden"
           |    aspectRatio = 1.0
           |    outputMaxWidth = 512

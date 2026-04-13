@@ -335,7 +335,7 @@ private final class ImageDialog(
 
           previewPlaceholder = document.createElement("div").asInstanceOf[HTMLDivElement]
           previewPlaceholder.nn.className = "image-plugin-dialog__preview-placeholder"
-          previewPlaceholder.nn.textContent = "Noch kein Bild gewaehlt"
+          previewPlaceholder.nn.textContent = "Noch kein Bild gewählt"
 
           previewImage = document.createElement("img").asInstanceOf[HTMLImageElement]
           val previewImg = previewImage.nn

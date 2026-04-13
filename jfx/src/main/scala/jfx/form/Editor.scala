@@ -374,7 +374,7 @@ class Editor(val name: String, override val standalone: Boolean = false)
       stateConfig(
         schema = schema,
         plugins = editorPlugins,
-        doc = parseDoc(schema, initialValue)
+        doc = parseDoc(schema, decodeExternalValue(initialValue))
       )
     )
   }

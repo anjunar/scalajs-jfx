@@ -106,7 +106,7 @@ class ImageCropper(val name: String, override val standalone: Boolean = false) e
       fileInput.`type` = "file"
       fileInput.accept = "image/*"
 
-      uploadButton = newButton("Bild waehlen")
+      uploadButton = newButton("Bild wählen")
       cropButton = newButton("Zuschneiden")
       clearButton = newButton("Leeren")
 
@@ -303,7 +303,7 @@ class ImageCropper(val name: String, override val standalone: Boolean = false) e
       Option(value)
         .map(_.trim)
         .filter(_.nonEmpty)
-        .getOrElse("Kein Bild ausgewaehlt")
+        .getOrElse("Kein Bild ausgewählt")
 
     if (previewImg != null) {
       previewImg.alt = text
@@ -324,7 +324,7 @@ class ImageCropper(val name: String, override val standalone: Boolean = false) e
     clearButton.style.display = if editable then "block" else "none"
     cropButton.disabled = !hasSource
     clearButton.disabled = !hasValue
-    uploadButton.textContent = if (hasValue) "Bild ersetzen" else "Bild waehlen"
+    uploadButton.textContent = if (hasValue) "Bild ersetzen" else "Bild wählen"
   }
 
   private def previewSrc(media: Media): Option[String] = {
@@ -391,10 +391,10 @@ private final class ImageCropperDialog(
   }
 
   private lazy val applyButton: HTMLButtonElement =
-    newButton("Uebernehmen")
+    newButton("Übernehmen")
 
   private lazy val resetButton: HTMLButtonElement =
-    newButton("Zuruecksetzen")
+    newButton("Zurücksetzen")
 
   private lazy val closeButton: HTMLButtonElement =
     newButton("Schliessen")

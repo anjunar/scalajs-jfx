@@ -38,7 +38,7 @@ final case class Digits(
 
 final case class Pattern(
   regex: String,
-  message: String = "Hat ein ungueltiges Format"
+  message: String = "Hat ein ungültiges Format"
 ) extends StaticAnnotation
 
-final case class EmailConstraint(message: String = "Muss eine gueltige E-Mail-Adresse sein") extends StaticAnnotation
+final case class EmailConstraint(message: String = "Muss eine gültige E-Mail-Adresse sein") extends StaticAnnotation

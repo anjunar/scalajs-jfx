@@ -356,7 +356,7 @@ class JsonMapperSpec extends AnyFlatSpec with Matchers {
     post.links.get(1).rel.get shouldBe "send-to-curation"
   }
 
-  it should "abstrakte Link-Typen bei generischem json-ld @type ueber id aufloesen" in {
+  it should "abstrakte Link-Typen bei generischem json-ld @type über id auflösen" in {
     val mapper = new JsonMapper
     val firstLink = Dynamic.literal(
       rel = "document",

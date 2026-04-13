@@ -52,11 +52,11 @@ object ValidatorFactory {
 
       case "jfx.form.validators.Pattern" =>
         val regex = annotation.parameters.getOrElse("regex", "").asInstanceOf[String]
-        val message = annotation.parameters.getOrElse("message", "Hat ein ungueltiges Format").asInstanceOf[String]
+        val message = annotation.parameters.getOrElse("message", "Hat ein ungültiges Format").asInstanceOf[String]
         Some(PatternValidator(new Regex(regex), message).asInstanceOf[jfx.form.validators.Validator[Any]])
 
       case "jfx.form.validators.EmailConstraint" =>
-        val message = annotation.parameters.getOrElse("message", "Muss eine gueltige E-Mail-Adresse sein").asInstanceOf[String]
+        val message = annotation.parameters.getOrElse("message", "Muss eine gültige E-Mail-Adresse sein").asInstanceOf[String]
         Some(EmailValidator(message).asInstanceOf[jfx.form.validators.Validator[Any]])
 
       case _ => None

@@ -588,10 +588,10 @@ object FormPage {
   private final case class TeamSample(value: String, focus: String, lane: String)
 
   private val teamSamples = Vector(
-    TeamSample("Platform Engineering", "Routing, Formulare und gemeinsames Tooling fuer alle Teams.", "Core"),
+    TeamSample("Platform Engineering", "Routing, Formulare und gemeinsames Tooling für alle Teams.", "Core"),
     TeamSample("Design Systems", "Komponentenbibliothek, Tokens und konsistente Interaktionen.", "UI"),
     TeamSample("Field Research", "Interview-Auswertung, Prototyping und schnelle Produkt-Validierung.", "Labs"),
-    TeamSample("Customer Success", "Onboarding-Flows, Rueckmeldungen aus dem Betrieb und Retention.", "Ops")
+    TeamSample("Customer Success", "Onboarding-Flows, Rückmeldungen aus dem Betrieb und Retention.", "Ops")
   )
 
   private val teamSamplesByValue: Map[String, TeamSample] =

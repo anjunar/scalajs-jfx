@@ -80,7 +80,7 @@ final case class MinValidator[V](value: Long, message: String | Null = null) ext
 
   private def resolveMessage(): String =
     if (ValidatorSupport.hasText(message)) message
-    else s"Muss groesser oder gleich $value sein"
+    else s"Muss größer oder gleich $value sein"
 }
 
 final case class MaxValidator[V](value: Long, message: String | Null = null) extends Validator[V] {
@@ -106,8 +106,8 @@ final case class DecimalMinValidator[V](
 
   private def resolveMessage(): String =
     if (ValidatorSupport.hasText(message)) message
-    else if (inclusive) s"Muss groesser oder gleich $value sein"
-    else s"Muss groesser als $value sein"
+    else if (inclusive) s"Muss größer oder gleich $value sein"
+    else s"Muss größer als $value sein"
 }
 
 final case class DecimalMaxValidator[V](
@@ -180,7 +180,7 @@ final case class DigitsValidator[V](
 
 final case class PatternValidator(
   regex: Regex,
-  message: String = "Hat ein ungueltiges Format"
+  message: String = "Hat ein ungültiges Format"
 ) extends Validator[String] {
   override def validate(value: String): Option[String] =
     if (value == null) None
@@ -189,7 +189,7 @@ final case class PatternValidator(
 }
 
 final case class EmailValidator(
-  message: String = "Muss eine gueltige E-Mail-Adresse sein",
+  message: String = "Muss eine gültige E-Mail-Adresse sein",
   regex: Regex = ValidatorSupport.defaultEmailRegex
 ) extends Validator[String] {
   override def validate(value: String): Option[String] =
