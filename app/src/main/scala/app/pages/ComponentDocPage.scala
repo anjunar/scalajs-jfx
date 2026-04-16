@@ -16,7 +16,7 @@ import jfx.dsl.Scope.{inject, scope, scoped}
 import jfx.form.ComboBox.{comboBox, comboItem, comboItemSelected, comboRenderedSelectedItem, items, itemRenderer, valueRenderer}
 import jfx.form.Editor.editor
 import jfx.form.Form.{form, onSubmit, onSubmit_=}
-import jfx.form.editor.plugins.{basePlugin, headingPlugin, linkPlugin, listPlugin}
+import jfx.form.editor.plugins.{basePlugin, codePlugin, headingPlugin, imagePlugin, linkPlugin, listPlugin, tablePlugin}
 import jfx.form.ImageCropper.*
 import jfx.form.Input.input
 import jfx.form.InputContainer.inputContainer
@@ -587,10 +587,10 @@ class ComponentDocPage(entry: DocEntry) extends CompositeComponent[HTMLDivElemen
         text = "Live Editor"
       }
 
-      div {
-        classes = "component-doc__hint"
-        text = "This editor starts with a short note and the toolbar plugins that matter most in the docs: headings, lists and links."
-      }
+        div {
+          classes = "component-doc__hint"
+          text = "This editor starts with a short note and the toolbar plugins that matter most in the docs: headings, lists, links, code blocks, images and tables."
+        }
 
       editor("docs-editor") {
         val currentEditor = summon[jfx.form.Editor]
@@ -602,6 +602,9 @@ class ComponentDocPage(entry: DocEntry) extends CompositeComponent[HTMLDivElemen
         headingPlugin()
         listPlugin()
         linkPlugin()
+        imagePlugin()
+        tablePlugin()
+        codePlugin()
       }
     }
 

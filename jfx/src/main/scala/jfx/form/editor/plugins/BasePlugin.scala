@@ -1,6 +1,6 @@
 package jfx.form.editor.plugins
 
-import lexical.{EditorModules, ToolbarElement, RedoModule, UndoModule}
+import lexical.{EditorModules, HistoryModule, LexicalHistory, ToolbarElement, RedoModule, UndoModule}
 
 class BasePlugin extends AbstractEditorPlugin("base-plugin") {
 
@@ -11,8 +11,13 @@ class BasePlugin extends AbstractEditorPlugin("base-plugin") {
       new UndoModule(),
       new RedoModule(),
       EditorModules.BOLD,
-      EditorModules.ITALIC
+      EditorModules.ITALIC,
+      EditorModules.UNDERLINE,
+      EditorModules.STRIKETHROUGH
     )
+
+  override val modules: Seq[lexical.EditorModule] =
+    Seq(new HistoryModule(LexicalHistory.createEmptyHistoryState()))
 }
 
 object BasePlugin {

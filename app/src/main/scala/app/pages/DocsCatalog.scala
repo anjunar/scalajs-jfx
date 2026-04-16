@@ -320,13 +320,16 @@ object DocsCatalog {
       ),
       importCode =
         """import jfx.form.Editor.editor
-          |import jfx.form.editor.plugins.{basePlugin, headingPlugin, linkPlugin, listPlugin}""".stripMargin,
+          |import jfx.form.editor.plugins.{basePlugin, codePlugin, headingPlugin, imagePlugin, linkPlugin, listPlugin, tablePlugin}""".stripMargin,
       usageCode =
         """editor("article") {
           |  basePlugin()
           |  headingPlugin()
           |  listPlugin()
           |  linkPlugin()
+          |  imagePlugin()
+          |  tablePlugin()
+          |  codePlugin()
           |}""".stripMargin,
       patterns = Vector(
         "Content Authoring" -> "Use it when the user needs a structured writing surface rather than a plain textarea.",
@@ -337,7 +340,10 @@ object DocsCatalog {
         "editor(name) { ... }" -> "Create a rich editor control.",
         "basePlugin()" -> "Add core formatting controls like undo, redo, bold and italic.",
         "headingPlugin()" -> "Enable heading levels in the editor.",
-        "listPlugin()" -> "Add bullet and numbered list support."
+        "listPlugin()" -> "Add bullet and numbered list support.",
+        "tablePlugin()" -> "Add insert/remove table controls and table node support.",
+        "codePlugin()" -> "Add a code block editor backed by CodeMirror.",
+        "imagePlugin()" -> "Add the image insertion dialog and image node support."
       )
     ),
     DocEntry(

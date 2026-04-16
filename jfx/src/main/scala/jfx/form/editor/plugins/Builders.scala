@@ -14,3 +14,9 @@ def linkPlugin(init: LinkPlugin ?=> Unit = {}): LinkPlugin =
 
 def imagePlugin(init: ImagePlugin ?=> Unit = {}): ImagePlugin =
   ImagePlugin.imagePlugin(init)
+
+def tablePlugin(init: TablePlugin ?=> Unit = {}): TablePlugin =
+  TablePlugin.tablePlugin(init)
+
+def codePlugin(init: CodePlugin ?=> Unit = {}): CodePlugin =
+  CodePlugin.codePlugin(init)

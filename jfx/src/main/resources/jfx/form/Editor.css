@@ -140,6 +140,117 @@
     background: var(--color-editor-hover);
 }
 
+.editor .lexical-editor-input table,
+.editor .lexical-read-only table {
+    width: fit-content;
+    min-width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+    margin: 12px 0;
+    table-layout: auto;
+    background: var(--color-surface-base);
+    border: 1px solid var(--color-editor-border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.editor .lexical-editor-input table tr,
+.editor .lexical-read-only table tr {
+    background: transparent;
+}
+
+.editor .lexical-editor-input table td,
+.editor .lexical-editor-input table th,
+.editor .lexical-read-only table td,
+.editor .lexical-read-only table th {
+    min-width: 96px;
+    padding: 10px 12px;
+    vertical-align: top;
+    border-right: 1px solid var(--color-editor-rule);
+    border-bottom: 1px solid var(--color-editor-rule);
+    color: var(--color-editor-text);
+    background: transparent;
+}
+
+.editor .lexical-editor-input table td:last-child,
+.editor .lexical-editor-input table th:last-child,
+.editor .lexical-read-only table td:last-child,
+.editor .lexical-read-only table th:last-child {
+    border-right: none;
+}
+
+.editor .lexical-editor-input table tr:last-child td,
+.editor .lexical-editor-input table tr:last-child th,
+.editor .lexical-read-only table tr:last-child td,
+.editor .lexical-read-only table tr:last-child th {
+    border-bottom: none;
+}
+
+.editor .lexical-editor-input table th,
+.editor .lexical-read-only table th {
+    font-weight: 600;
+    background: var(--color-background-secondary);
+    color: var(--color-editor-text-strong);
+}
+
+.jfx-dialog-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.42);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 4000;
+    padding: 16px;
+}
+
+.jfx-dialog {
+    width: min(720px, 100%);
+    background: var(--color-surface-base);
+    border: 1px solid var(--color-editor-border);
+    border-radius: 8px;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.18);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.jfx-dialog__title {
+    margin: 0;
+    font-size: 16px;
+    color: var(--color-editor-text-strong);
+}
+
+.jfx-dialog__content {
+    min-width: 0;
+}
+
+.jfx-dialog__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.jfx-dialog__button {
+    border-radius: 6px;
+    border: 1px solid var(--color-editor-border);
+    padding: 8px 12px;
+    cursor: pointer;
+    font: inherit;
+}
+
+.jfx-dialog__button--secondary {
+    background: var(--color-surface-base);
+    color: var(--color-editor-text-strong);
+}
+
+.jfx-dialog__button--primary {
+    background: var(--color-accent);
+    border-color: var(--color-accent-strong);
+    color: var(--color-black);
+}
+
 .ProseMirror {
     position: relative;
     height: 100%;

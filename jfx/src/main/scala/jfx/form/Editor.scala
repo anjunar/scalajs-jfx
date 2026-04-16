@@ -3,7 +3,7 @@ package jfx.form
 import jfx.core.component.{ManagedElementComponent, NodeComponent}
 import jfx.core.state.Property
 import jfx.dsl.*
-import jfx.form.editor.plugins.EditorPlugin
+import jfx.form.editor.plugins.{DefaultDialogService, EditorPlugin}
 import jfx.layout.{Div, HBox, HorizontalLine, VBox}
 import lexical.*
 import org.scalajs.dom.{Element, Event, HTMLDivElement, HTMLElement, MouseEvent, Node, window}
@@ -183,6 +183,7 @@ class Editor(val name: String, override val standalone: Boolean = false)
     val editor = builder.build(mount)
     lexicalEditor = editor
     readOnlyMount = null
+    editor.setDialogService(new DefaultDialogService())
 
     renderToolbar(editor)
     registerFloatingToolbar(editor)
