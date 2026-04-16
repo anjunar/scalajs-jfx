@@ -1,6 +1,4 @@
 package app.pages
-
-import app.ClarityState
 import app.domain.InsightRecord
 import jfx.action.Button.*
 import jfx.control.{TableCell, TableColumn, TableRow, TableView}
@@ -48,15 +46,16 @@ class TablePage extends CompositeComponent[HTMLDivElement] {
     error: Option[String],
     activeSort: String,
     query: InsightQuery,
-    stageCounts: Map[String, Int]
+    topicCounts: Map[String, Int]
   )
 
+  private val topics = Vector("Forms", "Tables", "Windows", "Docs")
   private val themes = Vector(
     "Onboarding voice",
     "Viewport memory",
     "Form trust boundary",
     "Archive discoverability",
-    "Clarification prompts",
+    "Review prompts",
     "Window persistence",
     "List maturity signal",
     "Routing narrative",
@@ -78,10 +77,10 @@ class TablePage extends CompositeComponent[HTMLDivElement] {
     "The framework primitive is stable, yet its place in the showcase still needs refinement."
   )
   private val nextSteps = Map(
-    ClarityState.Raw.label -> "Keep the intake protected until the record has enough shape to be questioned.",
-    ClarityState.Clarification.label -> "Make contradiction visible and name the next question precisely.",
-    ClarityState.Condensed.label -> "Reduce the structure without hiding the tensions that created it.",
-    ClarityState.Archived.label -> "Keep the reference stable and reopen it only when context changes."
+    "Forms" -> "Keep the intake steady until the record has enough shape to work with.",
+    "Tables" -> "Keep the queue readable while you sort, filter and compare entries.",
+    "Windows" -> "Use the side surface when a secondary task should stay nearby.",
+    "Docs" -> "Keep the reference stable and reopen it only when you need a detail."
   )
 
   private val demoData: Vector[InsightRecord] = buildDemoData(total = 192)
@@ -201,11 +200,6 @@ class TablePage extends CompositeComponent[HTMLDivElement] {
                     classes = "window-demo-card window-demo-card--record"
 
                     div {
-                      classes = Seq("clarity-state-chip", s"is-${stateCss(record.state.get)}")
-                      text = record.state.get
-                    }
-
-                    div {
                       classes = "window-demo-card__title"
                       text = record.title.get
                     }
@@ -231,21 +225,21 @@ class TablePage extends CompositeComponent[HTMLDivElement] {
             )
 
       div {
-        classes = "clarity-hero clarity-hero--clarification"
+        classes = "clarity-hero clarity-hero--table"
 
         div {
           classes = "clarity-hero__eyebrow"
-          text = "Clarification Queue"
+          text = "Data table"
         }
 
         div {
           classes = "clarity-hero__title"
-          text = "Remote data becomes a meaning field when rows carry state, maturity and tension."
+          text = "Load, filter and sort data in one place."
         }
 
         div {
           classes = "clarity-hero__copy"
-          text = "The queue keeps conflict visible instead of flattening every record into the same neutral table row. Filtering, sorting and lazy loading still behave like a real application surface."
+          text = "This page shows remote loading, topic filters, row selection and a detail view."
         }
       }
 
@@ -270,7 +264,7 @@ class TablePage extends CompositeComponent[HTMLDivElement] {
 
               div {
                 classes = "clarity-zone-heading__title"
-                text = "Filter the queue, keep state visible and select one record for deeper context."
+                text = "Filter the queue, keep topic visible and select one record for deeper context."
               }
             }
 
@@ -322,9 +316,9 @@ class TablePage extends CompositeComponent[HTMLDivElement] {
               div {
                 classes = "table-page__state-filter"
 
-                stageFilterButton("All states", None, current.query.stage)(applyStageFilter)
-                ClarityState.ordered.foreach { state =>
-                  stageFilterButton(state.label, Some(state.label), current.query.stage)(applyStageFilter)
+                stageFilterButton("All topics", None, current.query.stage)(applyStageFilter)
+                topics.foreach { topic =>
+                  stageFilterButton(topic, Some(topic), current.query.stage)(applyStageFilter)
                 }
               }
             }
@@ -369,23 +363,23 @@ class TablePage extends CompositeComponent[HTMLDivElement] {
               div {
                 classes = "table-page__count-grid"
 
-                ClarityState.ordered.foreach { state =>
+                topics.foreach { topic =>
                   div {
                     classes = "table-page__count-card"
 
                     div {
-                      classes = Seq("clarity-state-chip", s"is-${state.cssName}")
-                      text = state.label
+                      classes = Seq("clarity-state-chip", s"is-${stateCss(topic)}")
+                      text = topic
                     }
 
                     div {
                       classes = "table-page__count-value"
-                      text = current.stageCounts.getOrElse(state.label, 0).toString
+                      text = current.topicCounts.getOrElse(topic, 0).toString
                     }
 
                     div {
                       classes = "table-page__count-copy"
-                      text = state.discipline
+                      text = nextSteps(topic)
                     }
                   }
                 }
@@ -421,7 +415,7 @@ class TablePage extends CompositeComponent[HTMLDivElement] {
                   div {
                     classes = "table-page__detail-list"
 
-                    detailRow("State", record.state.get, record.state.get)
+                    detailRow("Topic", record.state.get, record.state.get)
                     detailRow("Steward", record.steward.get)
                     detailRow("Tension", tensionLabel(record.tension.get))
                     detailRow("Revisions", record.revisions.get.toString)
@@ -488,7 +482,7 @@ class TablePage extends CompositeComponent[HTMLDivElement] {
 
           div {
             classes = "clarity-empty-state__copy"
-            text = "Try another search term or move back to all states. The queue keeps conflict visible, so empty results are treated as information."
+            text = "Try another search term or move back to all topics. The queue keeps conflict visible, so empty results are treated as information."
           }
         }
       )
@@ -499,7 +493,7 @@ class TablePage extends CompositeComponent[HTMLDivElement] {
         height = "560px"
       }
 
-      TableColumn.column[InsightRecord, String]("State") {
+      TableColumn.column[InsightRecord, String]("Topic") {
         val currentColumn = summon[TableColumn[InsightRecord, String]]
         currentColumn.setCellValueFactory(new PropertyValueFactory[InsightRecord, String]("state"))
         currentColumn.prefWidth = 160
@@ -554,7 +548,7 @@ class TablePage extends CompositeComponent[HTMLDivElement] {
         .map { case (field, ascending) =>
           val label =
             field match
-              case "state" => "state"
+              case "state" => "topic"
               case "title" => "title"
               case "steward" => "steward"
               case "tension" => "tension"
@@ -572,12 +566,12 @@ class TablePage extends CompositeComponent[HTMLDivElement] {
       error = remote.errorProperty.get.flatMap(error => Option(error.getMessage)).filter(_.nonEmpty),
       activeSort = activeSort,
       query = query,
-      stageCounts = ClarityState.ordered.iterator.map(state => state.label -> filtered.count(_.state.get == state.label)).toMap
+      topicCounts = topics.iterator.map(topic => topic -> filtered.count(_.state.get == topic)).toMap
     )
   }
 
   private def queueStatusCopy(current: QueueTelemetry): String = {
-    val stageLabel = current.query.stage.getOrElse("all states")
+    val stageLabel = current.query.stage.getOrElse("all topics")
     val loadingCopy = if (current.loading) " Refresh in progress." else ""
     val errorCopy = current.error.map(message => s" Issue: $message").getOrElse("")
     s"Viewing $stageLabel with ${current.filteredCount} relevant records. Loaded ${current.loadedCount}. Sorted by ${current.activeSort}.$loadingCopy$errorCopy"
@@ -669,7 +663,7 @@ class TablePage extends CompositeComponent[HTMLDivElement] {
   private def sortRecords(records: Vector[InsightRecord], sort: Seq[String]): Vector[InsightRecord] =
     sort.headOption.flatMap(parseSort) match
       case Some(("state", ascending)) =>
-        sortBy(records, record => stateRank(record.state.get), ascending)
+        sortBy(records, record => topicRank(record.state.get), ascending)
       case Some(("title", ascending)) =>
         sortBy(records, record => normalize(record.title.get), ascending)
       case Some(("steward", ascending)) =>
@@ -694,36 +688,36 @@ class TablePage extends CompositeComponent[HTMLDivElement] {
 
   private def buildDemoData(total: Int): Vector[InsightRecord] =
     Vector.tabulate(total) { index =>
-      val state =
+      val topic =
         index % 4 match
-          case 0 => ClarityState.Raw
-          case 1 => ClarityState.Clarification
-          case 2 => ClarityState.Condensed
-          case _ => ClarityState.Archived
+          case 0 => topics(0)
+          case 1 => topics(1)
+          case 2 => topics(2)
+          case _ => topics(3)
       val theme = themes(index % themes.length)
       val steward = stewards((index / 2) % stewards.length)
       val summary = summaries((index / 3) % summaries.length)
       val tension =
-        state match
-          case ClarityState.Raw => 5 - (index % 2)
-          case ClarityState.Clarification => 3 + (index % 3)
-          case ClarityState.Condensed => 2 + (index % 2)
-          case ClarityState.Archived => 1 + (index % 2)
+        topic match
+          case "Forms" => 5 - (index % 2)
+          case "Tables" => 3 + (index % 3)
+          case "Windows" => 2 + (index % 2)
+          case "Docs" => 1 + (index % 2)
       val revisions =
-        state match
-          case ClarityState.Raw => 1 + (index % 2)
-          case ClarityState.Clarification => 2 + (index % 4)
-          case ClarityState.Condensed => 4 + (index % 4)
-          case ClarityState.Archived => 6 + (index % 3)
+        topic match
+          case "Forms" => 1 + (index % 2)
+          case "Tables" => 2 + (index % 4)
+          case "Windows" => 4 + (index % 4)
+          case "Docs" => 6 + (index % 3)
 
       new InsightRecord(
         title = Property(s"$theme ${index + 1}"),
-        state = Property(state.label),
+        state = Property(topic),
         steward = Property(steward),
         tension = Property(tension),
         revisions = Property(revisions),
         summary = Property(summary),
-        nextStep = Property(nextSteps(state.label)),
+        nextStep = Property(nextSteps(topic)),
         updatedAt = Property(f"2026-04-${(index % 9) + 1}%02d")
       )
     }
@@ -731,9 +725,9 @@ class TablePage extends CompositeComponent[HTMLDivElement] {
   private def normalize(value: String | Null): String =
     Option(value).map(_.trim.toLowerCase).getOrElse("")
 
-  private def stateRank(label: String): Int =
-    ClarityState.ordered.indexWhere(_.label == label) match
-      case -1 => ClarityState.ordered.length
+  private def topicRank(label: String): Int =
+    topics.indexWhere(_ == label) match
+      case -1 => topics.length
       case rank => rank
 
   private def stateCss(label: String): String =
@@ -756,10 +750,7 @@ class TablePage extends CompositeComponent[HTMLDivElement] {
     this.element.classList.add("clarity-table__row")
 
     override protected def updateItem(item: InsightRecord | Null, empty: Boolean): Unit = {
-      this.element.classList.remove("is-raw")
-      this.element.classList.remove("is-clarification")
-      this.element.classList.remove("is-condensed")
-      this.element.classList.remove("is-archived")
+      topics.foreach(topic => this.element.classList.remove(s"is-${stateCss(topic)}"))
       if (!empty && item != null) {
         this.element.classList.add(s"is-${stateCss(item.state.get)}")
         this.element.setAttribute("data-tension", item.tension.get.toString)
@@ -774,10 +765,7 @@ class TablePage extends CompositeComponent[HTMLDivElement] {
 
     override protected def updateItem(item: String | Null, empty: Boolean): Unit = {
       super.updateItem(item, empty)
-      this.element.classList.remove("is-raw")
-      this.element.classList.remove("is-clarification")
-      this.element.classList.remove("is-condensed")
-      this.element.classList.remove("is-archived")
+      topics.foreach(topic => this.element.classList.remove(s"is-${stateCss(topic)}"))
       if (!empty && item != null) {
         this.element.classList.add(s"is-${stateCss(item)}")
       }

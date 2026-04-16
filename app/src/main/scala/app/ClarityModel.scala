@@ -1,82 +1,11 @@
 package app
 
-enum ClarityState(
-  val label: String,
-  val cssName: String,
-  val summary: String,
-  val discipline: String
-):
-  case Raw
-      extends ClarityState(
-        label = "RAW",
-        cssName = "raw",
-        summary = "Unformed, protected and not yet ready for evaluation.",
-        discipline = "Keep intake safe and incomplete."
-      )
-  case Clarification
-      extends ClarityState(
-        label = "CLARIFICATION",
-        cssName = "clarification",
-        summary = "Tension stays visible while contradictions are worked through.",
-        discipline = "Hold conflict without rushing resolution."
-      )
-  case Condensed
-      extends ClarityState(
-        label = "CONDENSED",
-        cssName = "condensed",
-        summary = "Structure emerges and decisions begin to connect.",
-        discipline = "Reduce without flattening meaning."
-      )
-  case Archived
-      extends ClarityState(
-        label = "ARCHIVED",
-        cssName = "archived",
-        summary = "Stable, referenceable and optimized for reading.",
-        discipline = "Keep knowledge quiet, findable and intact."
-      )
-
-object ClarityState:
-  val ordered: Vector[ClarityState] =
-    Vector(Raw, Clarification, Condensed, Archived)
-
-  def canTransition(from: ClarityState, to: ClarityState): Boolean =
-    (from, to) match
-      case (Raw, Clarification)                     => true
-      case (Clarification, Raw | Condensed)        => true
-      case (Condensed, Clarification | Archived)   => true
-      case (Archived, Clarification)               => true
-      case _                                       => false
-
-  def transitionTargets(from: ClarityState): Vector[ClarityState] =
-    ordered.filter(target => canTransition(from, target))
-
-  def transitionNarrative(from: ClarityState, to: ClarityState): String =
-    (from, to) match
-      case (Raw, Clarification) =>
-        "The record leaves protected intake and enters explicit clarification."
-      case (Clarification, Raw) =>
-        "The record returns to intake because it still needs protection."
-      case (Clarification, Condensed) =>
-        "The active tension has been reduced into a more coherent structure."
-      case (Condensed, Clarification) =>
-        "The structure is reopened because important conflict remains unresolved."
-      case (Condensed, Archived) =>
-        "The record is stable enough to become quiet reference material."
-      case (Archived, Clarification) =>
-        "The archive is reopened because context changed or contradiction surfaced."
-      case _ =>
-        s"${from.label} cannot move directly to ${to.label}."
-
-  def invalidTransitionMessage(from: ClarityState, to: ClarityState): String =
-    s"${from.label} cannot move directly to ${to.label}. Every transition must stay explicit."
-
 final case class ShowcaseRoute(
   path: String,
   title: String,
   summary: String,
   zone: String,
   section: String,
-  state: ClarityState,
   note: String
 )
 
@@ -84,63 +13,58 @@ object ShowcaseCatalog:
   val manifest: ShowcaseRoute =
     ShowcaseRoute(
       path = "/",
-      title = "Technology Speaks",
-      summary = "The shell turns the design manifesto into route structure, state visibility and calm guidance.",
-      zone = "Orientation",
-      section = "Manifest",
-      state = ClarityState.Clarification,
-      note = "Start with tension made visible, not flattened."
+      title = "Start here",
+      summary = "Get a quick overview and choose the part of the framework you want to explore.",
+      zone = "Overview",
+      section = "Start",
+      note = "Best first stop if you are new to the demo."
     )
 
   val formWorkspace: ShowcaseRoute =
     ShowcaseRoute(
       path = "/form",
-      title = "Raw Workspace",
-      summary = "Typed forms become a protected intake surface with revision logs and explicit transitions.",
-      zone = "Work",
-      section = "Workspace",
-      state = ClarityState.Raw,
-      note = "No forced completion, no silent overwrite."
+      title = "Forms Workspace",
+      summary = "See typed inputs, nested forms, image editing and revision history on one page.",
+      zone = "Example",
+      section = "Examples",
+      note = "Open this page if you want to understand form binding."
     )
 
-  val clarificationQueue: ShowcaseRoute =
+  val dataQueue: ShowcaseRoute =
     ShowcaseRoute(
       path = "/table",
-      title = "Clarification Queue",
-      summary = "Remote data stays meaningful by exposing state, maturity and tension in the same field.",
-      zone = "Work",
-      section = "Workspace",
-      state = ClarityState.Clarification,
-      note = "Conflict is a signal, not an error."
+      title = "Data Queue",
+      summary = "See loading, filtering, sorting and record selection in a realistic table view.",
+      zone = "Example",
+      section = "Examples",
+      note = "Open this page for async lists and table behavior."
     )
 
-  val condensedContext: ShowcaseRoute =
+  val windowWorkspace: ShowcaseRoute =
     ShowcaseRoute(
       path = "/window",
-      title = "Condensed Context",
-      summary = "Windows and notifications support secondary work without collapsing the main surface.",
-      zone = "Context",
-      section = "Workspace",
-      state = ClarityState.Condensed,
-      note = "Use motion only when it improves understanding."
+      title = "Window Workspace",
+      summary = "See floating windows, notifications and side tasks without leaving the main screen.",
+      zone = "Example",
+      section = "Examples",
+      note = "Open this page to see overlay and viewport patterns."
     )
 
   val referenceAtlas: ShowcaseRoute =
     ShowcaseRoute(
       path = "/docs",
-      title = "Reference Atlas",
-      summary = "Component knowledge enters a quiet archived layer without losing live examples.",
+      title = "Component Docs",
+      summary = "Browse components with short explanations, imports and live examples.",
       zone = "Reference",
       section = "Reference",
-      state = ClarityState.Archived,
-      note = "Archive is stable, but still connected to working examples."
+      note = "Use this page when you want to look up an API quickly."
     )
 
   val navigation: Vector[ShowcaseRoute] =
-    Vector(manifest, formWorkspace, clarificationQueue, condensedContext, referenceAtlas)
+    Vector(manifest, formWorkspace, dataQueue, windowWorkspace, referenceAtlas)
 
   val workspaceRoutes: Vector[ShowcaseRoute] =
-    Vector(formWorkspace, clarificationQueue, condensedContext, referenceAtlas)
+    Vector(formWorkspace, dataQueue, windowWorkspace, referenceAtlas)
 
   def descriptorFor(path: String): ShowcaseRoute =
     navigation
@@ -150,11 +74,10 @@ object ShowcaseCatalog:
           ShowcaseRoute(
             path = path,
             title = docTitleFromPath(path),
-            summary = "A stable component reference page with live embedded examples.",
+            summary = "A component reference page with a short explanation and a live example.",
             zone = "Reference",
             section = "Reference",
-            state = ClarityState.Archived,
-            note = "Archived knowledge stays readable, but never disconnected from behavior."
+            note = "Use this page when you want details for one component."
           )
         }
       }

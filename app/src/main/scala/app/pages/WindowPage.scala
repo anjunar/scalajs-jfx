@@ -1,6 +1,4 @@
 package app.pages
-
-import app.ClarityState
 import jfx.action.Button.{button, onClick}
 import jfx.core.component.CompositeComponent
 import jfx.core.component.CompositeComponent.composite
@@ -31,34 +29,33 @@ class WindowPage extends CompositeComponent[HTMLDivElement] {
       }
 
       div {
-        classes = "clarity-hero clarity-hero--condensed"
+        classes = "clarity-hero clarity-hero--window"
 
         div {
           classes = "clarity-hero__eyebrow"
-          text = "Condensed Context"
+          text = "Windows"
         }
 
         div {
           classes = "clarity-hero__title"
-          text = "Windows hold secondary work without tearing the main surface apart."
+          text = "Open secondary tasks without leaving the page."
         }
 
         div {
           classes = "clarity-hero__copy"
-          text = "The viewport becomes a contextual layer for clarification support, condensed summaries and archive previews. Motion stays calm and only appears when understanding benefits from it."
+          text = "This page shows floating windows, notifications and supporting UI for side tasks."
         }
 
         hbox {
           classes = "clarity-action-row"
 
-          button("Open Clarification Map") {
+          button("Open Notes Map") {
             classes = Seq("calm-action", "calm-action--primary")
             onClick { _ =>
               Viewport.addWindow(workspaceWindow(
-                state = ClarityState.Clarification,
-                title = "Clarification Map",
-                body = "Collect contradictions, competing notes and open questions without leaving the current route.",
-                nextStep = "Keep the tension visible until the next explicit decision is ready."
+                title = "Notes Map",
+                body = "Collect related notes, open questions and context without leaving the current route.",
+                nextStep = "Keep the secondary surface nearby while the main page stays open."
               ))
             }
           }
@@ -67,10 +64,9 @@ class WindowPage extends CompositeComponent[HTMLDivElement] {
             classes = Seq("calm-action", "calm-action--secondary")
             onClick { _ =>
               Viewport.addWindow(workspaceWindow(
-                state = ClarityState.Condensed,
                 title = "Revision Ledger",
-                body = "Review the latest transitions, snapshots and explanatory notes as one quiet side surface.",
-                nextStep = "Use this layer when the main page needs to remain visually calm."
+                body = "Review the latest revisions, snapshots and explanatory notes as one quiet side surface.",
+                nextStep = "Use this layer when the main page needs to stay visually calm."
               ))
             }
           }
@@ -79,25 +75,22 @@ class WindowPage extends CompositeComponent[HTMLDivElement] {
             classes = Seq("calm-action", "calm-action--quiet")
             onClick { _ =>
               Viewport.addWindow(workspaceWindow(
-                state = ClarityState.Raw,
-                title = "Protected Intake",
+                title = "Notes Intake",
                 body = "A temporary side room for unfinished notes and partial drafts.",
-                nextStep = "Return to the main work surface when the record has enough shape for clarification."
+                nextStep = "Return to the main work surface when the material is ready."
               ))
               Viewport.addWindow(workspaceWindow(
-                state = ClarityState.Clarification,
-                title = "Conflict Notes",
+                title = "Open Questions",
                 body = "A focused panel for contradictions, context mismatch and unresolved meaning.",
-                nextStep = "Escalate only what truly requires a new interpretation."
+                nextStep = "Escalate only what truly needs a fresh interpretation."
               ))
               Viewport.addWindow(workspaceWindow(
-                state = ClarityState.Archived,
-                title = "Archive Preview",
-                body = "A stable view that shows what the current record would look like once it becomes reference material.",
-                nextStep = "Archive only after condensation is complete."
+                title = "Reference Preview",
+                body = "A stable view that shows what the current record looks like once it becomes reference material.",
+                nextStep = "Open it when the work needs a quiet reference view."
               ))
               Viewport.notify(
-                message = "Three contextual layers are open. Notice how the main route remains intact.",
+                message = "Three contextual layers are open. The main route stays intact.",
                 kind = Viewport.NotificationKind.Success,
                 durationMs = 2800
               )
@@ -110,42 +103,36 @@ class WindowPage extends CompositeComponent[HTMLDivElement] {
         classes = "window-page__launch-grid"
 
         launchCard(
-          state = ClarityState.Raw,
-          title = "Protected intake",
+          title = "Notes intake",
           body = "Use a floating window when unfinished material should stay present, but out of the main reading flow."
         ) {
           Viewport.addWindow(workspaceWindow(
-            state = ClarityState.Raw,
-            title = "Protected Intake",
+            title = "Notes Intake",
             body = "This window holds early notes that should not yet become part of the stable layout.",
-            nextStep = "Move to clarification only when the record can tolerate evaluation."
+            nextStep = "Move it aside only when the material can stand on its own."
           ))
         }
 
         launchCard(
-          state = ClarityState.Clarification,
-          title = "Conflict support",
+          title = "Open questions",
           body = "Keep contradictions, questions and context mismatch nearby without collapsing them into the main page."
         ) {
           Viewport.addWindow(workspaceWindow(
-            state = ClarityState.Clarification,
-            title = "Conflict Support",
+            title = "Open Questions",
             body = "This surface is useful for inspection, synthesis and other secondary decision layers.",
             nextStep = "Keep only the information that improves understanding in motion."
           ))
         }
 
         launchCard(
-          state = ClarityState.Archived,
-          title = "Archive preview",
-          body = "Preview how a record will read once it becomes stable reference material."
+          title = "Reference preview",
+          body = "Preview how a record reads once it becomes stable reference material."
         ) {
-          Viewport.addWindow(workspaceWindow(
-            state = ClarityState.Archived,
-            title = "Archive Preview",
-            body = "The archived layer should feel stable, quiet and minimally interactive.",
-            nextStep = "Reopen only when context changes, not when attention wanders."
-          ))
+              Viewport.addWindow(workspaceWindow(
+                title = "Reference Preview",
+                body = "The reference view should feel stable, quiet and minimally interactive.",
+                nextStep = "Reopen only when context changes."
+              ))
         }
       }
 
@@ -199,7 +186,7 @@ class WindowPage extends CompositeComponent[HTMLDivElement] {
       }
     }
 
-  private def workspaceWindow(state: ClarityState, title: String, body: String, nextStep: String): WindowConf =
+  private def workspaceWindow(title: String, body: String, nextStep: String): WindowConf =
     WindowConf(
       title = title,
       resizable = true,
@@ -208,11 +195,6 @@ class WindowPage extends CompositeComponent[HTMLDivElement] {
       component = Viewport.captureComponent {
         div {
           classes = "window-demo-card"
-
-          div {
-            classes = Seq("clarity-state-chip", s"is-${state.cssName}")
-            text = state.label
-          }
 
           div {
             classes = "window-demo-card__title"
@@ -232,14 +214,9 @@ class WindowPage extends CompositeComponent[HTMLDivElement] {
       }
     )
 
-  private def launchCard(state: ClarityState, title: String, body: String)(run: => Unit): Unit =
+  private def launchCard(title: String, body: String)(run: => Unit): Unit =
     div {
       classes = "window-page__launch-card"
-
-      div {
-        classes = Seq("clarity-state-chip", s"is-${state.cssName}")
-        text = state.label
-      }
 
       div {
         classes = "window-page__launch-title"

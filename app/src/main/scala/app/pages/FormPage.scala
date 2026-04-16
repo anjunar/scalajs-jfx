@@ -1,6 +1,4 @@
 package app.pages
-
-import app.ClarityState
 import app.component.AddressForm.addressForm
 import app.domain.Person
 import jfx.action.Button.*
@@ -33,8 +31,7 @@ class FormPage extends CompositeComponent[HTMLDivElement] {
   private final case class RevisionEvent(
     stamp: String,
     title: String,
-    detail: String,
-    state: ClarityState
+    detail: String
   )
 
   override val element: HTMLDivElement = newElement("div")
@@ -46,22 +43,20 @@ class FormPage extends CompositeComponent[HTMLDivElement] {
       val json =
         """{ "@type" : "Person", "firstName" : "Jon", "lastName" : "Doe", "team" : ["Platform Engineering"], "address" : { "@type" : "Address" , "street" : "Avenue 28", "city" : "Los Angeles" }, "emails" : [{"@type" : "Email", "value" : "test@test.de" }] }"""
 
-      val workflowState = Property(ClarityState.Raw)
       val lastSnapshot = Property("No revision has been recorded yet.")
       val revisionLedger = ListProperty(
         js.Array(
           RevisionEvent(
             stamp = "Revision 01",
             title = "Working copy created",
-            detail = "The record enters the form workspace as RAW so incomplete thought can stay protected.",
-            state = ClarityState.Raw
+            detail = "The record enters the form workspace ready for editing."
           )
         )
       )
 
-      def appendRevision(title: String, detail: String, state: ClarityState): Unit = {
+      def appendRevision(title: String, detail: String): Unit = {
         val nextStamp = f"Revision ${revisionLedger.length + 1}%02d"
-        revisionLedger.prepend(RevisionEvent(nextStamp, title, detail, state))
+        revisionLedger.prepend(RevisionEvent(nextStamp, title, detail))
       }
 
       def recordSnapshot(): Unit = {
@@ -69,61 +64,25 @@ class FormPage extends CompositeComponent[HTMLDivElement] {
         lastSnapshot.set(snapshot)
         appendRevision(
           title = "Snapshot recorded",
-          detail = s"The ${workflowState.get.label} working copy was serialized without destroying the current editing context.",
-          state = workflowState.get
+          detail = "The working copy was serialized without destroying the current editing context."
         )
         Viewport.notify(
-          message = "Revision recorded. The working copy remains open for further clarification.",
+          message = "Revision recorded. The working copy remains open for further editing.",
           kind = Viewport.NotificationKind.Success,
           durationMs = 2400
         )
       }
 
-      def transitionTo(next: ClarityState): Unit = {
-        val current = workflowState.get
-
-        if (current == next) {
-          Viewport.notify(
-            message = s"The record is already held in ${current.label}.",
-            kind = Viewport.NotificationKind.Info,
-            durationMs = 2200
-          )
-        } else if (ClarityState.canTransition(current, next)) {
-          workflowState.set(next)
-          appendRevision(
-            title = s"Moved to ${next.label}",
-            detail = ClarityState.transitionNarrative(current, next),
-            state = next
-          )
-          Viewport.notify(
-            message = s"${current.label} -> ${next.label}. ${next.discipline}",
-            kind = Viewport.NotificationKind.Success,
-            durationMs = 2600
-          )
-        } else {
-          Viewport.notify(
-            message = ClarityState.invalidTransitionMessage(current, next),
-            kind = Viewport.NotificationKind.Warning,
-            durationMs = 3200
-          )
-        }
-      }
-
       def openSnapshotWindow(): Unit = {
         Viewport.addWindow(
           WindowConf(
-            title = s"${workflowState.get.label} Snapshot",
+            title = "Snapshot",
             width = 460,
             height = 320,
             resizable = true,
             component = Viewport.captureComponent {
               div {
                 classes = "window-demo-card window-demo-card--snapshot"
-
-                div {
-                  classes = Seq("clarity-state-chip", s"is-${workflowState.get.cssName}")
-                  text = workflowState.get.label
-                }
 
                 div {
                   classes = "window-demo-card__title"
@@ -161,63 +120,21 @@ class FormPage extends CompositeComponent[HTMLDivElement] {
         }
 
         div {
-          classes = "clarity-hero clarity-hero--raw"
+          classes = "clarity-hero"
 
           div {
             classes = "clarity-hero__eyebrow"
-            text = "Raw Workspace"
+          text = "Forms"
           }
 
           div {
             classes = "clarity-hero__title"
-            text = "Typed forms become a protected intake surface instead of a rushed data funnel."
+            text = "Build typed forms without losing structure."
           }
 
           div {
             classes = "clarity-hero__copy"
-            text = "The page keeps unfinished thought editable, records revisions instead of overwriting silently, and moves the record through explicit lifecycle transitions."
-          }
-        }
-
-        observeRender(workflowState) { currentState =>
-          div {
-            classes = "form-page__state-strip clarity-zone"
-
-            div {
-              classes = "clarity-zone-heading"
-
-              div {
-                classes = "clarity-zone-heading__label"
-                text = "Explicit Transitions"
-              }
-
-              div {
-                classes = "clarity-zone-heading__title"
-                text = s"Current state: ${currentState.label}"
-              }
-
-              div {
-                classes = "clarity-zone-heading__copy"
-                text = currentState.summary
-              }
-            }
-
-            hbox {
-              classes = "form-page__transition-row"
-
-              ClarityState.ordered.foreach { state =>
-                button(state.label) {
-                  buttonType = "button"
-                  classes =
-                    Vector("form-page__transition-button", s"is-${state.cssName}") ++
-                      Option.when(currentState == state)("is-active")
-
-                  onClick { _ =>
-                    transitionTo(state)
-                  }
-                }
-              }
-            }
+            text = "This page shows field binding, nested forms, media editing and revision history in one place."
           }
         }
 
@@ -419,46 +336,44 @@ class FormPage extends CompositeComponent[HTMLDivElement] {
             div {
               classes = "form-page__context"
 
-              observeRender(workflowState) { currentState =>
+              div {
+                classes = "clarity-zone"
+
                 div {
-                  classes = "clarity-zone"
+                  classes = "clarity-zone-heading"
 
                   div {
-                    classes = "clarity-zone-heading"
-
-                    div {
-                      classes = "clarity-zone-heading__label"
-                      text = "Current Discipline"
-                    }
-
-                    div {
-                      classes = "clarity-zone-heading__title"
-                      text = currentState.label
-                    }
-
-                    div {
-                      classes = "clarity-zone-heading__copy"
-                      text = currentState.discipline
-                    }
+                    classes = "clarity-zone-heading__label"
+                    text = "Current notes"
                   }
 
                   div {
-                    classes = "form-page__context-list"
+                    classes = "clarity-zone-heading__title"
+                    text = "Working copy"
+                  }
 
-                    div {
-                      classes = "form-page__context-item"
-                      text = s"State summary: ${currentState.summary}"
-                    }
+                  div {
+                    classes = "clarity-zone-heading__copy"
+                    text = "Keep the record editable while you shape the content."
+                  }
+                }
 
-                    div {
-                      classes = "form-page__context-item"
-                      text = s"Allowed next moves: ${ClarityState.transitionTargets(currentState).map(_.label).mkString(", ")}"
-                    }
+                div {
+                  classes = "form-page__context-list"
 
-                    div {
-                      classes = "form-page__context-item"
-                      text = "Rule: archive only becomes available once the record has passed through condensation."
-                    }
+                  div {
+                    classes = "form-page__context-item"
+                    text = "Revision history stays visible while the current form remains active."
+                  }
+
+                  div {
+                    classes = "form-page__context-item"
+                    text = "The snapshot window shows the latest serialized working copy."
+                  }
+
+                  div {
+                    classes = "form-page__context-item"
+                    text = "The page keeps unfinished thought editable until you are ready to record it."
                   }
                 }
               }
@@ -493,11 +408,6 @@ class FormPage extends CompositeComponent[HTMLDivElement] {
                         div {
                           classes = "form-page__ledger-stamp"
                           text = event.stamp
-                        }
-
-                        div {
-                          classes = Seq("clarity-state-chip", s"is-${event.state.cssName}")
-                          text = event.state.label
                         }
                       }
 
@@ -557,9 +467,9 @@ class FormPage extends CompositeComponent[HTMLDivElement] {
                   }
                 }
 
-                promptRow("What is still incomplete?", "RAW may stay unfinished. Completion is not forced by the UI.")
-                promptRow("Where is the conflict?", "Move to CLARIFICATION when disagreement should remain visible.")
-                promptRow("What can already be condensed?", "Only stabilize what is coherent enough to be reduced.")
+                promptRow("What is still incomplete?", "Some details may stay unfinished. Completion is not forced by the UI.")
+                promptRow("Where is the conflict?", "Keep disagreements visible until the next edit makes them obvious.")
+                promptRow("What can already be stabilized?", "Only flatten what is coherent enough to read without friction.")
               }
             }
           }

@@ -1,6 +1,4 @@
 package app.pages
-
-import app.ClarityState
 import app.domain.{Address, Email, Person}
 import jfx.action.Button.{button, onClick}
 import jfx.control.TableColumn
@@ -55,7 +53,7 @@ class ComponentDocPage(entry: DocEntry) extends CompositeComponent[HTMLDivElemen
       }
 
       div {
-        classes = "clarity-hero clarity-hero--archived"
+        classes = "clarity-hero clarity-hero--reference"
 
         div {
           classes = "clarity-hero__eyebrow"

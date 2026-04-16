@@ -7,7 +7,7 @@ ThisBuild / organizationName := "Anjunar"
 ThisBuild / organizationHomepage := Some(url("https://github.com/anjunar"))
 ThisBuild / scalaVersion := "3.8.3"
 ThisBuild / homepage := Some(url("https://github.com/anjunar/scala-js-jfx"))
-ThisBuild / description := "Reactive UI framework for Scala.js with structured state, lifecycle control, and a composable DSL."
+ThisBuild / description := "Reactive UI framework for Scala.js with lifecycle control, typed forms, routing, tables, and a composable DSL."
 ThisBuild / licenses := Seq("MIT" -> url("https://opensource.org/licenses/MIT"))
 ThisBuild / scmInfo := Some(
   ScmInfo(

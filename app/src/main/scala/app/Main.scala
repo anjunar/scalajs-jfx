@@ -36,26 +36,26 @@ object Main {
             classes = "app-nav-intro"
 
             div {
-              classes = Seq("app-state-chip", "is-clarification")
-              text = "Manifest der Stille"
+              classes = "app-state-chip"
+              text = "Demo"
             }
 
             div {
               classes = "app-nav-intro__title"
-              text = "Technology Speaks"
+              text = "Pick a page"
             }
 
             div {
               classes = "app-nav-intro__copy"
-              text = "A framework showcase that treats state, revision and calm orientation as first-class structure."
+              text = "Each page shows one part of scala-js-jfx in a simpler, more direct way."
             }
           }
 
           observeRender(router.stateProperty) { state =>
             val activePath = state.path
 
-            navGroup("Manifest", Vector(ShowcaseCatalog.manifest), activePath, router)
-            navGroup("Workspaces", ShowcaseCatalog.workspaceRoutes.take(3), activePath, router)
+            navGroup("Start", Vector(ShowcaseCatalog.manifest), activePath, router)
+            navGroup("Examples", ShowcaseCatalog.workspaceRoutes.take(3), activePath, router)
             navGroup("Reference", Vector(ShowcaseCatalog.referenceAtlas), activePath, router)
           }
         }
@@ -65,67 +65,16 @@ object Main {
             classes = "app-frame"
 
             div {
-              classes = "app-header"
+              classes = "app-shell__controls"
 
-              hbox {
-                classes = "app-header__bar"
+              button("menu") {
+                buttonType = "button"
+                classes = Seq("material-icons", "app-menu-button")
 
-                button("menu") {
-                  buttonType = "button"
-                  classes = Seq("material-icons", "app-menu-button")
-
-                  onClick { _ =>
-                    toggleDrawer
-                  }
+                onClick { _ =>
+                  toggleDrawer
                 }
-
-                div {
-                  classes = "app-header__brand"
-
-                  div {
-                    classes = "app-header__title"
-                    text = "scala-js-jfx"
-                  }
-
-                  div {
-                    classes = "app-header__subtitle"
-                    text = "Clarity-driven framework showcase"
-                  }
-                }
-
               }
-
-              /*observeRender(router.stateProperty) { state =>
-                val descriptor = ShowcaseCatalog.descriptorFor(state.path)
-
-                hbox {
-                  classes = "app-route-bar"
-
-                  div {
-                    classes = Seq("app-state-chip", s"is-${descriptor.state.cssName}")
-                    text = descriptor.state.label
-                  }
-
-                  div {
-                    classes = "app-route-bar__copy"
-
-                    div {
-                      classes = "app-route-bar__title"
-                      text = descriptor.title
-                    }
-
-                    div {
-                      classes = "app-route-bar__summary"
-                      text = descriptor.summary
-                    }
-                  }
-
-                  div {
-                    classes = "app-route-bar__note"
-                    text = descriptor.note
-                  }
-                }
-              }*/
             }
 
             div {
@@ -146,7 +95,7 @@ object Main {
 
               div {
                 classes = "app-footer__copy"
-                text = "Explicit state, revision first and quiet reference layers are all demonstrated inside one runtime."
+                text = "Forms, tables, windows and docs all run on the same component model."
               }
             }
           }
@@ -194,13 +143,13 @@ object Main {
         classes = "app-nav-card__meta"
 
         div {
-          classes = Seq("app-state-chip", s"is-${entry.state.cssName}")
-          text = entry.state.label
+          classes = "app-nav-card__zone"
+          text = entry.zone
         }
 
         div {
-          classes = "app-nav-card__zone"
-          text = entry.zone
+          classes = "app-nav-card__section"
+          text = entry.section
         }
       }
 

@@ -14,7 +14,7 @@ const ssrRouteScript = join(scriptDir, "render-ssr-route.mjs");
 const execFileAsync = promisify(execFile);
 
 const defaultDescription =
-  "scala-js-jfx is a reactive Scala.js UI framework with structured state, lifecycle control, typed forms, routing, tables and a composable JavaFX-inspired DSL.";
+  "scala-js-jfx is a reactive Scala.js UI framework with lifecycle control, typed forms, routing, tables and a composable JavaFX-inspired DSL.";
 const imageUrl = `${siteBase}/og-image.svg`;
 
 const fixedRoutes = [
@@ -26,26 +26,26 @@ const fixedRoutes = [
   },
   {
     path: "/form/",
-    title: "Raw Workspace | scala-js-jfx",
-    description: "Typed forms become a protected intake surface with revision logs and explicit transitions.",
+    title: "Forms Workspace | scala-js-jfx",
+    description: "Typed forms become a protected editing surface with revision logs and live snapshots.",
     priority: "0.8",
   },
   {
     path: "/table/",
-    title: "Clarification Queue | scala-js-jfx",
-    description: "Remote data stays meaningful by exposing state, maturity and tension in the same field.",
+    title: "Data Queue | scala-js-jfx",
+    description: "Remote data stays meaningful by exposing loading, filtering and tension in the same field.",
     priority: "0.8",
   },
   {
     path: "/window/",
-    title: "Condensed Context | scala-js-jfx",
+    title: "Window Workspace | scala-js-jfx",
     description: "Windows and notifications support secondary work without collapsing the main surface.",
     priority: "0.7",
   },
   {
     path: "/docs/",
-    title: "Reference Atlas | scala-js-jfx",
-    description: "Component knowledge enters a quiet archived layer without losing live examples.",
+    title: "Component Docs | scala-js-jfx",
+    description: "Component knowledge stays organized without losing live examples.",
     priority: "0.9",
   },
 ];

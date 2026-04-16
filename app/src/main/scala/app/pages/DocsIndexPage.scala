@@ -1,6 +1,4 @@
 package app.pages
-
-import app.ClarityState
 import jfx.action.Button.*
 import jfx.core.component.CompositeComponent
 import jfx.core.component.CompositeComponent.composite
@@ -33,28 +31,28 @@ class DocsIndexPage extends CompositeComponent[HTMLDivElement] {
       }
 
       div {
-        classes = "clarity-hero clarity-hero--archived"
+        classes = "clarity-hero clarity-hero--reference"
 
         div {
           classes = "clarity-hero__eyebrow"
-          text = "Reference Atlas"
+          text = "Component docs"
         }
 
         div {
           classes = "clarity-hero__title"
-          text = "Archived knowledge stays quiet, readable and still connected to live behavior."
+          text = "Find a component quickly and open a live example."
         }
 
         div {
           classes = "clarity-hero__copy"
-          text = "Each reference page explains one framework primitive, keeps a stable import and usage surface, and embeds a live sandbox so the archive never drifts away from the runtime."
+          text = "Each reference page shows what the component is for, how to import it and a working demo."
         }
       }
 
       div {
         classes = "docs-index__meta-grid"
 
-        metaCard("Entries", DocsCatalog.entries.length.toString, "Component references currently archived in the atlas.")
+        metaCard("Entries", DocsCatalog.entries.length.toString, "Component references currently organized in the atlas.")
         metaCard("Categories", groupedEntries.length.toString, "Application, data, forms and layout stay distinct.")
         metaCard("Live demos", "Embedded", "Each reference page still contains a working example.")
       }
@@ -70,7 +68,7 @@ class DocsIndexPage extends CompositeComponent[HTMLDivElement] {
 
           div {
             classes = "clarity-zone-heading__title"
-            text = s"${entries.length} archived references"
+            text = s"${entries.length} references"
           }
 
           div {
@@ -90,11 +88,6 @@ class DocsIndexPage extends CompositeComponent[HTMLDivElement] {
 
       div {
         classes = "docs-card__meta"
-
-        div {
-          classes = Seq("clarity-state-chip", s"is-${ClarityState.Archived.cssName}")
-          text = ClarityState.Archived.label
-        }
 
         div {
           classes = "docs-card__package"

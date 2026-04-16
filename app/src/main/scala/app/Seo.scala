@@ -6,7 +6,7 @@ import org.scalajs.dom.{Element, HTMLLinkElement, HTMLMetaElement, HTMLScriptEle
 object Seo:
   private val siteBase = "https://anjunar.github.io/scala-js-jfx"
   private val defaultDescription =
-    "scala-js-jfx is a reactive Scala.js UI framework with structured state, lifecycle control, typed forms, routing, tables and a composable JavaFX-inspired DSL."
+    "scala-js-jfx is a reactive Scala.js UI framework with lifecycle control, typed forms, routing, tables and a composable JavaFX-inspired DSL."
   private val defaultImage = s"$siteBase/og-image.svg"
 
   final case class RouteMeta(

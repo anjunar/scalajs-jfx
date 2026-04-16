@@ -1,7 +1,7 @@
 {
   "name": "scala-js-jfx",
   "short_name": "scala-js-jfx",
-  "description": "Reactive UI framework for Scala.js with structured state, lifecycle control and a composable DSL.",
+  "description": "Reactive UI framework for Scala.js with lifecycle control and a composable DSL.",
   "start_url": "/scala-js-jfx/",
   "scope": "/scala-js-jfx/",
   "display": "standalone",

@@ -24,6 +24,7 @@
 
 .app-frame {
     min-height: 100%;
+    position: relative;
 }
 
 .app-nav-intro {
@@ -117,57 +118,16 @@
     line-height: 1.55;
 }
 
-.app-header {
-    position: sticky;
-    top: 0;
-    z-index: 5;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 18px 24px 16px;
-    border-bottom: 1px solid var(--color-border-strong);
-    background: var(--gradient-chrome-top);
-    backdrop-filter: blur(var(--glass-blur));
-    -webkit-backdrop-filter: blur(var(--glass-blur));
-}
-
-.app-header__bar {
-    align-items: center;
-    justify-content: space-between;
-    gap: 14px;
-}
-
-.app-header__brand {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.app-header__title {
-    font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
-    font-size: 1.22rem;
-    line-height: 1.05;
-    letter-spacing: -0.03em;
-}
-
-.app-header__subtitle,
 .app-footer__copy,
-.app-route-bar__summary,
-.app-route-bar__note {
+.app-shell__controls {
     color: var(--color-text-secondary);
 }
 
-.app-header__rule {
-    padding: 8px 12px;
-    border: 1px solid var(--color-border-strong);
-    border-radius: 999px;
-    font-size: 0.78rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    background: var(--color-surface-soft);
+.app-shell__controls {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    z-index: 5;
 }
 
 .app-menu-button {
@@ -181,39 +141,6 @@
 
 .app-menu-button:hover {
     background: var(--color-surface-overlay);
-}
-
-.app-route-bar {
-    align-items: flex-start;
-    gap: 14px;
-    padding: 14px 16px;
-    border: 1px solid var(--color-border-subtle);
-    border-radius: 20px;
-    background: var(--gradient-surface-soft);
-    box-shadow: 0 14px 30px var(--color-shadow-soft);
-}
-
-.app-route-bar__copy {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.app-route-bar__title {
-    font-size: 1.04rem;
-    font-weight: 700;
-}
-
-.app-route-bar__summary {
-    line-height: 1.55;
-}
-
-.app-route-bar__note {
-    max-width: 28ch;
-    font-size: 0.9rem;
-    line-height: 1.55;
 }
 
 .app-content {
@@ -236,27 +163,15 @@
 }
 
 @media (max-width: 960px) {
-    .app-route-bar {
-        flex-direction: column;
-    }
-
-    .app-route-bar__note {
-        max-width: none;
+    .app-shell__controls {
+        top: 12px;
+        left: 12px;
     }
 }
 
 @media (max-width: 720px) {
     .app-shell .jfx-drawer__navigation {
         padding: 18px 14px 22px;
-    }
-
-    .app-header {
-        padding: 16px;
-    }
-
-    .app-header__bar {
-        align-items: flex-start;
-        flex-wrap: wrap;
     }
 
     .app-content {

@@ -35,38 +35,38 @@ class HomePage extends CompositeComponent[HTMLDivElement] {
 
         div {
           classes = "clarity-hero__eyebrow"
-          text = "Manifest"
+          text = "Start here"
         }
 
         div {
           classes = "clarity-hero__title"
-          text = "Technology Speaks when state, tension and revision remain visible."
+          text = "One framework. Four clear examples."
         }
 
         div {
           classes = "clarity-hero__copy"
           text =
-            "This showcase is no longer a gallery of unrelated demos. Each route now carries one clear responsibility, so the framework reads as one calm system instead of a pile of isolated examples."
+            "Use the navigation to jump straight to forms, tables, windows or component docs. Each page focuses on one idea."
         }
 
         hbox {
           classes = "clarity-action-row"
 
-          button("Enter Raw Workspace") {
+          button("Open forms") {
             classes = Seq("calm-action", "calm-action--primary")
             onClick { _ =>
               inject[Router].navigate("/form")
             }
           }
 
-          button("Review Clarification Queue") {
+          button("Open data table") {
             classes = Seq("calm-action", "calm-action--secondary")
             onClick { _ =>
               inject[Router].navigate("/table")
             }
           }
 
-          button("Open Reference Atlas") {
+          button("Open docs") {
             classes = Seq("calm-action", "calm-action--quiet")
             onClick { _ =>
               inject[Router].navigate("/docs")
@@ -79,24 +79,24 @@ class HomePage extends CompositeComponent[HTMLDivElement] {
         classes = "clarity-zone"
 
         zoneHeading(
-          label = "Operating Rules",
-          title = "The shell follows the manifesto structurally, not decoratively.",
-          copy = "Navigation, workspaces and reference pages stay calm, direct and intentionally spare."
+          label = "What this demo shows",
+          title = "The app is organized by use case, not by abstract ideas.",
+          copy = "You can move directly to the area you care about without reading the whole story first."
         )
 
         principleCard(
-          title = "Separation before beauty",
-          body = "Orientation, work and context are split into explicit surfaces with hard boundaries and soft internal composition."
+          title = "Forms",
+          body = "Typed inputs, nested subforms, media editing and revision history."
         )
 
         principleCard(
-          title = "Clarity before speed",
-          body = "The primary actions stay deliberate. They do not chase stimulation or instant feedback."
+          title = "Tables",
+          body = "Filtering, sorting, loading and record selection with realistic data."
         )
 
         principleCard(
-          title = "Revision before overwrite",
-          body = "The form workspace records revisions, the queue shows maturity, and the docs keep archived knowledge connected to live runtime behavior."
+          title = "Windows and docs",
+          body = "Secondary surfaces, notifications and a searchable reference section with live examples."
         )
       }
 
@@ -104,17 +104,17 @@ class HomePage extends CompositeComponent[HTMLDivElement] {
         classes = "clarity-zone"
 
         zoneHeading(
-          label = "Workspaces",
-          title = "The framework is introduced through roles, not through random feature buckets.",
-          copy = "Each route demonstrates one semantic zone of the system while still sharing the same DSL, state model and viewport runtime."
+          label = "Pages",
+          title = "Choose the example that matches your question.",
+          copy = "Every page is intentionally focused so the framework feels easier to understand."
         )
 
         div {
           classes = "clarity-route-grid"
 
           routeCard(ShowcaseCatalog.formWorkspace)
-          routeCard(ShowcaseCatalog.clarificationQueue)
-          routeCard(ShowcaseCatalog.condensedContext)
+          routeCard(ShowcaseCatalog.dataQueue)
+          routeCard(ShowcaseCatalog.windowWorkspace)
           routeCard(ShowcaseCatalog.referenceAtlas)
         }
       }
@@ -126,39 +126,39 @@ class HomePage extends CompositeComponent[HTMLDivElement] {
           classes = "clarity-zone"
 
           zoneHeading(
-            label = "Revision Model",
-            title = "Progress is expressed as explicit continuation.",
-            copy = "The showcase keeps the revision concept visible so editing feels like continuation instead of correction."
+            label = "Suggested order",
+            title = "A simple way to explore the demo.",
+            copy = "Start with forms, move to tables, then windows, and use the docs as reference."
           )
 
-          timelineStep("01", "Protected intake", "The form workspace starts in RAW so unfinished content can stay incomplete.")
-          timelineStep("02", "Clarification", "The queue keeps tension and maturity visible instead of flattening every row into one visual treatment.")
-          timelineStep("03", "Condensation", "The window system gives secondary work its own context without breaking the main surface.")
-          timelineStep("04", "Archive", "The docs layer turns stabilized knowledge into a readable reference without losing live examples.")
+          timelineStep("01", "Forms", "See how typed fields, nested forms and revision history work together.")
+          timelineStep("02", "Data table", "See how the framework handles remote data, filters and selection.")
+          timelineStep("03", "Windows", "See floating windows and notifications for secondary workflows.")
+          timelineStep("04", "Docs", "Use the component docs when you want a concrete API example.")
         }
 
         div {
           classes = "clarity-zone"
 
           zoneHeading(
-            label = "What This Proves",
-            title = "The app module now carries more of the framework story.",
-            copy = "Routing, dynamic render blocks, typed forms, remote data and the viewport system are all visible as one coherent product language."
+            label = "Under the hood",
+            title = "The same runtime powers every page.",
+            copy = "Routing, render blocks, typed state and the viewport system all come from the same framework primitives."
           )
 
           principleCard(
-            title = "ObserveRender in the shell",
-            body = "The chrome reacts to route state directly, so page context is derived from runtime truth instead of hidden UI flags."
+            title = "Route-aware shell",
+            body = "The header and navigation react directly to the active route."
           )
 
           principleCard(
-            title = "ForEach in the workspaces",
-            body = "Revision ledgers and docs listings are rendered through framework primitives instead of manual DOM stitching."
+            title = "Reusable rendering",
+            body = "Lists, detail panes and docs use the same component and state model."
           )
 
           principleCard(
-            title = "Component docs stay live",
-            body = "The archived layer embeds interactive previews so reference pages remain connected to actual framework behavior."
+            title = "Live reference",
+            body = "The docs stay practical because they include running examples."
           )
         }
       }
@@ -207,11 +207,6 @@ class HomePage extends CompositeComponent[HTMLDivElement] {
         classes = "clarity-route-card__meta"
 
         div {
-          classes = Seq("clarity-state-chip", s"is-${route.state.cssName}")
-          text = route.state.label
-        }
-
-        div {
           classes = "clarity-route-card__zone"
           text = route.zone
         }
@@ -232,7 +227,7 @@ class HomePage extends CompositeComponent[HTMLDivElement] {
         text = route.note
       }
 
-      button("Open Route") {
+      button("Open page") {
         classes = Seq("calm-action", "calm-action--quiet")
         onClick { _ =>
           inject[Router].navigate(route.path)

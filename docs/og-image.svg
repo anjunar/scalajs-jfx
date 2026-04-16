@@ -9,7 +9,7 @@
   <circle cx="204" cy="112" r="16" fill="#2f9e8f"/>
   <text x="96" y="260" fill="#111827" font-family="Arial, Helvetica, sans-serif" font-size="72" font-weight="700">scala-js-jfx</text>
   <text x="96" y="340" fill="#27313f" font-family="Arial, Helvetica, sans-serif" font-size="36">Reactive UI framework for Scala.js</text>
-  <text x="96" y="420" fill="#3f4c5a" font-family="Arial, Helvetica, sans-serif" font-size="28">Structured state. Lifecycle control. Composable DSL.</text>
+  <text x="96" y="420" fill="#3f4c5a" font-family="Arial, Helvetica, sans-serif" font-size="28">Lifecycle control. Composable DSL. Typed forms.</text>
   <g transform="translate(828 254)">
     <rect width="244" height="208" rx="8" fill="#f0f3ef" stroke="#1f2933" stroke-width="3"/>
     <rect x="28" y="32" width="188" height="28" rx="4" fill="#2f9e8f"/>
