@@ -1,12 +1,12 @@
 package jfx.form.editor.plugins
 
-import lexical.{LexicalEditor, LexicalLink, LinkModule, ToolbarElement, getDialogService, getSelectionWrapper}
+import lexical.{BaseSelection, Lexical, LexicalEditor, LexicalLink, LinkModule, NodeSelection, RangeSelection, ToolbarElement, getDialogService, getSelectionWrapper}
 import org.scalajs.dom.{HTMLElement, HTMLInputElement, document}
-
 import scala.scalajs.js
 
 final case class LinkDialogContext(
   editor: LexicalEditor,
+  selection: BaseSelection | Null,
   currentUrl: String,
   dialogTitle: String,
   urlLabel: String,
@@ -24,8 +24,13 @@ class LinkPlugin extends AbstractEditorPlugin("link-plugin") {
   var buildDialogContent: LinkDialogContext => HTMLElement = LinkPlugin.defaultBuildDialogContent
   var confirmDialog: (LinkDialogContext, HTMLElement) => Unit = LinkPlugin.defaultConfirmDialog
 
+  private val linkDialogModule = new LinkDialogModule()
+
   override val toolbarElements: Seq[ToolbarElement] =
-    Seq(new LinkDialogModule())
+    Seq(linkDialogModule)
+
+  override val modules: Seq[lexical.EditorModule] =
+    Seq(linkDialogModule)
 
   override val nodes: Seq[js.Any] =
     Seq(LexicalLink.LinkNode)
@@ -39,6 +44,7 @@ class LinkPlugin extends AbstractEditorPlugin("link-plugin") {
     val context =
       LinkDialogContext(
         editor = editor,
+        selection = editor.read(() => Lexical.$getSelection()),
         currentUrl = currentLinkUrl(editor),
         dialogTitle = dialogTitle,
         urlLabel = urlLabel,
@@ -93,7 +99,15 @@ object LinkPlugin {
     val urlInput = content.querySelector("#link-url-input").asInstanceOf[HTMLInputElement]
     val url = Option(urlInput).map(_.value.trim).getOrElse("")
     val finalUrl = if (url.isEmpty) null else url
-    context.editor.dispatchCommand(LexicalLink.TOGGLE_LINK_COMMAND, finalUrl)
+    context.editor.update(
+      () => {
+        if (context.selection != null) {
+          Lexical.$setSelection(context.selection.clone().asInstanceOf[RangeSelection | NodeSelection])
+        }
+        LexicalLink.$toggleLink(finalUrl)
+      },
+      js.Dynamic.literal().asInstanceOf[lexical.EditorUpdateOptions]
+    )
   }
 
   def linkPlugin(init: LinkPlugin ?=> Unit = {}): LinkPlugin =

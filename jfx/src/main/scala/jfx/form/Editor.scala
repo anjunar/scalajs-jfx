@@ -362,9 +362,7 @@ class Editor(val name: String, override val standalone: Boolean = false)
       modules += EditorModules.ITALIC
     }
 
-    if (pluginComponents.exists(_.isInstanceOf[jfx.form.editor.plugins.LinkPlugin])) {
-      modules += new LinkModule()
-    }
+    modules ++= pluginComponents.iterator.flatMap(_.modules).collect { case module: EditorModule => module }
 
     modules.toSeq.distinct
   }

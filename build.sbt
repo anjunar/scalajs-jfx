@@ -49,7 +49,7 @@ lazy val jfx = Project(id = "scala-js-jfx", base = file("jfx"))
     moduleName := "scala-js-jfx",
     Compile / doc / sources := Seq.empty,
     libraryDependencies += "com.anjunar" %%% "scala-reflect" % "1.0.0",
-    libraryDependencies += "com.anjunar" %%% "scalajs-lexical" % "1.0.3",
+    libraryDependencies += "com.anjunar" %%% "scalajs-lexical" % "1.0.5",
     libraryDependencies += "org.scala-js" %%% "scalajs-dom" % "2.8.1",
     libraryDependencies += ("org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0").cross(CrossVersion.for3Use2_13),
     libraryDependencies += "org.scalatest" %%% "scalatest" % "3.2.19" % Test

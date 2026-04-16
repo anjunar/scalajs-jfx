@@ -642,7 +642,15 @@ class ComponentDocPage(entry: DocEntry) extends CompositeComponent[HTMLDivElemen
             val urlInput = content.querySelector("#link-url-input").asInstanceOf[org.scalajs.dom.HTMLInputElement]
             val url = Option(urlInput).map(_.value.trim).getOrElse("")
             val finalUrl = if (url.isEmpty) null else url
-            context.editor.dispatchCommand(lexical.LexicalLink.TOGGLE_LINK_COMMAND, finalUrl)
+            context.editor.update(
+              () => {
+                if (context.selection != null) {
+                  lexical.Lexical.$setSelection(context.selection.clone().asInstanceOf[lexical.RangeSelection | lexical.NodeSelection])
+                }
+                lexical.LexicalLink.$toggleLink(finalUrl)
+              },
+              js.Dynamic.literal().asInstanceOf[lexical.EditorUpdateOptions]
+            )
           }
         }
         imagePlugin()
