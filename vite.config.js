@@ -1,6 +1,6 @@
 import { defineConfig } from "vite";
 import scalaJSPlugin from "@scala-js/vite-plugin-scalajs";
-import { resolve } from "node:path"
+import { resolve } from "node:path";
 
 export default defineConfig({
     base: "/scalajs-jfx/",
@@ -14,10 +14,5 @@ export default defineConfig({
             cwd: ".",
             projectID: "scalajs-jfx-demo",
         }),
-    ],
-    resolve: {
-        alias: {
-            "@jfx-css": resolve(__dirname, "./jfx/src/main/resources/jfx/index.css")
-        }
-    }
+    ]
 });

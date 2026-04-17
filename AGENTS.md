@@ -16,7 +16,7 @@ Diese Datei konkretisiert die uebergeordnete `../AGENTS.md` fuer `scalajs-jfx`.
 `scalajs-jfx` ist ein Scala.js UI-Framework mit JavaFX-inspirierter DSL. Der Kern liegt im Ordner `jfx` und im sbt-Projekt `scalajs-jfx`; `app` ist Demo, Dokumentation und Showcase; `docs` ist der gebaute GitHub-Pages-Output.
 
 - `jfx/src/main/scala/jfx`: wiederverwendbare Bibliothek.
-- `jfx/src/main/resources/jfx`: Basis-CSS der Bibliothekskomponenten.
+- `npm/scalajs-jfx`: NPM-Paket fuer die Basis-CSS der Bibliothekskomponenten.
 - `jfx/src/test/scala/jfx`: ScalaTest-Spezifikationen fuer Kernverhalten.
 - `app/src/main/scala/app`: Demo-App, Routing, Seiten, Domaenenmodelle und Dokumentationskatalog.
 - `app/src/main/webapp`: Vite-Webapp, globale Styles und Public Assets.

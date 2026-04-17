@@ -1,0 +1,3 @@
+import './index.css';
+
+export const version = '1.0.7';

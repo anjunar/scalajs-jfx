@@ -10,7 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@anjunar/scalajs-lexical": "^1.0.6"
+    "@anjunar/scalajs-lexical": "^1.0.6",
+    "@anjunar/scalajs-jfx": "file:./npm/scalajs-jfx"
   },
   "devDependencies": {
     "@scala-js/vite-plugin-scalajs": "^1.1.0",
