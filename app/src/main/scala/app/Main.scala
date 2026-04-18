@@ -14,11 +14,42 @@ import jfx.layout.VBox.vbox
 import jfx.layout.Viewport.viewport
 import jfx.router.Router
 import jfx.statement.ObserveRender.observeRender
-import org.scalajs.dom.{KeyboardEvent, document}
+import org.scalajs.dom.{HTMLElement, KeyboardEvent, document}
+
+import scala.concurrent.ExecutionContext
+import scala.scalajs.js
+import scala.scalajs.js.JSConverters.*
+import scala.scalajs.js.annotation.JSExportTopLevel
 
 object Main {
 
   def main(args: Array[String]): Unit = {
+    boot()
+  }
+
+  @JSExportTopLevel("boot")
+  def boot(): Unit = {
+    mountApp()
+  }
+
+  @JSExportTopLevel("renderSsr")
+  def renderSsr(path: String): js.Promise[String] = {
+    given ExecutionContext = ExecutionContext.global
+
+    val app = mountApp()
+    app.router
+      .renderRoute(path)
+      .toFuture
+      .map(_ => app.root.innerHTML)
+      .toJSPromise
+  }
+
+  private final case class AppMount(
+    root: HTMLElement,
+    router: Router
+  )
+
+  private def mountApp(): AppMount = {
     DomainRegistry.init()
 
     val themeProperty = Property(Theme.initialMode())
@@ -134,10 +165,12 @@ object Main {
         themeProperty.observe(Theme.apply)
       )
 
-      val root = document.getElementById("root")
+      val root = document.getElementById("root").asInstanceOf[HTMLElement]
       root.textContent = ""
       root.appendChild(container.element)
       container.onMount()
+
+      AppMount(root, router)
     }
   }
 

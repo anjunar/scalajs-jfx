@@ -31,12 +31,10 @@ window.document.documentElement.innerHTML = `<!doctype html>
 installBrowserGlobals(window);
 
 try {
-  const entryUrl = `${pathToFileURL(entryPath).href}?ssr-route=${encodeURIComponent(routePath)}&t=${Date.now()}`;
-  await import(entryUrl);
-  await waitForRender(window);
-
-  const root = window.document.getElementById("root");
-  await writeFile(outputPath, root?.innerHTML ?? "", "utf8");
+  const entryUrl = `${pathToFileURL(entryPath).href}?ssr=1&t=${Date.now()}`;
+  const entryModule = await import(entryUrl);
+  const ssrHtml = await entryModule.renderSsr(routePath);
+  await writeFile(outputPath, ssrHtml, "utf8");
   process.exit(0);
 } catch (error) {
   console.error(error);
@@ -106,16 +104,4 @@ function installBrowserGlobals(window) {
   }
 
   window.ResizeObserver ??= fallbackResizeObserver;
-}
-
-async function waitForRender(window) {
-  if (window.happyDOM?.whenAsyncComplete) {
-    await window.happyDOM.whenAsyncComplete();
-  }
-
-  await new Promise(resolve => window.setTimeout(resolve, 25));
-
-  if (window.happyDOM?.whenAsyncComplete) {
-    await window.happyDOM.whenAsyncComplete();
-  }
 }

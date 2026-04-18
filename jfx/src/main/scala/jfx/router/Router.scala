@@ -7,9 +7,11 @@ import jfx.statement.DynamicOutlet
 import org.scalajs.dom.{Comment, Event, Node, console, window}
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Promise
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.*
 import scala.util.{Failure, Success}
+import java.util.concurrent.CancellationException
 
 class Router(val routes: js.Array[Route], private val scope: Scope) extends NodeComponent[Comment] {
 
@@ -36,6 +38,7 @@ class Router(val routes: js.Array[Route], private val scope: Scope) extends Node
   private var renderedComponent: NodeComponent[? <: Node] | Null = null
   private var disposed: Boolean = false
   private var renderVersion: Int = 0
+  private var renderWaiter: Option[(Int, Promise[Unit])] = None
 
   override val element: Comment = outlet.element
 
@@ -94,6 +97,16 @@ class Router(val routes: js.Array[Route], private val scope: Scope) extends Node
   def reload(): Unit =
     syncWithLocation()
 
+  def renderRoute(path: String): js.Promise[Unit] = {
+    if (disposed) return js.Promise.resolve(())
+
+    val nextState = resolve(Router.toRelativePath(path))
+    val promise = Promise[Unit]()
+    prepareRenderWaiter(renderVersion + 1, promise)
+    stateProperty.setAlways(nextState)
+    promise.future.toJSPromise
+  }
+
   override protected def mountContent(): Unit = {
     if (disposed) return
     syncWithLocation()
@@ -105,6 +118,7 @@ class Router(val routes: js.Array[Route], private val scope: Scope) extends Node
     disposed = true
 
     renderVersion += 1
+    failRenderWaiter(new CancellationException("Router disposed"))
     clearRenderedComponent()
 
     outlet.dispose()
@@ -133,6 +147,7 @@ class Router(val routes: js.Array[Route], private val scope: Scope) extends Node
         loadComponent(routeMatch, state, currentVersion)
       case None =>
         loadingProperty.set(false)
+        completeRenderWaiter(currentVersion)
     }
   }
 
@@ -164,6 +179,7 @@ class Router(val routes: js.Array[Route], private val scope: Scope) extends Node
               renderedComponent = component
               contentProperty.set(renderedComponent)
               loadingProperty.set(false)
+              completeRenderWaiter(version)
             }
 
           case Failure(error) =>
@@ -180,7 +196,45 @@ class Router(val routes: js.Array[Route], private val scope: Scope) extends Node
 
     loadingProperty.set(false)
     errorProperty.set(Some(error))
+    failRenderWaiter(error, version)
     console.error(error)
+  }
+
+  private def prepareRenderWaiter(version: Int, promise: Promise[Unit]): Unit = {
+    renderWaiter.foreach { case (_, currentPromise) =>
+      if (!currentPromise.isCompleted) {
+        currentPromise.tryFailure(new CancellationException("Route render superseded"))
+      }
+    }
+
+    renderWaiter = Some(version -> promise)
+  }
+
+  private def completeRenderWaiter(version: Int): Unit = {
+    renderWaiter match {
+      case Some((waitVersion, promise)) if waitVersion == version =>
+        renderWaiter = None
+        promise.trySuccess(())
+      case _ =>
+    }
+  }
+
+  private def failRenderWaiter(error: Throwable, version: Int): Unit = {
+    renderWaiter match {
+      case Some((waitVersion, promise)) if waitVersion == version =>
+        renderWaiter = None
+        promise.tryFailure(error)
+      case _ =>
+    }
+  }
+
+  private def failRenderWaiter(error: Throwable): Unit = {
+    renderWaiter.foreach { case (_, promise) =>
+      if (!promise.isCompleted) {
+        promise.tryFailure(error)
+      }
+    }
+    renderWaiter = None
   }
 
   private def clearRenderedComponent(): Unit = {
@@ -324,6 +378,9 @@ object Router {
 
   def reload(using router: Router): Unit =
     router.reload()
+
+  def renderRoute(router: Router, path: String): js.Promise[Unit] =
+    router.renderRoute(path)
 
   lazy val basePath: String = {
     val baseElements = org.scalajs.dom.document.getElementsByTagName("base")

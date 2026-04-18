@@ -60,7 +60,7 @@ lazy val app = Project(id = "scalajs-jfx-demo", base = file("app"))
   .enablePlugins(ScalaJSPlugin)
   .dependsOn(jfx)
   .settings(
-    scalaJSUseMainModuleInitializer := true,
+    scalaJSUseMainModuleInitializer := false,
     publish / skip := true
   )
   .settings(commonJsSettings)

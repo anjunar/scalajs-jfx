@@ -66,12 +66,8 @@ async function renderWithSSR(templateHtml, url) {
   installBrowserGlobals(window);
 
   try {
-    const entryModule = await vite.ssrLoadModule("/@fs/" + resolve(root, "app/src/main/webapp/src/main.js"));
-
-    await waitForRender(window);
-
-    const rootEl = window.document.getElementById("root");
-    const ssrContent = rootEl?.innerHTML ?? "";
+    const entryModule = await vite.ssrLoadModule("/@fs/" + resolve(root, "app/src/main/webapp/src/main.js") + "?ssr=1");
+    const ssrContent = await entryModule.renderSsr(url);
 
     return templateHtml.replace('<div id="root"></div>', `<div id="root">${ssrContent}</div>`);
   } catch (error) {
@@ -143,18 +139,6 @@ function installBrowserGlobals(window) {
   }
 
   window.ResizeObserver ??= fallbackResizeObserver;
-}
-
-async function waitForRender(window) {
-  if (window.happyDOM?.whenAsyncComplete) {
-    await window.happyDOM.whenAsyncComplete();
-  }
-
-  await new Promise(resolve => window.setTimeout(resolve, 50));
-
-  if (window.happyDOM?.whenAsyncComplete) {
-    await window.happyDOM.whenAsyncComplete();
-  }
 }
 
 async function readIndexPath() {
