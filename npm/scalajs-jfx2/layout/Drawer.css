@@ -1,0 +1,132 @@
+div.jfx-drawer {
+    position: relative;
+    display: flex;
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+}
+
+div.jfx-drawer > .jfx-drawer__scrim {
+    display: none;
+}
+
+div.jfx-drawer > .jfx-drawer__panel-shell {
+    align-self: stretch;
+    position: relative;
+    flex: 0 0 auto;
+    width: 0;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    transition: width 180ms ease;
+    z-index: 2;
+}
+
+div.jfx-drawer.jfx-drawer--end > .jfx-drawer__panel-shell {
+    order: 2;
+}
+
+div.jfx-drawer > .jfx-drawer__panel-shell > .jfx-drawer__panel {
+    box-sizing: border-box;
+    width: 280px;
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    background: var(--aj-overlay-bg);
+    color: var(--aj-ink);
+    border-right: 1px solid var(--aj-overlay-border);
+    backdrop-filter: blur(var(--aj-overlay-blur)) saturate(180%);
+    -webkit-backdrop-filter: blur(var(--aj-overlay-blur)) saturate(180%);
+    transform: translateX(-100%);
+    transition: transform 180ms ease, box-shadow 180ms ease;
+    box-shadow: none;
+}
+
+div.jfx-drawer.jfx-drawer--end > .jfx-drawer__panel-shell > .jfx-drawer__panel {
+    border-right: none;
+    border-left: 1px solid var(--aj-overlay-border);
+    transform: translateX(100%);
+}
+
+div.jfx-drawer.jfx-drawer--open > .jfx-drawer__panel-shell {
+    width: 280px;
+}
+
+div.jfx-drawer.jfx-drawer--open > .jfx-drawer__panel-shell > .jfx-drawer__panel {
+    transform: translateX(0);
+    box-shadow: 0 16px 32px var(--aj-shadow-medium);
+}
+
+div.jfx-drawer .jfx-drawer__navigation {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+div.jfx-drawer > .jfx-drawer__content {
+    position: relative;
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+    z-index: 1;
+}
+
+div.jfx-drawer.jfx-drawer--end > .jfx-drawer__content {
+    order: 1;
+}
+
+@media (max-width: 767px) {
+    div.jfx-drawer {
+        display: block;
+    }
+
+    div.jfx-drawer > .jfx-drawer__scrim {
+        position: absolute;
+        inset: 0;
+        display: block;
+        background: var(--aj-surface-backdrop);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 180ms ease;
+        z-index: 10;
+    }
+
+    div.jfx-drawer > .jfx-drawer__panel-shell,
+    div.jfx-drawer.jfx-drawer--open > .jfx-drawer__panel-shell {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: min(92vw, 280px);
+        max-width: 100%;
+        overflow: visible;
+        pointer-events: none;
+        z-index: 20;
+    }
+
+    div.jfx-drawer.jfx-drawer--end > .jfx-drawer__panel-shell,
+    div.jfx-drawer.jfx-drawer--end.jfx-drawer--open > .jfx-drawer__panel-shell {
+        left: auto;
+        right: 0;
+    }
+
+    div.jfx-drawer > .jfx-drawer__panel-shell > .jfx-drawer__panel {
+        width: min(92vw, 280px);
+    }
+
+    div.jfx-drawer.jfx-drawer--open > .jfx-drawer__scrim {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    div.jfx-drawer.jfx-drawer--open > .jfx-drawer__panel-shell {
+        pointer-events: auto;
+    }
+}

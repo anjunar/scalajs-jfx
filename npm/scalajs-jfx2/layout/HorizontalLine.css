@@ -1,0 +1,7 @@
+hr {
+    border: 0;
+    border-top: 1px solid var(--aj-line);
+    margin: 0;
+    color: var(--aj-line);
+    background-color: var(--aj-line);
+}

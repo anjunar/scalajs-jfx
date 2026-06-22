@@ -1,0 +1,68 @@
+.jfx-input-container {
+  padding: 10px 0 6px;
+}
+
+.jfx-input-container__label {
+  height: 12px;
+  margin-bottom: 6px;
+}
+
+.jfx-input-container__label span.placeholder {
+  display: inline;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
+.jfx-input-container.empty .jfx-input-container__label span.placeholder {
+  display: none;
+}
+
+.jfx-input-container__label.focus {
+  color: var(--aj-accent) !important;
+}
+
+.jfx-input-container__label.dirty {
+  color: var(--aj-warning) !important;
+}
+
+.jfx-input-container__label.invalid {
+  color: var(--aj-danger) !important;
+}
+
+.jfx-input-container__control input {
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 4px 0;
+  width: 100%;
+  font-size: 14px;
+}
+
+.jfx-input-container__divider {
+  border: 0;
+  height: 2px;
+  margin: 0;
+  padding: 0;
+  background-color: var(--aj-surface-hover);
+}
+
+.jfx-input-container__divider.focus {
+  background-color: var(--aj-accent);
+}
+
+.jfx-input-container__divider.dirty {
+  background-color: var(--aj-warning);
+}
+
+.jfx-input-container__divider.invalid {
+  background-color: var(--aj-danger);
+}
+
+.jfx-input-container__errors {
+  margin-top: 6px;
+  color: var(--aj-danger);
+  font-size: 10px;
+  height: 12px;
+}

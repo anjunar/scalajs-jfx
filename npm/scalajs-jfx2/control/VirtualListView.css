@@ -1,0 +1,32 @@
+.jfx-virtual-list {
+    height: 100%;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+}
+
+.jfx-virtual-list-viewport {
+    scrollbar-width: thin;
+}
+
+.jfx-virtual-list-content {
+    box-sizing: border-box;
+}
+
+.jfx-virtual-list-header-slot {
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.jfx-virtual-list-items-surface {
+    position: relative;
+    width: 100%;
+}
+
+.jfx-virtual-list-cell {
+    box-sizing: border-box;
+}
+
+.jfx-virtual-list-cell-loading {
+    color: var(--aj-ink-muted, currentColor);
+}

@@ -1,0 +1,47 @@
+.image-cropper-field {
+    width: 100%;
+}
+
+.image-cropper {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.image-cropper .toolbar {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+}
+
+.image-cropper .canvas-wrap {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.image-cropper canvas.canvas {
+    border: 1px solid var(--aj-surface-muted);
+    background: var(--aj-canvas);
+    border-radius: 6px;
+    max-width: 100%;
+    height: auto;
+    cursor: crosshair;
+    touch-action: none;
+    user-select: none;
+}
+
+.image-cropper .preview {
+    flex : 1;
+    min-width: 0;
+    min-height: 0;
+    border: 1px solid var(--aj-surface-muted);
+    border-radius: 6px;
+    object-fit: cover;
+    background: var(--aj-canvas);
+}
+
+.image-cropper-dialog {
+    min-width: 500px;
+    min-height: 400px;
+}

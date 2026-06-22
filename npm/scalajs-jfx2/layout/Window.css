@@ -1,0 +1,211 @@
+.jfx-window.is-hidden {
+    opacity: 0;
+    transform: scale(0.96) translateY(14px);
+    pointer-events: none;
+}
+
+.jfx-window {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    overflow: visible;
+    max-height: 1024px;
+    min-width: 360px;
+    min-height: 360px;
+    max-width: 1600px;
+
+    transition:
+            opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+            transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    opacity: 1;
+    transform: none;
+    pointer-events: all;
+
+    .jfx-window__surface {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        min-width: 0;
+        min-height: 0;
+        overflow: hidden;
+        position: relative;
+        isolation: isolate;
+
+        background: var(--aj-overlay-bg);
+        border: 1px solid var(--aj-overlay-border);
+        box-shadow: 0 16px 44px var(--aj-shadow-medium);
+        border-radius: var(--aj-overlay-radius);
+    }
+
+    .jfx-window__surface::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        backdrop-filter: blur(var(--aj-overlay-blur)) saturate(180%);
+        -webkit-backdrop-filter: blur(var(--aj-overlay-blur)) saturate(180%);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .jfx-window__surface > * {
+        position: relative;
+        z-index: 1;
+    }
+
+    .jfx-window__container {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: auto;
+    }
+
+    .jfx-window__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background-color : var(--aj-chrome-bg);
+        cursor: move;
+        flex: 0 0 38px;
+        height: 38px;
+        min-height: 38px;
+        max-height: 38px;
+        line-height: 38px;
+        vertical-align: center;
+        width: 100%;
+        box-sizing: border-box;
+        overflow: hidden;
+        border-bottom: 1px solid var(--aj-chrome-border);
+
+        .jfx-window__title {
+            padding-left: 12px;
+            font-size: 12px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+    }
+
+    &.jfx-window--resizable {
+        .jfx-window__handle--nw {
+            position: absolute;
+            cursor: nw-resize;
+            left : -12px;
+            top : -12px;
+            width : 12px;
+            height : 12px;
+        }
+
+        .jfx-window__handle--ne {
+            position : absolute;
+            right: -12px;
+            top : -12px;
+            width: 12px;
+            height: 12px;
+            cursor : ne-resize;
+        }
+
+        .jfx-window__handle--se {
+            position : absolute;
+            right: -12px;
+            bottom: -12px;
+            width: 12px;
+            height: 12px;
+            cursor : se-resize;
+        }
+
+        .jfx-window__handle--sw {
+            position: absolute;
+            left : -12px;
+            bottom : -12px;
+            width : 12px;
+            height : 12px;
+            cursor: sw-resize;
+        }
+
+        .jfx-window__handle--n {
+            position : absolute;
+            left : 12px;
+            top: -12px;
+            width : calc(100% - 24px);
+            height : 12px;
+            cursor : n-resize;
+        }
+
+        .jfx-window__handle--s {
+            position : absolute;
+            left : 12px;
+            bottom: -12px;
+            width : calc(100% - 24px);
+            height : 12px;
+            cursor : s-resize;
+        }
+
+        .jfx-window__handle--w {
+            position: absolute;
+            left: -12px;
+            top : 12px;
+            width: 12px;
+            height: calc(100% - 24px);
+            cursor: w-resize;
+        }
+
+        .jfx-window__handle--e {
+            position: absolute;
+            right: -12px;
+            top: 12px;
+            width: 12px;
+            height: calc(100% - 24px);
+            cursor: e-resize;
+        }
+    }
+
+
+}
+
+html[data-theme="light"] .jfx-window .jfx-window__surface {
+    border-color: color-mix(in srgb, var(--aj-overlay-border) 112%, transparent);
+    box-shadow:
+            0 16px 34px color-mix(in srgb, var(--aj-shadow-medium) 76%, transparent),
+            inset 0 1px 0 color-mix(in srgb, white 36%, transparent);
+}
+
+html[data-theme="light"] .jfx-window .jfx-window__header {
+    background-color: color-mix(in srgb, var(--aj-surface-scrim) 118%, transparent);
+    border-bottom-color: color-mix(in srgb, var(--aj-chrome-border) 108%, transparent);
+}
+
+html[data-theme="light"] .jfx-window .jfx-window__title {
+    color: color-mix(in srgb, var(--aj-ink-soft) 88%, black 12%);
+}
+
+@media (max-width: 900px) {
+    .jfx-window {
+        top: 8px !important;
+        left: 8px !important;
+        width: calc(100vw - 16px) !important;
+        height: calc(100dvh - 16px) !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        max-width: calc(100vw - 16px) !important;
+        max-height: calc(100dvh - 16px) !important;
+    }
+
+    .jfx-window .jfx-window__surface {
+        border-radius: calc(var(--aj-overlay-radius) - 4px);
+    }
+
+    .jfx-window .jfx-window__header {
+        cursor: default;
+    }
+
+    .jfx-window.jfx-window--resizable .jfx-window__handle--nw,
+    .jfx-window.jfx-window--resizable .jfx-window__handle--ne,
+    .jfx-window.jfx-window--resizable .jfx-window__handle--se,
+    .jfx-window.jfx-window--resizable .jfx-window__handle--sw,
+    .jfx-window.jfx-window--resizable .jfx-window__handle--n,
+    .jfx-window.jfx-window--resizable .jfx-window__handle--s,
+    .jfx-window.jfx-window--resizable .jfx-window__handle--w,
+    .jfx-window.jfx-window--resizable .jfx-window__handle--e {
+        display: none;
+    }
+}

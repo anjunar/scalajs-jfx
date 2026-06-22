@@ -1,0 +1,17 @@
+a {
+    cursor: pointer;
+    color: var(--aj-ink);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--aj-accent);
+}
+
+a:visited {
+    color: var(--aj-ink);
+}
+
+a:active {
+    color: var(--aj-accent);
+}

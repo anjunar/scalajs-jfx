@@ -1,0 +1,40 @@
+.jfx-data-grid-header-slot {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.jfx-data-grid-items-surface {
+  position: relative;
+  min-width: 100%;
+}
+
+.jfx-data-grid-more-link {
+  color: var(--aj-accent-strong);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.jfx-data-grid-more-link:hover,
+.jfx-data-grid-more-link:focus-visible {
+  text-decoration: underline;
+}
+
+.jfx-data-grid-placeholder {
+  position: absolute;
+  inset: 0;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.jfx-data-grid-default-placeholder {
+  padding: 12px 16px;
+  border: 1px dashed var(--aj-line);
+  border-radius: 8px;
+  color: var(--aj-ink-muted);
+  background: var(--aj-surface-overlay);
+}
+
+.jfx-data-grid-cell-loading {
+  opacity: 0.72;
+}

@@ -1,0 +1,66 @@
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px var(--aj-canvas) inset !important;
+    -webkit-text-fill-color: var(--aj-ink) !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+input {
+    font-size: 15px;
+    outline: 0;
+    border: 0;
+    box-shadow: none !important;
+    padding: 0;
+    margin: 0;
+    background-color: inherit;
+    width: 100%;
+
+    &:focus,
+    &:focus-visible,
+    &:active {
+        outline: none !important;
+        box-shadow: none !important;
+    }
+
+    &.focus {
+        color: var(--aj-accent);
+
+        &::placeholder {
+            color: var(--aj-accent);
+        }
+    }
+
+
+    &.dirty {
+        color: var(--aj-warning);
+
+        &::placeholder {
+            color: var(--aj-warning);
+        }
+    }
+
+    &.invalid {
+        color: var(--aj-danger);
+
+        &::placeholder {
+            color: var(--aj-danger);
+        }
+    }
+
+    &::placeholder {
+        color: var(--aj-ink);
+        opacity: 0.64;
+    }
+
+    &[readonly]::placeholder {
+        opacity: 0.5;
+    }
+
+    &[type=date] {
+        &[readonly] {
+            opacity: 0.5;
+        }
+    }
+}

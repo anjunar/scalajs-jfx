@@ -1,0 +1,228 @@
+.app-shell {
+    min-height: 100%;
+    background: var(--app-shell-bg);
+}
+
+.app-shell .jfx-drawer__navigation {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 24px 18px 28px;
+    border-right: 1px solid var(--aj-line-strong);
+    background: var(--aj-gradient-chrome-top);
+    backdrop-filter: blur(var(--aj-glass-blur));
+    -webkit-backdrop-filter: blur(var(--aj-glass-blur));
+}
+
+.app-shell .jfx-drawer__content {
+    min-width: 0;
+    background: transparent;
+}
+
+.app-frame {
+    min-height: 100%;
+    position: relative;
+}
+
+.app-nav-intro {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+    border: 1px solid var(--aj-line-strong);
+    border-radius: 22px;
+    background: var(--aj-gradient-surface-strong);
+    box-shadow: var(--app-shell-intro-shadow);
+}
+
+.app-nav-intro__title {
+    font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+    font-size: 1.35rem;
+    line-height: 1.1;
+    letter-spacing: 0;
+}
+
+.app-nav-intro__copy {
+    color: var(--aj-ink-soft);
+    line-height: 1.6;
+}
+
+.app-zone-heading__label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--aj-ink-muted);
+}
+
+.app-nav-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.app-nav-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px 16px;
+    border: 1px solid var(--aj-line-soft);
+    border-radius: 18px;
+    background: var(--aj-surface-raised);
+    box-shadow: var(--app-shell-card-shadow);
+    cursor: pointer;
+    transition:
+        transform 180ms ease,
+        border-color 180ms ease,
+        background-color 180ms ease,
+        box-shadow 180ms ease;
+}
+
+.app-nav-card:hover,
+.app-nav-card:focus-visible {
+    transform: translateY(-1px);
+    border-color: var(--aj-line-strong);
+    background: var(--aj-surface-overlay);
+    outline: none;
+}
+
+.app-nav-card.is-active {
+    border-color: var(--aj-accent);
+    background: var(--app-shell-card-active-bg);
+    box-shadow: inset 0 0 0 1px var(--aj-accent-ring);
+}
+
+.app-nav-card__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.app-nav-card__zone {
+    font-size: 0.8rem;
+    color: var(--aj-ink-muted);
+}
+
+.app-nav-card__title {
+    font-size: 1rem;
+    font-weight: 680;
+    line-height: 1.2;
+}
+
+.app-nav-card__copy {
+    color: var(--aj-ink-soft);
+    line-height: 1.55;
+}
+
+.app-footer__copy,
+.app-shell__controls {
+    color: var(--aj-ink-soft);
+}
+
+.app-shell__controls {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    z-index: 5;
+    display: flex;
+    gap: 10px;
+}
+
+.app-icon-button,
+.app-menu-button {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: 12px;
+    flex: 0 0 auto;
+    border: 1px solid var(--app-shell-control-border);
+    background: var(--app-shell-control-bg);
+    color: var(--aj-ink);
+    box-shadow: var(--app-shell-control-shadow);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.app-theme-button {
+    min-width: 78px;
+    padding: 0 14px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.app-icon-button:hover,
+.app-menu-button:hover {
+    background: var(--app-shell-control-hover-bg);
+}
+
+.app-icon-button:focus-visible,
+.app-menu-button:focus-visible {
+    outline: 2px solid var(--aj-accent-ring);
+    outline-offset: 2px;
+}
+
+.app-content {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    padding: 24px;
+}
+
+.app-content > .jfx-viewport {
+    min-height: 100%;
+}
+
+.app-footer {
+    padding: 0 24px 22px;
+}
+
+.app-footer__copy {
+    line-height: 1.6;
+}
+
+@media (max-width: 960px) {
+    .app-shell__controls {
+        top: 12px;
+        left: 12px;
+    }
+}
+
+@media (max-width: 720px) {
+    div.jfx-drawer.app-shell-drawer {
+        display: block !important;
+    }
+
+    div.jfx-drawer.app-shell-drawer > .jfx-drawer__panel-shell,
+    div.jfx-drawer.app-shell-drawer.jfx-drawer--open > .jfx-drawer__panel-shell {
+        position: absolute !important;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: min(92vw, 280px) !important;
+        max-width: 100%;
+        height: 100% !important;
+        overflow: visible;
+        pointer-events: none;
+        z-index: 20;
+    }
+
+    div.jfx-drawer.app-shell-drawer.jfx-drawer--open > .jfx-drawer__panel-shell {
+        pointer-events: auto;
+    }
+
+    .app-shell .jfx-drawer__navigation {
+        padding: 18px 14px 22px;
+    }
+
+    .app-content {
+        padding: 16px;
+    }
+
+    .app-footer {
+        padding: 0 16px 18px;
+    }
+}

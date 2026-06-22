@@ -1,0 +1,5 @@
+- Immer `sbtn` verwenden, niemals `sbt`.
+- Projekte liegen in Nachbarverzeichnissen. Bei Bedarf dort nachsehen.
+- Keine Workarounds. Ursachen sauber verstehen und richtig lösen.
+- Keine kompilierten JavaScript-Sourcen durchsuchen oder bearbeiten.
+- Vor größeren Änderungen erst Architektur und bestehende Muster prüfen.

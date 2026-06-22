@@ -1,0 +1,26 @@
+{
+  "name": "scalajs-jfx",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server/server.mjs",
+    "build": "npm run build:client && npm run build:server",
+    "build:client": "vite build --outDir dist/client",
+    "build:server": "vite build --outDir dist/server --ssr src/entry-server.js",
+    "start": "cross-env NODE_ENV=production node server.mjs"
+  },
+  "dependencies": {
+    "@anjunar/scalajs-lexical": "^1.0.9",
+    "@anjunar/scalajs-jfx2": "file:./npm/scalajs-jfx2",
+    "@anjunar/ui": "^1.0.1",
+    "express": "latest"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "latest",
+    "tailwindcss": "latest",
+    "@scala-js/vite-plugin-scalajs": "latest",
+    "cross-env": "latest",
+    "vite": "latest"
+  }
+}
