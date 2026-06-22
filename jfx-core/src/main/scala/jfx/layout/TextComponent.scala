@@ -1,6 +1,7 @@
 package jfx.layout
 
 import jfx.component.{AbstractComponent, AbstractCustomComponent, Runtime}
+import jfx.dsl.JfxDsl
 import jfx.render.{Cursor, UiEvent}
 import jfx.state.{Disposable, ReadOnlyProperty}
 
@@ -29,5 +30,8 @@ class TextComponent(initial: String = "") extends AbstractComponent {
 object TextComponent {
   def bind(text: ReadOnlyProperty[String]): TextComponent =
     new BoundTextComponent(text)
+
+  def text(value: String)(using Cursor): TextComponent =
+    JfxDsl.child(new TextComponent(value)) {}
 }
 

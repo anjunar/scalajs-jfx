@@ -2,26 +2,32 @@ package app
 
 import jfx.component.AbstractComponent
 import jfx.dsl.ComponentDSL.it
+import jfx.dsl.JfxDsl.render
 import jfx.layout.*
+import jfx.layout.Button.{button, onClick}
+import jfx.layout.Div.div
 import jfx.render.Cursor
 
 class App extends AbstractComponent {
 
   val tagName = "div"
 
-  override def compose(cursor: Cursor): Unit = withCursor(cursor) {
-
-    child(new Div()) {
+  override def compose(cursor: Cursor): Unit = {
+    
+    render(cursor) {
       
-      child(new Button("Press!")) {
-        it.onClick(event => {
-          println("clicked")
-        })
+      div {
+        
+        button("Hello World") {
+
+          onClick(_ => println("clicked"))
+          
+        }
+        
       }
-
-      child(new TextComponent("Hello World!!"))
-
+      
     }
+
 
   }
 }

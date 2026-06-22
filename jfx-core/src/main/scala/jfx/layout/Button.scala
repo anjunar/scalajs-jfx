@@ -1,7 +1,9 @@
 package jfx.layout
 
 import jfx.component.{AbstractComponent, Runtime}
+import jfx.dsl.JfxDsl
 import jfx.render.{Cursor, UiEvent}
+import org.scalajs.dom
 
 class Button(label: String = "") extends AbstractComponent {
   val tagName = "button"
@@ -18,4 +20,12 @@ class Button(label: String = "") extends AbstractComponent {
       addDisposable(host.onClick(handler))
     }
   }
+}
+
+object Button {
+  def button(label: String)(body: => Unit = ())(using Cursor): Button =
+    JfxDsl.child(new Button(label))(body)
+  
+  def onClick(handler: UiEvent => Unit)(using button : Button): Unit =
+    button.onClick(handler)
 }
