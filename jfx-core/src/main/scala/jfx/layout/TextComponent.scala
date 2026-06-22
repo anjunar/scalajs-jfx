@@ -34,7 +34,7 @@ object TextComponent {
   def text(label: String)(
     body: TextComponent ?=> Cursor ?=> Unit = {}
   )(using AbstractComponent, Cursor): TextComponent =
-    JfxDsl.child(new TextComponent(label)) { text ?=> component ?=> cursor ?=>
+    JfxDsl.child(new TextComponent(label)) { text ?=> cursor ?=>
       body(using text)(using cursor)
     }
 

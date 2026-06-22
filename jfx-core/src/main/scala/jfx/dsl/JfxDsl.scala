@@ -15,15 +15,15 @@ object JfxDsl {
     }
 
   def child[A <: AbstractComponent](component: A)(
-    body: A ?=> AbstractComponent ?=> Cursor ?=> Unit
+    body: A ?=> Cursor ?=> Unit
   )(using parent: AbstractComponent, cursor: Cursor): A = {
+    given AbstractComponent = component
+
     parent.child(component) {
-      given AbstractComponent = component
       given A = component
 
-      body(using component)(using component)(using cursor)
+      body(using component)(using cursor)
     }
-
     component
   }
 }
