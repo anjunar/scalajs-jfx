@@ -1,8 +1,7 @@
 package app
 
 import jfx.component.{AbstractComponent, Runtime}
-import jfx.layout.{Body, Div, Head, Html, Script, TextComponent}
-import jfx.render.{Cursor, DomCursor, HydratingCursor}
+import jfx.render.{Cursor, HydratingCursor}
 import org.scalajs.dom.document
 
 import scala.scalajs.js

@@ -10,7 +10,7 @@ import jfx.render.Cursor
 
 class App extends AbstractComponent {
 
-  val tagName = "div"
+  val tagName = "app"
 
   override def compose(cursor: Cursor): Unit = {
     
@@ -23,7 +23,8 @@ class App extends AbstractComponent {
           onClick(_ => println("clicked"))
           
         }
-        
+
+
       }
       
     }
