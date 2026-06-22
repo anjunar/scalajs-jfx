@@ -25,10 +25,7 @@ class Foreach[V](items: ReadOnlyProperty[Seq[V]],
     values.zipWithIndex.foreach { case (value, index) =>
       val childOffset = _children.length
 
-      given AbstractComponent = this
-      given Cursor = currentCursor
-
-      build(value, index)
+      build(value, index)(using this)(using currentCursor)
 
       mounted ++= _children.drop(childOffset)
     }
