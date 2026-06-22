@@ -140,11 +140,24 @@ final class HydratingCursor private (
 
 object HydratingCursor {
 
-  def root(element: dom.Element): HydratingCursor =
+  def root(container: dom.Element): HydratingCursor =
     new HydratingCursor(
-      parent = element.parentNode,
-      nextNode = Some(element),
-      stopBefore = Option(element.nextSibling)
+      parent = container,
+      nextNode = firstHydratableChild(container),
+      stopBefore = None
     )
+
+  private def firstHydratableChild(parent: dom.Node): Option[dom.Node] = {
+    var current = parent.firstChild
+
+    while (current != null && isIgnorableWhitespace(current)) {
+      current = current.nextSibling
+    }
+
+    Option(current)
+  }
+
+  private def isIgnorableWhitespace(node: dom.Node): Boolean =
+    node.nodeType == dom.Node.TEXT_NODE && node.textContent.trim.isEmpty
 
 }

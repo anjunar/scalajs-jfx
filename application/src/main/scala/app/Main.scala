@@ -19,7 +19,7 @@ object Main {
   @JSExportTopLevel("boot")
   def boot(): Unit = {
 
-    val hydratingCursor = HydratingCursor.root(document.getElementById("root").firstElementChild)
+    val hydratingCursor = HydratingCursor.root(document.getElementById("root"))
 
     render(hydratingCursor)
 
