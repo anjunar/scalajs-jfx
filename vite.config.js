@@ -11,5 +11,10 @@ export default defineConfig({
             cwd: ".",
             projectID: "scalajs-jfx-demo"
         })
-    ]
+    ],
+
+    build: {
+        sourcemap: true,
+        manifest: true
+    }
 })
