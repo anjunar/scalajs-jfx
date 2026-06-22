@@ -11,7 +11,16 @@ class Document extends AbstractComponent {
 
   override def compose(cursor: Cursor): Unit = withCursor(cursor) {
 
-    child(new Head())
+    child(new Head()) {
+
+      child(new Script()) {
+
+        it.src("/src/main.js")
+        it.scriptType("module")
+
+      }
+
+    }
 
     child(new Body()) {
 
