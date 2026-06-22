@@ -1,7 +1,8 @@
 package jfx.dsl
 
 import jfx.component.AbstractComponent
-import jfx.render.Cursor
+import jfx.render.{Cursor, HostElement, VirtualHost}
+import jfx.component.Runtime
 
 object DslLayerTwo {
 
@@ -17,13 +18,17 @@ object DslLayerTwo {
   def child[A <: AbstractComponent](component: A)(
     body: A ?=> Cursor ?=> Unit
   )(using parent: AbstractComponent, cursor: Cursor): A = {
-    given AbstractComponent = component
+    val mounted = Runtime.mount(component, cursor, Some(parent))
 
-    parent.child(component) {
-      given A = component
+    val childCursor =
+      mounted._host match {
+        case host: VirtualHost => host.cursor.getOrElse(cursor)
+        case host: HostElement => cursor.sub(host)
+        case _ => cursor
+      }
 
-      body(using component)(using cursor)
-    }
-    component
+    body(using mounted)(using childCursor)
+
+    mounted
   }
 }
