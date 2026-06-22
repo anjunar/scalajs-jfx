@@ -42,7 +42,7 @@ class Foreach[V](items: ListProperty[V],
         else mountAt(index, element, mountedCursor)
       case InsertAll(index, elements, _) =>
         if (reindexOnStructuralChange) rebuildFrom(index)
-        else elements.zipWithIndex.foreach { case (element, offset) => mountAt(index + offset, element, mountedCursor) }
+        else elements.toSeq.zipWithIndex.foreach { case (element, offset) => mountAt(index + offset, element, mountedCursor) }
       case RemoveAt(index, _, _) =>
         if (reindexOnStructuralChange) rebuildFrom(index)
         else unmountAt(index)
@@ -55,7 +55,7 @@ class Foreach[V](items: ListProperty[V],
         if (reindexOnStructuralChange) rebuildFrom(from)
         else {
           unmountRange(from, removed.length)
-          inserted.zipWithIndex.foreach { case (element, offset) => mountAt(from + offset, element, mountedCursor) }
+          inserted.toSeq.zipWithIndex.foreach { case (element, offset) => mountAt(from + offset, element, mountedCursor) }
         }
       case Clear(_, _) =>
         clearMounted()
