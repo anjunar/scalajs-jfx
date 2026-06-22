@@ -31,11 +31,9 @@ object TextComponent {
   def bind(text: ReadOnlyProperty[String]): TextComponent =
     new BoundTextComponent(text)
 
-  def text(label: String)(
-    body: TextComponent ?=> Cursor ?=> Unit = {}
-  )(using AbstractComponent, Cursor): TextComponent =
-    JfxDsl.child(new TextComponent(label)) { text ?=> cursor ?=>
-      body(using text)(using cursor)
+  def text(label: String)(body: TextComponent ?=> Cursor ?=> Unit = {})(using AbstractComponent, Cursor): TextComponent =
+    JfxDsl.child(new TextComponent(label)) {
+      body
     }
 
 }
