@@ -11,30 +11,9 @@ import scala.scalajs.js.annotation.JSExportTopLevel
 object Main {
 
   def render(cursor: Cursor): AbstractComponent = {
-
-    val html = Runtime.mount(new Html, cursor)
-
-    val htmlCursor = cursor.sub(html.host)
-
-    val head = Runtime.mount(new Head, htmlCursor, Some(html))
-
-    val headCursor = htmlCursor.sub(head.host)
-
-    val script = Runtime.mount(new Script, headCursor, Some(head))
-    script.src("/src/main.js")
-    script.scriptType("module")
-
-    val body = Runtime.mount(new Body, htmlCursor, Some(html))
-
-    val bodyCursor = htmlCursor.sub(body.host)
-
-    val div = Runtime.mount(new Div, bodyCursor, Some(body))
-
-    val divCursor = bodyCursor.sub(div.host)
-
-    Runtime.mount(new TextComponent("Hello World!"), divCursor, Some(div))
-
-    html
+    
+    Runtime.mount(new Document(), cursor)
+    
   }
 
   @JSExportTopLevel("boot")

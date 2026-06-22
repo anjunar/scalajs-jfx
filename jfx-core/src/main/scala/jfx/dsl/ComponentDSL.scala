@@ -1,0 +1,33 @@
+package jfx.dsl
+
+import jfx.component.{AbstractComponent, Runtime}
+import jfx.render.Cursor
+
+trait ComponentDSL { self: AbstractComponent =>
+
+  inline def withCursor[A](cursor: Cursor)(inline block: (Cursor, AbstractComponent) ?=> A): A =
+    given Cursor = cursor
+    given AbstractComponent = this
+    block
+
+  def child[C <: AbstractComponent](component: C)
+                                   (using cursor: Cursor, parent: AbstractComponent): C =
+    Runtime.mount(component, cursor, Some(parent))
+
+  def child[C <: AbstractComponent](component: C)(build: ComponentDSL.Scope[C] ?=> Unit)
+                                   (using cursor: Cursor, parent: AbstractComponent): C = {
+    val mounted = Runtime.mount(component, cursor, Some(parent))
+    given Cursor = cursor.sub(mounted.host)
+    given AbstractComponent = mounted
+    given ComponentDSL.Scope[C] = new ComponentDSL.Scope(mounted)
+    build
+    mounted
+  }
+
+}
+
+object ComponentDSL {
+  final class Scope[C <: AbstractComponent](val component: C)
+
+  def it[C <: AbstractComponent](using scope: Scope[C]): C = scope.component
+}

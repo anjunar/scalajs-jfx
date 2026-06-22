@@ -1,11 +1,12 @@
 package jfx.component
 
+import jfx.dsl.ComponentDSL
 import jfx.render.*
 import jfx.state.{CompositeDisposable, Disposable}
 
 import scala.collection.mutable
 
-abstract class AbstractComponent {
+abstract class AbstractComponent extends ComponentDSL {
 
   val tagName: String
 
