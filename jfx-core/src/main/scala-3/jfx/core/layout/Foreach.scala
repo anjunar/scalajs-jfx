@@ -3,7 +3,7 @@ package jfx.core.layout
 import jfx.core.component.{AbstractComponent, AbstractCustomComponent, Runtime}
 import jfx.core.dsl.DslLayerTwo
 import jfx.core.render.{Cursor, HostNode, VirtualHost}
-import jfx.core.state.{ListProperty, Property, ReadOnlyProperty}
+import jfx.core.state.{ListProperty, ReadOnlyProperty}
 
 import scala.collection.mutable
 import scala.scalajs.js
@@ -152,15 +152,15 @@ private final class PropertyForeach[V](source: ReadOnlyProperty[Seq[V]],
 object Foreach {
   def foreach[V](items: ListProperty[V])(body: V => AbstractComponent ?=> Cursor ?=> Unit)
                 (using AbstractComponent, Cursor): Foreach[V] =
-    foreachIndexed(items)((value, _) => body(value))
+    DslLayerTwo.child(new Foreach(items, (value, _) => body(value))) {}
 
   def foreach[V](items: ReadOnlyProperty[Seq[V]])(body: V => AbstractComponent ?=> Cursor ?=> Unit)
                 (using AbstractComponent, Cursor): Foreach[V] =
-    foreachIndexed(items)((value, _) => body(value))
+    DslLayerTwo.child(new PropertyForeach(items, listOf(items.get), (value, _) => body(value), reindexOnStructuralChange = false)) {}
 
   def foreach[V](items: Seq[V])(body: V => AbstractComponent ?=> Cursor ?=> Unit)
                 (using AbstractComponent, Cursor): Foreach[V] =
-    foreach(ListProperty(js.Array(items.toSeq*)))(body)
+    foreach(listOf(items))(body)
 
   def foreachIndexed[V](items: ListProperty[V])(body: (V, Int) => AbstractComponent ?=> Cursor ?=> Unit)
                        (using AbstractComponent, Cursor): Foreach[V] =
@@ -168,9 +168,12 @@ object Foreach {
 
   def foreachIndexed[V](items: ReadOnlyProperty[Seq[V]])(body: (V, Int) => AbstractComponent ?=> Cursor ?=> Unit)
                        (using AbstractComponent, Cursor): Foreach[V] =
-    DslLayerTwo.child(new PropertyForeach(items, ListProperty(js.Array(items.get.toSeq*)), body, reindexOnStructuralChange = true)) {}
+    DslLayerTwo.child(new PropertyForeach(items, listOf(items.get), body, reindexOnStructuralChange = true)) {}
 
   def foreachIndexed[V](items: Seq[V])(body: (V, Int) => AbstractComponent ?=> Cursor ?=> Unit)
                        (using AbstractComponent, Cursor): Foreach[V] =
-    foreachIndexed(ListProperty(js.Array(items.toSeq*)))(body)
+    foreachIndexed(listOf(items))(body)
+
+  private def listOf[V](items: Seq[V]): ListProperty[V] =
+    ListProperty(js.Array(items.toSeq*))
 }
