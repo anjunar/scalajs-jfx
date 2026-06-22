@@ -1,7 +1,7 @@
 package jfx.layout
 
 import jfx.component.{AbstractComponent, Runtime}
-import jfx.dsl.JfxDsl
+import jfx.dsl.DslLayerTwo
 import jfx.render.{Cursor, UiEvent}
 import org.scalajs.dom
 
@@ -25,7 +25,7 @@ class Button(label: String = "") extends AbstractComponent {
 
 object Button {
   def button(label: String)(body: Button ?=> Cursor ?=> Unit = {})(using AbstractComponent, Cursor): Button =
-    JfxDsl.child(new Button(label)) { 
+    DslLayerTwo.child(new Button(label)) { 
       body
     }
 

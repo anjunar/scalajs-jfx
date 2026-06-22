@@ -3,7 +3,7 @@ package jfx.dsl
 import jfx.component.AbstractComponent
 import jfx.render.Cursor
 
-object JfxDsl {
+object DslLayerTwo {
 
   def render(root: AbstractComponent, cursor: Cursor)(
     body: AbstractComponent ?=> Cursor ?=> Unit

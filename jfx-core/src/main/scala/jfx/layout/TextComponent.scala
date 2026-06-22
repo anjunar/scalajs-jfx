@@ -1,7 +1,7 @@
 package jfx.layout
 
 import jfx.component.{AbstractComponent, AbstractCustomComponent, Runtime}
-import jfx.dsl.JfxDsl
+import jfx.dsl.DslLayerTwo
 import jfx.render.{Cursor, UiEvent}
 import jfx.state.{Disposable, ReadOnlyProperty}
 
@@ -32,7 +32,7 @@ object TextComponent {
     new BoundTextComponent(text)
 
   def text(label: String)(body: TextComponent ?=> Cursor ?=> Unit = {})(using AbstractComponent, Cursor): TextComponent =
-    JfxDsl.child(new TextComponent(label)) {
+    DslLayerTwo.child(new TextComponent(label)) {
       body
     }
 

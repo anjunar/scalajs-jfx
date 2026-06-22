@@ -1,7 +1,7 @@
 package jfx.layout
 
 import jfx.component.AbstractComponent
-import jfx.dsl.JfxDsl
+import jfx.dsl.DslLayerTwo
 import jfx.render.Cursor
 
 class Div extends AbstractComponent {
@@ -10,7 +10,7 @@ class Div extends AbstractComponent {
 
 object Div {
   def div(body: Div ?=> Cursor ?=> Unit = {})(using AbstractComponent, Cursor): Div =
-    JfxDsl.child(new Div()) { 
+    DslLayerTwo.child(new Div()) { 
       body
     }
 }
