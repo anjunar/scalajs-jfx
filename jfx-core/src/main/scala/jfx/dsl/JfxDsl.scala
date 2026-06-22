@@ -5,30 +5,23 @@ import jfx.render.Cursor
 
 object JfxDsl {
 
-  private var current: AbstractComponent = _
-
-  def render(root: AbstractComponent, cursor: Cursor)(body: Cursor ?=> Unit): Unit =
+  def render(root: AbstractComponent, cursor: Cursor)(
+    body: AbstractComponent ?=> Cursor ?=> Unit
+  ): Unit =
     root.withCursor(cursor) {
-      val previous = current
-      current = root
+      given AbstractComponent = root
 
-      try body(using cursor)
-      finally current = previous
+      body(using root)(using cursor)
     }
 
-  def child[A <: AbstractComponent](component: A)(body: A ?=> Cursor ?=> Unit)(using cursor: Cursor): A = {
-    val parent = current
-
-    given AbstractComponent = parent
-
+  def child[A <: AbstractComponent](component: A)(
+    body: A ?=> AbstractComponent ?=> Cursor ?=> Unit
+  )(using parent: AbstractComponent, cursor: Cursor): A = {
     parent.child(component) {
-      val previous = current
-      current = component
-
+      given AbstractComponent = component
       given A = component
 
-      try body(using component)(using cursor)
-      finally current = previous
+      body(using component)(using component)(using cursor)
     }
 
     component

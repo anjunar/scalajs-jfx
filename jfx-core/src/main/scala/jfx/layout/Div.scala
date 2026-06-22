@@ -9,6 +9,10 @@ class Div extends AbstractComponent {
 }
 
 object Div {
-  def div(body: Div ?=> Cursor ?=> Unit)(using Cursor): Div =
-    JfxDsl.child(new Div())(body)
+  def div()(
+    body: Div ?=> Cursor ?=> Unit = {}
+  )(using AbstractComponent, Cursor): Div =
+    JfxDsl.child(new Div()) { div ?=> component ?=> cursor ?=>
+      body(using div)(using cursor)
+    }
 }
