@@ -12,14 +12,14 @@ object Main {
 
   def render(cursor: Cursor): AbstractComponent = {
     
-    Runtime.mount(new Document(), cursor)
+    Runtime.mount(new App(), cursor)
     
   }
 
   @JSExportTopLevel("boot")
   def boot(): Unit = {
 
-    val hydratingCursor = HydratingCursor.root(document.documentElement)
+    val hydratingCursor = HydratingCursor.root(document.getElementById("root").firstElementChild)
 
     render(hydratingCursor)
 

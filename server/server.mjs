@@ -5,8 +5,15 @@ import { dirname, resolve } from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
+
 const isProduction = process.env.NODE_ENV === "production"
 const port = Number(process.env.PORT ?? 3000)
+
+const projectRoot = resolve(__dirname, "..")
+
+const clientRoot = resolve(projectRoot, "application/src/main/webapp")
+const clientDist = resolve(projectRoot, "dist/client")
+const serverEntry = resolve(projectRoot, "dist/server/entry-server.js")
 
 const app = express()
 
@@ -14,6 +21,7 @@ let vite = null
 
 if (!isProduction) {
     vite = await createViteServer({
+        root: clientRoot,
         server: {
             middlewareMode: true
         },
@@ -24,71 +32,46 @@ if (!isProduction) {
 } else {
     app.use(
         "/assets",
-        express.static(resolve(__dirname, "dist/client/assets"), {
+        express.static(resolve(clientDist, "assets"), {
             immutable: true,
             maxAge: "1y"
         })
     )
-}
 
-async function clientAssets() {
-    if (!isProduction) {
-        return {
-            script: "/src/main.js",
-            css: []
-        }
-    }
-
-    const manifestPath = resolve(__dirname, "dist/client/.vite/manifest.json")
-    const manifest = JSON.parse(await readFile(manifestPath, "utf-8"))
-    const entry = manifest["src/main.js"]
-
-    if (!entry) {
-        throw new Error("Vite manifest entry missing: src/main.js")
-    }
-
-    return {
-        script: `/${entry.file}`,
-        css: entry.css?.map(file => `/${file}`) ?? []
-    }
-}
-
-function injectClientAssets(html, assets) {
-    let result = html.replace(
-        /src="\/src\/main\.js"/,
-        `src="${assets.script}"`
+    app.use(
+        express.static(clientDist, {
+            index: false
+        })
     )
+}
 
-    if (assets.css.length > 0) {
-        const links = assets.css
-            .map(href => `<link rel="stylesheet" href="${href}">`)
-            .join("")
-
-        result = result.replace("</head>", `${links}</head>`)
+async function loadTemplate(url) {
+    if (isProduction) {
+        return await readFile(resolve(clientDist, "index.html"), "utf-8")
     }
 
-    return result
+    const template = await readFile(resolve(clientRoot, "index.html"), "utf-8")
+    return await vite.transformIndexHtml(url, template)
+}
+
+async function loadServerModule() {
+    if (isProduction) {
+        return await import(pathToFileURL(serverEntry).href)
+    }
+
+    return await vite.ssrLoadModule("/src/entry-server.js")
 }
 
 app.use(async (req, res, next) => {
-    const path = req.originalUrl
+    const url = req.originalUrl
 
     try {
-        const serverModule = isProduction
-            ? await import(pathToFileURL(resolve(__dirname, "dist/server/entry-server.js")).href)
-            : await vite.ssrLoadModule("/src/entry-server.js")
+        const template = await loadTemplate(url)
+        const serverModule = await loadServerModule()
 
-        let html = await serverModule.render(path)
+        const appHtml = await serverModule.render(url)
 
-        if (!html.trimStart().toLowerCase().startsWith("<!doctype")) {
-            html = `<!doctype html>${html}`
-        }
-
-        html = injectClientAssets(html, await clientAssets())
-
-        if (!isProduction) {
-            html = await vite.transformIndexHtml(path, html)
-        }
+        const html = template.replace("<!--app-html-->", appHtml)
 
         res
             .status(200)
