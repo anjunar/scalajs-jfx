@@ -5,7 +5,6 @@ import jfx.core.di.Context
 import jfx.core.dsl.DslLayerTwo
 import jfx.core.dsl.DslLayerTwo.render
 import jfx.core.render.Cursor
-import jfx.core.state.Ref
 import jfx.forms.Form.FormContext
 
 import scala.collection.mutable
@@ -34,9 +33,8 @@ class Form extends AbstractComponent {
 object Form {
   val FormContext: Context[FormController] = Context.create[FormController]("FormController")
 
-  def form(ref: Ref[Form] = Ref())(body: Form ?=> Cursor ?=> Unit = {})(using AbstractComponent, Cursor): Form = {
+  def form(body: Form ?=> Cursor ?=> Unit = {})(using AbstractComponent, Cursor): Form = {
     val component = new Form()
-    ref.value = component
     DslLayerTwo.child(component) {
       body
     }

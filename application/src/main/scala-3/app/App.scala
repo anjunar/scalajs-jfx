@@ -6,7 +6,6 @@ import jfx.core.dsl.DslLayerTwo.render
 import jfx.core.layout.Button.{button, buttonType, onClick}
 import jfx.core.layout.Div.div
 import jfx.core.render.Cursor
-import jfx.core.state.Ref
 import jfx.forms.FieldSet.fieldSet
 import jfx.forms.Form
 import jfx.forms.Form.form
@@ -19,11 +18,9 @@ class App extends AbstractComponent {
 
   override def compose(cursor: Cursor): Unit = {
 
-    val formRef = new Ref[Form]()
-
     render(this, cursor) {
       
-      form(formRef) {
+      form { formRef ?=> 
 
         input("name") {
           placeholder("Name")
@@ -40,7 +37,7 @@ class App extends AbstractComponent {
           buttonType("button")
 
           onClick {
-            _ => println(formRef.value.fields.mkString(", "))
+            _ => println(formRef.fields.mkString(", "))
           }
           
         }
