@@ -23,9 +23,9 @@ class Button(label: String = "") extends AbstractComponent {
 }
 
 object Button {
-  def button(label: String)(body: => Unit = ())(using Cursor): Button =
+  def button(label: String)(body: Button ?=> Cursor ?=> Unit = {})(using Cursor): Button =
     JfxDsl.child(new Button(label))(body)
-  
-  def onClick(handler: UiEvent => Unit)(using button : Button): Unit =
+
+  def onClick(handler: UiEvent => Unit)(using button: Button): Unit =
     button.onClick(handler)
 }

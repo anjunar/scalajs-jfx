@@ -7,16 +7,16 @@ object JfxDsl {
 
   private var current: AbstractComponent = _
 
-  def render(cursor: Cursor)(body: => Unit)(using root: AbstractComponent): Unit = {
+  def render(root: AbstractComponent, cursor: Cursor)(body: Cursor ?=> Unit): Unit =
     root.withCursor(cursor) {
       val previous = current
       current = root
-      body
-      current = previous
+
+      try body(using cursor)
+      finally current = previous
     }
-  }
-  
-  def child[A <: AbstractComponent](component: A)(body: Cursor ?=> Unit)(using cursor: Cursor): A = {
+
+  def child[A <: AbstractComponent](component: A)(body: A ?=> Cursor ?=> Unit)(using cursor: Cursor): A = {
     val parent = current
 
     given AbstractComponent = parent
@@ -25,7 +25,9 @@ object JfxDsl {
       val previous = current
       current = component
 
-      try body(using cursor)
+      given A = component
+
+      try body(using component)(using cursor)
       finally current = previous
     }
 

@@ -14,7 +14,7 @@ class App extends AbstractComponent {
 
   override def compose(cursor: Cursor): Unit = {
     
-    render(cursor) {
+    render(this, cursor) {
       
       div {
         
