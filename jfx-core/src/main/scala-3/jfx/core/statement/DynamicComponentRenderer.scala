@@ -11,6 +11,7 @@ class DynamicComponentRenderer(
 
   private var mounted: Option[AbstractComponent] = None
   private var mountedCursor: Cursor = _
+  private var initialMount = true
 
   override def compose(cursor: Cursor): Unit = {
     mountedCursor = cursor
@@ -40,17 +41,31 @@ class DynamicComponentRenderer(
   }
 
   private def mount(component: AbstractComponent): Unit = {
-    Runtime.mount(component, insertionCursor, Some(this))
+    val cursor = insertionCursor
+
     mounted = Some(component)
+
+    try {
+      Runtime.mount(component, cursor, Some(this))
+      initialMount = false
+    } catch {
+      case error: Throwable =>
+        mounted = None
+        throw error
+    }
   }
 
   private def insertionCursor: Cursor =
-    mounted match {
-      case Some(component) =>
-        firstHost(component).map(mountedCursor.before).getOrElse(endCursor)
+    if (initialMount && mountedCursor.isHydrating) {
+      mountedCursor
+    } else {
+      mounted match {
+        case Some(component) =>
+          firstHost(component).map(mountedCursor.before).getOrElse(endCursor)
 
-      case None =>
-        endCursor
+        case None =>
+          endCursor
+      }
     }
 
   private def firstHost(component: AbstractComponent): Option[HostNode] =
