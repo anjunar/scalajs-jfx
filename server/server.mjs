@@ -69,7 +69,11 @@ app.use(async (req, res, next) => {
         const template = await loadTemplate(url)
         const serverModule = await loadServerModule()
 
-        const appHtml = await serverModule.render(url)
+        const appHtml = await serverModule.render(
+            req.originalUrl,
+            req.method,
+            JSON.stringify(req.headers)
+        )
 
         const html = template.replace("<!--app-html-->", appHtml)
 

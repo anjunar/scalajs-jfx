@@ -6,13 +6,14 @@ import jfx.core.layout.Button.{button, onClick}
 import jfx.core.layout.Div.div
 import jfx.core.layout.TextComponent.text
 import jfx.core.render.Cursor
+import jfx.core.request.RequestContext
 import jfx.router.Route
 import jfx.router.Router.router
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class App(initialPath: String) extends AbstractComponent {
+class App(request: RequestContext) extends AbstractComponent {
 
   val tagName = "app"
 
@@ -68,7 +69,9 @@ class App(initialPath: String) extends AbstractComponent {
     )
 
   override def compose(cursor: Cursor): Unit =
+    RequestContext.provide(request)(using this)
+    
     render(this, cursor) {
-      router(routes, initialPath)
+      router(routes, request.url)
     }
 }
