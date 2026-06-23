@@ -5,6 +5,8 @@ import jfx.core.async.AsyncRenderContext
 trait Cursor {
   def supportsAnchors: Boolean = false
 
+  def isHydrating: Boolean = false
+
   def asyncContext: Option[AsyncRenderContext] =
     None
 

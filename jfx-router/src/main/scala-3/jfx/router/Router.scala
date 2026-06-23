@@ -33,7 +33,9 @@ class Router(
 
     asyncCursorContext = cursor.asyncContext
 
-    resolveCurrentRoute()
+    if (cursor.isHydrating) {
+      prepareInitialHydrationRoute()
+    }
 
     DslLayerTwo.render(this, cursor) {
       dynamic(componentProperty)
@@ -45,7 +47,64 @@ class Router(
       }
     }
 
+    if (!cursor.isHydrating) {
+      resolveCurrentRoute()
+    }
+
     installPopStateListener()
+  }
+
+
+  private def prepareInitialHydrationRoute(): Unit = {
+    renderToken += 1
+
+    val token = renderToken
+    val state = stateProperty.get
+
+    state.currentMatchOption match {
+      case Some(routeMatch) =>
+        val context =
+          RouteContext(
+            path = state.path,
+            url = state.url,
+            fullPath = routeMatch.fullPath,
+            pathParams = routeMatch.params,
+            queryParams = state.queryParams,
+            state = state,
+            routeMatch = routeMatch
+          )
+
+        try {
+          val loaded = routeMatch.route.load(context)
+
+          loaded.value match {
+            case Some(scala.util.Success(component)) =>
+              if (token == renderToken) {
+                componentProperty.set(new RoutedComponent(context, component))
+              }
+
+            case Some(scala.util.Failure(error)) =>
+              if (token == renderToken) {
+                componentProperty.set(Router.errorComponent(error))
+              }
+
+            case None =>
+              throw new IllegalStateException(
+                "Hydration kann die initiale Route nicht asynchron auflösen. " +
+                  "Die SSR-Route ist bereits im DOM, deshalb muss die Hydration denselben Komponentenbaum synchron bereitstellen. " +
+                  "Später brauchen wir dafür einen SSR-Data-Cache."
+              )
+          }
+        } catch {
+          case error: Throwable =>
+            if (token == renderToken) {
+              componentProperty.set(Router.errorComponent(error))
+            }
+        }
+
+      case None =>
+        componentProperty.set(Router.notFoundComponent(state.path))
+    }
   }
 
   def navigate(path: String, replace: Boolean = false): Unit = {
