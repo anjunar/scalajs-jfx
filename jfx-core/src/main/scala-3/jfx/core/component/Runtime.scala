@@ -1,10 +1,13 @@
 package jfx.core.component
 
+import jfx.core.async.AsyncRenderContext
+import jfx.core.di.Context
 import jfx.core.layout.TextComponent
 import jfx.core.render.{Cursor, HostElement, SsrCursor, VirtualHost}
 import jfx.core.render.*
 
 import scala.annotation.tailrec
+import scala.concurrent.{ExecutionContext, Future}
 
 object Runtime {
 
@@ -60,6 +63,17 @@ object Runtime {
     renderMountedRoot(component, cursor)
   }
 
+  def renderToStringAsync(build: SsrCursor => AbstractComponent)(using ec: ExecutionContext): Future[String] = {
+    val cursor = new SsrCursor()
+    val async = new AsyncRenderContext()
+
+    val root = build(cursor)
+
+    async.drain().map { _ =>
+      root.host.renderHtml()
+    }
+  }
+
   def unmount(component: AbstractComponent): Unit = {
     component._parent match {
       case Some(parent) =>
@@ -93,4 +107,9 @@ object Runtime {
         if (!component.isVirtual) Some(component.host)
         else parentHostElement(component._parent)
     }
+
+  val AsyncContext: Context[AsyncRenderContext] = Context.create[AsyncRenderContext]("AsyncRenderContext")
+
+
 }
+

@@ -5,6 +5,8 @@ import jfx.core.dsl.DslLayerOne.it
 import jfx.core.dsl.DslLayerTwo.render
 import jfx.core.layout.Button.{button, buttonType, onClick}
 import jfx.core.layout.Div.div
+import jfx.core.layout.FetchComponent
+import jfx.core.layout.FetchComponent.fetch
 import jfx.core.layout.TextComponent.text
 import jfx.core.render.Cursor
 import jfx.core.state.ListProperty
@@ -15,11 +17,16 @@ import jfx.forms.Form.form
 import jfx.forms.Input.input
 import jfx.forms.Placeholder.placeholder
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.scalajs.js
 
 class App extends AbstractComponent {
 
   val tagName = "app"
+
+  private def loadMessage(): Future[String] =
+    Future.successful("Hallo aus der async Komponente")
 
   override def compose(cursor: Cursor): Unit = {
 
@@ -38,7 +45,9 @@ class App extends AbstractComponent {
           }
         }
 
-
+        fetch(() => loadMessage()) { message => cursor ?=>
+          text(s"Geladen: $message") {}
+        }
 
         form { formRef ?=>
 

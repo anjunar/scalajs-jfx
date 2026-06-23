@@ -4,8 +4,10 @@ import jfx.core.component.{AbstractComponent, Runtime}
 import jfx.core.render.{Cursor, HydratingCursor}
 import org.scalajs.dom.document
 
+import scala.concurrent.{ExecutionContext, Future}
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
+import scala.scalajs.js.JSConverters.*
 
 object Main {
 
@@ -27,12 +29,14 @@ object Main {
 
   @JSExportTopLevel("renderSsr")
   def renderSsr(path: String): js.Promise[String] = {
-    js.Promise.resolve(
-      Runtime.renderToString(cursor => {
-        render(cursor)
-      })
-    )
+    
+    given ExecutionContext = ExecutionContext.global
+
+    Runtime.renderToStringAsync(cursor => {
+      render(cursor)
+    }).toJSPromise
   }
+  
 
 
 }
