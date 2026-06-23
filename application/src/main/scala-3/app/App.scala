@@ -2,7 +2,7 @@ package app
 
 import jfx.core.component.AbstractComponent
 import jfx.core.dsl.DslLayerTwo.render
-import jfx.core.layout.Button.{button, onClick}
+import jfx.core.layout.Button.button
 import jfx.core.layout.Div.div
 import jfx.core.layout.TextComponent.text
 import jfx.core.render.Cursor
