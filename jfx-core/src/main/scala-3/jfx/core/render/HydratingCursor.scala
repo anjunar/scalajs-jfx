@@ -14,6 +14,9 @@ final class HydratingCursor private (
   override def supportsAnchors: Boolean =
     true
 
+  override def isHydrating: Boolean =
+    true
+
   override def asyncContext: Option[AsyncRenderContext] =
     currentAsyncContext
 
