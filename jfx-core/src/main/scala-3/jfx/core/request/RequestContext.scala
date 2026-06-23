@@ -1,15 +1,24 @@
 package jfx.core.request
 
 import jfx.core.component.AbstractComponent
+import jfx.core.context.{ClientDevice, ClientDeviceDetector}
 import jfx.core.di.Context
 
-final case class RequestContext(
-                                 path: String,
-                                 url: String,
-                                 method: String,
-                                 headers: RequestHeaders,
-                                 serverSide: Boolean
-                               )
+import scala.collection.immutable
+
+final case class RequestContext(headers: RequestHeaders) {
+
+  def header(name: String): Option[String] =
+    headers.get(name.toLowerCase)
+
+  lazy val clientDevice: ClientDevice = ClientDeviceDetector.detect(this)
+
+  def isMobile: Boolean =
+    clientDevice == ClientDevice.Mobile
+
+  def isDesktop: Boolean =
+    clientDevice == ClientDevice.Desktop
+}
 
 object RequestContext {
 
@@ -18,11 +27,7 @@ object RequestContext {
 
   val empty: RequestContext =
     RequestContext(
-      path = "/",
-      url = "/",
-      method = "GET",
       headers = RequestHeaders.empty,
-      serverSide = false
     )
 
   def provide(value: RequestContext)(using component: AbstractComponent): Unit =
@@ -35,11 +40,12 @@ object RequestContext {
     current.getOrElse {
       throw new IllegalStateException("Kein RequestContext im aktuellen Komponentenbaum gefunden.")
     }
+
 }
 
-final class RequestHeaders private (
-                                     private val values: Map[String, Vector[String]]
-                                   ) {
+final class RequestHeaders private(
+                                    private val values: Map[String, Vector[String]]
+                                  ) {
 
   def get(name: String): Option[String] =
     values.get(normalize(name)).flatMap(_.headOption)
@@ -56,6 +62,7 @@ final class RequestHeaders private (
   private def normalize(name: String): String =
     name.toLowerCase
 }
+
 
 object RequestHeaders {
 

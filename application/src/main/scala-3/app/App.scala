@@ -72,6 +72,6 @@ class App(request: RequestContext) extends AbstractComponent {
     RequestContext.provide(request)(using this)
     
     render(this, cursor) {
-      router(routes, request.url)
+      router(routes, request.header("path").getOrElse(""))
     }
 }

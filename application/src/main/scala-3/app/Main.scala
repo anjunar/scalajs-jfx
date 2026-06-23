@@ -27,11 +27,7 @@ object Main {
 
     val request =
       RequestContext(
-        path = dom.window.location.pathname,
-        url = url,
-        method = "GET",
         headers = RequestHeaders.empty,
-        serverSide = false
       )
 
     val hydratingCursor =
@@ -48,11 +44,7 @@ object Main {
 
     val request =
       RequestContext(
-        path = path.takeWhile(_ != '?'),
-        url = path,
-        method = method,
-        headers = RequestHeadersJson.parse(headersJson),
-        serverSide = true
+        RequestHeadersJson.parse(headersJson)
       )
 
     Runtime.renderToStringAsync { cursor =>
