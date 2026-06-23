@@ -64,13 +64,13 @@ object Runtime {
   }
 
   def renderToStringAsync(build: SsrCursor => AbstractComponent)(using ec: ExecutionContext): Future[String] = {
-    val cursor = new SsrCursor()
     val async = new AsyncRenderContext()
+    val cursor = new SsrCursor(async)
 
     val root = build(cursor)
 
     async.drain().map { _ =>
-      root.host.renderHtml()
+      renderMountedRoot(root, cursor)
     }
   }
 
@@ -107,9 +107,6 @@ object Runtime {
         if (!component.isVirtual) Some(component.host)
         else parentHostElement(component._parent)
     }
-
-  val AsyncContext: Context[AsyncRenderContext] = Context.create[AsyncRenderContext]("AsyncRenderContext")
-
 
 }
 

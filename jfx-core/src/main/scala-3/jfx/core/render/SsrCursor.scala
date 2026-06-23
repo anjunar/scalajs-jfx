@@ -1,15 +1,28 @@
 package jfx.core.render
 
+import jfx.core.async.AsyncRenderContext
+
 import scala.collection.mutable
 
-final class SsrCursor private(parent: Option[SsrHostElement],
-                              beforeNode: Option[HostNode],
-                              emitAnchors: Boolean,
-                              rootNodes: mutable.ArrayBuffer[HostNode]) extends Cursor {
+final class SsrCursor private(
+                               parent: Option[SsrHostElement],
+                               beforeNode: Option[HostNode],
+                               emitAnchors: Boolean,
+                               rootNodes: mutable.ArrayBuffer[HostNode],
+                               currentAsyncContext: Option[AsyncRenderContext]
+                             ) extends Cursor {
 
-  def this() = this(None, None, true, mutable.ArrayBuffer.empty[HostNode])
+  def this() =
+    this(None, None, true, mutable.ArrayBuffer.empty[HostNode], None)
 
-  override def supportsAnchors: Boolean = emitAnchors
+  def this(asyncContext: AsyncRenderContext) =
+    this(None, None, true, mutable.ArrayBuffer.empty[HostNode], Some(asyncContext))
+
+  override def supportsAnchors: Boolean =
+    emitAnchors
+
+  override def asyncContext: Option[AsyncRenderContext] =
+    currentAsyncContext
 
   def claimElement(tag: String): HostElement = {
     val element = new SsrHostElement(tag)
@@ -30,23 +43,38 @@ final class SsrCursor private(parent: Option[SsrHostElement],
   }
 
   def sub(host: HostElement): Cursor =
-    new SsrCursor(Some(host.asInstanceOf[SsrHostElement]), None, emitAnchors, rootNodes)
+    new SsrCursor(
+      Some(host.asInstanceOf[SsrHostElement]),
+      None,
+      emitAnchors,
+      rootNodes,
+      currentAsyncContext
+    )
 
   override def before(node: HostNode): Cursor =
-    new SsrCursor(parent, Some(node), emitAnchors, rootNodes)
+    new SsrCursor(
+      parent,
+      Some(node),
+      emitAnchors,
+      rootNodes,
+      currentAsyncContext
+    )
 
-  def collectHtml(): String = rootNodes.map(_.renderHtml()).mkString
+  def collectHtml(): String =
+    rootNodes.map(_.renderHtml()).mkString
 
   private def insert(node: HostNode): Unit =
     parent match {
       case Some(element) =>
         element.insertBefore(node, beforeNode)
+
       case None =>
         beforeNode match {
           case Some(existing) =>
             val idx = rootNodes.indexOf(existing)
             if (idx >= 0) rootNodes.insert(idx, node)
             else rootNodes += node
+
           case None =>
             rootNodes += node
         }
