@@ -46,7 +46,13 @@ class App extends AbstractComponent {
         }
 
         fetch(() => loadMessage()) { message => cursor ?=>
-          text(s"Geladen: $message") {}
+          div {
+            button("Fetch") {
+              onClick { _ =>
+                println(message)
+              }
+            }
+          }
         }
 
         form { formRef ?=>
