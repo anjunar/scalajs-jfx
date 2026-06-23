@@ -1,15 +1,21 @@
 package jfx.core.render
 
+import jfx.core.async.AsyncRenderContext
 import org.scalajs.dom
 
 final class HydratingCursor private (
-  parent: dom.Node,
-  private var nextNode: Option[dom.Node],
-  stopBefore: Option[dom.Node],
-  mode : HydrationMode = HydrationMode.Strict
-) extends Cursor {
+                                      parent: dom.Node,
+                                      private var nextNode: Option[dom.Node],
+                                      stopBefore: Option[dom.Node],
+                                      mode: HydrationMode = HydrationMode.Strict,
+                                      currentAsyncContext: Option[AsyncRenderContext] = None
+                                    ) extends Cursor {
 
-  override def supportsAnchors: Boolean = true
+  override def supportsAnchors: Boolean =
+    true
+
+  override def asyncContext: Option[AsyncRenderContext] =
+    currentAsyncContext
 
   def claimElement(tag: String): HostElement = {
     val node =
@@ -72,17 +78,28 @@ final class HydratingCursor private (
   override def claimRange(label: String): VirtualRange = {
     val startNode = takeComment(s"jfx:$label:start")
     val endNode = findEnd(startNode, s"jfx:$label:end")
+
     nextNode = Option(endNode.nextSibling)
+
     val start = new DomCommentNode(startNode)
     val end = new DomCommentNode(endNode)
-    val inner = new HydratingCursor(parent, Option(startNode.nextSibling).filter(_ != endNode), Some(endNode))
+
+    val inner =
+      new HydratingCursor(
+        parent = parent,
+        nextNode = Option(startNode.nextSibling).filter(_ != endNode),
+        stopBefore = Some(endNode),
+        mode = HydrationMode.Strict,
+        currentAsyncContext = currentAsyncContext
+      )
+
     VirtualRange(start, end, inner)
   }
 
   def sub(host: HostElement): Cursor = {
     val raw = DomNodes.raw(host)
 
-    val mode =
+    val nextMode =
       raw match {
         case e: dom.Element if e.tagName.equalsIgnoreCase("head") =>
           HydrationMode.Head
@@ -90,19 +107,27 @@ final class HydratingCursor private (
           HydrationMode.Strict
       }
 
-    new HydratingCursor(raw, Option(raw.firstChild), None, mode)
+    new HydratingCursor(
+      parent = raw,
+      nextNode = Option(raw.firstChild),
+      stopBefore = None,
+      mode = nextMode,
+      currentAsyncContext = currentAsyncContext
+    )
   }
 
   override def before(node: HostNode): Cursor =
-    DomCursor.before(parent, DomNodes.raw(node))
+    DomCursor.before(parent, DomNodes.raw(node), currentAsyncContext)
 
   private def take(): dom.Node =
     nextNode match {
       case Some(node) if stopBefore.contains(node) =>
         throw new IllegalStateException("Hydration hat das Ende der aktuellen virtuellen Range erreicht.")
+
       case Some(node) =>
         nextNode = Option(node.nextSibling).filter(next => !stopBefore.contains(next))
         node
+
       case None =>
         throw new IllegalStateException("Hydration erwartet eine weitere DOM-Node, aber es gibt keine mehr.")
     }
@@ -112,8 +137,10 @@ final class HydratingCursor private (
     node match {
       case comment: dom.Comment if comment.data == expected =>
         comment
+
       case comment: dom.Comment =>
         throw new IllegalStateException(s"Hydration erwartet Kommentar '$expected', gefunden wurde '${comment.data}'.")
+
       case other =>
         throw new IllegalStateException(s"Hydration erwartet Kommentar '$expected', gefunden wurde ${other.nodeName}.")
     }
@@ -122,18 +149,25 @@ final class HydratingCursor private (
   private def findEnd(start: dom.Comment, expected: String): dom.Comment = {
     var current = start.nextSibling
     var depth = 0
+
     while (current != null) {
       current match {
         case comment: dom.Comment if comment.data.endsWith(":start") =>
           depth += 1
+
         case comment: dom.Comment if comment.data == expected && depth == 0 =>
           return comment
+
         case comment: dom.Comment if comment.data.endsWith(":end") && depth > 0 =>
           depth -= 1
-        case _ => ()
+
+        case _ =>
+          ()
       }
+
       current = current.nextSibling
     }
+
     throw new IllegalStateException(s"Hydration konnte den End-Anker '$expected' nicht finden.")
   }
 }
@@ -145,6 +179,14 @@ object HydratingCursor {
       parent = container,
       nextNode = firstHydratableChild(container),
       stopBefore = None
+    )
+
+  def root(container: dom.Element, asyncContext: AsyncRenderContext): HydratingCursor =
+    new HydratingCursor(
+      parent = container,
+      nextNode = firstHydratableChild(container),
+      stopBefore = None,
+      currentAsyncContext = Some(asyncContext)
     )
 
   private def firstHydratableChild(parent: dom.Node): Option[dom.Node] = {
@@ -159,5 +201,4 @@ object HydratingCursor {
 
   private def isIgnorableWhitespace(node: dom.Node): Boolean =
     node.nodeType == dom.Node.TEXT_NODE && node.textContent.trim.isEmpty
-
 }
