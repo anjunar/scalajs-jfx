@@ -2,6 +2,7 @@ package jfx.core.layout
 
 import jfx.core.component.AbstractComponent
 import jfx.core.dsl.DslLayerTwo.{child, render}
+import jfx.core.dsl.StyleDsl.*
 import jfx.core.layout.Div.div
 import jfx.core.render.Cursor
 import jfx.core.state.Property
@@ -60,6 +61,7 @@ final class Drawer extends AbstractComponent {
             height = "100%"
             overflow = "hidden"
           }
+          
 
           navigationHost = div {
             addClass("jfx-drawer__navigation")

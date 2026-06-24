@@ -1,16 +1,18 @@
 package jfx.core.component
 
-import jfx.core.dsl.{ComponentClassDsl, ComponentEventDsl, ComponentStyleDsl, DslLayerOne}
-import jfx.core.render.{CommentNode, Cursor, HostElement, HostNode, VirtualHost}
-import jfx.core.state.{CompositeDisposable, Disposable}
+import jfx.core.dsl.{ClassDsl, EventDsl, DslLayerOne}
+import jfx.core.render.{CommentNode, Cursor, HostElement, HostNode, UiEvent, VirtualHost}
+import jfx.core.state.{CompositeDisposable, Disposable, ReadOnlyProperty}
+import org.scalajs.dom
+
+import scala.scalajs.js
 
 import scala.collection.mutable
 
 abstract class AbstractComponent
     extends DslLayerOne
-    with ComponentClassDsl
-    with ComponentEventDsl
-    with ComponentStyleDsl {
+    with ClassDsl
+    with EventDsl {
 
   val tagName: String
 
@@ -108,4 +110,32 @@ abstract class AbstractComponent
     _host = null
     _parent = None
   }
+
+  def classIf(name: String, condition: ReadOnlyProperty[Boolean]): Unit =
+    addDisposable {
+      condition.observe { enabled =>
+        if (enabled) addClass(name)
+        else removeClass(name)
+      }
+    }
+
+  def on(eventName: String)(handler: UiEvent => Unit): Unit =
+    addDisposable(host.on(eventName)(handler))
+
+  def onClick(handler: UiEvent => Unit): Unit =
+    on("click")(handler)
+
+  def onDoubleClick(handler: UiEvent => Unit): Unit =
+    on("dblclick")(handler)
+
+  def onWindowKeyDown(handler: dom.KeyboardEvent => Unit): Unit =
+    browserWindow.foreach { window =>
+      val listener: js.Function1[dom.KeyboardEvent, Any] = event => handler(event)
+      window.addEventListener("keydown", listener)
+      addDisposable(Disposable(window.removeEventListener("keydown", listener)))
+    }
+
+  private def browserWindow: Option[dom.Window] =
+    Option.when(js.typeOf(js.Dynamic.global.selectDynamic("window")) != "undefined")(dom.window)
+
 }
