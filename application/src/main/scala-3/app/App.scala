@@ -7,6 +7,9 @@ import jfx.core.layout.Div.div
 import jfx.core.layout.TextComponent.text
 import jfx.core.render.Cursor
 import jfx.core.request.RequestContext
+import jfx.layout.Viewport
+import jfx.layout.Viewport.NotificationKind
+import jfx.layout.Viewport.viewport
 import jfx.router.Route
 import jfx.router.Router.router
 
@@ -32,6 +35,28 @@ class App(request: RequestContext) extends AbstractComponent {
           button("Async") {
             onClick { _ =>
               jfx.router.Router.navigate("/async")
+            }
+          }
+
+          button("Notify") {
+            onClick { _ =>
+              Viewport.notify("Viewport notification", NotificationKind.Success)
+            }
+          }
+
+          button("Window") {
+            onClick { _ =>
+              Viewport.addWindow("Viewport Window") {
+                div {
+                  text("Das Fenster lebt im globalen Viewport.") {}
+
+                  button("Close") {
+                    onClick { _ =>
+                      Viewport.closeWindowById(Viewport.windows.last.id)
+                    }
+                  }
+                }
+              }
             }
           }
         }
@@ -72,6 +97,8 @@ class App(request: RequestContext) extends AbstractComponent {
     RequestContext.provide(request)(using this)
     
     render(this, cursor) {
-      router(routes, request.header("path").getOrElse(""))
+      viewport {
+        router(routes, request.header("path").getOrElse(""))
+      }
     }
 }

@@ -143,6 +143,8 @@ object StyleDsl {
 
   def left(using s: StyleProxy): String = ""
   def left_=(v: String)(using s: StyleProxy): Unit = s.host.setStyle("left", v)
+  def left_=(v: ReadOnlyProperty[String])(using s: StyleProxy, c: AbstractComponent): Unit =
+    c.addDisposable(v.observe(s.host.setStyle("left", _)))
 
   def zIndex(using s: StyleProxy): String = ""
   def zIndex_=(v: String)(using s: StyleProxy): Unit = s.host.setStyle("z-index", v)
