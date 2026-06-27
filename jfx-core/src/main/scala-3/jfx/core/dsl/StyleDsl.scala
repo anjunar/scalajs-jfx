@@ -4,8 +4,6 @@ import jfx.core.component.AbstractComponent
 import jfx.core.render.HostElement
 import jfx.core.state.ReadOnlyProperty
 
-class StyleProxy(val host: HostElement)
-
 object StyleDsl {
   def style(init: StyleProxy ?=> Unit)(using c: AbstractComponent): Unit = {
     val proxy = new StyleProxy(c.host)
