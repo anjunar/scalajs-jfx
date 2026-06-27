@@ -10,13 +10,13 @@ import jfx.core.state.Property
 final class Drawer extends AbstractComponent {
   val tagName = "div"
 
-  val openProperty = Property(false)
-  val drawerWidthProperty = Property("280px")
-  val sideProperty = Property(Drawer.Side.Start)
+  val openProperty              = Property(false)
+  val drawerWidthProperty       = Property("280px")
+  val sideProperty              = Property(Drawer.Side.Start)
   val closeOnScrimClickProperty = Property(true)
 
   private var navigationHost: Div = _
-  private var contentHost: Div = _
+  private var contentHost: Div    = _
 
   private val panelShellWidth =
     openProperty.flatMap { open =>
@@ -26,7 +26,7 @@ final class Drawer extends AbstractComponent {
     }
 
   private[layout] def navigationSlot: Div = navigationHost
-  private[layout] def contentSlot: Div = contentHost
+  private[layout] def contentSlot: Div    = contentHost
 
   override def compose(cursor: Cursor): Unit = {
     given AbstractComponent = this
@@ -61,7 +61,6 @@ final class Drawer extends AbstractComponent {
             height = "100%"
             overflow = "hidden"
           }
-          
 
           navigationHost = div {
             addClass("jfx-drawer__navigation")
@@ -116,14 +115,18 @@ object Drawer {
       body
     }
 
-  def drawerNavigation(body: AbstractComponent ?=> Cursor ?=> Unit)(using drawer: Drawer, cursor: Cursor): Unit = {
+  def drawerNavigation(
+      body: AbstractComponent ?=> Cursor ?=> Unit
+  )(using drawer: Drawer, cursor: Cursor): Unit = {
     val childCursor = cursor.sub(drawer.navigationSlot.host)
     render(drawer.navigationSlot, childCursor) {
       body
     }
   }
 
-  def drawerContent(body: AbstractComponent ?=> Cursor ?=> Unit)(using drawer: Drawer, cursor: Cursor): Unit = {
+  def drawerContent(
+      body: AbstractComponent ?=> Cursor ?=> Unit
+  )(using drawer: Drawer, cursor: Cursor): Unit = {
     val childCursor = cursor.sub(drawer.contentSlot.host)
     render(drawer.contentSlot, childCursor) {
       body

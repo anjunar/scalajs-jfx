@@ -5,4 +5,3 @@ import jfx.core.state.Disposable
 trait HostNode {
   def renderHtml(): String
 }
-

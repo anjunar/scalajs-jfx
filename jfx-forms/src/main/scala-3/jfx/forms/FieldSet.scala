@@ -8,7 +8,7 @@ import jfx.forms.Form.FormContext
 
 import scala.collection.mutable
 
-class FieldSet(val name : String) extends AbstractComponent, Control {
+class FieldSet(val name: String) extends AbstractComponent, Control {
 
   val tagName = "fieldset"
 
@@ -34,12 +34,13 @@ class FieldSet(val name : String) extends AbstractComponent, Control {
     }
   }
 
-
   override def toString = s"FieldSet($name, ${fields.mkString(", ")})"
 }
 
 object FieldSet {
-  def fieldSet(name : String)(body: FieldSet ?=> Cursor ?=> Unit = {})(using AbstractComponent, Cursor): FieldSet =
+  def fieldSet(
+      name: String
+  )(body: FieldSet ?=> Cursor ?=> Unit = {})(using AbstractComponent, Cursor): FieldSet =
     DslLayerTwo.child(new FieldSet(name)) {
       body
     }

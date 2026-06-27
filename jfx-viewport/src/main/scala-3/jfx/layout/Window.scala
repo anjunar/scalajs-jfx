@@ -88,10 +88,10 @@ final class Window(conf: Viewport.WindowConf) extends AbstractComponent {
         event.preventDefault()
         Viewport.touchWindow(conf)
 
-        val startX = mouse.clientX.toDouble
-        val startY = mouse.clientY.toDouble
+        val startX      = mouse.clientX.toDouble
+        val startY      = mouse.clientY.toDouble
         val initialLeft = conf.leftPx.get
-        val initialTop = conf.topPx.get
+        val initialTop  = conf.topPx.get
 
         val moveListener: js.Function1[dom.MouseEvent, Any] = next =>
           conf.leftPx.set(initialLeft + next.clientX.toDouble - startX)

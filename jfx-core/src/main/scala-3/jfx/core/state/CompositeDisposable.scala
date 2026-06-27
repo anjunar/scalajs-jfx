@@ -3,7 +3,7 @@ package jfx.core.state
 import scala.collection.mutable
 
 final class CompositeDisposable extends Disposable {
-  private val items = mutable.ArrayBuffer.empty[Disposable]
+  private val items    = mutable.ArrayBuffer.empty[Disposable]
   private var disposed = false
 
   def add(disposable: Disposable): Unit =
@@ -11,7 +11,7 @@ final class CompositeDisposable extends Disposable {
     else items += disposable
 
   def remove(disposable: Disposable): Unit = items -= disposable
-  
+
   def dispose(): Unit =
     if (!disposed) {
       disposed = true

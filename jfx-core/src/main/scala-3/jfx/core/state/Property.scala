@@ -5,9 +5,9 @@ import scala.compiletime.uninitialized
 
 final class Property[T](private var value: T) extends ReadOnlyProperty[T] {
 
-  private val listeners = mutable.ArrayBuffer.empty[T => Unit]
+  private val listeners                                   = mutable.ArrayBuffer.empty[T => Unit]
   private var disposableOwner: CompositeDisposable | Null = null
-  private var defaultValue : T = value
+  private var defaultValue: T                             = value
 
   override def get: T =
     value
@@ -29,14 +29,14 @@ final class Property[T](private var value: T) extends ReadOnlyProperty[T] {
     if (newValue != value) {
       setAlways(newValue)
     }
-    
-  def setDefault(newValue : T) : Unit =
+
+  def setDefault(newValue: T): Unit =
     if (newValue != defaultValue) {
       defaultValue = newValue
-    }  
+    }
 
-  def isDirty : Boolean = value != defaultValue
-  
+  def isDirty: Boolean = value != defaultValue
+
   def setAlways(newValue: T): Unit = {
     value = newValue
     listeners.toVector.foreach(_(newValue))

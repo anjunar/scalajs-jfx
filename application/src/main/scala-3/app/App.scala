@@ -61,7 +61,6 @@ class App(request: RequestContext) extends AbstractComponent {
           }
         }
       },
-
       Route.view("/about") {
         div {
           text("About") {}
@@ -73,7 +72,6 @@ class App(request: RequestContext) extends AbstractComponent {
           }
         }
       },
-
       Route.asyncView("/async") { _ =>
         Future.successful {
           Route.factory {
@@ -83,7 +81,6 @@ class App(request: RequestContext) extends AbstractComponent {
           }
         }
       },
-
       Route.view("/user/:id") {
         val context = Route.requireContext
 
@@ -95,7 +92,7 @@ class App(request: RequestContext) extends AbstractComponent {
 
   override def compose(cursor: Cursor): Unit =
     RequestContext.provide(request)(using this)
-    
+
     render(this, cursor) {
       viewport {
         router(routes, request.header("path").getOrElse(""))

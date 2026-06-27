@@ -6,12 +6,12 @@ import jfx.core.render.{Cursor, HostNode, VirtualHost}
 import jfx.core.state.ReadOnlyProperty
 
 class DynamicComponentRenderer(
-                                componentProperty: ReadOnlyProperty[AbstractComponent]
-                              ) extends AbstractCustomComponent {
+    componentProperty: ReadOnlyProperty[AbstractComponent]
+) extends AbstractCustomComponent {
 
   private var mounted: Option[AbstractComponent] = None
-  private var mountedCursor: Cursor = _
-  private var initialMount = true
+  private var mountedCursor: Cursor              = _
+  private var initialMount                       = true
 
   override def compose(cursor: Cursor): Unit = {
     mountedCursor = cursor
@@ -76,7 +76,7 @@ class DynamicComponentRenderer(
       case host: VirtualHost =>
         host.end match {
           case Some(end) => mountedCursor.before(end)
-          case None => host.cursor.getOrElse(mountedCursor)
+          case None      => host.cursor.getOrElse(mountedCursor)
         }
 
       case _ =>
@@ -87,7 +87,7 @@ class DynamicComponentRenderer(
 object DynamicComponentRenderer {
 
   def dynamic(
-               component: ReadOnlyProperty[AbstractComponent]
-             )(using parent: AbstractComponent, cursor: Cursor): DynamicComponentRenderer =
+      component: ReadOnlyProperty[AbstractComponent]
+  )(using parent: AbstractComponent, cursor: Cursor): DynamicComponentRenderer =
     DslLayerTwo.child(new DynamicComponentRenderer(component)) {}
 }

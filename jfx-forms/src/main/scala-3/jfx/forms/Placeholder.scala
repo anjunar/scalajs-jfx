@@ -1,9 +1,9 @@
 package jfx.forms
 
 trait Placeholder {
-  
+
   def placeholder(value: String): Unit
-  
+
 }
 
 object Placeholder {

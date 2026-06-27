@@ -4,12 +4,12 @@ import jfx.core.async.AsyncRenderContext
 import org.scalajs.dom
 
 final class HydratingCursor private (
-                                      parent: dom.Node,
-                                      private var nextNode: Option[dom.Node],
-                                      stopBefore: Option[dom.Node],
-                                      mode: HydrationMode = HydrationMode.Strict,
-                                      currentAsyncContext: Option[AsyncRenderContext] = None
-                                    ) extends Cursor {
+    parent: dom.Node,
+    private var nextNode: Option[dom.Node],
+    stopBefore: Option[dom.Node],
+    mode: HydrationMode = HydrationMode.Strict,
+    currentAsyncContext: Option[AsyncRenderContext] = None
+) extends Cursor {
 
   override def supportsAnchors: Boolean =
     true
@@ -66,7 +66,10 @@ final class HydratingCursor private (
     val node = take()
     node match {
       case text: dom.Text => new DomTextNode(text)
-      case other => throw new IllegalStateException(s"Hydration erwartet TextNode, gefunden wurde ${other.nodeName}.")
+      case other =>
+        throw new IllegalStateException(
+          s"Hydration erwartet TextNode, gefunden wurde ${other.nodeName}."
+        )
     }
   }
 
@@ -74,18 +77,21 @@ final class HydratingCursor private (
     val node = take()
     node match {
       case comment: dom.Comment => new DomCommentNode(comment)
-      case other => throw new IllegalStateException(s"Hydration erwartet CommentNode, gefunden wurde ${other.nodeName}.")
+      case other =>
+        throw new IllegalStateException(
+          s"Hydration erwartet CommentNode, gefunden wurde ${other.nodeName}."
+        )
     }
   }
 
   override def claimRange(label: String): VirtualRange = {
     val startNode = takeComment(s"jfx:$label:start")
-    val endNode = findEnd(startNode, s"jfx:$label:end")
+    val endNode   = findEnd(startNode, s"jfx:$label:end")
 
     nextNode = Option(endNode.nextSibling)
 
     val start = new DomCommentNode(startNode)
-    val end = new DomCommentNode(endNode)
+    val end   = new DomCommentNode(endNode)
 
     val inner =
       new HydratingCursor(
@@ -125,14 +131,18 @@ final class HydratingCursor private (
   private def take(): dom.Node =
     nextNode match {
       case Some(node) if stopBefore.contains(node) =>
-        throw new IllegalStateException("Hydration hat das Ende der aktuellen virtuellen Range erreicht.")
+        throw new IllegalStateException(
+          "Hydration hat das Ende der aktuellen virtuellen Range erreicht."
+        )
 
       case Some(node) =>
         nextNode = Option(node.nextSibling).filter(next => !stopBefore.contains(next))
         node
 
       case None =>
-        throw new IllegalStateException("Hydration erwartet eine weitere DOM-Node, aber es gibt keine mehr.")
+        throw new IllegalStateException(
+          "Hydration erwartet eine weitere DOM-Node, aber es gibt keine mehr."
+        )
     }
 
   private def takeComment(expected: String): dom.Comment = {
@@ -142,16 +152,20 @@ final class HydratingCursor private (
         comment
 
       case comment: dom.Comment =>
-        throw new IllegalStateException(s"Hydration erwartet Kommentar '$expected', gefunden wurde '${comment.data}'.")
+        throw new IllegalStateException(
+          s"Hydration erwartet Kommentar '$expected', gefunden wurde '${comment.data}'."
+        )
 
       case other =>
-        throw new IllegalStateException(s"Hydration erwartet Kommentar '$expected', gefunden wurde ${other.nodeName}.")
+        throw new IllegalStateException(
+          s"Hydration erwartet Kommentar '$expected', gefunden wurde ${other.nodeName}."
+        )
     }
   }
 
   private def findEnd(start: dom.Comment, expected: String): dom.Comment = {
     var current = start.nextSibling
-    var depth = 0
+    var depth   = 0
 
     while (current != null) {
       current match {

@@ -7,25 +7,27 @@ import scala.scalajs.js.JSConverters.*
 import scala.util.control.NonFatal
 
 final class RemoteListProperty[V, Query](
-  val loader: ListProperty.RemoteLoader[V, Query],
-  initialQuery: Query,
-  underlying: js.Array[V] = js.Array[V](),
-  executionContext: ExecutionContext = ExecutionContext.global,
-  sortUpdater: Option[(Query, Seq[ListProperty.RemoteSort]) => Query] = None,
-  rangeQueryUpdater: Option[(Query, Int, Int) => Query] = None
+    val loader: ListProperty.RemoteLoader[V, Query],
+    initialQuery: Query,
+    underlying: js.Array[V] = js.Array[V](),
+    executionContext: ExecutionContext = ExecutionContext.global,
+    sortUpdater: Option[(Query, Seq[ListProperty.RemoteSort]) => Query] = None,
+    rangeQueryUpdater: Option[(Query, Int, Int) => Query] = None
 ) extends ListProperty[V](underlying) {
 
   private given ExecutionContext = executionContext
-  private val loadedItemsByIndex = mutable.Map[Int, V](underlying.iterator.zipWithIndex.map { case (value, index) => index -> value }.toSeq*)
+  private val loadedItemsByIndex = mutable.Map[Int, V](underlying.iterator.zipWithIndex.map {
+    case (value, index) => index -> value
+  }.toSeq*)
   private var applyingRemotePage = false
 
-  val queryProperty: Property[Query] = Property(initialQuery)
+  val queryProperty: Property[Query]                             = Property(initialQuery)
   val sortingProperty: Property[Vector[ListProperty.RemoteSort]] = Property(Vector.empty)
-  val loadingProperty: Property[Boolean] = Property(false)
-  val errorProperty: Property[Option[Throwable]] = Property(None)
-  val hasMoreProperty: Property[Boolean] = Property(false)
-  val totalCountProperty: Property[Option[Int]] = Property(None)
-  val nextQueryProperty: Property[Option[Query]] = Property(None)
+  val loadingProperty: Property[Boolean]                         = Property(false)
+  val errorProperty: Property[Option[Throwable]]                 = Property(None)
+  val hasMoreProperty: Property[Boolean]                         = Property(false)
+  val totalCountProperty: Property[Option[Int]]                  = Property(None)
+  val nextQueryProperty: Property[Option[Query]]                 = Property(None)
 
   override def remotePropertyOrNull: RemoteListProperty[V, Query] = this
 
@@ -50,7 +52,7 @@ final class RemoteListProperty[V, Query](
 
   def isRangeLoaded(fromIndex: Int, toExclusive: Int): Boolean = {
     val normalizedFrom = math.max(0, fromIndex)
-    val normalizedTo = math.max(normalizedFrom, toExclusive)
+    val normalizedTo   = math.max(normalizedFrom, toExclusive)
     (normalizedFrom until normalizedTo).forall(isIndexLoaded)
   }
 
@@ -61,7 +63,9 @@ final class RemoteListProperty[V, Query](
         sortingProperty.set(normalizedSorting)
         reload(updateSorting(queryProperty.get, normalizedSorting))
       case None =>
-        js.Promise.reject(IllegalStateException("This RemoteListProperty does not support remote sorting"))
+        js.Promise.reject(
+          IllegalStateException("This RemoteListProperty does not support remote sorting")
+        )
     }
 
   def reload(): js.Promise[js.Array[V]] =
@@ -75,8 +79,9 @@ final class RemoteListProperty[V, Query](
 
   def loadMore(): js.Promise[js.Array[V]] =
     nextQueryProperty.get match {
-      case Some(nextQuery) => loadQuery(nextQuery, replaceExisting = false, expectedOffset = Some(length))
-      case None            => js.Promise.resolve(get)
+      case Some(nextQuery) =>
+        loadQuery(nextQuery, replaceExisting = false, expectedOffset = Some(length))
+      case None => js.Promise.resolve(get)
     }
 
   def loadMore(query: Query): js.Promise[js.Array[V]] =
@@ -91,7 +96,7 @@ final class RemoteListProperty[V, Query](
     } else {
       rangeQueryUpdater match {
         case Some(updateRange) =>
-          val normalizedFrom = math.max(0, fromIndex)
+          val normalizedFrom  = math.max(0, fromIndex)
           val normalizedCount = math.max(1, toExclusive - normalizedFrom)
           loadQuery(
             updateRange(queryProperty.get, normalizedFrom, normalizedCount),
@@ -99,7 +104,9 @@ final class RemoteListProperty[V, Query](
             expectedOffset = Some(normalizedFrom)
           )
         case None =>
-          js.Promise.reject(IllegalStateException("This RemoteListProperty does not support range loading"))
+          js.Promise.reject(
+            IllegalStateException("This RemoteListProperty does not support range loading")
+          )
       }
     }
 
@@ -129,8 +136,8 @@ final class RemoteListProperty[V, Query](
 
   override def remove(idx: Int): V = {
     val previousTotalLength = totalLength
-    val absoluteIndex = absoluteIndexForLoadedPosition(idx)
-    val removed = super.remove(idx)
+    val absoluteIndex       = absoluteIndexForLoadedPosition(idx)
+    val removed             = super.remove(idx)
 
     if (!applyingRemotePage) {
       loadedItemsByIndex.remove(absoluteIndex)
@@ -158,7 +165,11 @@ final class RemoteListProperty[V, Query](
       expectedOffset = if (append) Some(length) else Some(0)
     )
 
-  private def loadQuery(query: Query, replaceExisting: Boolean, expectedOffset: Option[Int]): js.Promise[js.Array[V]] =
+  private def loadQuery(
+      query: Query,
+      replaceExisting: Boolean,
+      expectedOffset: Option[Int]
+  ): js.Promise[js.Array[V]] =
     if (loadingProperty.get) {
       js.Promise.reject(ListProperty.alreadyLoadingFailure)
     } else {
@@ -173,10 +184,9 @@ final class RemoteListProperty[V, Query](
           applyPage(page, replaceExisting, expectedOffset)
           get
         }
-        .recoverWith {
-          case NonFatal(error) =>
-            errorProperty.set(Some(error))
-            Future.failed(error)
+        .recoverWith { case NonFatal(error) =>
+          errorProperty.set(Some(error))
+          Future.failed(error)
         }
         .andThen { case _ =>
           loadingProperty.set(false)
@@ -185,9 +195,9 @@ final class RemoteListProperty[V, Query](
     }
 
   private def applyPage(
-    page: ListProperty.RemotePage[V, Query],
-    replaceExisting: Boolean,
-    expectedOffset: Option[Int]
+      page: ListProperty.RemotePage[V, Query],
+      replaceExisting: Boolean,
+      expectedOffset: Option[Int]
   ): Unit = {
     if (replaceExisting) {
       loadedItemsByIndex.clear()
@@ -197,9 +207,9 @@ final class RemoteListProperty[V, Query](
       page.offset
         .orElse(expectedOffset)
         .getOrElse {
-        if (replaceExisting) 0
-        else loadedItemsByIndex.size
-      }
+          if (replaceExisting) 0
+          else loadedItemsByIndex.size
+        }
 
     page.items.zipWithIndex.foreach { case (item, relativeIndex) =>
       loadedItemsByIndex.update(pageOffset + relativeIndex, item)
@@ -231,7 +241,7 @@ final class RemoteListProperty[V, Query](
     val updatedEntries =
       loadedItemsByIndex.toSeq.map { case (index, value) =>
         if (index > removedIndex) (index - 1) -> value
-        else index -> value
+        else index                            -> value
       }
 
     loadedItemsByIndex.clear()

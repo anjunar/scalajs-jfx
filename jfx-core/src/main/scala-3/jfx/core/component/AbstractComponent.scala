@@ -9,18 +9,15 @@ import scala.scalajs.js
 
 import scala.collection.mutable
 
-abstract class AbstractComponent
-    extends DslLayerOne
-    with ClassDsl
-    with EventDsl {
+abstract class AbstractComponent extends DslLayerOne with ClassDsl with EventDsl {
 
   val tagName: String
 
-  private[jfx] var _host: HostNode = _
+  private[jfx] var _host: HostNode                    = _
   private[jfx] var _parent: Option[AbstractComponent] = None
-  private[jfx] val _children = mutable.ArrayBuffer.empty[AbstractComponent]
-  private[jfx] val disposables = new CompositeDisposable()
-  private[jfx] val _contextValues = mutable.HashMap.empty[AnyRef, AnyRef]
+  private[jfx] val _children                          = mutable.ArrayBuffer.empty[AbstractComponent]
+  private[jfx] val disposables                        = new CompositeDisposable()
+  private[jfx] val _contextValues                     = mutable.HashMap.empty[AnyRef, AnyRef]
 
   private val baseClasses = mutable.ArrayBuffer.empty[String]
   private val userClasses = mutable.ArrayBuffer.empty[String]
@@ -35,10 +32,10 @@ abstract class AbstractComponent
   }
 
   def parent: Option[AbstractComponent] = _parent
-  def children: Seq[AbstractComponent] = _children.toSeq
-  def isVirtual: Boolean = tagName.isEmpty
-  def isText: Boolean = tagName == "#text"
-  def isBound: Boolean = _host != null
+  def children: Seq[AbstractComponent]  = _children.toSeq
+  def isVirtual: Boolean                = tagName.isEmpty
+  def isText: Boolean                   = tagName == "#text"
+  def isBound: Boolean                  = _host != null
 
   def domNodeCount: Int =
     if (!isVirtual) 1
@@ -48,7 +45,7 @@ abstract class AbstractComponent
     case None => 0
     case Some(p) =>
       val siblingsBefore = p._children.takeWhile(_ ne this)
-      val local = siblingsBefore.map(_.domNodeCount).sum
+      val local          = siblingsBefore.map(_.domNodeCount).sum
       if (p.isVirtual) p.domOffset + local else local
   }
 
@@ -58,12 +55,12 @@ abstract class AbstractComponent
 
   private def virtualStart: Option[CommentNode] = _host match {
     case host: VirtualHost => host.start
-    case _ => None
+    case _                 => None
   }
 
   private def virtualEnd: Option[CommentNode] = _host match {
     case host: VirtualHost => host.end
-    case _ => None
+    case _                 => None
   }
 
   private def virtualAnchorCount: Int =

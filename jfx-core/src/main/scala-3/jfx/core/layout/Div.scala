@@ -10,7 +10,7 @@ class Div extends AbstractComponent {
 
 object Div {
   def div(body: Div ?=> Cursor ?=> Unit = {})(using AbstractComponent, Cursor): Div =
-    DslLayerTwo.child(new Div()) { 
+    DslLayerTwo.child(new Div()) {
       body
     }
 }

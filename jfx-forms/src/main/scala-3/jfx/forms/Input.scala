@@ -6,7 +6,7 @@ import jfx.core.dsl.DslLayerTwo.render
 import jfx.core.render.Cursor
 import jfx.forms.Form.FormContext
 
-class Input(val name : String) extends AbstractComponent, Control, Placeholder {
+class Input(val name: String) extends AbstractComponent, Control, Placeholder {
 
   val tagName = "input"
 
@@ -19,15 +19,16 @@ class Input(val name : String) extends AbstractComponent, Control, Placeholder {
     }
   }
 
-  def placeholder(value : String) : Unit =
+  def placeholder(value: String): Unit =
     host.setAttribute("placeholder", value)
-
 
   override def toString = s"Input($name)"
 }
 
 object Input {
-  def input(name : String)(body: Input ?=> Cursor ?=> Unit = {})(using AbstractComponent, Cursor): Input =
+  def input(
+      name: String
+  )(body: Input ?=> Cursor ?=> Unit = {})(using AbstractComponent, Cursor): Input =
     DslLayerTwo.child(new Input(name)) {
       body
     }

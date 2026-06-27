@@ -4,7 +4,8 @@ import jfx.core.component.{AbstractComponent, AbstractCustomComponent, Runtime}
 import jfx.core.render.Cursor
 import jfx.core.state.ReadOnlyProperty
 
-class Condition(active: ReadOnlyProperty[Boolean], create: () => AbstractComponent) extends AbstractCustomComponent {
+class Condition(active: ReadOnlyProperty[Boolean], create: () => AbstractComponent)
+    extends AbstractCustomComponent {
   private var mounted: Option[AbstractComponent] = None
 
   override def compose(cursor: Cursor): Unit = {

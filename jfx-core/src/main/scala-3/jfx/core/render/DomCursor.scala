@@ -3,11 +3,11 @@ package jfx.core.render
 import jfx.core.async.AsyncRenderContext
 import org.scalajs.dom
 
-final class DomCursor private(
-                               parent: dom.Node,
-                               beforeNode: Option[dom.Node],
-                               currentAsyncContext: Option[AsyncRenderContext]
-                             ) extends Cursor {
+final class DomCursor private (
+    parent: dom.Node,
+    beforeNode: Option[dom.Node],
+    currentAsyncContext: Option[AsyncRenderContext]
+) extends Cursor {
 
   override def supportsAnchors: Boolean =
     true
@@ -54,6 +54,10 @@ object DomCursor {
   def before(parent: dom.Node, beforeNode: dom.Node): DomCursor =
     new DomCursor(parent, Some(beforeNode), None)
 
-  def before(parent: dom.Node, beforeNode: dom.Node, asyncContext: Option[AsyncRenderContext]): DomCursor =
+  def before(
+      parent: dom.Node,
+      beforeNode: dom.Node,
+      asyncContext: Option[AsyncRenderContext]
+  ): DomCursor =
     new DomCursor(parent, Some(beforeNode), asyncContext)
 }

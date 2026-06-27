@@ -47,53 +47,53 @@ final class Viewport extends AbstractComponent {
 object Viewport {
 
   enum NotificationKind(val cssClass: String) {
-    case Info extends NotificationKind("jfx-viewport-notification--info")
+    case Info    extends NotificationKind("jfx-viewport-notification--info")
     case Success extends NotificationKind("jfx-viewport-notification--success")
     case Warning extends NotificationKind("jfx-viewport-notification--warning")
-    case Error extends NotificationKind("jfx-viewport-notification--error")
+    case Error   extends NotificationKind("jfx-viewport-notification--error")
   }
 
   type WindowBody = AbstractComponent ?=> Cursor ?=> Unit
 
-  val windows: ListProperty[WindowConf] = ListProperty()
+  val windows: ListProperty[WindowConf]             = ListProperty()
   val notifications: ListProperty[NotificationConf] = ListProperty()
 
   private val notificationFadeOutMs = 250
-  private val windowFadeOutMs = 300
-  private val windowBaseOffsetPx = 72.0
-  private val windowStepPx = 28.0
+  private val windowFadeOutMs       = 300
+  private val windowBaseOffsetPx    = 72.0
+  private val windowStepPx          = 28.0
 
   final class NotificationConf(
-    val message: String,
-    val kind: NotificationKind = NotificationKind.Info,
-    val topPx: Double
+      val message: String,
+      val kind: NotificationKind = NotificationKind.Info,
+      val topPx: Double
   ) {
-    val id: String = UUID.randomUUID().toString
+    val id: String                 = UUID.randomUUID().toString
     val visible: Property[Boolean] = Property(true)
   }
 
   final class WindowConf(
-    val title: String,
-    val body: WindowBody,
-    val widthPx: Int = 520,
-    val heightPx: Int = 360,
-    val leftPx: Property[Double] = Property(windowBaseOffsetPx),
-    val topPx: Property[Double] = Property(windowBaseOffsetPx),
-    val zIndex: Property[Int] = Property(0),
-    val visible: Property[Boolean] = Property(true),
-    val onClose: Option[Window => Unit] = None,
-    val onClick: Option[Window => Unit] = None
+      val title: String,
+      val body: WindowBody,
+      val widthPx: Int = 520,
+      val heightPx: Int = 360,
+      val leftPx: Property[Double] = Property(windowBaseOffsetPx),
+      val topPx: Property[Double] = Property(windowBaseOffsetPx),
+      val zIndex: Property[Int] = Property(0),
+      val visible: Property[Boolean] = Property(true),
+      val onClose: Option[Window => Unit] = None,
+      val onClick: Option[Window => Unit] = None
   ) {
     val id: String = UUID.randomUUID().toString
   }
 
   object WindowConf {
     def apply(
-      title: String,
-      widthPx: Int = 520,
-      heightPx: Int = 360,
-      onClose: Option[Window => Unit] = None,
-      onClick: Option[Window => Unit] = None
+        title: String,
+        widthPx: Int = 520,
+        heightPx: Int = 360,
+        onClose: Option[Window => Unit] = None,
+        onClick: Option[Window => Unit] = None
     )(body: WindowBody): WindowConf =
       new WindowConf(
         title = title,
@@ -105,8 +105,10 @@ object Viewport {
       )
   }
 
-  def viewport(body: AbstractComponent ?=> Viewport ?=> Cursor ?=> Unit = {})(using AbstractComponent, Cursor): Viewport = {
-    val mounted = Runtime.mount(new Viewport(), summon[Cursor], Some(summon[AbstractComponent]))
+  def viewport(
+      body: AbstractComponent ?=> Viewport ?=> Cursor ?=> Unit = {}
+  )(using AbstractComponent, Cursor): Viewport = {
+    val mounted     = Runtime.mount(new Viewport(), summon[Cursor], Some(summon[AbstractComponent]))
     val childCursor = summon[Cursor].sub(mounted.contentSlot.host)
 
     render(mounted.contentSlot, childCursor) {
@@ -118,9 +120,9 @@ object Viewport {
   }
 
   def notify(
-    message: String,
-    kind: NotificationKind = NotificationKind.Info,
-    durationMs: Int = 3000
+      message: String,
+      kind: NotificationKind = NotificationKind.Info,
+      durationMs: Int = 3000
   ): NotificationConf = {
     val conf =
       new NotificationConf(
@@ -160,9 +162,9 @@ object Viewport {
   }
 
   def addWindow(
-    title: String,
-    widthPx: Int = 520,
-    heightPx: Int = 360
+      title: String,
+      widthPx: Int = 520,
+      heightPx: Int = 360
   )(body: WindowBody): WindowConf =
     addWindow(WindowConf(title, widthPx, heightPx)(body))
 

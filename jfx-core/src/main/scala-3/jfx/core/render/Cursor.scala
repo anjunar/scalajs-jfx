@@ -19,12 +19,14 @@ trait Cursor {
 
   def claimRange(label: String): VirtualRange = {
     val start = claimComment(s"jfx:$label:start")
-    val end = claimComment(s"jfx:$label:end")
+    val end   = claimComment(s"jfx:$label:end")
     VirtualRange(start, end, before(end))
   }
 
   def sub(host: HostElement): Cursor
 
   def before(node: HostNode): Cursor =
-    throw new UnsupportedOperationException("Dieser Cursor unterstützt kein Einfügen vor einer bestehenden Node.")
+    throw new UnsupportedOperationException(
+      "Dieser Cursor unterstützt kein Einfügen vor einer bestehenden Node."
+    )
 }

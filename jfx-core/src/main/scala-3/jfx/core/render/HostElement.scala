@@ -16,9 +16,5 @@ trait HostElement extends HostNode {
   def clearChildren(): Unit
   def childCount: Int
   def on(eventName: String)(handler: UiEvent => Unit): Disposable = Disposable.empty
-  def onClick(handler: UiEvent => Unit): Disposable = on("click")(handler)
+  def onClick(handler: UiEvent => Unit): Disposable               = on("click")(handler)
 }
-
-
-
-

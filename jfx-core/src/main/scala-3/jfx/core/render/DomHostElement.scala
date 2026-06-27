@@ -7,19 +7,19 @@ final class DomHostElement(private[jfx] val node: dom.Element) extends HostEleme
   def tagName: String = node.tagName.toLowerCase
 
   def setAttribute(name: String, value: String): Unit = node.setAttribute(name, value)
-  def removeAttribute(name: String): Unit = node.removeAttribute(name)
-  def attribute(name: String): Option[String] = Option(node.getAttribute(name))
+  def removeAttribute(name: String): Unit             = node.removeAttribute(name)
+  def attribute(name: String): Option[String]         = Option(node.getAttribute(name))
 
   def setStyle(name: String, value: String): Unit =
     node match {
       case html: dom.HTMLElement => html.style.setProperty(name, value)
-      case _ => ()
+      case _                     => ()
     }
 
   def removeStyle(name: String): Unit =
     node match {
       case html: dom.HTMLElement => html.style.removeProperty(name)
-      case _ => ()
+      case _                     => ()
     }
 
   def setClassNames(names: Seq[String]): Unit =
@@ -54,4 +54,3 @@ final class DomHostElement(private[jfx] val node: dom.Element) extends HostEleme
 
   def renderHtml(): String = node.outerHTML
 }
-

@@ -4,13 +4,13 @@ import jfx.core.async.AsyncRenderContext
 
 import scala.collection.mutable
 
-final class SsrCursor private(
-                               parent: Option[SsrHostElement],
-                               beforeNode: Option[HostNode],
-                               emitAnchors: Boolean,
-                               rootNodes: mutable.ArrayBuffer[HostNode],
-                               currentAsyncContext: Option[AsyncRenderContext]
-                             ) extends Cursor {
+final class SsrCursor private (
+    parent: Option[SsrHostElement],
+    beforeNode: Option[HostNode],
+    emitAnchors: Boolean,
+    rootNodes: mutable.ArrayBuffer[HostNode],
+    currentAsyncContext: Option[AsyncRenderContext]
+) extends Cursor {
 
   def this() =
     this(None, None, true, mutable.ArrayBuffer.empty[HostNode], None)

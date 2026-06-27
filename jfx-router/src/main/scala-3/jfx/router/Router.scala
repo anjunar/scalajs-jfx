@@ -15,11 +15,12 @@ import scala.scalajs.js
 import scala.util.{Failure, Success}
 
 class Router(
-              routes: Seq[Route],
-              initialUrl: String
-            )(using ec: ExecutionContext) extends AbstractCustomComponent {
+    routes: Seq[Route],
+    initialUrl: String
+)(using ec: ExecutionContext)
+    extends AbstractCustomComponent {
 
-  private var renderToken = 0
+  private var renderToken        = 0
   private var asyncCursorContext = Option.empty[jfx.core.async.AsyncRenderContext]
 
   private val stateProperty =
@@ -53,7 +54,6 @@ class Router(
 
     installPopStateListener()
   }
-
 
   private def prepareInitialHydrationRoute(): Unit = {
     renderToken += 1
@@ -212,19 +212,25 @@ class Router(
     if (!search.startsWith("?")) {
       Map.empty
     } else {
-      search.drop(1).split("&").iterator.filter(_.nonEmpty).map { part =>
-        val index = part.indexOf("=")
+      search
+        .drop(1)
+        .split("&")
+        .iterator
+        .filter(_.nonEmpty)
+        .map { part =>
+          val index = part.indexOf("=")
 
-        val key =
-          if (index >= 0) part.take(index)
-          else part
+          val key =
+            if (index >= 0) part.take(index)
+            else part
 
-        val value =
-          if (index >= 0) part.drop(index + 1)
-          else ""
+          val value =
+            if (index >= 0) part.drop(index + 1)
+            else ""
 
-        js.URIUtils.decodeURIComponent(key) -> js.URIUtils.decodeURIComponent(value)
-      }.toMap
+          js.URIUtils.decodeURIComponent(key) -> js.URIUtils.decodeURIComponent(value)
+        }
+        .toMap
     }
   }
 
@@ -241,9 +247,9 @@ class Router(
     }
 
   private final class RoutedComponent(
-                                       context: RouteContext,
-                                       child: AbstractComponent
-                                     ) extends AbstractCustomComponent {
+      context: RouteContext,
+      child: AbstractComponent
+  ) extends AbstractCustomComponent {
 
     override def compose(cursor: Cursor): Unit = {
       Route.RouteContextValue.provide(context)(using this)
@@ -258,9 +264,9 @@ object Router {
     Context.create[Router]("Router")
 
   def router(
-              routes: Seq[Route],
-              initial: String = null
-            )(using parent: AbstractComponent, cursor: Cursor, ec: ExecutionContext): Router = {
+      routes: Seq[Route],
+      initial: String = null
+  )(using parent: AbstractComponent, cursor: Cursor, ec: ExecutionContext): Router = {
     val startUrl =
       if (initial != null) initial
       else if (hasBrowserWindow) currentBrowserUrl()
@@ -307,7 +313,9 @@ object Router {
       override def compose(cursor: Cursor): Unit =
         DslLayerTwo.render(this, cursor) {
           div {
-            text(Option(error.getMessage).filter(_.nonEmpty).getOrElse("Route could not be loaded")) {}
+            text(
+              Option(error.getMessage).filter(_.nonEmpty).getOrElse("Route could not be loaded")
+            ) {}
           }
         }
     }

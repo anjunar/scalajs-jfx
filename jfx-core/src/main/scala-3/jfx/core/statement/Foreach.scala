@@ -8,13 +8,15 @@ import jfx.core.state.{ListProperty, ReadOnlyProperty}
 import scala.collection.mutable
 import scala.scalajs.js
 
-class Foreach[V](items: ListProperty[V],
-                 build: (V, Int) => AbstractComponent ?=> Cursor ?=> Unit,
-                 reindexOnStructuralChange: Boolean = false) extends AbstractCustomComponent {
+class Foreach[V](
+    items: ListProperty[V],
+    build: (V, Int) => AbstractComponent ?=> Cursor ?=> Unit,
+    reindexOnStructuralChange: Boolean = false
+) extends AbstractCustomComponent {
   import ListProperty.*
 
-  private val mounted = mutable.ArrayBuffer.empty[ForeachItem[V]]
-  private var initialized = false
+  private val mounted               = mutable.ArrayBuffer.empty[ForeachItem[V]]
+  private var initialized           = false
   private var mountedCursor: Cursor = _
 
   override def compose(cursor: Cursor): Unit = {
@@ -35,7 +37,10 @@ class Foreach[V](items: ListProperty[V],
         else mountAt(index, element, mountedCursor)
       case InsertAll(index, elements, _) =>
         if (reindexOnStructuralChange) rebuildFrom(index)
-        else elements.toSeq.zipWithIndex.foreach { case (element, offset) => mountAt(index + offset, element, mountedCursor) }
+        else
+          elements.toSeq.zipWithIndex.foreach { case (element, offset) =>
+            mountAt(index + offset, element, mountedCursor)
+          }
       case RemoveAt(index, _, _) =>
         if (reindexOnStructuralChange) rebuildFrom(index)
         else unmountAt(index)
@@ -48,7 +53,9 @@ class Foreach[V](items: ListProperty[V],
         if (reindexOnStructuralChange) rebuildFrom(from)
         else {
           unmountRange(from, removed.length)
-          inserted.toSeq.zipWithIndex.foreach { case (element, offset) => mountAt(from + offset, element, mountedCursor) }
+          inserted.toSeq.zipWithIndex.foreach { case (element, offset) =>
+            mountAt(from + offset, element, mountedCursor)
+          }
         }
       case Clear(_, _) =>
         clearMounted()
@@ -60,7 +67,7 @@ class Foreach[V](items: ListProperty[V],
   }
 
   private def rebuildFrom(index: Int): Unit = {
-    val from = index.max(0).min(mounted.length)
+    val from  = index.max(0).min(mounted.length)
     val count = mounted.length - from
 
     unmountRange(from, count)
@@ -80,7 +87,7 @@ class Foreach[V](items: ListProperty[V],
 
   private def mountAt(index: Int, value: V, cursor: Cursor): Unit = {
     val safeIndex = index.max(0).min(mounted.length)
-    val item = new ForeachItem(value, safeIndex, build)
+    val item      = new ForeachItem(value, safeIndex, build)
 
     Runtime.mount(item, insertionCursorAt(safeIndex, cursor), Some(this))
     mounted.insert(safeIndex, item)
@@ -126,35 +133,50 @@ class Foreach[V](items: ListProperty[V],
       case host: VirtualHost =>
         host.end match {
           case Some(end) => cursor.before(end)
-          case None => host.cursor.getOrElse(cursor)
+          case None      => host.cursor.getOrElse(cursor)
         }
       case _ => cursor
     }
 }
 
 object Foreach {
-  def foreach[V](items: ListProperty[V])(body: V => AbstractComponent ?=> Cursor ?=> Unit)
-                (using AbstractComponent, Cursor): Foreach[V] =
+  def foreach[V](items: ListProperty[V])(
+      body: V => AbstractComponent ?=> Cursor ?=> Unit
+  )(using AbstractComponent, Cursor): Foreach[V] =
     DslLayerTwo.child(new Foreach(items, (value, _) => body(value))) {}
 
-  def foreach[V](items: ReadOnlyProperty[Seq[V]])(body: V => AbstractComponent ?=> Cursor ?=> Unit)
-                (using AbstractComponent, Cursor): Foreach[V] =
-    DslLayerTwo.child(new PropertyForeach(items, listOf(items.get), (value, _) => body(value), reindexOnStructuralChange = false)) {}
+  def foreach[V](
+      items: ReadOnlyProperty[Seq[V]]
+  )(body: V => AbstractComponent ?=> Cursor ?=> Unit)(using AbstractComponent, Cursor): Foreach[V] =
+    DslLayerTwo.child(
+      new PropertyForeach(
+        items,
+        listOf(items.get),
+        (value, _) => body(value),
+        reindexOnStructuralChange = false
+      )
+    ) {}
 
-  def foreach[V](items: Seq[V])(body: V => AbstractComponent ?=> Cursor ?=> Unit)
-                (using AbstractComponent, Cursor): Foreach[V] =
+  def foreach[V](items: Seq[V])(
+      body: V => AbstractComponent ?=> Cursor ?=> Unit
+  )(using AbstractComponent, Cursor): Foreach[V] =
     foreach(listOf(items))(body)
 
-  def foreachIndexed[V](items: ListProperty[V])(body: (V, Int) => AbstractComponent ?=> Cursor ?=> Unit)
-                       (using AbstractComponent, Cursor): Foreach[V] =
+  def foreachIndexed[V](items: ListProperty[V])(
+      body: (V, Int) => AbstractComponent ?=> Cursor ?=> Unit
+  )(using AbstractComponent, Cursor): Foreach[V] =
     DslLayerTwo.child(new Foreach(items, body, reindexOnStructuralChange = true)) {}
 
-  def foreachIndexed[V](items: ReadOnlyProperty[Seq[V]])(body: (V, Int) => AbstractComponent ?=> Cursor ?=> Unit)
-                       (using AbstractComponent, Cursor): Foreach[V] =
-    DslLayerTwo.child(new PropertyForeach(items, listOf(items.get), body, reindexOnStructuralChange = true)) {}
+  def foreachIndexed[V](items: ReadOnlyProperty[Seq[V]])(
+      body: (V, Int) => AbstractComponent ?=> Cursor ?=> Unit
+  )(using AbstractComponent, Cursor): Foreach[V] =
+    DslLayerTwo.child(
+      new PropertyForeach(items, listOf(items.get), body, reindexOnStructuralChange = true)
+    ) {}
 
-  def foreachIndexed[V](items: Seq[V])(body: (V, Int) => AbstractComponent ?=> Cursor ?=> Unit)
-                       (using AbstractComponent, Cursor): Foreach[V] =
+  def foreachIndexed[V](items: Seq[V])(
+      body: (V, Int) => AbstractComponent ?=> Cursor ?=> Unit
+  )(using AbstractComponent, Cursor): Foreach[V] =
     foreachIndexed(listOf(items))(body)
 
   private def listOf[V](items: Seq[V]): ListProperty[V] =

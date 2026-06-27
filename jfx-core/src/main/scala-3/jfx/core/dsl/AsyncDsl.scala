@@ -7,7 +7,9 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object AsyncDsl {
 
-  def async(body: RenderScope ?=> Future[Unit])(using scope: RenderScope, ec: ExecutionContext): Unit = {
+  def async(
+      body: RenderScope ?=> Future[Unit]
+  )(using scope: RenderScope, ec: ExecutionContext): Unit = {
     val slot = Runtime.mount(
       new AsyncSlot(),
       scope.cursor,

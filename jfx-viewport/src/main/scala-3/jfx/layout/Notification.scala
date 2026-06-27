@@ -26,7 +26,7 @@ final class Notification(conf: Viewport.NotificationConf) extends AbstractCompon
 
       text(conf.message) {}
     }
-    
+
   }
 }
 

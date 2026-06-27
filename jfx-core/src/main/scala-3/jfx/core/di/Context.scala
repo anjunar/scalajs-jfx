@@ -16,7 +16,7 @@ final class Context[A](val name: String) {
   private def findInTree(component: AbstractComponent): Option[AnyRef] =
     component._contextValues.get(key) match {
       case some @ Some(_) => some
-      case None => component._parent.flatMap(findInTree)
+      case None           => component._parent.flatMap(findInTree)
     }
 }
 

@@ -21,13 +21,12 @@ object Main {
   def boot(): Unit = {
     given ExecutionContext = ExecutionContext.global
 
-
     val async = new AsyncRenderContext()
-    val url = s"${dom.window.location.pathname}${dom.window.location.search}"
+    val url   = s"${dom.window.location.pathname}${dom.window.location.search}"
 
     val request =
       RequestContext(
-        headers = RequestHeaders.empty,
+        headers = RequestHeaders.empty
       )
 
     val hydratingCursor =

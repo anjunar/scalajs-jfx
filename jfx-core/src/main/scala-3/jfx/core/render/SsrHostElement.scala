@@ -3,16 +3,16 @@ package jfx.core.render
 import scala.collection.mutable
 
 final class SsrHostElement(val tagName: String) extends HostElement {
-  private val attrs = mutable.LinkedHashMap.empty[String, String]
-  private val styles = mutable.LinkedHashMap.empty[String, String]
+  private val attrs    = mutable.LinkedHashMap.empty[String, String]
+  private val styles   = mutable.LinkedHashMap.empty[String, String]
   private val children = mutable.ArrayBuffer.empty[HostNode]
 
   def setAttribute(name: String, value: String): Unit = attrs(name) = value
-  def removeAttribute(name: String): Unit = attrs.remove(name)
-  def attribute(name: String): Option[String] = attrs.get(name)
+  def removeAttribute(name: String): Unit             = attrs.remove(name)
+  def attribute(name: String): Option[String]         = attrs.get(name)
 
   def setStyle(name: String, value: String): Unit = styles(name) = value
-  def removeStyle(name: String): Unit = styles.remove(name)
+  def removeStyle(name: String): Unit             = styles.remove(name)
 
   def setClassNames(names: Seq[String]): Unit =
     if (names.isEmpty) attrs.remove("class")
@@ -35,8 +35,8 @@ final class SsrHostElement(val tagName: String) extends HostElement {
     }
 
   def removeChild(child: HostNode): Unit = children -= child
-  def clearChildren(): Unit = children.clear()
-  def childCount: Int = children.length
+  def clearChildren(): Unit              = children.clear()
+  def childCount: Int                    = children.length
 
   def renderHtml(): String = {
     val styleStr =

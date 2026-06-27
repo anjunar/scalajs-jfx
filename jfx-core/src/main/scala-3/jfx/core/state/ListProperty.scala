@@ -10,28 +10,29 @@ import scala.scalajs.js.JSConverters.*
 import scala.util.control.NonFatal
 
 class ListProperty[V](val underlying: js.Array[V] = js.Array[V]())
-    extends ReadOnlyProperty[js.Array[V]], mutable.Buffer[V] {
+    extends ReadOnlyProperty[js.Array[V]],
+      mutable.Buffer[V] {
 
   import ListProperty.*
 
-  private val listeners = mutable.ArrayBuffer.empty[js.Array[V] => Unit]
+  private val listeners       = mutable.ArrayBuffer.empty[js.Array[V] => Unit]
   private val changeListeners = mutable.ArrayBuffer.empty[Change[V] => Unit]
   private var disposableOwner: CompositeDisposable | Null = null
-  private var defaultValue : js.Array[V] = underlying.slice(0, underlying.length)
+  private var defaultValue: js.Array[V]                   = underlying.slice(0, underlying.length)
 
   override def get: js.Array[V] =
     underlying
 
-  def setDefaultValue(newValue : js.Array[V]) : Unit = {
+  def setDefaultValue(newValue: js.Array[V]): Unit = {
     defaultValue = newValue.slice(0, newValue.length)
   }
 
-  def isDirty : Boolean = ! arrayEquals(underlying, defaultValue)
+  def isDirty: Boolean = !arrayEquals(underlying, defaultValue)
 
   private def arrayEquals[A](left: js.Array[A], right: js.Array[A]): Boolean =
     (left eq right) ||
       left.length == right.length &&
-        left.indices.forall(index => left(index) == right(index))
+      left.indices.forall(index => left(index) == right(index))
 
   def registerDisposableOwner(owner: CompositeDisposable): this.type = {
     disposableOwner = owner
@@ -118,7 +119,7 @@ class ListProperty[V](val underlying: js.Array[V] = js.Array[V]())
     if (seq.isEmpty && replaced == 0) return this
 
     val inserted = js.Array(seq*)
-    val removed = underlying.splice(from, replaced, seq*)
+    val removed  = underlying.splice(from, replaced, seq*)
     notified(Patch(from, removed, inserted, this))
     this
   }
@@ -180,18 +181,28 @@ object ListProperty {
   def apply[V](underlying: js.Array[V] = js.Array[V]()): ListProperty[V] =
     new ListProperty[V](underlying)
 
-  def owned[V](owner: CompositeDisposable, underlying: js.Array[V] = js.Array[V]()): ListProperty[V] =
+  def owned[V](
+      owner: CompositeDisposable,
+      underlying: js.Array[V] = js.Array[V]()
+  ): ListProperty[V] =
     new ListProperty[V](underlying).registerDisposableOwner(owner)
 
   def remote[V, Query](
-    loader: RemoteLoader[V, Query],
-    initialQuery: Query,
-    underlying: js.Array[V] = js.Array[V](),
-    executionContext: ExecutionContext = ExecutionContext.global,
-    sortUpdater: Option[(Query, Seq[RemoteSort]) => Query] = None,
-    rangeQueryUpdater: Option[(Query, Int, Int) => Query] = None
+      loader: RemoteLoader[V, Query],
+      initialQuery: Query,
+      underlying: js.Array[V] = js.Array[V](),
+      executionContext: ExecutionContext = ExecutionContext.global,
+      sortUpdater: Option[(Query, Seq[RemoteSort]) => Query] = None,
+      rangeQueryUpdater: Option[(Query, Int, Int) => Query] = None
   ): RemoteListProperty[V, Query] =
-    new RemoteListProperty[V, Query](loader, initialQuery, underlying, executionContext, sortUpdater, rangeQueryUpdater)
+    new RemoteListProperty[V, Query](
+      loader,
+      initialQuery,
+      underlying,
+      executionContext,
+      sortUpdater,
+      rangeQueryUpdater
+    )
 
   def subscribeBidirectional[V](a: ListProperty[V], b: ListProperty[V]): Disposable = {
     if (a.eq(b)) return () => ()
@@ -230,7 +241,11 @@ object ListProperty {
   private def resetFrom[V](target: ListProperty[V], source: ListProperty[V]): Unit =
     target.setAll(source.get.toSeq)
 
-  private def applyChange[V](source: ListProperty[V], target: ListProperty[V], change: Change[V]): Unit =
+  private def applyChange[V](
+      source: ListProperty[V],
+      target: ListProperty[V],
+      change: Change[V]
+  ): Unit =
     change match {
       case Reset(_) =>
         resetFrom(target, source)
@@ -256,14 +271,22 @@ object ListProperty {
     def list: ListProperty[V]
   }
 
-  final case class Reset[V](list: ListProperty[V]) extends Change[V]
-  final case class Add[V](element: V, list: ListProperty[V]) extends Change[V]
+  final case class Reset[V](list: ListProperty[V])                          extends Change[V]
+  final case class Add[V](element: V, list: ListProperty[V])                extends Change[V]
   final case class Insert[V](index: Int, element: V, list: ListProperty[V]) extends Change[V]
-  final case class InsertAll[V](index: Int, elements: js.Array[V], list: ListProperty[V]) extends Change[V]
+  final case class InsertAll[V](index: Int, elements: js.Array[V], list: ListProperty[V])
+      extends Change[V]
   final case class RemoveAt[V](index: Int, element: V, list: ListProperty[V]) extends Change[V]
-  final case class RemoveRange[V](index: Int, elements: js.Array[V], list: ListProperty[V]) extends Change[V]
-  final case class UpdateAt[V](index: Int, oldElement: V, newElement: V, list: ListProperty[V]) extends Change[V]
-  final case class Patch[V](from: Int, removed: js.Array[V], inserted: js.Array[V], list: ListProperty[V]) extends Change[V]
+  final case class RemoveRange[V](index: Int, elements: js.Array[V], list: ListProperty[V])
+      extends Change[V]
+  final case class UpdateAt[V](index: Int, oldElement: V, newElement: V, list: ListProperty[V])
+      extends Change[V]
+  final case class Patch[V](
+      from: Int,
+      removed: js.Array[V],
+      inserted: js.Array[V],
+      list: ListProperty[V]
+  ) extends Change[V]
   final case class Clear[V](removed: js.Array[V], list: ListProperty[V]) extends Change[V]
 
   trait RemoteLoader[V, Query] {
@@ -279,44 +302,44 @@ object ListProperty {
       }
 
     def rest[V, Query](
-      requestFor: Query => RestRequest,
-      executionContext: ExecutionContext = ExecutionContext.global
+        requestFor: Query => RestRequest,
+        executionContext: ExecutionContext = ExecutionContext.global
     )(decode: (js.Any, Query) => RemotePage[V, Query]): RemoteLoader[V, Query] =
       RemoteLoader(query => fetchPage(requestFor(query), query, decode, executionContext))
   }
 
   final case class RemotePage[V, Query](
-    items: Seq[V],
-    offset: Option[Int] = None,
-    nextQuery: Option[Query] = None,
-    totalCount: Option[Int] = None,
-    hasMore: Option[Boolean] = None
+      items: Seq[V],
+      offset: Option[Int] = None,
+      nextQuery: Option[Query] = None,
+      totalCount: Option[Int] = None,
+      hasMore: Option[Boolean] = None
   )
 
   final case class RemoteSort(field: String, ascending: Boolean = true) {
-    def direction: String = if (ascending) "asc" else "desc"
+    def direction: String    = if (ascending) "asc" else "desc"
     def asQueryValue: String = s"$field,$direction"
   }
 
   object RemotePage {
 
     def fromArray[V, Query](
-      items: js.Array[V],
-      offset: Option[Int] = None,
-      nextQuery: Option[Query] = None,
-      totalCount: Option[Int] = None,
-      hasMore: Option[Boolean] = None
+        items: js.Array[V],
+        offset: Option[Int] = None,
+        nextQuery: Option[Query] = None,
+        totalCount: Option[Int] = None,
+        hasMore: Option[Boolean] = None
     ): RemotePage[V, Query] =
       RemotePage(items.toSeq, offset, nextQuery, totalCount, hasMore)
   }
 
   final case class RestRequest(
-    url: String,
-    method: String = "GET",
-    queryParams: Map[String, Any] = Map.empty,
-    headers: Map[String, String] = Map.empty,
-    body: js.UndefOr[js.Any] = js.undefined,
-    initOverrides: Map[String, js.Any] = Map.empty
+      url: String,
+      method: String = "GET",
+      queryParams: Map[String, Any] = Map.empty,
+      headers: Map[String, String] = Map.empty,
+      body: js.UndefOr[js.Any] = js.undefined,
+      initOverrides: Map[String, js.Any] = Map.empty
   ) {
 
     def withQueryParam(name: String, value: Any): RestRequest =
@@ -358,19 +381,22 @@ object ListProperty {
   }
 
   final case class RemoteRequestException(url: String, status: Int, responseBody: String)
-    extends RuntimeException(
-      s"Request to $url failed with status $status${if (responseBody.nonEmpty) s": $responseBody" else ""}"
-    )
+      extends RuntimeException(
+        s"Request to $url failed with status $status${
+            if (responseBody.nonEmpty) s": $responseBody" else ""
+          }"
+      )
 
   private def fetchPage[V, Query](
-    request: RestRequest,
-    query: Query,
-    decode: (js.Any, Query) => RemotePage[V, Query],
-    executionContext: ExecutionContext
+      request: RestRequest,
+      query: Query,
+      decode: (js.Any, Query) => RemotePage[V, Query],
+      executionContext: ExecutionContext
   ): js.Promise[RemotePage[V, Query]] = {
     given ExecutionContext = executionContext
 
-    dom.fetch(request.urlWithQueryString, request.toRequestInit)
+    dom
+      .fetch(request.urlWithQueryString, request.toRequestInit)
       .toFuture
       .flatMap { response =>
         if (response.ok) {
@@ -379,7 +405,11 @@ object ListProperty {
           response
             .text()
             .toFuture
-            .flatMap(body => Future.failed(RemoteRequestException(request.urlWithQueryString, response.status.toInt, body)))
+            .flatMap(body =>
+              Future.failed(
+                RemoteRequestException(request.urlWithQueryString, response.status.toInt, body)
+              )
+            )
         }
       }
       .toJSPromise

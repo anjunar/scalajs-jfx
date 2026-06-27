@@ -4,7 +4,7 @@ import jfx.core.state.Disposable
 
 trait Control {
 
-  val name : String
+  val name: String
 
   def addDisposable(d: Disposable): Unit
 

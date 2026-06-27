@@ -27,7 +27,7 @@ object RequestContext {
 
   val empty: RequestContext =
     RequestContext(
-      headers = RequestHeaders.empty,
+      headers = RequestHeaders.empty
     )
 
   def provide(value: RequestContext)(using component: AbstractComponent): Unit =
@@ -43,9 +43,9 @@ object RequestContext {
 
 }
 
-final class RequestHeaders private(
-                                    private val values: Map[String, Vector[String]]
-                                  ) {
+final class RequestHeaders private (
+    private val values: Map[String, Vector[String]]
+) {
 
   def get(name: String): Option[String] =
     values.get(normalize(name)).flatMap(_.headOption)
@@ -62,7 +62,6 @@ final class RequestHeaders private(
   private def normalize(name: String): String =
     name.toLowerCase
 }
-
 
 object RequestHeaders {
 

@@ -12,43 +12,47 @@ import scala.concurrent.{ExecutionContext, Future}
 object Runtime {
 
   def mount[C <: AbstractComponent](
-    component: C,
-    cursor: Cursor,
-    parent: Option[AbstractComponent] = None
+      component: C,
+      cursor: Cursor,
+      parent: Option[AbstractComponent] = None
   ): C = {
     component._parent = parent
     parent.foreach(_._children += component)
 
-    component._host =
-      if (component.isVirtual) {
-        if (cursor.supportsAnchors) {
-          val range = cursor.claimRange(component.getClass.getSimpleName)
-          new VirtualHost(parentHostElement(parent), Some(range.start), Some(range.end), Some(range.cursor))
-        } else {
-          new VirtualHost(parentHostElement(parent))
-        }
-      } else if (component.isText) {
-        val initial = component match {
-          case text: TextComponent => text.getText
-          case _ => ""
-        }
-        val textNode = cursor.claimText(initial)
-        component match {
-          case text: TextComponent => text.setTextNode(textNode)
-          case _ => ()
-        }
-        textNode
+    component._host = if (component.isVirtual) {
+      if (cursor.supportsAnchors) {
+        val range = cursor.claimRange(component.getClass.getSimpleName)
+        new VirtualHost(
+          parentHostElement(parent),
+          Some(range.start),
+          Some(range.end),
+          Some(range.cursor)
+        )
       } else {
-        cursor.claimElement(component.tagName)
+        new VirtualHost(parentHostElement(parent))
       }
+    } else if (component.isText) {
+      val initial = component match {
+        case text: TextComponent => text.getText
+        case _                   => ""
+      }
+      val textNode = cursor.claimText(initial)
+      component match {
+        case text: TextComponent => text.setTextNode(textNode)
+        case _                   => ()
+      }
+      textNode
+    } else {
+      cursor.claimElement(component.tagName)
+    }
 
     component.hostBound()
 
     val subCursor: Cursor =
       component._host match {
-        case host: VirtualHost => host.cursor.getOrElse(cursor)
+        case host: VirtualHost      => host.cursor.getOrElse(cursor)
         case _ if !component.isText => cursor.sub(component.host)
-        case _ => cursor
+        case _                      => cursor
       }
 
     component.compose(subCursor)
@@ -58,13 +62,15 @@ object Runtime {
   }
 
   def renderToString(build: SsrCursor => AbstractComponent): String = {
-    val cursor = new SsrCursor()
+    val cursor    = new SsrCursor()
     val component = build(cursor)
     renderMountedRoot(component, cursor)
   }
 
-  def renderToStringAsync(build: SsrCursor => AbstractComponent)(using ec: ExecutionContext): Future[String] = {
-    val async = new AsyncRenderContext()
+  def renderToStringAsync(
+      build: SsrCursor => AbstractComponent
+  )(using ec: ExecutionContext): Future[String] = {
+    val async  = new AsyncRenderContext()
     val cursor = new SsrCursor(async)
 
     val root = build(cursor)
@@ -91,8 +97,8 @@ object Runtime {
   private def renderMountedRoot(component: AbstractComponent, cursor: SsrCursor): String =
     component._host match {
       case host: HostElement => host.renderHtml()
-      case _: VirtualHost => cursor.collectHtml()
-      case _ => cursor.collectHtml()
+      case _: VirtualHost    => cursor.collectHtml()
+      case _                 => cursor.collectHtml()
     }
 
   private[jfx] def nearestPhysicalParent(component: AbstractComponent): Option[AbstractComponent] =
@@ -109,4 +115,3 @@ object Runtime {
     }
 
 }
-

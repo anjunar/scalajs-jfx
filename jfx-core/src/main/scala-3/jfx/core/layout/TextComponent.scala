@@ -5,11 +5,10 @@ import jfx.core.dsl.DslLayerTwo
 import jfx.core.render.{Cursor, TextNode, UiEvent}
 import jfx.core.state.{Disposable, ReadOnlyProperty}
 
-
 class TextComponent(initial: String = "") extends AbstractComponent {
   val tagName = "#text"
 
-  private var textNode: TextNode = _
+  private var textNode: TextNode  = _
   private var pendingText: String = initial
 
   def setText(value: String): Unit = {
@@ -30,10 +29,11 @@ object TextComponent {
   def bind(text: ReadOnlyProperty[String]): TextComponent =
     new BoundTextComponent(text)
 
-  def text(label: String)(body: TextComponent ?=> Cursor ?=> Unit = {})(using AbstractComponent, Cursor): TextComponent =
+  def text(
+      label: String
+  )(body: TextComponent ?=> Cursor ?=> Unit = {})(using AbstractComponent, Cursor): TextComponent =
     DslLayerTwo.child(new TextComponent(label)) {
       body
     }
 
 }
-
