@@ -31,6 +31,8 @@ object Main {
     val async = new AsyncRenderContext()
     val url   = s"${dom.window.location.pathname}${dom.window.location.search}"
 
+    Theme.syncFromDocument()
+
     val request =
       RequestContext(
         headers = RequestHeaders.empty
