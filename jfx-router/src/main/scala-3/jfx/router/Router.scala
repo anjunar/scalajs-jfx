@@ -16,15 +16,19 @@ import scala.util.{Failure, Success}
 
 class Router(
     routes: Seq[Route],
-    initialUrl: String
+    initialUrl: String,
+    config: RouterConfig = RouterConfig()
 )(using ec: ExecutionContext)
     extends AbstractCustomComponent {
+
+  private val initialState =
+    resolve(initialUrl, None)
 
   private var renderToken        = 0
   private var asyncCursorContext = Option.empty[jfx.core.async.AsyncRenderContext]
 
   private val stateProperty =
-    Property(resolve(initialUrl))
+    Property(initialState)
 
   private val componentProperty =
     Property[AbstractComponent](Router.emptyComponent())
@@ -67,11 +71,13 @@ class Router(
           RouteContext(
             path = state.path,
             url = state.url,
+            browserPath = state.browserPath,
             fullPath = routeMatch.fullPath,
             pathParams = routeMatch.params,
             queryParams = state.queryParams,
             state = state,
-            routeMatch = routeMatch
+            routeMatch = routeMatch,
+            locale = state.locale
           )
 
         try {
@@ -80,7 +86,7 @@ class Router(
           loaded.value match {
             case Some(scala.util.Success(component)) =>
               if (token == renderToken) {
-                componentProperty.set(new RoutedComponent(context, component))
+                componentProperty.set(new RoutedComponent(component))
               }
 
             case Some(scala.util.Failure(error)) =>
@@ -103,12 +109,12 @@ class Router(
         }
 
       case None =>
-        componentProperty.set(Router.notFoundComponent(state.path))
+        componentProperty.set(Router.notFoundComponent(state.browserPath))
     }
   }
 
   def navigate(path: String, replace: Boolean = false): Unit = {
-    val nextState = resolve(path)
+    val nextState = resolve(path, stateProperty.get.locale)
 
     if (Router.hasBrowserWindow) {
       if (replace) dom.window.history.replaceState(null, "", nextState.url)
@@ -130,17 +136,19 @@ class Router(
           RouteContext(
             path = state.path,
             url = state.url,
+            browserPath = state.browserPath,
             fullPath = routeMatch.fullPath,
             pathParams = routeMatch.params,
             queryParams = state.queryParams,
             state = state,
-            routeMatch = routeMatch
+            routeMatch = routeMatch,
+            locale = state.locale
           )
 
         loadRoute(token, context, routeMatch.route)
 
       case None =>
-        componentProperty.set(Router.notFoundComponent(state.path))
+        componentProperty.set(Router.notFoundComponent(state.browserPath))
     }
   }
 
@@ -151,7 +159,7 @@ class Router(
       loaded.value match {
         case Some(Success(component)) =>
           if (token == renderToken) {
-            componentProperty.set(new RoutedComponent(context, component))
+            componentProperty.set(new RoutedComponent(component))
           }
 
         case Some(Failure(error)) =>
@@ -167,7 +175,7 @@ class Router(
               if (token == renderToken) {
                 result match {
                   case Success(component) =>
-                    componentProperty.set(new RoutedComponent(context, component))
+                    componentProperty.set(new RoutedComponent(component))
 
                   case Failure(error) =>
                     componentProperty.set(Router.errorComponent(error))
@@ -187,51 +195,21 @@ class Router(
     }
   }
 
-  private def resolve(url: String): RouterState = {
-    val safeUrl =
-      Option(url).filter(_.nonEmpty).getOrElse("/")
-
-    val pathname =
-      safeUrl.takeWhile(_ != '?')
-
-    val search =
-      safeUrl.drop(pathname.length)
+  private def resolve(url: String, preferredLocale: Option[jfx.i18n.I18nLocale]): RouterState = {
+    val resolved =
+      RouterUrlResolver.resolve(url, config, preferredLocale)
 
     val matches =
-      RouteMatcher.resolve(routes, pathname)
+      RouteMatcher.resolve(routes, resolved.path)
 
     RouterState(
-      path = if (pathname.isEmpty) "/" else pathname,
+      path = resolved.path,
+      browserPath = resolved.browserPath,
       matches = matches,
-      queryParams = parseQueryParams(search),
-      search = search
+      queryParams = resolved.queryParams,
+      search = resolved.search,
+      locale = resolved.locale
     )
-  }
-
-  private def parseQueryParams(search: String): Map[String, String] = {
-    if (!search.startsWith("?")) {
-      Map.empty
-    } else {
-      search
-        .drop(1)
-        .split("&")
-        .iterator
-        .filter(_.nonEmpty)
-        .map { part =>
-          val index = part.indexOf("=")
-
-          val key =
-            if (index >= 0) part.take(index)
-            else part
-
-          val value =
-            if (index >= 0) part.drop(index + 1)
-            else ""
-
-          js.URIUtils.decodeURIComponent(key) -> js.URIUtils.decodeURIComponent(value)
-        }
-        .toMap
-    }
   }
 
   private def installPopStateListener(): Unit =
@@ -247,12 +225,10 @@ class Router(
     }
 
   private final class RoutedComponent(
-      context: RouteContext,
       child: AbstractComponent
   ) extends AbstractCustomComponent {
 
     override def compose(cursor: Cursor): Unit = {
-      Route.RouteContextValue.provide(context)(using this)
       Runtime.mount(child, cursor, Some(this))
     }
   }
@@ -265,14 +241,15 @@ object Router {
 
   def router(
       routes: Seq[Route],
-      initial: String = null
+      initial: String = null,
+      config: RouterConfig = RouterConfig()
   )(using parent: AbstractComponent, cursor: Cursor, ec: ExecutionContext): Router = {
     val startUrl =
       if (initial != null) initial
       else if (hasBrowserWindow) currentBrowserUrl()
       else "/"
 
-    DslLayerTwo.child(new Router(routes, startUrl)) {}
+    DslLayerTwo.child(new Router(routes, startUrl, config)) {}
   }
 
   def current(using component: AbstractComponent): Option[Router] =

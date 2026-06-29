@@ -17,6 +17,13 @@ object Main {
   def render(cursor: Cursor, request: RequestContext): AbstractComponent =
     Runtime.mount(new App(request), cursor)
 
+  def render(
+      cursor: Cursor,
+      request: RequestContext,
+      initialUrl: String
+  ): AbstractComponent =
+    Runtime.mount(new App(request, initialUrl), cursor)
+
   @JSExportTopLevel("boot")
   def boot(): Unit = {
     given ExecutionContext = ExecutionContext.global
@@ -32,7 +39,7 @@ object Main {
     val hydratingCursor =
       HydratingCursor.root(document.getElementById("root"), async)
 
-    render(hydratingCursor, request)
+    render(hydratingCursor, request, url)
 
     async.drain()
   }
@@ -47,7 +54,7 @@ object Main {
       )
 
     Runtime.renderToStringAsync { cursor =>
-      render(cursor, request)
+      render(cursor, request, path)
     }.toJSPromise
   }
 }
