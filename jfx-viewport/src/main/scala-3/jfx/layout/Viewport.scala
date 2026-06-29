@@ -1,30 +1,28 @@
 package jfx.layout
 
-import java.util.UUID
 import jfx.core.component.{AbstractComponent, Runtime}
 import jfx.core.dsl.DslLayerTwo.render
 import jfx.core.dsl.StyleDsl.*
 import jfx.core.layout.Div
 import jfx.core.layout.Div.div
 import jfx.core.render.Cursor
-import jfx.core.state.{ListProperty, Property}
+import jfx.core.state.{ListProperty, Property, ReadOnlyProperty}
 import jfx.core.statement.Foreach
+import jfx.core.text.TextValue
 
+import java.util.UUID
+import scala.compiletime.uninitialized
 import scala.scalajs.js.timers.setTimeout
 
 final class Viewport extends AbstractComponent {
   val tagName = "div"
 
-  private var contentHost: Div = _
-
-  private[layout] def contentSlot: Div = contentHost
+  private var contentHost: Div = uninitialized
 
   override def compose(cursor: Cursor): Unit = {
-    given AbstractComponent = this
-
-    addClass("jfx-viewport")
-
     render(this, cursor) {
+      addClass("jfx-viewport")
+
       contentHost = div {
         addClass("jfx-viewport__content")
 
@@ -64,16 +62,24 @@ object Viewport {
   private val windowStepPx          = 28.0
 
   final class NotificationConf(
-      val message: String,
       val kind: NotificationKind = NotificationKind.Info,
       val topPx: Double
   ) {
-    val id: String                 = UUID.randomUUID().toString
-    val visible: Property[Boolean] = Property(true)
+    val messageProperty: Property[String] = Property("")
+    val id: String                        = UUID.randomUUID().toString
+    val visible: Property[Boolean]        = Property(true)
+
+    def message: ReadOnlyProperty[String] =
+      messageProperty
+
+    def message_=(value: String): Unit =
+      messageProperty.set(Option(value).getOrElse(""))
+
+    def message_=(value: ReadOnlyProperty[String]): Unit =
+      value.observe(messageProperty.set)
   }
 
   final class WindowConf(
-      val title: String,
       val body: WindowBody,
       val widthPx: Int = 520,
       val heightPx: Int = 360,
@@ -84,7 +90,17 @@ object Viewport {
       val onClose: Option[Window => Unit] = None,
       val onClick: Option[Window => Unit] = None
   ) {
-    val id: String = UUID.randomUUID().toString
+    val titleProperty: Property[String] = Property("")
+    val id: String                      = UUID.randomUUID().toString
+
+    def title: ReadOnlyProperty[String] =
+      titleProperty
+
+    def title_=(value: String): Unit =
+      titleProperty.set(Option(value).getOrElse(""))
+
+    def title_=(value: ReadOnlyProperty[String]): Unit =
+      value.observe(titleProperty.set)
   }
 
   object WindowConf {
@@ -94,42 +110,44 @@ object Viewport {
         heightPx: Int = 360,
         onClose: Option[Window => Unit] = None,
         onClick: Option[Window => Unit] = None
-    )(body: WindowBody): WindowConf =
-      new WindowConf(
-        title = title,
+    )(body: WindowBody): WindowConf = {
+      val conf = new WindowConf(
         body = body,
         widthPx = widthPx,
         heightPx = heightPx,
         onClose = onClose,
         onClick = onClick
       )
+      conf.title = title
+      conf
+    }
   }
 
   def viewport(
       body: AbstractComponent ?=> Viewport ?=> Cursor ?=> Unit = {}
-  )(using AbstractComponent, Cursor): Viewport = {
-    val mounted     = Runtime.mount(new Viewport(), summon[Cursor], Some(summon[AbstractComponent]))
-    val childCursor = summon[Cursor].sub(mounted.contentSlot.host)
+  )(using parent: AbstractComponent, cursor: Cursor): Viewport = {
+    val mounted     = Runtime.mount(new Viewport(), cursor, Some(parent))
+    val childCursor = cursor.sub(mounted.contentHost.host)
 
-    render(mounted.contentSlot, childCursor) {
-      given Viewport = mounted
-      body(using mounted.contentSlot)(using mounted)(using childCursor)
+    render(mounted.contentHost, childCursor) {
+      body(using mounted.contentHost)(using mounted)(using childCursor)
     }
 
     mounted
   }
 
-  def notify(
-      message: String,
+  private def notifyProperty(
+      message: ReadOnlyProperty[String],
       kind: NotificationKind = NotificationKind.Info,
       durationMs: Int = 3000
   ): NotificationConf = {
     val conf =
       new NotificationConf(
-        message = message,
         kind = kind,
         topPx = 64.0 + notifications.length * 72.0
       )
+
+    conf.message = message
 
     notifications += conf
 
@@ -143,6 +161,20 @@ object Viewport {
 
     conf
   }
+
+  def notify(
+      message: String,
+      kind: NotificationKind = NotificationKind.Info,
+      durationMs: Int = 3000
+  ): NotificationConf =
+    notifyProperty(Property(Option(message).getOrElse("")), kind, durationMs)
+
+  def notify[T](
+      message: T,
+      kind: NotificationKind,
+      durationMs: Int
+  )(using textValue: TextValue[T], component: AbstractComponent): NotificationConf =
+    notifyProperty(textValue.asReadOnlyProperty(message), kind, durationMs)
 
   def closeNotification(conf: NotificationConf): Unit = {
     conf.visible.set(false)
@@ -167,6 +199,16 @@ object Viewport {
       heightPx: Int = 360
   )(body: WindowBody): WindowConf =
     addWindow(WindowConf(title, widthPx, heightPx)(body))
+
+  def addWindow[T](
+      title: T,
+      widthPx: Int,
+      heightPx: Int
+  )(body: WindowBody)(using textValue: TextValue[T], component: AbstractComponent): WindowConf = {
+    val conf = new WindowConf(body, widthPx, heightPx)
+    conf.title_=(textValue.asReadOnlyProperty(title))
+    addWindow(conf)
+  }
 
   def closeWindow(conf: WindowConf): Unit = {
     conf.visible.set(false)

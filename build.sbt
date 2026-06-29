@@ -96,16 +96,6 @@ lazy val jfxViewport = Project(id = "scalajs-jfx-viewport", base = file("jfx-vie
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
 
-lazy val jfxI18n = Project(id = "scalajs-jfx-i18n", base = file("jfx-i18n"))
-  .enablePlugins(ScalaJSPlugin)
-  .dependsOn(jfxCore)
-  .settings(
-    name := "scalajs-jfx-i18n",
-    moduleName := "scalajs-jfx-i18n"
-  )
-  .settings(commonLibrarySettings)
-  .settings(commonJsSettings)
-
 lazy val jfxJson = Project(id = "scalajs-jfx-json", base = file("jfx-json"))
   .enablePlugins(ScalaJSPlugin)
   .dependsOn(jfxCore)
@@ -174,7 +164,6 @@ lazy val app = Project(id = "scalajs-jfx-demo", base = file("application"))
     jfxCore,
     jfxRouter,
     jfxViewport,
-    jfxI18n,
     jfxJson,
     jfxControls,
     jfxForms,
@@ -193,7 +182,6 @@ lazy val root = Project(id = "scalajs-jfx-root", base = file("."))
     jfxCore,
     jfxRouter,
     jfxViewport,
-    jfxI18n,
     jfxJson,
     jfxControls,
     jfxForms,

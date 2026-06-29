@@ -1,13 +1,29 @@
 package jfx.forms
 
-trait Placeholder {
+import jfx.core.component.AbstractComponent
+import jfx.core.state.ReadOnlyProperty
+import jfx.core.text.TextValue
 
-  def placeholder(value: String): Unit
+trait Placeholder { self: AbstractComponent =>
+
+  protected def setPlaceholder(value: String): Unit
+
+  final def placeholder(value: String): Unit =
+    setPlaceholder(value)
+
+  final def placeholder(value: ReadOnlyProperty[String]): Unit =
+    addDisposable(value.observe(setPlaceholder))
 
 }
 
 object Placeholder {
-  def placeholder(value: String)(using input: Placeholder): Unit =
-    input.placeholder(value)
+  def placeholder[T](value: T)(using
+      input: Placeholder,
+      textValue: TextValue[T],
+      component: AbstractComponent
+  ): Unit = {
+    given AbstractComponent = input.asInstanceOf[AbstractComponent]
+    input.placeholder(textValue.asReadOnlyProperty(value))
+  }
 
 }

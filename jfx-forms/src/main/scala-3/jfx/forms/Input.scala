@@ -19,7 +19,7 @@ class Input(val name: String) extends AbstractComponent, Control, Placeholder {
     }
   }
 
-  def placeholder(value: String): Unit =
+  override protected def setPlaceholder(value: String): Unit =
     host.setAttribute("placeholder", value)
 
   override def toString = s"Input($name)"
