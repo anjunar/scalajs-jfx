@@ -1,13 +1,16 @@
 package app
 
 import app.Theme.Mode
-import app.components.Dsl.{classIf, classes, onClick}
 import app.components.Anchor.*
 import app.components.Image.*
 import app.components.Layouts.{hbox, vbox}
+import app.components.RouterLink.*
+import app.components.RouterLinkHandler
 import app.pages.*
 import jfx.core.component.AbstractComponent
+import jfx.core.dsl.ClassDsl.{classIf, classes}
 import jfx.core.dsl.DslLayerTwo.render
+import jfx.core.dsl.EventDsl.onClick
 import jfx.core.dsl.StyleDsl.*
 import jfx.core.layout.Button.button
 import jfx.core.layout.Div.div
@@ -22,9 +25,10 @@ import jfx.layout.Viewport.viewport
 import jfx.router.Route
 import jfx.router.RouteContext
 import jfx.router.Router
-import jfx.router.Router.{navigate, replace, router}
+import jfx.router.Router.router
 import jfx.router.RouterConfig
 import org.scalajs.dom
+import org.scalajs.dom.MouseEvent
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -52,15 +56,18 @@ class App(
   private val routePathProperty =
     Property(extractRoutePath(initialLocation))
 
+  private var activeRouter: Option[Router] =
+    None
+
   private val navigationEntries =
     Seq(
-      NavEntry(i18n"Foundation", i18n"Discover", i18n"Start", "/")(_ == "/"),
-      NavEntry(i18n"Foundation", i18n"Router", i18n"Paths, locale and loaders", "/router")(_.startsWith("/router")),
-      NavEntry(i18n"Foundation", i18n"i18n", i18n"Toolbar locale meets URL locale", "/i18n")(_.startsWith("/i18n")),
-      NavEntry(i18n"Runtime", i18n"Rendering", i18n"SSR, hydration and shell stability", "/rendering")(_.startsWith("/rendering")),
-      NavEntry(i18n"Runtime", i18n"State", i18n"Reactive properties in plain sight", "/state")(_.startsWith("/state")),
-      NavEntry(i18n"Composition", i18n"Forms", i18n"Control registration and context", "/forms")(_.startsWith("/forms")),
-      NavEntry(i18n"Composition", i18n"Viewport", i18n"Notifications and windows", "/viewport")(_.startsWith("/viewport"))
+      NavEntry(i18n"Foundation", i18n"Discover", i18n"Start", "/"),
+      NavEntry(i18n"Foundation", i18n"Router", i18n"Paths, locale and loaders", "/router"),
+      NavEntry(i18n"Foundation", i18n"i18n", i18n"Toolbar locale meets URL locale", "/i18n"),
+      NavEntry(i18n"Runtime", i18n"Rendering", i18n"SSR, hydration and shell stability", "/rendering"),
+      NavEntry(i18n"Runtime", i18n"State", i18n"Reactive properties in plain sight", "/state"),
+      NavEntry(i18n"Composition", i18n"Forms", i18n"Control registration and context", "/forms"),
+      NavEntry(i18n"Composition", i18n"Viewport", i18n"Notifications and windows", "/viewport")
     )
 
   private val toolbarTitle =
@@ -120,6 +127,13 @@ class App(
   override def compose(cursor: Cursor): Unit = {
     RequestContext.provide(request)(using this)
     I18nRuntime.provide(DemoI18n.runtime(localeProperty))(using this)
+    RouterLinkHandler.provide(
+      RouterLinkHandler(
+        navigate = path => requireRouter.navigate(path),
+        currentPath = routePathProperty,
+        hrefForAppPath = path => localizedHref(path, localeProperty.get)
+      )
+    )(using this)
     installBrowserLocationSync()
 
     render(this, cursor) {
@@ -197,7 +211,7 @@ class App(
           }
         }
 
-        anchor("Scala.js") {
+        routerLink() {
           classes = Seq("app-toolbar__scala-link")
           href = "https://www.scala-js.org/"
           target = "_blank"
@@ -210,7 +224,7 @@ class App(
           }
         }
 
-        anchor("GitHub") {
+        routerLink("GitHub") {
           classes = Seq("app-toolbar__github")
           href = "https://github.com/anjunar/scalajs-jfx"
           target = "_blank"
@@ -221,7 +235,10 @@ class App(
           classes = Seq("app-toolbar__chooser", "app-toolbar__language")
           button(DemoI18n.localeLabel(localeProperty)) {
             classes = Seq("app-toolbar__choice")
-            onClick { _ => switchLocale() }
+            onClick { event =>
+              println(event.asInstanceOf[MouseEvent].target)  
+              switchLocale() 
+            }
           }
         }
 
@@ -255,7 +272,9 @@ class App(
 
         div {
           classes = Seq("app-content-viewport")
-          router(routes, initialLocation, routerConfig)
+          val appRouter = router(routes, initialLocation, routerConfig)
+          activeRouter = Some(appRouter)
+          bindRouterState(appRouter)
         }
       }
 
@@ -276,16 +295,10 @@ class App(
     }
 
   private def navLink(entry: NavEntry)(using Drawer, AbstractComponent, Cursor): Unit = {
-    anchor(entry.title(localeProperty.get)) {
+    routerLink(entry.path) {
       classes = Seq("app-nav-link")
-      href = localizedHref(entry.path, localeProperty.get)
-      classIf("active", routePathProperty.map(entry.matches))
 
       onClick { event =>
-        event.preventDefault()
-        routePathProperty.set(entry.path)
-        navigate(entry.path)
-
         if (hasBrowserWindow && dom.window.innerWidth <= 720) {
           open = false
         }
@@ -310,9 +323,24 @@ class App(
         case _               => DemoI18n.German
       }
 
-    localeProperty.set(nextLocale)
-    replace(localizedRouterPath(routePathProperty.get, nextLocale))(using this)
+    requireRouter.navigate(
+      localizedRouterPath(routePathProperty.get, nextLocale),
+      replace = true
+    )
   }
+
+  private def requireRouter: Router =
+    activeRouter.getOrElse {
+      throw new IllegalStateException("App-Router wurde noch nicht gemountet.")
+    }
+
+  private def bindRouterState(router: Router): Unit =
+    addDisposable {
+      router.state.observe { state =>
+        routePathProperty.set(state.path)
+        localeProperty.set(state.locale.getOrElse(DemoI18n.English))
+      }
+    }
 
   private def installBrowserLocationSync(): Unit =
     if (hasBrowserWindow) {
@@ -394,7 +422,11 @@ final case class NavEntry(
     titleMessage: RuntimeMessage,
     copyMessage: RuntimeMessage,
     path: String
-)(val matches: String => Boolean) {
+) {
+
+  def matches(currentPath: String): Boolean =
+    if (path == "/") currentPath == "/"
+    else currentPath == path || currentPath.startsWith(s"$path/")
 
   def zone(locale: I18nLocale): String =
     DemoI18n.resolve(zoneMessage, locale)

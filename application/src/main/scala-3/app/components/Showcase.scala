@@ -1,8 +1,8 @@
 package app.components
 
-import app.components.Dsl.classes
 import app.components.Layouts.vbox
 import jfx.core.component.AbstractComponent
+import jfx.core.dsl.ClassDsl.classes
 import jfx.core.render.Cursor
 import jfx.core.state.{Property, ReadOnlyProperty}
 import jfx.core.layout.Div.div

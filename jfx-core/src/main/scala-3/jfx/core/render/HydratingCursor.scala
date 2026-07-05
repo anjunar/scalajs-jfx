@@ -32,13 +32,17 @@ final class HydratingCursor private (
         new DomHostElement(element)
 
       case element: dom.Element =>
-        throw new IllegalStateException(
-          s"Hydration erwartet <$tag>, gefunden wurde <${element.tagName.toLowerCase}>."
+        throw hydrationFault(
+          "Element-Tag stimmt nicht.",
+          expected = s"<$tag>",
+          found = Some(element)
         )
 
       case other =>
-        throw new IllegalStateException(
-          s"Hydration erwartet <$tag>, gefunden wurde ${other.nodeName}."
+        throw hydrationFault(
+          "DOM-Node-Typ stimmt nicht.",
+          expected = s"<$tag>",
+          found = Some(other)
         )
     }
   }
@@ -57,8 +61,10 @@ final class HydratingCursor private (
       }
     }
 
-    throw new IllegalStateException(
-      s"Hydration erwartet im <head> <$tag>, konnte aber kein passendes Element finden."
+    throw hydrationFault(
+      "Im <head> wurde kein passendes Element gefunden.",
+      expected = s"<$tag>",
+      found = nextNode
     )
   }
 
@@ -67,8 +73,10 @@ final class HydratingCursor private (
     node match {
       case text: dom.Text => new DomTextNode(text)
       case other =>
-        throw new IllegalStateException(
-          s"Hydration erwartet TextNode, gefunden wurde ${other.nodeName}."
+        throw hydrationFault(
+          "DOM-Node-Typ stimmt nicht.",
+          expected = "TextNode",
+          found = Some(other)
         )
     }
   }
@@ -78,8 +86,10 @@ final class HydratingCursor private (
     node match {
       case comment: dom.Comment => new DomCommentNode(comment)
       case other =>
-        throw new IllegalStateException(
-          s"Hydration erwartet CommentNode, gefunden wurde ${other.nodeName}."
+        throw hydrationFault(
+          "DOM-Node-Typ stimmt nicht.",
+          expected = "CommentNode",
+          found = Some(other)
         )
     }
   }
@@ -131,8 +141,10 @@ final class HydratingCursor private (
   private def take(): dom.Node =
     nextNode match {
       case Some(node) if stopBefore.contains(node) =>
-        throw new IllegalStateException(
-          "Hydration hat das Ende der aktuellen virtuellen Range erreicht."
+        throw hydrationFault(
+          "Das Ende der aktuellen virtuellen Range wurde erreicht.",
+          expected = "weitere DOM-Node vor dem Range-End-Anker",
+          found = Some(node)
         )
 
       case Some(node) =>
@@ -140,8 +152,10 @@ final class HydratingCursor private (
         node
 
       case None =>
-        throw new IllegalStateException(
-          "Hydration erwartet eine weitere DOM-Node, aber es gibt keine mehr."
+        throw hydrationFault(
+          "Es gibt keine weitere DOM-Node.",
+          expected = "weitere DOM-Node",
+          found = None
         )
     }
 
@@ -152,13 +166,17 @@ final class HydratingCursor private (
         comment
 
       case comment: dom.Comment =>
-        throw new IllegalStateException(
-          s"Hydration erwartet Kommentar '$expected', gefunden wurde '${comment.data}'."
+        throw hydrationFault(
+          "Kommentar-Anker stimmt nicht.",
+          expected = s"<!--$expected-->",
+          found = Some(comment)
         )
 
       case other =>
-        throw new IllegalStateException(
-          s"Hydration erwartet Kommentar '$expected', gefunden wurde ${other.nodeName}."
+        throw hydrationFault(
+          "DOM-Node-Typ stimmt nicht.",
+          expected = s"<!--$expected-->",
+          found = Some(other)
         )
     }
   }
@@ -185,7 +203,129 @@ final class HydratingCursor private (
       current = current.nextSibling
     }
 
-    throw new IllegalStateException(s"Hydration konnte den End-Anker '$expected' nicht finden.")
+    throw hydrationFault(
+      "End-Anker wurde nicht gefunden.",
+      expected = s"<!--$expected-->",
+      found = Option(start.nextSibling)
+    )
+  }
+
+  private def hydrationFault(
+      reason: String,
+      expected: String,
+      found: Option[dom.Node]
+  ): IllegalStateException =
+    new IllegalStateException(
+      s"""Hydration fault: $reason
+         |Erwartet: $expected
+         |Gefunden: ${found.map(describeNode).getOrElse("<keine weitere DOM-Node>")}
+         |Parent: ${describePath(parent)}
+         |Umgebung:
+         |${describeContext(found)}
+         |
+         |Hinweis: SSR-HTML und Client-Komponentenbaum unterscheiden sich an dieser Position.""".stripMargin
+    )
+
+  private def describeContext(focus: Option[dom.Node]): String = {
+    val contextParent = focus.flatMap(node => Option(node.parentNode)).getOrElse(parent)
+    val children      = contextParent.childNodes
+    val focusIndex    = focus.map(indexOfChild(contextParent, _)).getOrElse(-1)
+    val start =
+      if (focusIndex >= 0) math.max(0, focusIndex - 2)
+      else math.max(0, children.length - 5)
+    val end =
+      if (focusIndex >= 0) math.min(children.length, focusIndex + 3)
+      else children.length
+
+    if (children.length == 0)
+      "  <keine Child-Nodes>"
+    else {
+      val lines = new StringBuilder
+      var index = start
+
+      while (index < end) {
+        val node   = children.item(index)
+        val marker = if (focus.contains(node)) ">" else " "
+        lines.append(s"  $marker [$index] ${describeNode(node)}")
+        if (index < end - 1) lines.append('\n')
+        index += 1
+      }
+
+      if (lines.isEmpty) "  <keine Child-Nodes>" else lines.toString()
+    }
+  }
+
+  private def indexOfChild(parent: dom.Node, child: dom.Node): Int = {
+    val children = parent.childNodes
+    var index    = 0
+
+    while (index < children.length) {
+      if (children.item(index) == child) return index
+      index += 1
+    }
+
+    -1
+  }
+
+  private def describePath(node: dom.Node): String = {
+    val parts   = scala.collection.mutable.ArrayBuffer.empty[String]
+    var current = Option(node)
+
+    while (current.nonEmpty && current.get.nodeType != dom.Node.DOCUMENT_NODE) {
+      parts.insert(0, describePathPart(current.get))
+      current = Option(current.get.parentNode)
+    }
+
+    if (parts.isEmpty) describeNode(node) else parts.mkString(" > ")
+  }
+
+  private def describePathPart(node: dom.Node): String =
+    node match {
+      case element: dom.Element =>
+        val idPart =
+          Option(element.getAttribute("id")).filter(_.nonEmpty).map(id => s"#$id").getOrElse("")
+        val classPart =
+          Option(element.getAttribute("class"))
+            .map(_.trim)
+            .filter(_.nonEmpty)
+            .map(_.split("\\s+").take(3).mkString(".", ".", ""))
+            .getOrElse("")
+
+        s"${element.tagName.toLowerCase}$idPart$classPart"
+
+      case _ =>
+        node.nodeName
+    }
+
+  private def describeNode(node: dom.Node): String =
+    node match {
+      case element: dom.Element =>
+        val tag       = element.tagName.toLowerCase
+        val idPart    = attributePart(element, "id")
+        val classPart = attributePart(element, "class")
+        s"<$tag$idPart$classPart>"
+
+      case text: dom.Text =>
+        s"""TextNode("${clip(text.data)}")"""
+
+      case comment: dom.Comment =>
+        s"<!--${clip(comment.data)}-->"
+
+      case _ =>
+        node.nodeName
+    }
+
+  private def attributePart(element: dom.Element, name: String): String =
+    Option(element.getAttribute(name))
+      .map(_.trim)
+      .filter(_.nonEmpty)
+      .map(value => s""" $name="${clip(value)}"""")
+      .getOrElse("")
+
+  private def clip(value: String, maxLength: Int = 120): String = {
+    val normalized = value.replaceAll("\\s+", " ").trim
+    if (normalized.length <= maxLength) normalized
+    else normalized.take(maxLength - 1) + "…"
   }
 }
 

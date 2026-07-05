@@ -84,6 +84,8 @@ abstract class AbstractComponent extends DslLayerOne with ClassDsl with EventDsl
       syncClasses()
     }
   }
+  
+  def getClasses : Seq[String] = userClasses.toSeq
 
   def setClasses(names: Seq[String]): Unit = {
     userClasses.clear()
@@ -108,7 +110,7 @@ abstract class AbstractComponent extends DslLayerOne with ClassDsl with EventDsl
     _parent = None
   }
 
-  def classIf(name: String, condition: ReadOnlyProperty[Boolean]): Unit =
+  def classCondition(name: String, condition: ReadOnlyProperty[Boolean]): Unit =
     addDisposable {
       condition.observe { enabled =>
         if (enabled) addClass(name)
@@ -116,16 +118,16 @@ abstract class AbstractComponent extends DslLayerOne with ClassDsl with EventDsl
       }
     }
 
-  def on(eventName: String)(handler: UiEvent => Unit): Unit =
+  def onHandler(eventName: String)(handler: UiEvent => Unit): Unit =
     addDisposable(host.on(eventName)(handler))
 
-  def onClick(handler: UiEvent => Unit): Unit =
-    on("click")(handler)
+  def onClickHandler(handler: UiEvent => Unit): Unit =
+    onHandler("click")(handler)
 
-  def onDoubleClick(handler: UiEvent => Unit): Unit =
-    on("dblclick")(handler)
+  def onDoubleClickHandler(handler: UiEvent => Unit): Unit =
+    onHandler("dblclick")(handler)
 
-  def onWindowKeyDown(handler: dom.KeyboardEvent => Unit): Unit =
+  def onWindowKeyDownHandler(handler: dom.KeyboardEvent => Unit): Unit =
     browserWindow.foreach { window =>
       val listener: js.Function1[dom.KeyboardEvent, Any] = event => handler(event)
       window.addEventListener("keydown", listener)

@@ -1,12 +1,13 @@
 package app.pages
 
 import app.DemoI18n
-import app.components.Dsl.{classIf, classes, onClick}
 import app.components.Layouts.vbox
 import app.components.Showcase
 import jfx.core.component.AbstractComponent
+import jfx.core.dsl.ClassDsl.{classIf, classes}
+import jfx.core.dsl.EventDsl.onClick
 import jfx.core.state.{Property, ReadOnlyProperty}
-import jfx.core.layout.Button.button
+import jfx.core.layout.Button.{button, buttonType}
 import jfx.core.layout.Div.div
 import jfx.core.layout.TextComponent.text
 import jfx.core.render.Cursor
@@ -494,6 +495,7 @@ object ViewportPage {
 
           button(i18n"Notify") {
             classes = Seq("calm-action", "calm-action--primary")
+            buttonType("button")
             onClick { _ =>
               Viewport.notify(
                 DemoI18n.resolve(i18n"Viewport notification from the rebuilt demo.", locale.get),

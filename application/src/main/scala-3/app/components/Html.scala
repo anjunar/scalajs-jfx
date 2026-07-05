@@ -1,17 +1,15 @@
 package app.components
 
-import jfx.core.component.{AbstractComponent, Runtime}
+import jfx.core.component.AbstractComponent
+import jfx.core.di.Context
 import jfx.core.dsl.DslLayerTwo
 import jfx.core.render.Cursor
-import jfx.core.state.{Property, ReadOnlyProperty}
+import jfx.core.state.ReadOnlyProperty
 import jfx.core.layout.TextComponent
 import jfx.core.text.TextValue
 
 final class Anchor extends AbstractComponent {
   val tagName = "a"
-
-  private val labelProperty =
-    Property("")
 
   def href: String =
     host.attribute("href").getOrElse("#")
@@ -30,29 +28,27 @@ final class Anchor extends AbstractComponent {
 
   def rel_=(value: String): Unit =
     host.setAttribute("rel", value)
-
-  def label(value: String): Unit =
-    labelProperty.set(Option(value).getOrElse(""))
-
-  def label(value: ReadOnlyProperty[String]): Unit =
-    addDisposable(value.observe(labelProperty.set))
-
-  override def compose(cursor: Cursor): Unit =
-    Runtime.mount(TextComponent.bind(labelProperty), cursor, Some(this))
 }
 
 object Anchor {
+  def anchor()(
+      body: Anchor ?=> Cursor ?=> Unit
+  )(using AbstractComponent, Cursor): Anchor =
+    DslLayerTwo.child(new Anchor()) {
+      body
+    }
+
   def anchor[T](
       label: T
   )(body: Anchor ?=> Cursor ?=> Unit = {})(using
-      AbstractComponent,
-      Cursor,
-      TextValue[T]
+      parent: AbstractComponent,
+      cursor: Cursor,
+      textValue: TextValue[T]
   ): Anchor = {
     val link = new Anchor()
 
     DslLayerTwo.child(link) {
-      label_=(label)(using link, summon[TextValue[T]], summon[AbstractComponent])
+      TextComponent.text(label) {}
       body
     }
   }
@@ -75,18 +71,101 @@ object Anchor {
   def rel(using anchor: Anchor): String =
     anchor.rel
 
-  def label_=(value: String)(using anchor: Anchor): Unit =
-    anchor.label(value)
+}
 
-  def label_=(value: ReadOnlyProperty[String])(using anchor: Anchor): Unit =
-    anchor.label(value)
+final case class RouterLinkHandler(
+    navigate: String => Unit,
+    currentPath: ReadOnlyProperty[String],
+    hrefForAppPath: String => String
+)
 
-  def label_=[T](value: T)(using
-      anchor: Anchor,
-      textValue: TextValue[T],
-      component: AbstractComponent
-  ): Unit =
-    anchor.label(textValue.asReadOnlyProperty(value))
+object RouterLinkHandler {
+  private val RouterLinkContext =
+    Context.create[RouterLinkHandler]("AppRouterLink")
+
+  def provide(handler: RouterLinkHandler)(using component: AbstractComponent): Unit =
+    RouterLinkContext.provide(handler)
+
+  def inject(using component: AbstractComponent): Option[RouterLinkHandler] =
+    RouterLinkContext.inject
+}
+
+object RouterLink {
+
+  def routerLink()(
+      body: Anchor ?=> Cursor ?=> Unit
+  )(using AbstractComponent, Cursor): Anchor = {
+    val link = new Anchor()
+
+    DslLayerTwo.child(link) {
+      body
+      installNavigation(link, None)
+    }
+  }
+
+  def routerLink(
+      to: String,
+      activeClass: String = "active"
+  )(
+      body: Anchor ?=> Cursor ?=> Unit
+  )(using AbstractComponent, Cursor): Anchor = {
+    val link = new Anchor()
+    val activeMatcher = defaultActiveMatcher(to)
+
+    DslLayerTwo.child(link) {
+      RouterLinkHandler.inject(using link) match {
+        case Some(handler) if isAppPath(to) =>
+          link.href = handler.hrefForAppPath(to)
+          link.classCondition(activeClass, handler.currentPath.map(activeMatcher))
+          body
+          installNavigation(link, Some(handler.navigate))
+
+        case _ =>
+          link.href = to
+          body
+          installNavigation(link, None)
+      }
+    }
+  }
+
+  private def installNavigation(link: Anchor, navigate: Option[String => Unit]): Unit =
+    navigate.foreach { runNavigate =>
+      link.onClickHandler { event =>
+        val destination = link.href
+
+        if (isInternalDestination(destination) && link.target.isEmpty) {
+          event.preventDefault()
+          runNavigate(destination)
+        }
+      }
+    }
+
+  private def isInternalDestination(destination: String): Boolean =
+    destination.startsWith("/")
+
+  private def isAppPath(destination: String): Boolean =
+    destination.startsWith("/") && !destination.startsWith("//")
+
+  private def defaultActiveMatcher(to: String): String => Boolean = {
+    val normalized = normalizeInternalPath(to)
+
+    currentPath =>
+      if (normalized == "/") currentPath == "/"
+      else currentPath == normalized || currentPath.startsWith(s"$normalized/")
+  }
+
+  private def normalizeInternalPath(path: String): String = {
+    val pathname = Option(path).getOrElse("/").takeWhile(ch => ch != '?' && ch != '#')
+    val segments = pathname.split("/").filter(_.nonEmpty).toVector
+    val withoutLocale =
+      segments.headOption match {
+        case Some("de" | "en") => segments.drop(1)
+        case _                 => segments
+      }
+
+    if (withoutLocale.isEmpty) "/"
+    else s"/${withoutLocale.mkString("/")}"
+  }
 }
 
 final class Image extends AbstractComponent {

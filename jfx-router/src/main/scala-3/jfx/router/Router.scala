@@ -6,7 +6,7 @@ import jfx.core.dsl.DslLayerTwo
 import jfx.core.layout.Div.div
 import jfx.core.layout.TextComponent.text
 import jfx.core.render.Cursor
-import jfx.core.state.Property
+import jfx.core.state.{Property, ReadOnlyProperty}
 import jfx.core.statement.DynamicComponentRenderer.dynamic
 import org.scalajs.dom
 
@@ -29,6 +29,9 @@ class Router(
 
   private val stateProperty =
     Property(initialState)
+
+  def state: ReadOnlyProperty[RouterState] =
+    stateProperty
 
   private val componentProperty =
     Property[AbstractComponent](Router.emptyComponent())

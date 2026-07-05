@@ -1,7 +1,9 @@
 package jfx.layout
 
 import jfx.core.component.AbstractComponent
+import jfx.core.dsl.ClassDsl.classIf
 import jfx.core.dsl.DslLayerTwo.{child, render}
+import jfx.core.dsl.EventDsl.onClick
 import jfx.core.dsl.StyleDsl.*
 import jfx.core.layout.TextComponent.text
 import jfx.core.render.Cursor

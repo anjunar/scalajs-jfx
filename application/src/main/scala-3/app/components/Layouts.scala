@@ -1,7 +1,7 @@
 package app.components
 
-import app.components.Dsl.addClass
 import jfx.core.component.AbstractComponent
+import jfx.core.dsl.ClassDsl.addClass
 import jfx.core.layout.Div.div
 import jfx.core.render.Cursor
 
