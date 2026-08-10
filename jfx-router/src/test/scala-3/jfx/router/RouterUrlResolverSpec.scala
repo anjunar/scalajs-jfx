@@ -1,6 +1,7 @@
 package jfx.router
 
-import jfx.i18n.I18nLocale
+import jfx.core.state.Property
+import jfx.i18n.{I18nLocale, I18nResolver, I18nRuntime, MessageCatalog}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -8,13 +9,20 @@ class RouterUrlResolverSpec extends AnyFlatSpec with Matchers {
 
   private val config =
     RouterConfig(
-      basePath = "/scalajs-jfx",
-      supportedLocales = Seq(I18nLocale("de"), I18nLocale.En)
+      basePath = "/scalajs-jfx"
+    )
+
+  private val i18n =
+    I18nRuntime(
+      Property(I18nLocale.En),
+      I18nResolver(MessageCatalog.empty),
+      supportedLocales = Seq(I18nLocale("de"), I18nLocale.En),
+      defaultLocale = I18nLocale.En
     )
 
   "RouterUrlResolver" should "strip base path and locale before route matching" in {
     val resolved =
-      RouterUrlResolver.resolve("/scalajs-jfx/de/about?tab=details", config)
+      RouterUrlResolver.resolve("/scalajs-jfx/de/about?tab=details", config, Some(i18n))
 
     resolved.path shouldBe "/about"
     resolved.browserPath shouldBe "/scalajs-jfx/de/about"
@@ -25,7 +33,7 @@ class RouterUrlResolverSpec extends AnyFlatSpec with Matchers {
 
   it should "preserve the current locale for locale-neutral navigations" in {
     val resolved =
-      RouterUrlResolver.resolve("/about", config, preferredLocale = Some(I18nLocale("de")))
+      RouterUrlResolver.resolve("/about", config, Some(i18n), preferredLocale = Some(I18nLocale("de")))
 
     resolved.path shouldBe "/about"
     resolved.browserPath shouldBe "/scalajs-jfx/de/about"
@@ -34,7 +42,7 @@ class RouterUrlResolverSpec extends AnyFlatSpec with Matchers {
 
   it should "leave non-localized routes untouched when no locale is active" in {
     val resolved =
-      RouterUrlResolver.resolve("/scalajs-jfx/about", config)
+      RouterUrlResolver.resolve("/scalajs-jfx/about", config, None)
 
     resolved.path shouldBe "/about"
     resolved.browserPath shouldBe "/scalajs-jfx/about"

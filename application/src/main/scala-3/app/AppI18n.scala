@@ -3,7 +3,7 @@ package app
 import jfx.core.state.ReadOnlyProperty
 import jfx.i18n.*
 
-object DemoI18n {
+object AppI18n {
   val German: I18nLocale  = I18nLocale("de")
   val English: I18nLocale = I18nLocale.En
 
@@ -12,12 +12,6 @@ object DemoI18n {
       case German => "DE"
       case _      => "EN"
     }
-
-  def runtime(locale: ReadOnlyProperty[I18nLocale]): I18nRuntime =
-    I18nRuntime(locale, resolver)
-
-  def text(message: RuntimeMessage, locale: ReadOnlyProperty[I18nLocale]): ReadOnlyProperty[String] =
-    resolver.resolve(message, locale)
 
   def resolve(message: RuntimeMessage, locale: I18nLocale): String =
     resolver.resolve(message, locale)
@@ -112,11 +106,18 @@ object DemoI18n {
       de(i18n"This content is mounted into the shared viewport layer, not into the route subtree.", "Dieser Inhalt wird in die geteilte Viewport-Schicht gemountet, nicht in den Routen-Subtree.")
     )
 
-  private val resolver =
-    I18nResolver(catalog)
-
   private def de(message: RuntimeMessage, translation: String): CatalogEntry =
     I18n.entry(message.key).translations(
       German -> translation
+    )
+
+  private val resolver =
+    I18nResolver(catalog)
+
+  val config: I18nConfig =
+    I18nConfig(
+      resolver = resolver,
+      supportedLocales = Seq(German, English),
+      defaultLocale = English
     )
 }

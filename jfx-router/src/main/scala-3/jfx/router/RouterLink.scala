@@ -1,77 +1,11 @@
-package app.components
+package jfx.router
 
 import jfx.core.component.AbstractComponent
 import jfx.core.di.Context
 import jfx.core.dsl.DslLayerTwo
+import jfx.core.layout.Anchor
 import jfx.core.render.Cursor
 import jfx.core.state.ReadOnlyProperty
-import jfx.core.layout.TextComponent
-import jfx.core.text.TextValue
-
-final class Anchor extends AbstractComponent {
-  val tagName = "a"
-
-  def href: String =
-    host.attribute("href").getOrElse("#")
-
-  def href_=(value: String): Unit =
-    host.setAttribute("href", Option(value).getOrElse("#"))
-
-  def target: String =
-    host.attribute("target").getOrElse("")
-
-  def target_=(value: String): Unit =
-    host.setAttribute("target", value)
-
-  def rel: String =
-    host.attribute("rel").getOrElse("")
-
-  def rel_=(value: String): Unit =
-    host.setAttribute("rel", value)
-}
-
-object Anchor {
-  def anchor()(
-      body: Anchor ?=> Cursor ?=> Unit
-  )(using AbstractComponent, Cursor): Anchor =
-    DslLayerTwo.child(new Anchor()) {
-      body
-    }
-
-  def anchor[T](
-      label: T
-  )(body: Anchor ?=> Cursor ?=> Unit = {})(using
-      parent: AbstractComponent,
-      cursor: Cursor,
-      textValue: TextValue[T]
-  ): Anchor = {
-    val link = new Anchor()
-
-    DslLayerTwo.child(link) {
-      TextComponent.text(label) {}
-      body
-    }
-  }
-
-  def href_=(value: String)(using anchor: Anchor): Unit =
-    anchor.href_=(value)
-
-  def href(using anchor: Anchor): String =
-    anchor.href
-
-  def target_=(value: String)(using anchor: Anchor): Unit =
-    anchor.target_=(value)
-
-  def target(using anchor: Anchor): String =
-    anchor.target
-
-  def rel_=(value: String)(using anchor: Anchor): Unit =
-    anchor.rel_=(value)
-
-  def rel(using anchor: Anchor): String =
-    anchor.rel
-
-}
 
 final case class RouterLinkHandler(
     navigate: String => Unit,
@@ -113,7 +47,7 @@ object RouterLink {
     val activeMatcher = defaultActiveMatcher(to)
 
     DslLayerTwo.child(link) {
-      RouterLinkHandler.inject(using link) match {
+      RouterLinkHandler.inject(using link).orElse(routerHandler(using link)) match {
         case Some(handler) if isAppPath(to) =>
           link.href = handler.hrefForAppPath(to)
           link.classCondition(activeClass, handler.currentPath.map(activeMatcher))
@@ -138,6 +72,15 @@ object RouterLink {
           runNavigate(destination)
         }
       }
+    }
+
+  private def routerHandler(using link: Anchor): Option[RouterLinkHandler] =
+    Router.current(using link).map { router =>
+      RouterLinkHandler(
+        navigate = path => router.navigate(path),
+        currentPath = router.state.map(_.path),
+        hrefForAppPath = path => router.hrefFor(path)
+      )
     }
 
   private def isInternalDestination(destination: String): Boolean =
@@ -166,41 +109,4 @@ object RouterLink {
     if (withoutLocale.isEmpty) "/"
     else s"/${withoutLocale.mkString("/")}"
   }
-}
-
-final class Image extends AbstractComponent {
-  val tagName = "img"
-
-  def src: String =
-    host.attribute("src").getOrElse("")
-
-  def src_=(value: String): Unit =
-    host.setAttribute("src", value)
-
-  def alt: String =
-    host.attribute("alt").getOrElse("")
-
-  def alt_=(value: String): Unit =
-    host.setAttribute("alt", value)
-}
-
-object Image {
-  def image(
-      body: Image ?=> Cursor ?=> Unit = {}
-  )(using AbstractComponent, Cursor): Image =
-    DslLayerTwo.child(new Image()) {
-      body
-    }
-
-  def src_=(value: String)(using image: Image): Unit =
-    image.src_=(value)
-
-  def src(using image: Image): String =
-    image.src
-
-  def alt_=(value: String)(using image: Image): Unit =
-    image.alt_=(value)
-
-  def alt(using image: Image): String =
-    image.alt
 }

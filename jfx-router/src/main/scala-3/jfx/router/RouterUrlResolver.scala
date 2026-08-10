@@ -1,6 +1,6 @@
 package jfx.router
 
-import jfx.i18n.I18nLocale
+import jfx.i18n.{I18nLocale, I18nRuntime}
 
 private[router] final case class ResolvedRouterUrl(
     path: String,
@@ -18,6 +18,7 @@ private[router] object RouterUrlResolver {
   def resolve(
       rawUrl: String,
       config: RouterConfig,
+      i18n: Option[I18nRuntime] = None,
       preferredLocale: Option[I18nLocale] = None
   ): ResolvedRouterUrl = {
     val safeUrl =
@@ -36,10 +37,12 @@ private[router] object RouterUrlResolver {
       stripBasePath(pathname, config.normalizedBasePath)
 
     val extractedLocale =
-      extractLocale(appRelativePath, config)
+      extractLocale(appRelativePath, i18n)
 
     val locale =
-      extractedLocale.locale.orElse(preferredLocale)
+      extractedLocale.locale
+        .orElse(preferredLocale)
+        .orElse(i18n.map(_.defaultLocale))
 
     val normalizedPath =
       normalizePath(extractedLocale.remainingPath)
@@ -58,11 +61,16 @@ private[router] object RouterUrlResolver {
       remainingPath: String
   )
 
-  private def extractLocale(path: String, config: RouterConfig): ExtractedLocale = {
+  private def extractLocale(
+      path: String,
+      i18n: Option[I18nRuntime]
+  ): ExtractedLocale = {
     val normalized = normalizePath(path)
     val pathSegments = segments(normalized)
+    val localesByCode =
+      i18n.toSeq.flatMap(_.supportedLocales).iterator.map(locale => locale.code -> locale).toMap
 
-    pathSegments.headOption.flatMap(config.localesByCode.get) match {
+    pathSegments.headOption.flatMap(localesByCode.get) match {
       case Some(matchedLocale) =>
         val remainder = pathSegments.drop(1)
         val remainingPath =
@@ -76,7 +84,7 @@ private[router] object RouterUrlResolver {
     }
   }
 
-  private def buildBrowserPath(
+  private[router] def buildBrowserPath(
       path: String,
       locale: Option[I18nLocale],
       config: RouterConfig
@@ -97,7 +105,7 @@ private[router] object RouterUrlResolver {
     else combined
   }
 
-  private def stripBasePath(path: String, basePath: String): String = {
+  private[router] def stripBasePath(path: String, basePath: String): String = {
     val normalized = normalizePath(path)
 
     if (basePath.isEmpty || normalized == basePath) {
@@ -135,11 +143,11 @@ private[router] object RouterUrlResolver {
         .toMap
     }
 
-  private def segments(path: String): Vector[String] =
+  private[router] def segments(path: String): Vector[String] =
     if (path == "/") Vector.empty
     else path.stripPrefix("/").split("/").iterator.filter(_.nonEmpty).toVector
 
-  private def normalizePath(path: String): String =
+  private[router] def normalizePath(path: String): String =
     if (path == null || path.isEmpty || path == "/") {
       "/"
     } else {

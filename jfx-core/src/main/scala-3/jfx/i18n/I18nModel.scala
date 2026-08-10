@@ -2,7 +2,7 @@ package jfx.i18n
 
 import jfx.core.component.AbstractComponent
 import jfx.core.di.Context
-import jfx.core.state.ReadOnlyProperty
+import jfx.core.state.{Property, ReadOnlyProperty}
 import jfx.core.text.TextValue
 
 final case class I18nLocale(code: String) {
@@ -129,6 +129,9 @@ final case class NamedPlaceholder(name: String, value: Any)
 trait I18nRuntime {
   def locale: ReadOnlyProperty[I18nLocale]
   def resolver: I18nResolver
+  def supportedLocales: Seq[I18nLocale]
+  def defaultLocale: I18nLocale
+  def setLocale(locale: I18nLocale): Unit
 
   def text(message: RuntimeMessage): ReadOnlyProperty[String] =
     resolver.resolve(message, locale)
@@ -143,12 +146,39 @@ object I18nRuntime {
 
   def apply(
       localeProperty: ReadOnlyProperty[I18nLocale],
-      resolverInstance: I18nResolver
+      resolverInstance: I18nResolver,
+      configuredSupportedLocales: Seq[I18nLocale] = Seq.empty,
+      configuredDefaultLocale: I18nLocale = I18nLocale.En
   ): I18nRuntime =
     new I18nRuntime {
       override val locale: ReadOnlyProperty[I18nLocale] = localeProperty
       override val resolver: I18nResolver = resolverInstance
+      override val supportedLocales: Seq[I18nLocale] =
+        if (configuredSupportedLocales.nonEmpty) configuredSupportedLocales.distinct
+        else Seq(configuredDefaultLocale)
+      override val defaultLocale: I18nLocale = configuredDefaultLocale
+      override def setLocale(locale: I18nLocale): Unit = ()
     }
+
+  def managed(
+      config: I18nConfig,
+      initialUrl: String = "/",
+      basePath: String = ""
+  ): I18nRuntime = {
+    val initialLocale =
+      I18nUrlResolver.resolveLocale(initialUrl, config, basePath)
+
+    val localeProperty =
+      Property(initialLocale)
+
+    new I18nRuntime {
+      override val locale: ReadOnlyProperty[I18nLocale] = localeProperty
+      override val resolver: I18nResolver = config.resolver
+      override val supportedLocales: Seq[I18nLocale] = config.supportedLocales
+      override val defaultLocale: I18nLocale = config.defaultLocale
+      override def setLocale(locale: I18nLocale): Unit = localeProperty.set(locale)
+    }
+  }
 
   def provide(value: I18nRuntime)(using component: AbstractComponent): Unit =
     Value.provide(value)
@@ -161,6 +191,21 @@ object I18nRuntime {
       throw new IllegalStateException("Kein I18nRuntime im aktuellen Komponentenbaum gefunden.")
     }
 
+}
+
+final case class I18nConfig(
+    resolver: I18nResolver,
+    supportedLocales: Seq[I18nLocale],
+    defaultLocale: I18nLocale = I18nLocale.En
+) {
+  require(supportedLocales.nonEmpty, "I18nConfig.supportedLocales must not be empty")
+  require(
+    supportedLocales.contains(defaultLocale),
+    "I18nConfig.defaultLocale must be part of supportedLocales"
+  )
+
+  val localesByCode: Map[String, I18nLocale] =
+    supportedLocales.iterator.map(locale => locale.code -> locale).toMap
 }
 
 object I18n {

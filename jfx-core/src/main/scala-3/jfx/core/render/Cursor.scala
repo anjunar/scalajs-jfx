@@ -1,11 +1,16 @@
 package jfx.core.render
 
 import jfx.core.async.AsyncRenderContext
+import org.scalajs.dom
 
 trait Cursor {
   def supportsAnchors: Boolean = false
 
+  def isBrowser: Boolean = false
+
   def isHydrating: Boolean = false
+
+  def browserUrl: Option[String] = None
 
   def asyncContext: Option[AsyncRenderContext] =
     None

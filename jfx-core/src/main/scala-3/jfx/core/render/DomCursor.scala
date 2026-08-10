@@ -12,6 +12,12 @@ final class DomCursor private (
   override def supportsAnchors: Boolean =
     true
 
+  override def isBrowser: Boolean =
+    true
+
+  override def browserUrl: Option[String] =
+    Some(s"${dom.window.location.pathname}${dom.window.location.search}")
+
   override def asyncContext: Option[AsyncRenderContext] =
     currentAsyncContext
 

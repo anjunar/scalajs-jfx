@@ -14,9 +14,6 @@ import scala.scalajs.js.annotation.JSExportTopLevel
 
 object Main {
 
-  def render(cursor: Cursor, request: RequestContext): AbstractComponent =
-    Runtime.mount(new App(request), cursor)
-
   def render(
       cursor: Cursor,
       request: RequestContext,
@@ -31,7 +28,7 @@ object Main {
     val async = new AsyncRenderContext()
     val url   = s"${dom.window.location.pathname}${dom.window.location.search}"
 
-    Theme.syncFromDocument()
+    AppTheme.syncFromDocument()
 
     val request =
       RequestContext(

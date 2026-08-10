@@ -8,6 +8,7 @@ import jfx.core.layout.TextComponent.text
 import jfx.core.render.Cursor
 import jfx.core.state.{Property, ReadOnlyProperty}
 import jfx.core.statement.DynamicComponentRenderer.dynamic
+import jfx.i18n.{I18nLocale, I18nRuntime}
 import org.scalajs.dom
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -21,14 +22,14 @@ class Router(
 )(using ec: ExecutionContext)
     extends AbstractCustomComponent {
 
-  private val initialState =
-    resolve(initialUrl, None)
-
   private var renderToken        = 0
   private var asyncCursorContext = Option.empty[jfx.core.async.AsyncRenderContext]
+  private var browserEnabled     = false
+  private var currentBrowserUrl  = () => initialUrl
+  private var initialized        = false
 
   private val stateProperty =
-    Property(initialState)
+    Property(RouterState("/", "/", Nil, Map.empty, "", None))
 
   def state: ReadOnlyProperty[RouterState] =
     stateProperty
@@ -39,7 +40,11 @@ class Router(
   override def compose(cursor: Cursor): Unit = {
     Router.RouterContext.provide(this)(using this)
 
+    initializeStateIfNeeded()
+
     asyncCursorContext = cursor.asyncContext
+    browserEnabled = cursor.isBrowser
+    currentBrowserUrl = () => cursor.browserUrl.getOrElse(initialUrl)
 
     if (cursor.isHydrating) {
       prepareInitialHydrationRoute()
@@ -61,6 +66,13 @@ class Router(
 
     installPopStateListener()
   }
+
+  def hrefFor(path: String): String =
+    RouterUrlResolver.buildBrowserPath(
+      RouterUrlResolver.normalizePath(path),
+      Some(currentLocale),
+      config
+    )
 
   private def prepareInitialHydrationRoute(): Unit = {
     renderToken += 1
@@ -117,15 +129,33 @@ class Router(
   }
 
   def navigate(path: String, replace: Boolean = false): Unit = {
-    val nextState = resolve(path, stateProperty.get.locale)
+    val nextState = resolve(path, Some(currentLocale))
 
-    if (Router.hasBrowserWindow) {
+    if (browserEnabled) {
       if (replace) dom.window.history.replaceState(null, "", nextState.url)
       else dom.window.history.pushState(null, "", nextState.url)
     }
 
     stateProperty.set(nextState)
+    synchronizeI18n(nextState)
   }
+
+  def localizedPath(path: String, locale: I18nLocale): String =
+    RouterUrlResolver.buildBrowserPath(
+      RouterUrlResolver.normalizePath(path),
+      Some(locale),
+      config
+    )
+
+  private def initializeStateIfNeeded(): Unit =
+    if (!initialized) {
+      val initialState =
+        resolve(initialUrl, None)
+
+      stateProperty.set(initialState)
+      synchronizeI18n(initialState)
+      initialized = true
+    }
 
   private def resolveCurrentRoute(): Unit = {
     renderToken += 1
@@ -198,9 +228,9 @@ class Router(
     }
   }
 
-  private def resolve(url: String, preferredLocale: Option[jfx.i18n.I18nLocale]): RouterState = {
+  private def resolve(url: String, preferredLocale: Option[I18nLocale]): RouterState = {
     val resolved =
-      RouterUrlResolver.resolve(url, config, preferredLocale)
+      RouterUrlResolver.resolve(url, config, I18nRuntime.current(using this), preferredLocale)
 
     val matches =
       RouteMatcher.resolve(routes, resolved.path)
@@ -215,10 +245,21 @@ class Router(
     )
   }
 
+  private def synchronizeI18n(state: RouterState): Unit =
+    for {
+      runtime <- I18nRuntime.current(using this)
+      locale  <- state.locale
+    } runtime.setLocale(locale)
+
+  private def currentLocale: I18nLocale =
+    I18nRuntime.current(using this).map(_.locale.get).getOrElse {
+      stateProperty.get.locale.getOrElse(I18nLocale.En)
+    }
+
   private def installPopStateListener(): Unit =
-    if (Router.hasBrowserWindow) {
+    if (browserEnabled) {
       val listener: js.Function1[dom.Event, Unit] =
-        _ => navigate(Router.currentBrowserUrl(), replace = true)
+        _ => navigate(currentBrowserUrl(), replace = true)
 
       dom.window.addEventListener("popstate", listener)
 
@@ -249,8 +290,7 @@ object Router {
   )(using parent: AbstractComponent, cursor: Cursor, ec: ExecutionContext): Router = {
     val startUrl =
       if (initial != null) initial
-      else if (hasBrowserWindow) currentBrowserUrl()
-      else "/"
+      else cursor.browserUrl.getOrElse("/")
 
     DslLayerTwo.child(new Router(routes, startUrl, config)) {}
   }
@@ -258,22 +298,22 @@ object Router {
   def current(using component: AbstractComponent): Option[Router] =
     RouterContext.inject
 
+  def provide(router: Router)(using component: AbstractComponent): Unit =
+    RouterContext.provide(router)
+
   def requireCurrent(using component: AbstractComponent): Router =
     current.getOrElse {
       throw new IllegalStateException("Kein Router im aktuellen Komponentenbaum gefunden.")
     }
+
+  def appPathFor(url: String, config: RouterConfig = RouterConfig()): String =
+    RouterUrlResolver.resolve(url, config).path
 
   def navigate(path: String)(using component: AbstractComponent): Unit =
     requireCurrent.navigate(path)
 
   def replace(path: String)(using component: AbstractComponent): Unit =
     requireCurrent.navigate(path, replace = true)
-
-  private[router] def hasBrowserWindow: Boolean =
-    js.typeOf(js.Dynamic.global.window) != "undefined"
-
-  private[router] def currentBrowserUrl(): String =
-    s"${dom.window.location.pathname}${dom.window.location.search}"
 
   private def emptyComponent(): AbstractComponent =
     new AbstractCustomComponent {}

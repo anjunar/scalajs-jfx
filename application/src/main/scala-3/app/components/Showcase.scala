@@ -1,12 +1,12 @@
 package app.components
 
-import app.components.Layouts.vbox
 import jfx.core.component.AbstractComponent
 import jfx.core.dsl.ClassDsl.classes
-import jfx.core.render.Cursor
-import jfx.core.state.{Property, ReadOnlyProperty}
 import jfx.core.layout.Div.div
 import jfx.core.layout.TextComponent.text
+import jfx.core.layout.VBox.vbox
+import jfx.core.render.Cursor
+import jfx.core.state.{Property, ReadOnlyProperty}
 import jfx.i18n.RuntimeMessage
 
 object Showcase {

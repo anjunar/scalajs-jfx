@@ -6,7 +6,7 @@ import org.scalajs.dom
 import scala.scalajs.js
 import scala.util.control.NonFatal
 
-object Theme {
+object AppTheme {
   enum Mode(val value: String) {
     case Light extends Mode("light")
     case Dark  extends Mode("dark")

@@ -1,25 +1,20 @@
 package jfx.router
 
-import jfx.i18n.I18nLocale
 import org.scalajs.dom
 
 import scala.scalajs.js
 
 final case class RouterConfig(
-    basePath: String = RouterConfig.detectBasePath(),
-    supportedLocales: Seq[I18nLocale] = Nil
+    basePath: String = RouterConfig.detectBasePath()
 ) {
   val normalizedBasePath: String =
     RouterConfig.normalizeBasePath(basePath)
-
-  val localesByCode: Map[String, I18nLocale] =
-    supportedLocales.iterator.map(locale => locale.code -> locale).toMap
 }
 
 object RouterConfig {
 
   private[router] def detectBasePath(): String =
-    if (!Router.hasBrowserWindow) {
+    if (!hasBrowserWindow) {
       ""
     } else {
       val baseElements = dom.document.getElementsByTagName("base")
@@ -40,6 +35,9 @@ object RouterConfig {
         normalizeBasePath(path)
       }
     }
+
+  private def hasBrowserWindow: Boolean =
+    js.typeOf(js.Dynamic.global.window) != "undefined"
 
   private[router] def normalizeBasePath(value: String): String =
     if (value == null || value.isEmpty || value == "/") {
