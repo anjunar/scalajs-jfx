@@ -1,24 +1,25 @@
 import org.scalajs.linker.interface.{ESVersion, ModuleKind}
 import org.scalajs.sbtplugin.ScalaJSPlugin
+import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import sbt.url
 
-version := "1.0.0-SNAPSHOT"
-organization := "com.anjunar"
-organizationName := "Anjunar"
-organizationHomepage := Some(url("https://github.com/anjunar"))
+ThisBuild / version := "1.0.0-SNAPSHOT"
+ThisBuild / organization := "com.anjunar"
+ThisBuild / organizationName := "Anjunar"
+ThisBuild / organizationHomepage := Some(url("https://github.com/anjunar"))
 
-usePipelining := false
-exportJars := false
-concurrentRestrictions += Tags.limitAll(1)
+ThisBuild / usePipelining := false
+ThisBuild / exportJars := false
+Global / concurrentRestrictions += Tags.limitAll(1)
 
-scalaVersion := "3.3.8"
+ThisBuild / scalaVersion := "3.3.8"
 
-homepage := Some(url("https://github.com/anjunar/scalajs-jfx"))
-description := "Reactive UI framework for Scala.js with lifecycle control, typed forms, routing, tables, and a composable DSL."
+ThisBuild / homepage := Some(url("https://github.com/anjunar/scalajs-jfx"))
+ThisBuild / description := "Reactive UI framework for Scala.js with lifecycle control, typed forms, routing, tables, and a composable DSL."
 
-licenses := Seq(License.MIT)
+ThisBuild / licenses := Seq("MIT" -> url("https://opensource.org/licenses/MIT"))
 
-scmInfo := Some(
+ThisBuild / scmInfo := Some(
   ScmInfo(
     url("https://github.com/anjunar/scalajs-jfx"),
     "scm:git:https://github.com/anjunar/scalajs-jfx.git",
@@ -26,7 +27,7 @@ scmInfo := Some(
   )
 )
 
-developers := List(
+ThisBuild / developers := List(
   Developer(
     id = "anjunar",
     name = "Patrick Bittner",
@@ -35,14 +36,14 @@ developers := List(
   )
 )
 
-versionScheme := Some("early-semver")
+ThisBuild / versionScheme := Some("early-semver")
 
-pomIncludeRepository := { _ => false }
-publishMavenStyle := true
+ThisBuild / pomIncludeRepository := { _ => false }
+ThisBuild / publishMavenStyle := true
 
-publishTo := {
+ThisBuild / publishTo := {
   val centralSnapshots = "https://central.sonatype.com/repository/maven-snapshots/"
-  if version.value.endsWith("-SNAPSHOT") then
+  if (version.value.endsWith("-SNAPSHOT"))
     Some("central-snapshots" at centralSnapshots)
   else
     localStaging.value
@@ -57,13 +58,10 @@ lazy val commonJsSettings = Seq(
 
 lazy val commonLibrarySettings = Seq(
   Compile / doc / sources := Seq.empty,
-  Compile / packageDoc / mappings += {
-    val converter = fileConverter.value
-    val readme = ((LocalRootProject / baseDirectory).value / "README.md").toPath
-    converter.toVirtualFile(readme) -> "README.md"
-  },
-  libraryDependencies += "org.scala-js" %% "scalajs-dom" % "2.8.1",
-  libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.19" % Test
+  Compile / packageDoc / mappings +=
+    ((LocalRootProject / baseDirectory).value / "README.md") -> "README.md",
+  libraryDependencies += "org.scala-js" %%% "scalajs-dom" % "2.8.1",
+  libraryDependencies += "org.scalatest" %%% "scalatest" % "3.2.19" % Test
 )
 
 lazy val jfxCore = Project(id = "scalajs-jfx-core", base = file("jfx-core"))
@@ -71,7 +69,7 @@ lazy val jfxCore = Project(id = "scalajs-jfx-core", base = file("jfx-core"))
   .settings(
     name := "scalajs-jfx-core",
     moduleName := "scalajs-jfx-core",
-    libraryDependencies += "com.anjunar" %% "scala-reflect" % "1.1.3"
+    libraryDependencies += "com.anjunar" %%% "scala-reflect" % "1.1.3"
   )
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
@@ -102,7 +100,7 @@ lazy val jfxJson = Project(id = "scalajs-jfx-json", base = file("jfx-json"))
   .settings(
     name := "scalajs-jfx-json",
     moduleName := "scalajs-jfx-json",
-    libraryDependencies += "com.anjunar" %% "scala-reflect" % "1.1.3"
+    libraryDependencies += "com.anjunar" %%% "scala-reflect" % "1.1.3"
   )
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
@@ -133,7 +131,7 @@ lazy val jfxEditor = Project(id = "scalajs-jfx-editor", base = file("jfx-editor"
   .settings(
     name := "scalajs-jfx-editor",
     moduleName := "scalajs-jfx-editor",
-    libraryDependencies += "com.anjunar" %% "scalajs-lexical" % "1.3.0"
+    libraryDependencies += "com.anjunar" %%% "scalajs-lexical" % "1.3.0"
   )
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
