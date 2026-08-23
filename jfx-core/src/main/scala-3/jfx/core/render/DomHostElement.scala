@@ -3,12 +3,22 @@ package jfx.core.render
 import jfx.core.state.Disposable
 import org.scalajs.dom
 
+import scala.scalajs.js
+
 final class DomHostElement(private[jfx] val node: dom.Element) extends HostElement {
   def tagName: String = node.tagName.toLowerCase
 
   def setAttribute(name: String, value: String): Unit = node.setAttribute(name, value)
   def removeAttribute(name: String): Unit             = node.removeAttribute(name)
   def attribute(name: String): Option[String]         = Option(node.getAttribute(name))
+
+  def setProperty(name: String, value: Any): Unit =
+    node.asInstanceOf[js.Dynamic].updateDynamic(name)(value.asInstanceOf[js.Any])
+
+  def property[T](name: String): Option[T] = {
+    val value = node.asInstanceOf[js.Dynamic].selectDynamic(name)
+    if (js.isUndefined(value) || value == null) None else Some(value.asInstanceOf[T])
+  }
 
   def setStyle(name: String, value: String): Unit =
     node match {

@@ -35,3 +35,11 @@ trait Cursor {
       "Dieser Cursor unterstützt kein Einfügen vor einer bestehenden Node."
     )
 }
+
+object Cursor {
+
+  def isBrowser(using c: Cursor) : Boolean = c.isBrowser
+
+  def isHydrating(using c: Cursor) : Boolean = c.isHydrating
+
+}

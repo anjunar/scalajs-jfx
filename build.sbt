@@ -50,10 +50,15 @@ ThisBuild / publishTo := {
 }
 
 lazy val commonJsSettings = Seq(
-  scalaJSLinkerConfig ~= (
-    _.withModuleKind(ModuleKind.ESModule)
+  scalaJSLinkerConfig := {
+    scalaJSLinkerConfig.value
+      .withModuleKind(ModuleKind.ESModule)
       .withESFeatures(_.withESVersion(ESVersion.ES2021))
-    )
+      .withSourceMap(true)
+      .withRelativizeSourceMapBase(
+        Some((Compile / fastLinkJS / scalaJSLinkerOutputDirectory).value.toURI)
+      )
+  }
 )
 
 lazy val commonLibrarySettings = Seq(

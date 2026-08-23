@@ -22,11 +22,13 @@ import jfx.core.request.RequestContext
 import jfx.i18n.{I18nRuntime, RuntimeMessage, i18n}
 import jfx.layout.Viewport.viewport
 import jfx.router.Router
+import jfx.router.Router.router
 import jfx.router.RouterLink.*
 import jfx.router.RouterConfig
 import org.scalajs.dom
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import jfx.router.RouteContext
 
 class App(
     request: RequestContext,
@@ -58,7 +60,9 @@ class App(
     )
 
   private def toolbarTitle =
-    requireRouter.state.flatMap { state =>
+    val router = Router.current(using this).get
+
+    router.state.flatMap { state =>
       i18nRuntime.locale.map { locale =>
         navigationEntries
           .find(_.matches(state.path))
@@ -84,171 +88,156 @@ class App(
         open = true
 
         drawerNavigation {
-          navSidebar()
+          div {
+            classes = Seq("app-sidebar")
+
+            div {
+              classes = Seq("app-sidebar__header")
+              div {
+                classes = Seq("app-sidebar__logo")
+                text(i18n"JFX API") {}
+              }
+            }
+
+            div {
+              classes = Seq("app-sidebar__nav")
+
+              var currentZone: Option[String] = None
+              navigationEntries.foreach { entry =>
+                val zoneKey = entry.zoneMessage.key.source
+
+                if (!currentZone.contains(zoneKey)) {
+                  currentZone = Some(zoneKey)
+                  div {
+                    classes = Seq("app-sidebar__section-title")
+                    text(entry.zone(i18nRuntime.locale.get)) {}
+                  }
+                }
+
+                routerLink(entry.path) {
+                  classes = Seq("app-nav-link")
+
+                  onClick { event =>
+                    if (Cursor.isBrowser && dom.window.innerWidth <= 720) {
+                      open = false
+                    }
+                  }
+
+                  div {
+                    classes = Seq("app-nav-link__label")
+                    text(entry.titleMessage) {}
+                  }
+
+                  div {
+                    classes = Seq("app-nav-link__sub")
+                    text(entry.copyMessage) {}
+                  }
+                }
+              }
+            }
+
+            div {
+              classes = Seq("app-sidebar__footer")
+              text(i18n"Design inherited from JFX2, content rebuilt for scalajs-jfx.") {}
+            }
+          }
         }
 
         drawerContent {
-          appContent(appRouter)
-        }
-      }
-    }
-  }
+          div {
+            classes = Seq("app-main")
 
-  private def navSidebar()(using Drawer, AbstractComponent, Cursor): Unit = {
-    div {
-      classes = Seq("app-sidebar")
+            div {
+              classes = Seq("app-toolbar")
 
-      div {
-        classes = Seq("app-sidebar__header")
-        div {
-          classes = Seq("app-sidebar__logo")
-          text(i18n"JFX API") {}
-        }
-      }
+              button("menu") {
+                classes = Seq("app-toolbar__menu-toggle", "material-icons")
+                onClick { _ => toggle() }
+              }
 
-      div {
-        classes = Seq("app-sidebar__nav")
+              div {
+                classes = Seq("app-toolbar__title")
+                text(toolbarTitle) {}
+              }
 
-        var currentZone: Option[String] = None
-        navigationEntries.foreach { entry =>
-          val zoneKey = entry.zoneMessage.key.source
+              div {
+                classes = Seq("spacer")
+                style {
+                  flex = "1"
+                }
+              }
 
-          if (!currentZone.contains(zoneKey)) {
-            currentZone = Some(zoneKey)
-            sidebarSection(entry.zone(i18nRuntime.locale.get))
-          }
+              routerLink() {
+                classes = Seq("app-toolbar__scala-link")
+                href = "https://www.scala-js.org/"
+                target = "_blank"
+                rel = "noopener noreferrer"
 
-          navLink(entry)
-        }
-      }
+                image {
+                  classes = Seq("app-toolbar__scala-badge")
+                  src = "https://img.shields.io/badge/Scala.js-1.21.0-DC322F.svg?logo=scala&logoColor=white"
+                  alt = "Scala.js 1.21.0"
+                }
+              }
 
-      div {
-        classes = Seq("app-sidebar__footer")
-        text(i18n"Design inherited from JFX2, content rebuilt for scalajs-jfx.") {}
-      }
-    }
-  }
+              routerLink("GitHub") {
+                classes = Seq("app-toolbar__github")
+                href = "https://github.com/anjunar/scalajs-jfx"
+                target = "_blank"
+                rel = "noopener noreferrer"
+              }
 
-  private def appContent(router: Router)(using Drawer, AbstractComponent, Cursor): Unit = {
-    div {
-      classes = Seq("app-main")
+              hbox {
+                classes = Seq("app-toolbar__chooser", "app-toolbar__language")
+                button(AppI18n.localeLabel(i18nRuntime.locale)) {
+                  classes = Seq("app-toolbar__choice")
+                  onClick { _ => switchLocale() }
+                }
+              }
 
-      div {
-        classes = Seq("app-toolbar")
+              hbox {
+                classes = Seq("app-toolbar__chooser", "app-toolbar__theme")
 
-        button("menu") {
-          classes = Seq("app-toolbar__menu-toggle", "material-icons")
-          onClick { _ => toggle() }
-        }
+                button(i18n"Light") {
+                  classes = Seq("app-toolbar__choice")
+                  classIf("is-active", AppTheme.modeProperty.map(_ == Mode.Light))
+                  onClick { _ => AppTheme.set(Mode.Light) }
+                }
 
-        div {
-          classes = Seq("app-toolbar__title")
-          text(toolbarTitle) {}
-        }
+                button(i18n"Dark") {
+                  classes = Seq("app-toolbar__choice")
+                  classIf("is-active", AppTheme.modeProperty.map(_ == Mode.Dark))
+                  onClick { _ => AppTheme.set(Mode.Dark) }
+                }
+              }
 
-        div {
-          classes = Seq("spacer")
-          style {
-            flex = "1"
-          }
-        }
+              div {
+                classes = Seq("app-toolbar__version")
+                text("v1 demo") {}
+              }
+            }
 
-        routerLink() {
-          classes = Seq("app-toolbar__scala-link")
-          href = "https://www.scala-js.org/"
-          target = "_blank"
-          rel = "noopener noreferrer"
+            viewport {
+              style {
+                flex = "1"
+                overflow = "auto"
+              }
 
-          image {
-            classes = Seq("app-toolbar__scala-badge")
-            src = "https://img.shields.io/badge/Scala.js-1.21.0-DC322F.svg?logo=scala&logoColor=white"
-            alt = "Scala.js 1.21.0"
-          }
-        }
+              div {
+                classes = Seq("app-content-viewport")
+                child(appRouter)
+              }
+            }
 
-        routerLink("GitHub") {
-          classes = Seq("app-toolbar__github")
-          href = "https://github.com/anjunar/scalajs-jfx"
-          target = "_blank"
-          rel = "noopener noreferrer"
-        }
-
-        hbox {
-          classes = Seq("app-toolbar__chooser", "app-toolbar__language")
-          button(AppI18n.localeLabel(i18nRuntime.locale)) {
-            classes = Seq("app-toolbar__choice")
-            onClick { _ => switchLocale() }
-          }
-        }
-
-        hbox {
-          classes = Seq("app-toolbar__chooser", "app-toolbar__theme")
-
-          button(i18n"Light") {
-            classes = Seq("app-toolbar__choice")
-            classIf("is-active", AppTheme.modeProperty.map(_ == Mode.Light))
-            onClick { _ => AppTheme.set(Mode.Light) }
-          }
-
-          button(i18n"Dark") {
-            classes = Seq("app-toolbar__choice")
-            classIf("is-active", AppTheme.modeProperty.map(_ == Mode.Dark))
-            onClick { _ => AppTheme.set(Mode.Dark) }
+            div {
+              classes = Seq("app-footer")
+              div {
+                classes = Seq("app-footer__text")
+                text(i18n"Pure Scala.js architecture, rebuilt around the modules that actually exist here.") {}
+              }
+            }
           }
         }
-
-        div {
-          classes = Seq("app-toolbar__version")
-          text("v1 demo") {}
-        }
-      }
-
-      viewport {
-        style {
-          flex =   "1"
-          overflow = "auto"
-        }
-
-        div {
-          classes = Seq("app-content-viewport")
-          child(router) {}
-        }
-      }
-
-      div {
-        classes = Seq("app-footer")
-        div {
-          classes = Seq("app-footer__text")
-          text(i18n"Pure Scala.js architecture, rebuilt around the modules that actually exist here.") {}
-        }
-      }
-    }
-  }
-
-  private def sidebarSection(title: String)(using AbstractComponent, Cursor): Unit =
-    div {
-      classes = Seq("app-sidebar__section-title")
-      text(title) {}
-    }
-
-  private def navLink(entry: NavEntry)(using Drawer, AbstractComponent, Cursor): Unit = {
-    routerLink(entry.path) {
-      classes = Seq("app-nav-link")
-
-      onClick { event =>
-        if (summon[Cursor].isBrowser && dom.window.innerWidth <= 720) {
-          open = false
-        }
-      }
-
-      div {
-        classes = Seq("app-nav-link__label")
-        text(entry.titleMessage) {}
-      }
-
-      div {
-        classes = Seq("app-nav-link__sub")
-        text(entry.copyMessage) {}
       }
     }
   }
@@ -260,12 +249,12 @@ class App(
         case _               => AppI18n.German
       }
 
-    requireRouter.navigate(
-      requireRouter.localizedPath(requireRouter.state.get.path, nextLocale),
+    val router = Router.current(using this).get
+
+    router.navigate(
+      router.localizedPath(router.state.get.path, nextLocale),
       replace = true
     )
   }
 
-  private def requireRouter: Router =
-    Router.requireCurrent(using this)
 }

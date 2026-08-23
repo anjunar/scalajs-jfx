@@ -65,18 +65,22 @@ async function loadServerModule() {
 app.use(async (req, res, next) => {
     const url = req.originalUrl
 
+    // Alles, was wie eine Datei aussieht (Assets, Quelltexte, Sourcemaps, ...),
+    // NICHT per SSR rendern - an Vite/static-Handler bzw. 404 durchreichen.
+    const isFileRequest = /\.[a-zA-Z0-9]+$/.test(url.split("?")[0])
+    if (isFileRequest && !url.endsWith(".html")) {
+        return next()
+    }
+
     try {
         const template = await loadTemplate(url)
         const serverModule = await loadServerModule()
-
         const appHtml = await serverModule.render(
             req.originalUrl,
             req.method,
             JSON.stringify(req.headers)
         )
-
         const html = template.replace("<!--app-html-->", appHtml)
-
         res
             .status(200)
             .set({ "Content-Type": "text/html" })
@@ -85,7 +89,6 @@ app.use(async (req, res, next) => {
         if (!isProduction && vite) {
             vite.ssrFixStacktrace(error)
         }
-
         next(error)
     }
 })

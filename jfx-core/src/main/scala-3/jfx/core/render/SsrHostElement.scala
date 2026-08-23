@@ -6,10 +6,24 @@ final class SsrHostElement(val tagName: String) extends HostElement {
   private val attrs    = mutable.LinkedHashMap.empty[String, String]
   private val styles   = mutable.LinkedHashMap.empty[String, String]
   private val children = mutable.ArrayBuffer.empty[HostNode]
+  private val properties = mutable.LinkedHashMap.empty[String, Any]
 
   def setAttribute(name: String, value: String): Unit = attrs(name) = value
   def removeAttribute(name: String): Unit             = attrs.remove(name)
   def attribute(name: String): Option[String]         = attrs.get(name)
+
+  def setProperty(name: String, value: Any): Unit = {
+    properties(name) = value
+    value match {
+      case boolean: Boolean if boolean => attrs(name) = name
+      case _: Boolean                  => attrs.remove(name)
+      case null                        => attrs.remove(name)
+      case other                       => attrs(name) = other.toString
+    }
+  }
+
+  def property[T](name: String): Option[T] =
+    properties.get(name).asInstanceOf[Option[T]]
 
   def setStyle(name: String, value: String): Unit = styles(name) = value
   def removeStyle(name: String): Unit             = styles.remove(name)

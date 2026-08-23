@@ -3,18 +3,15 @@ import scalaJSPlugin from "@scala-js/vite-plugin-scalajs"
 import tailwindcss from "@tailwindcss/vite"
 import { resolve } from "node:path"
 
+const repoRoot = resolve(__dirname, "..", "..")
+
 export default defineConfig({
     root: "application/src/main/webapp",
-
     server: {
         fs: {
-            allow: [
-                resolve(__dirname),
-                resolve(__dirname, "../../../target")
-            ]
+            allow: [repoRoot]
         }
     },
-
     plugins: [
         tailwindcss(),
         scalaJSPlugin({
@@ -22,7 +19,6 @@ export default defineConfig({
             projectID: "scalajs-jfx-demo"
         })
     ],
-
     build: {
         sourcemap: true,
         manifest: true

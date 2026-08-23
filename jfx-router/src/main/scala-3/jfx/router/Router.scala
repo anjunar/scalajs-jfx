@@ -280,7 +280,7 @@ class Router(
 
 object Router {
 
-  private[router] val RouterContext: Context[Router] =
+  val RouterContext: Context[Router] =
     Context.create[Router]("Router")
 
   def router(

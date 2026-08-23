@@ -4,6 +4,8 @@ import scala.collection.mutable
 
 trait FormController(val prefix: String) {
 
-  def register(field: Control): Unit
+  def register(field: Control[?]): Unit
+
+  def unregister(field: Control[?]): Unit
 
 }

@@ -7,6 +7,8 @@ trait HostElement extends HostNode {
   def setAttribute(name: String, value: String): Unit
   def removeAttribute(name: String): Unit
   def attribute(name: String): Option[String]
+  def setProperty(name: String, value: Any): Unit
+  def property[T](name: String): Option[T]
   def setStyle(name: String, value: String): Unit
   def removeStyle(name: String): Unit
   def setClassNames(names: Seq[String]): Unit
