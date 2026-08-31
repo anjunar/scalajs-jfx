@@ -97,7 +97,7 @@ Komponenten erzeugen noch DSL-Anweisungen oder Listener verstecken.
 - [ ] `Image`
 - [ ] `Tabs`
 - [ ] `Carousel`
-- [ ] `TableCell`, `TableColumn`, `TableRow`, `TableView`
+- [x] `TableCell`, `TableColumn`, `TableRow`, `TableView`
 - [ ] `VirtualListView`
 - [ ] `DataGrid`
 
@@ -143,7 +143,7 @@ Der Editor beginnt erst, wenn sein Forms-Control-Vertrag stabil ist.
 | `jfx-viewport` | portiert (`Viewport`, `Window`, `Notification`) |
 | `jfx-i18n` | nach `jfx-core` integriert |
 | `jfx-forms` | Forms-Kern vollstaendig portiert: typisierte Modellbindung, Editierbarkeit, Annotation-Validatoren, rekursive Fehlerzuordnung, `SubForm`, `ArrayForm` und `InputContainer`; `ComboBox`/`ImageCropper` warten auf ihre Controls-Abhaengigkeiten |
-| `jfx-controls` | noch offen |
+| `jfx-controls` | Tabellenbasis portiert (`TableCell`, `TableColumn`, `TableRow`, `TableView`) mit virtuellen Zeilen, lokaler/entfernter Liste, Sortierstatus, Crawl-Paging und Content-Header; weitere Controls noch offen |
 | `jfx-editor` | noch offen |
 | `jfx-json` | portiert; neuer reflektionsbasierter Mapper mit getrennten Komponenten fuer Typmodell, Metadaten, Serialisierung und Deserialisierung |
 | `jfx-webAuthn` | noch offen |
@@ -203,3 +203,22 @@ Neue oder vom JFX2-Verhalten abweichende Entscheidungen werden hier direkt bei
 der betroffenen Komponente dokumentiert: Problem, gewaehlte JFX3-Loesung,
 Auswirkung auf die DSL und zugehoerige Tests. Damit bleibt die Migration
 nachvollziehbar und die DSL konsistent.
+
+### Tabelle
+
+Die strukturelle `TableView`-Konfiguration wird innerhalb von `compose(cursor)`
+vor dem internen Tabellenbaum ausgefuehrt. Spalten, initiale Daten, Header- und
+Placeholder-Slots stehen dadurch bereits fest, bevor `Foreach` seine virtuellen
+Mount-Points fuer Header und Zeilen anlegt. SSR und Hydration beginnen somit mit
+derselben Struktur; nachfolgende `ListProperty`-Mutationen werden ueber diese
+Mount-Points eingefuegt und entfernt.
+
+Spalten bleiben nicht-visuelle Deskriptoren. Ihr Zell-Renderer ist eine
+kontextuelle JFX3-DSL-Funktion und wird in der jeweiligen `TableRow` am realen
+Zell-Cursor ausgefuehrt. Der JFX2-`header` wurde entsprechend als kontextueller
+Slot portiert. Zellen, Zeilen, Listener, ResizeObserver und Remote-Listener sind
+Teil des normalen Komponenten-Lebenszyklus und werden ueber `addDisposable`
+entsorgt. Tests decken Crawl-SSR, strukturelle Listenmutation, Entsorgung,
+unbeladene Remote-Bereiche und Remote-Sortierstatus ab. `fixedHeight` begrenzt
+die Tabellenhoehe exakt; der Body-Viewport bleibt innerhalb dieser Hoehe mit
+`overflow: auto` scrollbar.

@@ -1,7 +1,7 @@
 package jfx.control
 
 import jfx.core.component.AbstractComponent
-import jfx.core.dsl.ClassDsl.{addClass, classIf}
+import jfx.core.dsl.ClassDsl.{addClass, classIf, classes}
 import jfx.core.dsl.DslLayer
 import jfx.core.dsl.EventDsl.{onClick, onDoubleClick}
 import jfx.core.dsl.StyleDsl.*
@@ -46,18 +46,21 @@ class TableRow[S] private[control] (
         addDisposable(selected.observe(value => host.setAttribute("aria-selected", value.toString)))
 
         onClick(_ => table.select($indexProperty.get))
-        onDoubleClick(_ => Option($itemProperty.get).foreach(table.fireRowDoubleClick))
+        onDoubleClick { _ =>
+          $itemProperty.get match {
+            case item: S @unchecked => table.fireRowDoubleClick(item)
+            case null               => ()
+          }
+        }
       }
 
       columns.zipWithIndex.foreach { case (column, columnIndex) =>
         val typedColumn = column.asInstanceOf[TableColumn[S, Any]]
         div {
-          addClass("jfx-table-cell")
-          if (columnIndex == columns.length - 1) addClass("jfx-table-cell-last")
-          if (placeholder) {
-            addClass("jfx-table-cell-empty")
-            addClass("jfx-table-cell-loading-placeholder")
-          }
+          classes = Seq("jfx-table-cell") ++
+            Option.when(columnIndex == columns.length - 1)("jfx-table-cell-last") ++
+            Option.when(placeholder)("jfx-table-cell-empty") ++
+            Option.when(placeholder)("jfx-table-cell-loading-placeholder")
 
           val widthProperty = requireTableView().renderedWidthsProperty.map { widths =>
             s"${widths.lift(columnIndex).getOrElse(typedColumn.$prefWidth)}px"
@@ -69,10 +72,12 @@ class TableRow[S] private[control] (
           }
 
           if (!placeholder) {
-            Option($itemProperty.get).foreach { item =>
-              typedColumn.$cellRenderer.get.foreach { renderer =>
-                renderer(item)(using summon[AbstractComponent])(using summon[Cursor])
-              }
+            $itemProperty.get match {
+              case item: S @unchecked =>
+                typedColumn.$cellRenderer.get.foreach { renderer =>
+                  renderer(item)(using summon[AbstractComponent])(using summon[Cursor])
+                }
+              case null => ()
             }
           }
         }

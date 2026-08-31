@@ -53,6 +53,18 @@ object TableColumn {
     column
   }
 
+  @targetName("columnWithPrefWidthAndRenderer")
+  def column[S, T](text: String, prefWidth: Double)(renderer: CellRenderer[S])(using
+      table: TableView[S],
+      cursor: Cursor
+  ): TableColumn[S, T] = {
+    val column = new TableColumn[S, T](text)
+    column.$prefWidthProperty.set(prefWidth)
+    column.setCellRenderer(renderer)
+    table.registerColumn(column)
+    column
+  }
+
   def prefWidth[S, T](using column: TableColumn[S, T]): Double =
     column.$prefWidthProperty.get
 

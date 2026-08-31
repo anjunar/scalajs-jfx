@@ -65,6 +65,11 @@ object AppRoutes {
           FormsPage.render()
         })
       },
+      Route.view("/table") { _ =>
+        Future.successful(Route.component {
+          TableViewPage.render()
+        })
+      },
       Route.view("/viewport") { _ =>
         Future.successful(Route.component {
           ViewportPage.render()

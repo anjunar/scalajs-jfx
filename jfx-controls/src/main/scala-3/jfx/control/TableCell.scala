@@ -28,9 +28,12 @@ class TableCell[S, T] extends AbstractComponent {
 
 object TableCell {
   def cell[S, T](
-      body: TableCell[S, T] ?=> Cursor ?=> Unit = {}
+      body: TableCell[S, T] ?=> Cursor ?=> Unit
   )(using AbstractComponent, Cursor): TableCell[S, T] =
     DslLayer.child(new TableCell[S, T]()) {
       body
     }
+
+  def cell[S, T]()(using AbstractComponent, Cursor): TableCell[S, T] =
+    DslLayer.child(new TableCell[S, T]()) {}
 }

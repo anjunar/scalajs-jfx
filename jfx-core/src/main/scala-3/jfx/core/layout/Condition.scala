@@ -1,6 +1,7 @@
 package jfx.core.layout
 
 import jfx.core.component.{AbstractComponent, AbstractCustomComponent, DynamicMountPoint, Runtime}
+import jfx.core.dsl.DslLayer
 import jfx.core.render.Cursor
 import jfx.core.state.ReadOnlyProperty
 
