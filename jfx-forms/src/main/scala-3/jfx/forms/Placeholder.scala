@@ -26,4 +26,11 @@ object Placeholder {
     input.placeholder(textValue.asReadOnlyProperty(value))
   }
 
+  def placeholder_=[T](value: T)(using
+      input: Placeholder,
+      textValue: TextValue[T],
+      component: AbstractComponent
+  ): Unit =
+    placeholder(value)
+
 }

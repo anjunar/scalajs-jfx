@@ -115,7 +115,7 @@ JFX2-Funktionsumfang ab.
 - [x] Validatoren und Fehlermodell portieren
 - [x] `Formular`, `SubForm` und `ArrayForm` portieren
 - [x] `InputContainer` portieren
-- [ ] `ComboBox` nach Abschluss der Tabellenbasis portieren
+- [x] `ComboBox` nach Abschluss der Tabellenbasis portieren
 - [ ] `ImageCropper` nach `Image` und Viewport-Integration portieren
 
 ### 3. Editor
@@ -140,9 +140,9 @@ Der Editor beginnt erst, wenn sein Forms-Control-Vertrag stabil ist.
 | --- | --- |
 | `jfx-core` | portiert; traegt Runtime, DSL, State, Statements und SSR/Hydration |
 | `jfx-router` | portiert und von JFX2 fachlich weiterentwickelt |
-| `jfx-viewport` | portiert (`Viewport`, `Window`, `Notification`) |
+| `jfx-viewport` | portiert (`Viewport`, `Window`, `Notification`, `Overlay`) |
 | `jfx-i18n` | nach `jfx-core` integriert |
-| `jfx-forms` | Forms-Kern vollstaendig portiert: typisierte Modellbindung, Editierbarkeit, Annotation-Validatoren, rekursive Fehlerzuordnung, `SubForm`, `ArrayForm` und `InputContainer`; `ComboBox`/`ImageCropper` warten auf ihre Controls-Abhaengigkeiten |
+| `jfx-forms` | Forms-Kern samt `ComboBox` portiert: typisierte Modellbindung, Editierbarkeit, Annotation-Validatoren, rekursive Fehlerzuordnung, `SubForm`, `ArrayForm` und `InputContainer`; `ImageCropper` wartet auf `Image` und Viewport-Integration |
 | `jfx-controls` | Tabellenbasis portiert (`TableCell`, `TableColumn`, `TableRow`, `TableView`) mit virtuellen Zeilen, lokaler/entfernter Liste, Sortierstatus, Crawl-Paging und Content-Header; weitere Controls noch offen |
 | `jfx-editor` | noch offen |
 | `jfx-json` | portiert; neuer reflektionsbasierter Mapper mit getrennten Komponenten fuer Typmodell, Metadaten, Serialisierung und Deserialisierung |
@@ -222,3 +222,27 @@ entsorgt. Tests decken Crawl-SSR, strukturelle Listenmutation, Entsorgung,
 unbeladene Remote-Bereiche und Remote-Sortierstatus ab. `fixedHeight` begrenzt
 die Tabellenhoehe exakt; der Body-Viewport bleibt innerhalb dieser Hoehe mit
 `overflow: auto` scrollbar.
+
+### ComboBox
+
+Die `ComboBox` bleibt ein typisiertes `Control[T]` mit `Property[T]` fuer die
+Formularbindung und einer separaten `ListProperty[T]` fuer Single- und
+Multi-Selection. `identityBy` gleicht nicht nur die Markierung ab, sondern
+uebernimmt bei einer Listenaktualisierung auch die neue Instanz desselben
+fachlichen Eintrags. Dadurch bleiben Auswahl, geschlossener Wert und
+Formularwert konsistent.
+
+Die strukturelle Konfiguration und alle Renderer werden zu Beginn von
+`compose(cursor)` ausgewertet. Zeilen-, Wert- und Footer-Renderer sind
+kontextuelle JFX3-DSL-Funktionen; die Wertdarstellung verwendet `Foreach`, das
+Dropdown `Condition` und die Liste darin die portierte `TableView`. Das dafuer
+portierte `Overlay` wird als Konfiguration in der globalen Viewport-Liste
+registriert und dort durch `Foreach` gemountet. Es erzeugt oder verschiebt keine
+DOM-Kinder selbst; Positionierungsbeobachtung und Registrierung werden beim
+Unmount vollstaendig entsorgt.
+
+SSR rendert die geschlossene, zugängliche Combobox deterministisch. Tests
+decken das dynamische Overlay mit `TableView`, kontextuelle Renderer,
+Single-/Multi-Selection, stabile Identitaet, bidirektionale Formularbindung und
+die Entfernung der Overlay-Registrierung beim Unmount ab. Die Demo ist wieder
+unter `/combo-box` erreichbar.

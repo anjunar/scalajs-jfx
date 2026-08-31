@@ -11,7 +11,6 @@ import jfx.core.state.{ListProperty, Property, ReadOnlyProperty}
 import jfx.core.statement.Foreach
 import jfx.core.text.TextValue
 
-import java.util.UUID
 import scala.compiletime.uninitialized
 import scala.scalajs.js.timers.setTimeout
 
@@ -36,6 +35,10 @@ final class Viewport extends AbstractComponent {
         Window.window(conf)
       }
 
+      Foreach.foreach(Viewport.overlays) { conf =>
+        Overlay.render(conf)
+      }
+
       Foreach.foreach(Viewport.notifications) { conf =>
         Notification.notification(conf)
       }
@@ -52,22 +55,30 @@ object Viewport {
     case Error   extends NotificationKind("jfx-viewport-notification--error")
   }
 
-  type WindowBody = AbstractComponent ?=> Cursor ?=> Unit
+  type WindowBody  = AbstractComponent ?=> Cursor ?=> Unit
+  type OverlayBody = Overlay ?=> Cursor ?=> Unit
 
   val windows: ListProperty[WindowConf]             = ListProperty()
+  val overlays: ListProperty[OverlayConf]           = ListProperty()
   val notifications: ListProperty[NotificationConf] = ListProperty()
 
   private val notificationFadeOutMs = 250
   private val windowFadeOutMs       = 300
   private val windowBaseOffsetPx    = 72.0
   private val windowStepPx          = 28.0
+  private var nextConfId            = 0L
+
+  private def uniqueId(prefix: String): String = {
+    nextConfId += 1
+    s"$prefix-$nextConfId"
+  }
 
   final class NotificationConf(
       val kind: NotificationKind = NotificationKind.Info,
       val topPx: Double
   ) {
     val messageProperty: Property[String] = Property("")
-    val id: String                        = UUID.randomUUID().toString
+    val id: String                        = uniqueId("notification")
     val visible: Property[Boolean]        = Property(true)
 
     def message: ReadOnlyProperty[String] =
@@ -92,7 +103,7 @@ object Viewport {
       val onClick: Option[Window => Unit] = None
   ) {
     val titleProperty: Property[String] = Property("")
-    val id: String                      = UUID.randomUUID().toString
+    val id: String                      = uniqueId("window")
 
     def title: ReadOnlyProperty[String] =
       titleProperty
@@ -102,6 +113,22 @@ object Viewport {
 
     def title_=(value: ReadOnlyProperty[String]): Unit =
       value.observe(titleProperty.set)
+  }
+
+  final class OverlayConf(
+      val anchor: Option[org.scalajs.dom.HTMLElement],
+      val body: OverlayBody,
+      val widthPx: Option[Double],
+      val effectiveWidthProperty: Property[Double],
+      val offsetXPx: Double = 0.0,
+      val offsetYPx: Double = 4.0,
+      val minWidthPx: Option[Double] = None,
+      val maxHeightPx: Option[Double] = None,
+      val marginViewportPx: Double = 8.0,
+      val flipY: Boolean = true,
+      val zIndex: Int = 90000
+  ) {
+    val id: String = uniqueId("overlay")
   }
 
   object WindowConf {
@@ -192,6 +219,19 @@ object Viewport {
     touchWindow(conf)
     conf
   }
+
+  def addOverlay(conf: OverlayConf): OverlayConf = {
+    overlays += conf
+    conf
+  }
+
+  def closeOverlay(conf: OverlayConf): Unit = {
+    val index = overlays.indexWhere(_ eq conf)
+    if (index >= 0) overlays.remove(index)
+  }
+
+  def closeOverlayById(id: String): Unit =
+    overlays.find(_.id == id).foreach(closeOverlay)
 
   def addWindow(
       title: String,
