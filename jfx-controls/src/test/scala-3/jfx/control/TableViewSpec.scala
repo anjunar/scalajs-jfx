@@ -31,7 +31,10 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
                 tableView[String] {
                   crawlable = true
                   items = members
-                  column[String, String]("Name", prefWidth = 240.0) { item => text(item) {} }
+                  column[String, String]("Name") {
+                    prefWidth = 240.0
+                    cell { item => text(item) {} }
+                  }
                 }
               })
             }
@@ -118,7 +121,9 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
                 tableView[String] {
                   crawlable = true
                   items = remote
-                  column[String, String]("Name") { item => text(item) {} }
+                  column[String, String]("Name") {
+                    cell { item => text(item) {} }
+                  }
                 }
               })
             }
@@ -190,7 +195,9 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
             DslLayer.render(this, contentCursor) {
               tableView[String] {
                 items = itemsToRender
-                column[String, String]("Name") { item => text(item) {} }
+                column[String, String]("Name") {
+                  cell { item => text(item) {} }
+                }
                 extra
               }
             }
@@ -210,7 +217,9 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
       DslLayer.render(this, cursor) {
         tableView[String] {
           items = itemsProperty
-          column[String, String]("Name") { item => text(item) {} }
+          column[String, String]("Name") {
+            cell { item => text(item) {} }
+          }
         }
       }
   }
@@ -224,10 +233,8 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
         tableView[String] {
           items = itemsProperty
           column[String, String]("Name") {
-            (current: TableColumn[String, String]) ?=>
-              (_: Cursor) ?=>
-                current.$sortableProperty.set(true)
-                current.$sortKeyProperty.set(Some("name"))
+            sortable = true
+            sortKey = "name"
           }
         }
       }

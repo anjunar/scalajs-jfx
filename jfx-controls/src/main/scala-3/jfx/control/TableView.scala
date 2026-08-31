@@ -674,9 +674,9 @@ object TableView {
   def showHeader(using table: TableView[?]): Boolean = table.$showHeaderProperty.get
   def showHeader_=(value: Boolean)(using table: TableView[?]): Unit = table.$showHeaderProperty.set(value)
 
-  def prefWidth(using table: TableView[?]): Option[Double] = table.$prefWidthProperty.get
-  def prefWidth_=(value: Double)(using table: TableView[?]): Unit = table.$prefWidthProperty.set(Some(value))
-  def prefWidth_=(value: ReadOnlyProperty[Double])(using table: TableView[?]): Unit =
+  def tablePrefWidth(using table: TableView[?]): Option[Double] = table.$prefWidthProperty.get
+  def tablePrefWidth_=(value: Double)(using table: TableView[?]): Unit = table.$prefWidthProperty.set(Some(value))
+  def tablePrefWidth_=(value: ReadOnlyProperty[Double])(using table: TableView[?]): Unit =
     table.addDisposable(value.observe(width => table.$prefWidthProperty.set(Some(width))))
 
   def fixedHeight(using table: TableView[?]): Option[Double] = table.$fixedHeightProperty.get

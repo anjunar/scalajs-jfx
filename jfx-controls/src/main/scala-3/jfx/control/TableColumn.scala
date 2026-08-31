@@ -4,8 +4,6 @@ import jfx.core.component.{AbstractComponent, AbstractCustomComponent}
 import jfx.core.render.Cursor
 import jfx.core.state.{Property, ReadOnlyProperty}
 
-import scala.annotation.targetName
-
 class TableColumn[S, T](initialText: String = "") extends AbstractCustomComponent {
   import TableColumn.CellRenderer
 
@@ -42,36 +40,6 @@ object TableColumn {
   )(using TableView[S], Cursor): TableColumn[S, T] =
     tableColumn(text)(body)
 
-  @targetName("columnWithRenderer")
-  def column[S, T](text: String)(renderer: CellRenderer[S])(using
-      table: TableView[S],
-      cursor: Cursor
-  ): TableColumn[S, T] = {
-    val column = new TableColumn[S, T](text)
-    column.setCellRenderer(renderer)
-    table.registerColumn(column)
-    column
-  }
-
-  @targetName("columnWithPrefWidthAndRenderer")
-  def column[S, T](
-      text: String,
-      prefWidth: Double,
-      sortable: Boolean = false,
-      sortKey: String = ""
-  )(renderer: CellRenderer[S])(using
-      table: TableView[S],
-      cursor: Cursor
-  ): TableColumn[S, T] = {
-    val column = new TableColumn[S, T](text)
-    column.$prefWidthProperty.set(prefWidth)
-    column.$sortableProperty.set(sortable)
-    column.$sortKeyProperty.set(Option(sortKey).map(_.trim).filter(_.nonEmpty))
-    column.setCellRenderer(renderer)
-    table.registerColumn(column)
-    column
-  }
-
   def prefWidth[S, T](using column: TableColumn[S, T]): Double =
     column.$prefWidthProperty.get
 
@@ -87,6 +55,9 @@ object TableColumn {
     column.$cellRenderer.get
 
   def cellRenderer_=[S](renderer: CellRenderer[S])(using column: TableColumn[S, ?]): Unit =
+    column.setCellRenderer(renderer)
+
+  def cell[S, T](using column: TableColumn[S, T])(renderer: CellRenderer[S]): Unit =
     column.setCellRenderer(renderer)
 
   def cellValueFactory[S, T](using

@@ -1,7 +1,7 @@
 package app.pages
 
 import app.components.Showcase.*
-import jfx.control.TableColumn.column
+import jfx.control.TableColumn.*
 import jfx.control.TableView.*
 import jfx.core.component.AbstractComponent
 import jfx.core.dsl.ClassDsl.classes
@@ -150,31 +150,31 @@ object TableViewPage {
                 rowHeight = 44.0
                 items = books
 
-                column[Book, String](
-                  "Title",
-                  prefWidth = 300.0,
-                  sortable = true,
+                column[Book, String]("Title") {
+                  prefWidth = 300.0
+                  sortable = true
                   sortKey = "title"
-                ) { book =>
-                  text(book.title) {}
+                  cell { book =>
+                    text(book.title) {}
+                  }
                 }
 
-                column[Book, String](
-                  "Author",
-                  prefWidth = 240.0,
-                  sortable = true,
+                column[Book, String]("Author") {
+                  prefWidth = 240.0
+                  sortable = true
                   sortKey = "author"
-                ) { book =>
-                  text(book.author) {}
+                  cell { book =>
+                    text(book.author) {}
+                  }
                 }
 
-                column[Book, Int](
-                  "Year",
-                  prefWidth = 100.0,
-                  sortable = true,
+                column[Book, Int]("Year") {
+                  prefWidth = 100.0
+                  sortable = true
                   sortKey = "year"
-                ) { book =>
-                  text(book.year.toString) {}
+                  cell { book =>
+                    text(book.year.toString) {}
+                  }
                 }
 
                 header {
@@ -221,13 +221,13 @@ object TableViewPage {
                |    rowHeight = 44.0
                |    items = books
                |
-               |    column[Book, String](
-               |      "Title",
-               |      prefWidth = 300.0,
-               |      sortable = true,
+               |    column[Book, String]("Title") {
+               |      prefWidth = 300.0
+               |      sortable = true
                |      sortKey = "title"
-               |    ) { book =>
-               |      text(book.title) {}
+               |      cell { book =>
+               |        text(book.title) {}
+               |      }
                |    }
                |
                |    header {
