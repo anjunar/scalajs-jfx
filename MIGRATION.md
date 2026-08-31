@@ -129,7 +129,7 @@ Der Editor beginnt erst, wenn sein Forms-Control-Vertrag stabil ist.
 
 ### 4. Unabhaengige Module
 
-- [ ] `jfx-json`: `JsonId`, `JsonIgnore`, `JsonProperty`, `JsonType`, `JsonMapper`
+- [x] `jfx-json`: `JsonId`, `JsonIgnore`, `JsonProperty`, `JsonType`, `JsonMapper`
 - [ ] `jfx-webAuthn`: Base64URL, Facades und WebAuthn-Workflow
 - [ ] `jfx-ssr`: Node-Facades und Dev-/Prod-Renderer gegen die neue Cursor-SSR
       abgleichen
@@ -145,7 +145,7 @@ Der Editor beginnt erst, wenn sein Forms-Control-Vertrag stabil ist.
 | `jfx-forms` | Forms-Kern portiert: Kontextregistrierung, verschachtelte Fieldsets, Input-Zustand, Fehlerzuordnung und Basisvalidatoren; Controls-gebundene Komponenten offen |
 | `jfx-controls` | noch offen |
 | `jfx-editor` | noch offen |
-| `jfx-json` | noch offen |
+| `jfx-json` | portiert; neuer reflektionsbasierter Mapper mit getrennten Komponenten fuer Typmodell, Metadaten, Serialisierung und Deserialisierung |
 | `jfx-webAuthn` | noch offen |
 | `jfx-ssr` | HTTP-Response-Vertrag vorhanden; Node-Facades und wiederverwendbare Renderer noch offen |
 
@@ -175,6 +175,22 @@ dadurch mit Status 404 ausgeliefert.
 
 Noch nicht portierte Module bleiben bis zu ihrer Implementierung vom Publishing
 ausgeschlossen.
+
+### JSON-Mapping
+
+`jfx-json` ist als Neuimplementierung aus den fachlichen Anforderungen des
+JFX2-Mappers entstanden. Die oeffentliche `JsonMapper`-API und die Annotationen
+`JsonId`, `JsonIgnore`, `JsonProperty` und `JsonType` bleiben erhalten. Intern
+sind Mapping-Kontext, Typklassifikation und generische Bindungen,
+Annotations-/Polymorphie-Metadaten, Wertkonvertierung, Serialisierung und
+Deserialisierung getrennte Bausteine.
+
+Der Mapper unterstuetzt `Property`, `ListProperty`, Optionen, Maps, Scala- und
+JavaScript-Collections, primitive Werte, UUIDs, Raw-JSON, polymorphe Modelle und
+explizite Reflection-Metadaten. Deserialisierte State-Properties uebernehmen
+den gelesenen Wert zugleich als Default. Scala-Arrays werden anhand ihres
+Elementtyps erzeugt; damit wird insbesondere der alte `Array[Any]`-Fehler bei
+primitiven und registrierten Modell-Arrays vermieden.
 
 ## Entscheidungen festhalten
 

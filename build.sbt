@@ -106,8 +106,7 @@ lazy val jfxJson = Project(id = "scalajs-jfx-json", base = file("jfx-json"))
   .settings(
     name := "scalajs-jfx-json",
     moduleName := "scalajs-jfx-json",
-    libraryDependencies += "com.anjunar" %%% "scala-reflect" % "1.1.3",
-    publish / skip := true
+    libraryDependencies += "com.anjunar" %%% "scala-reflect" % "1.1.3"
   )
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
