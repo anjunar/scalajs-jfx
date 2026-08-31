@@ -81,7 +81,8 @@ object Runtime {
   def renderToString(build: SsrCursor => AbstractComponent): String = {
     val cursor    = new SsrCursor()
     val component = build(cursor)
-    renderMountedRoot(component, cursor)
+    try renderMountedRoot(component, cursor)
+    finally component.dispose()
   }
 
   def renderToStringAsync(
@@ -92,8 +93,9 @@ object Runtime {
 
     val root = build(cursor)
 
-    async.drain().map { _ =>
-      renderMountedRoot(root, cursor)
+    async.drain().transform { result =>
+      try result.map(_ => renderMountedRoot(root, cursor))
+      finally root.dispose()
     }
   }
 

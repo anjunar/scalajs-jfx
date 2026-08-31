@@ -32,9 +32,7 @@ object Main {
     AppTheme.syncFromDocument()
 
     val request =
-      RequestContext(
-        headers = RequestHeaders.empty
-      )
+      RequestContext.withUserAgent(dom.window.navigator.userAgent)
 
     val hydratingCursor =
       HydratingCursor.root(document.getElementById("root"), async)

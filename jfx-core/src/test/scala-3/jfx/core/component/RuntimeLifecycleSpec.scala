@@ -3,7 +3,7 @@ package jfx.core.component
 import jfx.core.dsl.DslLayer
 import jfx.core.layout.{Condition, TextComponent}
 import jfx.core.render.{CommentNode, Cursor, HostElement, HostNode, SsrCursor, TextNode}
-import jfx.core.state.{ListProperty, Property}
+import jfx.core.state.{Disposable, ListProperty, Property}
 import jfx.core.statement.Foreach
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -47,14 +47,52 @@ class RuntimeLifecycleSpec extends AnyFlatSpec with Matchers {
     val cursor = new SsrCursor()
     val root   = Runtime.mount(new EmptyRoot(), cursor)
     val childCursor = cursor.sub(root.host)
+    var disposed = false
 
     val error = intercept[IllegalStateException] {
-      Runtime.mount(new BrokenComponent(), childCursor, Some(root))
+      Runtime.mount(new BrokenComponent(() => disposed = true), childCursor, Some(root))
     }
 
     error.getMessage shouldBe "compose failed"
+    disposed shouldBe true
     root.children shouldBe empty
     cursor.collectHtml() shouldBe "<main></main>"
+  }
+
+  "Runtime.renderToString" should "dispose the rendered component tree" in {
+    var disposed = false
+
+    val html = Runtime.renderToString { cursor =>
+      Runtime.mount(new DisposableRoot(() => disposed = true), cursor)
+    }
+
+    html shouldBe "<main><span>rendered</span></main>"
+    disposed shouldBe true
+  }
+
+  it should "dispose the component when composition fails" in {
+    var disposed = false
+
+    val error = intercept[IllegalStateException] {
+      Runtime.renderToString { cursor =>
+        Runtime.mount(new BrokenComponent(() => disposed = true), cursor)
+      }
+    }
+
+    error.getMessage shouldBe "compose failed"
+    disposed shouldBe true
+  }
+
+  it should "dispose the component tree when HTML serialization fails" in {
+    var disposed = false
+
+    intercept[Throwable] {
+      Runtime.renderToString { cursor =>
+        Runtime.mount(new FailingRenderRoot(() => disposed = true), cursor)
+      }
+    }
+
+    disposed shouldBe true
   }
 
   "DslLayer.child" should "reuse the content cursor created during mounting" in {
@@ -109,12 +147,37 @@ class RuntimeLifecycleSpec extends AnyFlatSpec with Matchers {
     override val tagName: String = "section"
   }
 
-  private final class BrokenComponent extends AbstractComponent {
+  private final class BrokenComponent(onDispose: () => Unit) extends AbstractComponent {
     override val tagName: String = "section"
 
     override def compose(cursor: Cursor): Unit = {
+      addDisposable(Disposable(onDispose()))
       Runtime.mount(new Label("span", "partial"), cursor, Some(this))
       throw new IllegalStateException("compose failed")
+    }
+  }
+
+  private final class DisposableRoot(onDispose: () => Unit) extends AbstractComponent {
+    override val tagName: String = "main"
+
+    override def compose(cursor: Cursor): Unit = {
+      addDisposable(Disposable(onDispose()))
+      Runtime.mount(new Label("span", "rendered"), cursor, Some(this))
+    }
+  }
+
+  private final class FailingRenderRoot(onDispose: () => Unit) extends AbstractComponent {
+    override val tagName: String = "main"
+
+    override def compose(cursor: Cursor): Unit = {
+      addDisposable(Disposable(onDispose()))
+      host.insertChild(
+        0,
+        new HostNode {
+          override def renderHtml(): String =
+            throw new IllegalStateException("HTML serialization failed")
+        }
+      )
     }
   }
 

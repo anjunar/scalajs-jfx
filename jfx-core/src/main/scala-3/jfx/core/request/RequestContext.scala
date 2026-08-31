@@ -30,6 +30,13 @@ object RequestContext {
       headers = RequestHeaders.empty
     )
 
+  def withUserAgent(userAgent: String): RequestContext =
+    RequestContext(
+      headers = RequestHeaders(
+        Map("user-agent" -> Vector(Option(userAgent).getOrElse("")))
+      )
+    )
+
   def provide(value: RequestContext)(using component: AbstractComponent): Unit =
     Value.provide(value)
 
