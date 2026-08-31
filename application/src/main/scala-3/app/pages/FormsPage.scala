@@ -18,6 +18,7 @@ import jfx.forms.validators.{EmailConstraint, NotBlank}
 import jfx.i18n.{I18nRuntime, i18n}
 
 import scala.annotation.meta.field
+import jfx.forms.Input.inputType
 
 object FormsPage {
   def render()(using parent: AbstractComponent, cursor: Cursor): Unit = {
@@ -50,12 +51,10 @@ object FormsPage {
         i18n"Interactive profile",
         i18n"Change the model, force validation, or reset the interaction state."
       ) {
-        var mountedForm: jfx.forms.Form[DemoProfile] = null
-
         div {
           classes = Seq("form-page__layout")
 
-          mountedForm = form(profile) {
+          form(profile) { mountedForm ?=>
             classes = Seq("form-page__form", "form-page__workspace")
 
             div {
@@ -67,7 +66,7 @@ object FormsPage {
 
               inputContainer(i18n"Email address") {
                 input("email") {
-                  jfx.forms.Input.inputType = "email"
+                  inputType = "email"
                 }
               }
             }
