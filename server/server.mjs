@@ -14,6 +14,7 @@ const projectRoot = resolve(__dirname, "..")
 const clientRoot = resolve(projectRoot, "application/src/main/webapp")
 const clientDist = resolve(projectRoot, "dist/client")
 const serverEntry = resolve(projectRoot, "dist/server/entry-server.js")
+const viteConfig = resolve(projectRoot, "vite.config.js")
 
 const app = express()
 
@@ -21,7 +22,7 @@ let vite = null
 
 if (!isProduction) {
     vite = await createViteServer({
-        root: clientRoot,
+        configFile: viteConfig,
         server: {
             middlewareMode: true
         },

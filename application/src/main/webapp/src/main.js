@@ -1,4 +1,4 @@
 import './style.css'
-import { boot } from '../../../../target/scala-3.3.8/scalajs-jfx-demo-fastopt/main.js'
+import { boot } from 'scalajs:main.js'
 
 boot()

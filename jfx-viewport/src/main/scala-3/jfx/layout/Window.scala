@@ -1,7 +1,7 @@
 package jfx.layout
 
 import jfx.core.component.AbstractComponent
-import jfx.core.dsl.ClassDsl.classIf
+import jfx.core.dsl.ClassDsl.{classIf, classes}
 import jfx.core.dsl.DslLayerTwo.{child, render}
 import jfx.core.dsl.EventDsl
 import jfx.core.dsl.EventDsl.*
@@ -43,25 +43,25 @@ final class Window(conf: Viewport.WindowConf) extends AbstractComponent {
       }
 
       div {
-        addClass("jfx-window__surface")
+        classes = Seq("jfx-window__surface")
 
         div {
-          addClass("jfx-window__header")
+          classes = Seq("jfx-window__header")
 
           on("mousedown") { event =>
             startDrag(event)
           }
 
           div {
-            addClass("jfx-window__title")
+            classes = Seq("jfx-window__title")
             text(conf.title) {}
           }
 
           div {
-            addClass("jfx-window__actions")
+            classes = Seq("jfx-window__actions")
 
             button("close") {
-              addClass("material-icons jfx-window__chrome-button")
+              classes = Seq("material-icons", "jfx-window__chrome-button")
               buttonType("button")
 
               onClick { event =>
@@ -74,7 +74,7 @@ final class Window(conf: Viewport.WindowConf) extends AbstractComponent {
         }
 
         containerHost = div {
-          addClass("jfx-window__container")
+          classes = Seq("jfx-window__container")
         }
       }
     }

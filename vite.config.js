@@ -1,26 +1,33 @@
 import { defineConfig } from "vite"
-import scalaJSPlugin from "@scala-js/vite-plugin-scalajs"
 import tailwindcss from "@tailwindcss/vite"
-import { resolve } from "node:path"
+import { dirname, resolve } from "node:path"
+import { fileURLToPath } from "node:url"
 
-const repoRoot = resolve(__dirname, "..", "..")
+const projectRoot = dirname(fileURLToPath(import.meta.url))
+const webappRoot = resolve(projectRoot, "application", "src", "main", "webapp")
+const scalaJsOutputRoot = resolve(projectRoot, "application", "target", "vite")
+const scalaJsFastOptMain = resolve(scalaJsOutputRoot, "fastopt", "main.js")
+const scalaJsFullOptMain = resolve(scalaJsOutputRoot, "fullopt", "main.js")
 
-export default defineConfig({
-    root: "application/src/main/webapp",
+export default defineConfig(({ command, isSsrBuild }) => ({
+    root: webappRoot,
+    resolve: {
+        alias: {
+            "scalajs:main.js": command === "serve" ? scalaJsFastOptMain : scalaJsFullOptMain
+        }
+    },
     server: {
         fs: {
-            allow: [repoRoot]
+            allow: [projectRoot]
         }
     },
     plugins: [
-        tailwindcss(),
-        scalaJSPlugin({
-            cwd: ".",
-            projectID: "scalajs-jfx-demo"
-        })
+        tailwindcss()
     ],
     build: {
+        outDir: resolve(projectRoot, "dist", isSsrBuild ? "server" : "client"),
+        emptyOutDir: true,
         sourcemap: true,
-        manifest: true
+        manifest: !isSsrBuild
     }
-})
+}))

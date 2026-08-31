@@ -2,6 +2,8 @@ package app.components
 
 import jfx.core.component.AbstractComponent
 import jfx.core.dsl.ClassDsl.classes
+import jfx.core.dsl.DslLayerTwo.render
+import jfx.core.layout.Div
 import jfx.core.layout.Div.div
 import jfx.core.layout.TextComponent.text
 import jfx.core.layout.VBox.vbox
@@ -9,18 +11,22 @@ import jfx.core.render.Cursor
 import jfx.core.state.{Property, ReadOnlyProperty}
 import jfx.i18n.RuntimeMessage
 
+import scala.annotation.targetName
+
 object Showcase {
 
   def showcasePage(
       title: String,
       subtitle: String
-  )(content: => Unit)(using AbstractComponent, Cursor): Unit =
+  )(content: AbstractComponent ?=> Cursor ?=> Unit)(using AbstractComponent, Cursor): Unit =
     showcasePage(Property(title), Property(subtitle))(content)
 
   def showcasePage(
       title: RuntimeMessage,
       subtitle: RuntimeMessage
-  )(content: => Unit)(using AbstractComponent, Cursor): Unit = {
+  )(content: AbstractComponent ?=> Cursor ?=> Unit)(using parent: AbstractComponent, cursor: Cursor): Unit = {
+    var contentHost: Div = null
+
     vbox {
       classes = Seq("showcase-page")
 
@@ -31,33 +37,22 @@ object Showcase {
         div { classes = Seq("showcase-page__subtitle"); text(subtitle) {} }
       }
 
-      div {
+      contentHost = div {
         classes = Seq("showcase-page__content")
-        content
       }
+    }
+
+    val childCursor = cursor.sub(contentHost.host)
+    render(contentHost, childCursor) {
+      content
     }
   }
 
   def showcasePage(
       title: ReadOnlyProperty[String],
       subtitle: ReadOnlyProperty[String]
-  )(content: => Unit)(using AbstractComponent, Cursor): Unit = {
-    vbox {
-      classes = Seq("showcase-page")
-
-      vbox {
-        classes = Seq("showcase-page__header")
-        div { classes = Seq("showcase-page__eyebrow"); text("scalajs-jfx") {} }
-        div { classes = Seq("showcase-page__title"); text(title) {} }
-        div { classes = Seq("showcase-page__subtitle"); text(subtitle) {} }
-      }
-
-      div {
-        classes = Seq("showcase-page__content")
-        content
-      }
-    }
-  }
+  )(content: AbstractComponent ?=> Cursor ?=> Unit)(using AbstractComponent, Cursor): Unit =
+    renderShowcasePage(title, subtitle)(content)
 
   def sectionIntro(
       kicker: String,
@@ -106,6 +101,21 @@ object Showcase {
     }
   }
 
+  @targetName("metricStripMessages")
+  def metricStrip(items: (RuntimeMessage, RuntimeMessage)*)(using AbstractComponent, Cursor): Unit = {
+    div {
+      classes = Seq("showcase-metric-strip")
+
+      items.foreach { case (value, label) =>
+        vbox {
+          classes = Seq("showcase-metric")
+          div { classes = Seq("showcase-metric__value"); text(value) {} }
+          div { classes = Seq("showcase-metric__label"); text(label) {} }
+        }
+      }
+    }
+  }
+
   def insightGrid(items: (String, String, String)*)(using AbstractComponent, Cursor): Unit = {
     div {
       classes = Seq("showcase-insight-grid")
@@ -121,33 +131,61 @@ object Showcase {
     }
   }
 
-  def componentShowcase(
-      title: String,
-      summary: String = ""
-  )(content: => Unit)(using AbstractComponent, Cursor): Unit = {
-    vbox {
-      classes = Seq("component-showcase")
+  @targetName("insightGridMessages")
+  def insightGrid(items: (RuntimeMessage, RuntimeMessage, RuntimeMessage)*)(using
+      AbstractComponent,
+      Cursor
+  ): Unit = {
+    div {
+      classes = Seq("showcase-insight-grid")
 
-      vbox {
-        classes = Seq("component-showcase__header")
-        div { classes = Seq("component-showcase__title"); text(title) {} }
-
-        if (summary.nonEmpty) {
-          div { classes = Seq("component-showcase__summary"); text(summary) {} }
+      items.zipWithIndex.foreach { case ((label, title, body), index) =>
+        vbox {
+          classes = Seq("showcase-insight", s"showcase-insight--${index % 3}")
+          div { classes = Seq("showcase-insight__label"); text(label) {} }
+          div { classes = Seq("showcase-insight__title"); text(title) {} }
+          div { classes = Seq("showcase-insight__body"); text(body) {} }
         }
       }
+    }
+  }
 
+  def noteBlock(title: RuntimeMessage, body: RuntimeMessage)(using AbstractComponent, Cursor): Unit = {
+    vbox {
+      classes = Seq("showcase-note")
+      div { classes = Seq("showcase-note__title"); text(title) {} }
+      div { classes = Seq("showcase-note__body"); text(body) {} }
+    }
+  }
+
+  def patternList(title: RuntimeMessage, items: RuntimeMessage*)(using
+      AbstractComponent,
+      Cursor
+  ): Unit = {
+    vbox {
+      classes = Seq("showcase-pattern-list")
+      div { classes = Seq("showcase-pattern-list__title"); text(title) {} }
       div {
-        classes = Seq("component-showcase__render")
-        content
+        classes = Seq("showcase-pattern-list__items")
+        items.foreach { item =>
+          div { classes = Seq("showcase-pattern-list__item"); text(item) {} }
+        }
       }
     }
   }
 
   def componentShowcase(
+      title: String,
+      summary: String = ""
+  )(content: AbstractComponent ?=> Cursor ?=> Unit)(using AbstractComponent, Cursor): Unit =
+    renderComponentShowcase(Property(title), Option.when(summary.nonEmpty)(Property(summary)))(content)
+
+  def componentShowcase(
       title: RuntimeMessage,
       summary: RuntimeMessage
-  )(content: => Unit)(using AbstractComponent, Cursor): Unit = {
+  )(content: AbstractComponent ?=> Cursor ?=> Unit)(using parent: AbstractComponent, cursor: Cursor): Unit = {
+    var contentHost: Div = null
+
     vbox {
       classes = Seq("component-showcase")
 
@@ -157,40 +195,29 @@ object Showcase {
         div { classes = Seq("component-showcase__summary"); text(summary) {} }
       }
 
-      div {
+      contentHost = div {
         classes = Seq("component-showcase__render")
-        content
       }
+    }
+
+    val childCursor = cursor.sub(contentHost.host)
+    render(contentHost, childCursor) {
+      content
     }
   }
 
   def apiSection(
       title: String,
       summary: String = ""
-  )(content: => Unit)(using AbstractComponent, Cursor): Unit = {
-    vbox {
-      classes = Seq("api-section")
-
-      vbox {
-        classes = Seq("api-section__header")
-        div { classes = Seq("api-section__title"); text(title) {} }
-
-        if (summary.nonEmpty) {
-          div { classes = Seq("api-section__summary"); text(summary) {} }
-        }
-      }
-
-      div {
-        classes = Seq("api-section__content")
-        content
-      }
-    }
-  }
+  )(content: AbstractComponent ?=> Cursor ?=> Unit)(using AbstractComponent, Cursor): Unit =
+    renderApiSection(Property(title), Option.when(summary.nonEmpty)(Property(summary)))(content)
 
   def apiSection(
       title: RuntimeMessage,
       summary: RuntimeMessage
-  )(content: => Unit)(using AbstractComponent, Cursor): Unit = {
+  )(content: AbstractComponent ?=> Cursor ?=> Unit)(using parent: AbstractComponent, cursor: Cursor): Unit = {
+    var contentHost: Div = null
+
     vbox {
       classes = Seq("api-section")
 
@@ -200,10 +227,14 @@ object Showcase {
         div { classes = Seq("api-section__summary"); text(summary) {} }
       }
 
-      div {
+      contentHost = div {
         classes = Seq("api-section__content")
-        content
       }
+    }
+
+    val childCursor = cursor.sub(contentHost.host)
+    render(contentHost, childCursor) {
+      content
     }
   }
 
@@ -219,6 +250,89 @@ object Showcase {
     div {
       classes = Seq("app-state-chip", s"is-$modifier")
       text(label) {}
+    }
+  }
+
+  private def renderShowcasePage(
+      title: ReadOnlyProperty[String],
+      subtitle: ReadOnlyProperty[String]
+  )(content: AbstractComponent ?=> Cursor ?=> Unit)(using parent: AbstractComponent, cursor: Cursor): Unit = {
+    var contentHost: Div = null
+
+    vbox {
+      classes = Seq("showcase-page")
+
+      vbox {
+        classes = Seq("showcase-page__header")
+        div { classes = Seq("showcase-page__eyebrow"); text("scalajs-jfx") {} }
+        div { classes = Seq("showcase-page__title"); text(title) {} }
+        div { classes = Seq("showcase-page__subtitle"); text(subtitle) {} }
+      }
+
+      contentHost = div {
+        classes = Seq("showcase-page__content")
+      }
+    }
+
+    val childCursor = cursor.sub(contentHost.host)
+    render(contentHost, childCursor) {
+      content
+    }
+  }
+
+  private def renderComponentShowcase(
+      title: ReadOnlyProperty[String],
+      summary: Option[ReadOnlyProperty[String]]
+  )(content: AbstractComponent ?=> Cursor ?=> Unit)(using parent: AbstractComponent, cursor: Cursor): Unit = {
+    var contentHost: Div = null
+
+    vbox {
+      classes = Seq("component-showcase")
+
+      vbox {
+        classes = Seq("component-showcase__header")
+        div { classes = Seq("component-showcase__title"); text(title) {} }
+        summary.foreach { value =>
+          div { classes = Seq("component-showcase__summary"); text(value) {} }
+        }
+      }
+
+      contentHost = div {
+        classes = Seq("component-showcase__render")
+      }
+    }
+
+    val childCursor = cursor.sub(contentHost.host)
+    render(contentHost, childCursor) {
+      content
+    }
+  }
+
+  private def renderApiSection(
+      title: ReadOnlyProperty[String],
+      summary: Option[ReadOnlyProperty[String]]
+  )(content: AbstractComponent ?=> Cursor ?=> Unit)(using parent: AbstractComponent, cursor: Cursor): Unit = {
+    var contentHost: Div = null
+
+    vbox {
+      classes = Seq("api-section")
+
+      vbox {
+        classes = Seq("api-section__header")
+        div { classes = Seq("api-section__title"); text(title) {} }
+        summary.foreach { value =>
+          div { classes = Seq("api-section__summary"); text(value) {} }
+        }
+      }
+
+      contentHost = div {
+        classes = Seq("api-section__content")
+      }
+    }
+
+    val childCursor = cursor.sub(contentHost.host)
+    render(contentHost, childCursor) {
+      content
     }
   }
 }

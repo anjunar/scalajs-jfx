@@ -1,7 +1,7 @@
 package jfx.forms
 
 import jfx.core.component.AbstractComponent
-import jfx.core.state.{ListProperty, Property, ReadOnlyProperty}
+import jfx.core.state.{Disposable, ListProperty, Property, ReadOnlyProperty}
 import jfx.forms.validators.Validator
 
 trait Control[V] { self: AbstractComponent =>
@@ -9,6 +9,8 @@ trait Control[V] { self: AbstractComponent =>
   val name: String
 
   val valueProperty: Property[V]
+
+  def addDisposable(disposable: Disposable): Unit
   val editableProperty: Property[Boolean] = Property(true)
   val focusedProperty: Property[Boolean]  = Property(false)
   val dirtyProperty: Property[Boolean]    = Property(false)
@@ -22,7 +24,7 @@ trait Control[V] { self: AbstractComponent =>
   def editable_=(value: Boolean): Unit = editableProperty.set(value)
 
   def editable_=(value: ReadOnlyProperty[Boolean]): Unit =
-    addDisposable(value.observe(editableProperty.set))
+    self.addDisposable(value.observe(editableProperty.set))
 
   def invalid: ReadOnlyProperty[Boolean] = errors.map(_.nonEmpty)
 

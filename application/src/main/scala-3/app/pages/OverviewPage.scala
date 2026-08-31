@@ -1,213 +1,56 @@
 package app.pages
 
-import app.AppI18n
+import app.components.Showcase.*
 import jfx.core.component.AbstractComponent
 import jfx.core.dsl.ClassDsl.classes
 import jfx.core.dsl.EventDsl.onClick
+import jfx.core.dsl.StyleDsl.*
 import jfx.core.layout.Button.button
 import jfx.core.layout.Div.div
 import jfx.core.layout.TextComponent.text
+import jfx.core.layout.VBox.vbox
 import jfx.core.render.Cursor
 import jfx.i18n.{I18nRuntime, RuntimeMessage, i18n}
-import jfx.router.Router
 
 object OverviewPage {
-
   def render()(using AbstractComponent, Cursor): Unit = {
-    val locale =
-      I18nRuntime.require.locale
-
-    div {
-      classes = Seq("clarity-page", "clarity-page--home")
-
-      div {
-        classes = Seq("home-hero")
-
-        div {
-          classes = Seq("home-hero__content")
-
-          div {
-            classes = Seq("home-eyebrow")
-            text(i18n"Scala.js UI architecture") {}
-          }
-
-          div {
-            classes = Seq("home-hero__title")
-            text(i18n"A fresh demo, rebuilt around the actual scalajs-jfx modules.") {}
-          }
-
-          div {
-            classes = Seq("home-hero__copy")
-            text(i18n"The visual language mirrors the JFX2 showcase, but the pages here are written specifically for this repository: router, i18n, viewport, forms and rendering infrastructure.") {}
-          }
-
-          div {
-            classes = Seq("home-hero__actions", "clarity-action-row")
-
-            button(i18n"Router") {
-              classes = Seq("calm-action", "calm-action--primary")
-              onClick { _ => Router.navigate("/router") }
+    val runtime = I18nRuntime.require
+    showcasePage(i18n"Welcome to JFX2", i18n"Your new home for reactive UIs in Scala.js.") {
+      vbox {
+        style { gap = "34px" }
+        sectionIntro(i18n"Origin story", i18n"After 17 years of looking for clarity, the project started to feel less like a thesis and more like relief.", i18n"JFX2 is the answer I wanted after living with frameworks that promised simplicity but quietly handed over control. It chooses explicit lifecycles, honest reactivity, and a DSL that stays readable when the codebase grows.")
+        sectionIntro(i18n"Vision", i18n"A documentation site that feels like a real workbench.", i18n"The showcase should not just prove that components render. It should show how JFX2 is meant to feel: declarative, server-stable, reactive in the browser, and readable enough that you can still nod to it six months later.")
+        metricStrip(i18n"SSR" -> i18n"Server HTML and client hydration share the same structure.", i18n"DSL" -> i18n"Templates stay declarative and free of DOM handwork.", i18n"Live" -> i18n"Every page shows a usable example instead of a dry API list.")
+        componentShowcase(i18n"Message-centered I18n", i18n"The English source lives in Scala code. The catalog attaches multiple languages to exactly that one message.") {
+          vbox {
+            classes = Seq("i18n-demo")
+            div {
+              classes = Seq("i18n-demo__toolbar")
+              div { classes = Seq("i18n-demo__locale"); text(runtime.locale.map(locale => s"Locale: ${locale.code}")) {} }
+              button(i18n"Switch locale") { classes = Seq("calm-action", "calm-action--secondary"); onClick { _ => runtime.setLocale(if (runtime.locale.get.code == "de") jfx.i18n.I18nLocale.En else jfx.i18n.I18nLocale("de")) } }
             }
-
-            button(i18n"Viewport") {
-              classes = Seq("calm-action", "calm-action--secondary")
-              onClick { _ => Router.navigate("/viewport") }
+            div {
+              classes = Seq("i18n-demo__grid")
+              i18nSample("""i18n"Delete document"""", i18n"Delete document")
+              i18nSample("""i18n"User $user invited you to $group"""", i18n"User ${jfx.i18n.I18n.named("user", "Mira")} invited you to ${jfx.i18n.I18n.named("group", "Core Team")}")
+              i18nSample("""i18n"Missing translations fall back to English"""", i18n"Missing translations fall back to English")
             }
           }
         }
-
-        div {
-          classes = Seq("home-hero__metrics")
-
-          metricCard(
-            locale,
-            "01",
-            "core",
-            i18n"The rendering DSL, properties and lifecycle foundations."
-          )
-          metricCard(
-            locale,
-            "02",
-            "router",
-            i18n"Base-path aware navigation with locale prefixes and async route loading."
-          )
-          metricCard(
-            locale,
-            "03",
-            "viewport",
-            i18n"Windows and notifications as global UI surfaces."
-          )
-        }
-      }
-
-      div {
-        classes = Seq("home-section", "home-section--intro")
-        sectionHeading(
-          locale,
-          i18n"Modules",
-          i18n"What this app chooses to make visible.",
-          i18n"Each page isolates one subsystem and explains the tradeoffs in its own voice instead of imitating a generated docs tree."
-        )
-
-        div {
-          classes = Seq("home-benefit-grid")
-          benefitCard(locale, i18n"Router", i18n"Locale-aware paths", i18n"Routes stay matchable while the browser URL keeps `/scalajs-jfx/de/...` visible.")
-          benefitCard(locale, i18n"i18n", i18n"Message model", i18n"The repository already contains a source-first i18n model, so the demo shows where URL locale and runtime locale meet.")
-          benefitCard(locale, i18n"Forms", i18n"Field architecture", i18n"Forms are documented as composable controls with explicit registration and validation structure.")
-          benefitCard(locale, i18n"Viewport", i18n"Global stage", i18n"Notifications and windows are rendered once and reused across routes.")
-        }
-      }
-
-      div {
-        classes = Seq("home-section")
-        sectionHeading(
-          locale,
-          i18n"Explore",
-          i18n"Jump directly into the rebuilt pages.",
-          i18n"The shell design is inherited from JFX2, but every content block below is newly written for this codebase."
-        )
-
-        div {
-          classes = Seq("home-demo-grid")
-          demoCard(locale, "01", i18n"Router", i18n"Path resolution, route context and locale prefixes.", "/router")
-          demoCard(locale, "02", i18n"i18n", i18n"Toolbar locale switch, route prefixes and catalog direction.", "/i18n")
-          demoCard(locale, "03", i18n"Rendering", i18n"SSR, hydration and route loading constraints.", "/rendering")
-          demoCard(locale, "04", i18n"State", i18n"Reactive properties as the smallest moving part.", "/state")
-        }
-      }
-
-      div {
-        classes = Seq("home-section--closing")
-
-        div {
-          classes = Seq("home-closing__copy")
-          div {
-            classes = Seq("home-closing__title")
-            text(i18n"The shell is familiar. The story is new.") {}
-          }
-          div {
-            classes = Seq("home-closing__body")
-            text(i18n"This demo is intentionally narrower than JFX2: it shows the real building blocks that exist in this repository and avoids pretending that missing modules are already here.") {}
-          }
-        }
-
-        button(i18n"Open router docs") {
-          classes = Seq("calm-action", "calm-action--primary")
-          onClick { _ => Router.navigate("/router") }
-        }
+        insightGrid((i18n"01", i18n"Readability first", i18n"Components are shown so their purpose, state, and placement are immediately clear."), (i18n"02", i18n"Hydration in view", i18n"Examples avoid hidden DOM drift and keep virtual containers understandable."), (i18n"03", i18n"A growing system", i18n"New components get room for context, variants, API, and architectural hints."))
+        patternList(i18n"What you find on the component pages", i18n"A short explanation of when the component makes sense.", i18n"At least one real live state with data or interaction.", i18n"Concrete DSL examples that stay close to production code.", i18n"Notes about stability, cursor behavior, SSR, or reactive properties.")
+        noteBlock(i18n"Next step", i18n"Pick a component on the left. Each page is now denser and still leaves room for more building blocks without losing the thread.")
       }
     }
   }
 
-  private def metricCard(
-      locale: jfx.core.state.ReadOnlyProperty[jfx.i18n.I18nLocale],
-      index: String,
-      title: String,
-      body: RuntimeMessage
-  )(using AbstractComponent, Cursor): Unit =
-    div {
-      classes = Seq("home-metric")
-      div { classes = Seq("home-metric__index"); text(index) {} }
-      div { classes = Seq("home-metric__title"); text(title) {} }
-      div { classes = Seq("home-metric__body"); text(body) {} }
+  private def i18nSample(source: String, resolved: RuntimeMessage)(using AbstractComponent, Cursor): Unit = {
+    vbox {
+      classes = Seq("i18n-demo__sample")
+      div { classes = Seq("i18n-demo__label"); text(i18n"Source") {} }
+      div { classes = Seq("i18n-demo__source"); text(source) {} }
+      div { classes = Seq("i18n-demo__label"); text(i18n"Resolved") {} }
+      div { classes = Seq("i18n-demo__resolved"); text(resolved) {} }
     }
-
-  private def benefitCard(
-      locale: jfx.core.state.ReadOnlyProperty[jfx.i18n.I18nLocale],
-      title: RuntimeMessage,
-      subtitle: RuntimeMessage,
-      body: RuntimeMessage
-  )(using AbstractComponent, Cursor): Unit =
-    div {
-      classes = Seq("home-benefit-card")
-      div { classes = Seq("home-benefit-card__title"); text(title) {} }
-      div {
-        classes = Seq("home-benefit-card__body")
-        text(
-          locale.map { current =>
-            s"${AppI18n.resolve(subtitle, current)} ${AppI18n.resolve(body, current)}"
-          }
-        ) {}
-      }
-    }
-
-  private def demoCard(
-      locale: jfx.core.state.ReadOnlyProperty[jfx.i18n.I18nLocale],
-      meta: String,
-      title: RuntimeMessage,
-      body: RuntimeMessage,
-      path: String
-  )(using AbstractComponent, Cursor): Unit =
-    div {
-      classes = Seq("home-demo-card")
-      div {
-        classes = Seq("home-demo-card__meta")
-        text(meta) {}
-      }
-      div {
-        classes = Seq("home-demo-card__title")
-        text(title) {}
-      }
-      div {
-        classes = Seq("home-demo-card__body")
-        text(body) {}
-      }
-      button(i18n"Open") {
-        classes = Seq("calm-action", "calm-action--secondary")
-        onClick { _ => Router.navigate(path) }
-      }
-    }
-
-  private def sectionHeading(
-      locale: jfx.core.state.ReadOnlyProperty[jfx.i18n.I18nLocale],
-      label: RuntimeMessage,
-      title: RuntimeMessage,
-      copy: RuntimeMessage
-  )(using AbstractComponent, Cursor): Unit =
-    div {
-      classes = Seq("home-section-heading")
-      div { classes = Seq("home-eyebrow"); text(label) {} }
-      div { classes = Seq("home-section-heading__title"); text(title) {} }
-      div { classes = Seq("home-section-heading__copy"); text(copy) {} }
-    }
+  }
 }

@@ -1,6 +1,7 @@
 package jfx.layout
 
 import jfx.core.component.{AbstractComponent, Runtime}
+import jfx.core.dsl.ClassDsl.classes
 import jfx.core.dsl.DslLayerTwo.render
 import jfx.core.dsl.StyleDsl.*
 import jfx.core.layout.Div
@@ -24,7 +25,7 @@ final class Viewport extends AbstractComponent {
       addClass("jfx-viewport")
 
       contentHost = div {
-        addClass("jfx-viewport__content")
+        classes = Seq("jfx-viewport__content")
 
         style {
           minHeight = "100%"

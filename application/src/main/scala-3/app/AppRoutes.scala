@@ -15,6 +15,26 @@ object AppRoutes {
           OverviewPage.render()
         })
       },
+      Route.view("/button") { _ =>
+        Future.successful(Route.component {
+          ButtonPage.render()
+        })
+      },
+      Route.view("/layout") { _ =>
+        Future.successful(Route.component {
+          LayoutPage.render()
+        })
+      },
+      Route.view("/window") { _ =>
+        Future.successful(Route.component {
+          WindowPage.render()
+        })
+      },
+      Route.view("/image") { _ =>
+        Future.successful(Route.component {
+          ImagePage.render()
+        })
+      },
       Route.view("/router") { _ =>
         Future.successful(Route.component {
           RouterPage.render()

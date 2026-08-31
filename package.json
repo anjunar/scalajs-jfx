@@ -4,23 +4,26 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "npm run dev:scala",
     "dev": "node server/server.mjs",
-    "build": "npm run build:client && npm run build:server",
-    "build:client": "vite build --outDir dist/client",
-    "build:server": "vite build --outDir dist/server --ssr src/entry-server.js",
-    "start": "cross-env NODE_ENV=production node server.mjs"
+    "dev:scala": "sbtn scalajs-jfx-demo/viteFastLinkJS",
+    "dev:scala:watch": "sbtn \"~scalajs-jfx-demo/viteFastLinkJS\"",
+    "build": "npm run build:scala && npm run build:client && npm run build:server",
+    "build:scala": "sbtn scalajs-jfx-demo/viteFullLinkJS",
+    "build:client": "vite build",
+    "build:server": "vite build --ssr src/entry-server.js",
+    "start": "cross-env NODE_ENV=production node server/server.mjs"
   },
   "dependencies": {
-    "@anjunar/scalajs-lexical": "^1.0.9",
     "@anjunar/scalajs-jfx2": "file:./npm/scalajs-jfx2",
+    "@anjunar/scalajs-lexical": "^1.0.9",
     "@anjunar/ui": "^1.0.1",
     "express": "latest"
   },
   "devDependencies": {
     "@tailwindcss/vite": "latest",
-    "tailwindcss": "latest",
-    "@scala-js/vite-plugin-scalajs": "latest",
     "cross-env": "latest",
+    "tailwindcss": "latest",
     "vite": "latest"
   }
 }

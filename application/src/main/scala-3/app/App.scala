@@ -39,7 +39,7 @@ class App(
 
   private val routerConfig =
     RouterConfig(
-      basePath = "/scalajs-jfx"
+      basePath = "/scalajs-jfx2"
     )
 
   private val initialLocation =
@@ -50,7 +50,11 @@ class App(
 
   private val navigationEntries =
     Seq(
-      NavEntry(i18n"Foundation", i18n"Discover", i18n"Start", "/"),
+      NavEntry(i18n"Welcome", i18n"Discover", i18n"The JFX2 vision", "/"),
+      NavEntry(i18n"Interaction", i18n"Actions", i18n"The pulse of the app", "/button"),
+      NavEntry(i18n"Interaction", i18n"Images", i18n"Visual identity", "/image"),
+      NavEntry(i18n"Architecture", i18n"Layout", i18n"Room for design", "/layout"),
+      NavEntry(i18n"Architecture", i18n"Windows", i18n"Room for focus", "/window"),
       NavEntry(i18n"Foundation", i18n"Router", i18n"Paths, locale and loaders", "/router"),
       NavEntry(i18n"Foundation", i18n"i18n", i18n"Toolbar locale meets URL locale", "/i18n"),
       NavEntry(i18n"Runtime", i18n"Rendering", i18n"SSR, hydration and shell stability", "/rendering"),
@@ -83,157 +87,161 @@ class App(
     Router.provide(appRouter)(using this)
 
     render(this, cursor) {
-      drawer {
-        classes = Seq("app-shell", "app-shell-drawer")
-        open = true
+      div {
+        classes = Seq("app-shell")
 
-        drawerNavigation {
-          div {
-            classes = Seq("app-sidebar")
+        drawer {
+          classes = Seq("app-shell-drawer")
+          open = true
 
+          drawerNavigation {
             div {
-              classes = Seq("app-sidebar__header")
+              classes = Seq("app-sidebar")
+
               div {
-                classes = Seq("app-sidebar__logo")
-                text(i18n"JFX API") {}
-              }
-            }
-
-            div {
-              classes = Seq("app-sidebar__nav")
-
-              var currentZone: Option[String] = None
-              navigationEntries.foreach { entry =>
-                val zoneKey = entry.zoneMessage.key.source
-
-                if (!currentZone.contains(zoneKey)) {
-                  currentZone = Some(zoneKey)
-                  div {
-                    classes = Seq("app-sidebar__section-title")
-                    text(entry.zone(i18nRuntime.locale.get)) {}
-                  }
+                classes = Seq("app-sidebar__header")
+                div {
+                  classes = Seq("app-sidebar__logo")
+                  text(i18n"JFX API") {}
                 }
+              }
 
-                routerLink(entry.path) {
-                  classes = Seq("app-nav-link")
+              div {
+                classes = Seq("app-sidebar__nav")
 
-                  onClick { event =>
-                    if (Cursor.isBrowser && dom.window.innerWidth <= 720) {
-                      open = false
+                var currentZone: Option[String] = None
+                navigationEntries.foreach { entry =>
+                  val zoneKey = entry.zoneMessage.key.source
+
+                  if (!currentZone.contains(zoneKey)) {
+                    currentZone = Some(zoneKey)
+                    div {
+                      classes = Seq("app-sidebar__section-title")
+                      text(entry.zone(i18nRuntime.locale.get)) {}
                     }
                   }
 
-                  div {
-                    classes = Seq("app-nav-link__label")
-                    text(entry.titleMessage) {}
-                  }
+                  routerLink(entry.path) {
+                    classes = Seq("app-nav-link")
 
-                  div {
-                    classes = Seq("app-nav-link__sub")
-                    text(entry.copyMessage) {}
+                    onClick { event =>
+                      if (Cursor.isBrowser && dom.window.innerWidth <= 720) {
+                        open = false
+                      }
+                    }
+
+                    div {
+                      classes = Seq("app-nav-link__label")
+                      text(entry.titleMessage) {}
+                    }
+
+                    div {
+                      classes = Seq("app-nav-link__sub")
+                      text(entry.copyMessage) {}
+                    }
                   }
                 }
               }
-            }
 
-            div {
-              classes = Seq("app-sidebar__footer")
-              text(i18n"Design inherited from JFX2, content rebuilt for scalajs-jfx.") {}
+              div {
+                classes = Seq("app-sidebar__footer")
+                text(i18n"Design inherited from JFX2, content rebuilt for scalajs-jfx.") {}
+              }
             }
           }
-        }
 
-        drawerContent {
-          div {
-            classes = Seq("app-main")
-
+          drawerContent {
             div {
-              classes = Seq("app-toolbar")
-
-              button("menu") {
-                classes = Seq("app-toolbar__menu-toggle", "material-icons")
-                onClick { _ => toggle() }
-              }
+              classes = Seq("app-main")
 
               div {
-                classes = Seq("app-toolbar__title")
-                text(toolbarTitle) {}
+                classes = Seq("app-toolbar")
+
+                button("menu") {
+                  classes = Seq("app-toolbar__menu-toggle", "material-icons")
+                  onClick { _ => toggle() }
+                }
+
+                div {
+                  classes = Seq("app-toolbar__title")
+                  text(toolbarTitle) {}
+                }
+
+                div {
+                  classes = Seq("spacer")
+                  style {
+                    flex = "1"
+                  }
+                }
+
+                routerLink() {
+                  classes = Seq("app-toolbar__scala-link")
+                  href = "https://www.scala-js.org/"
+                  target = "_blank"
+                  rel = "noopener noreferrer"
+
+                  image {
+                    classes = Seq("app-toolbar__scala-badge")
+                    src = "https://img.shields.io/badge/Scala.js-1.21.0-DC322F.svg?logo=scala&logoColor=white"
+                    alt = "Scala.js 1.21.0"
+                  }
+                }
+
+                routerLink("GitHub") {
+                  classes = Seq("app-toolbar__github")
+                  href = "https://github.com/anjunar/scalajs-jfx"
+                  target = "_blank"
+                  rel = "noopener noreferrer"
+                }
+
+                hbox {
+                  classes = Seq("app-toolbar__chooser", "app-toolbar__language")
+                  button(AppI18n.localeLabel(i18nRuntime.locale)) {
+                    classes = Seq("app-toolbar__choice")
+                    onClick { _ => switchLocale() }
+                  }
+                }
+
+                hbox {
+                  classes = Seq("app-toolbar__chooser", "app-toolbar__theme")
+
+                  button(i18n"Light") {
+                    classes = Seq("app-toolbar__choice")
+                    classIf("is-active", AppTheme.modeProperty.map(_ == Mode.Light))
+                    onClick { _ => AppTheme.set(Mode.Light) }
+                  }
+
+                  button(i18n"Dark") {
+                    classes = Seq("app-toolbar__choice")
+                    classIf("is-active", AppTheme.modeProperty.map(_ == Mode.Dark))
+                    onClick { _ => AppTheme.set(Mode.Dark) }
+                  }
+                }
+
+                div {
+                  classes = Seq("app-toolbar__version")
+                  text("v1 demo") {}
+                }
               }
 
-              div {
-                classes = Seq("spacer")
+              viewport {
                 style {
                   flex = "1"
-                }
-              }
-
-              routerLink() {
-                classes = Seq("app-toolbar__scala-link")
-                href = "https://www.scala-js.org/"
-                target = "_blank"
-                rel = "noopener noreferrer"
-
-                image {
-                  classes = Seq("app-toolbar__scala-badge")
-                  src = "https://img.shields.io/badge/Scala.js-1.21.0-DC322F.svg?logo=scala&logoColor=white"
-                  alt = "Scala.js 1.21.0"
-                }
-              }
-
-              routerLink("GitHub") {
-                classes = Seq("app-toolbar__github")
-                href = "https://github.com/anjunar/scalajs-jfx"
-                target = "_blank"
-                rel = "noopener noreferrer"
-              }
-
-              hbox {
-                classes = Seq("app-toolbar__chooser", "app-toolbar__language")
-                button(AppI18n.localeLabel(i18nRuntime.locale)) {
-                  classes = Seq("app-toolbar__choice")
-                  onClick { _ => switchLocale() }
-                }
-              }
-
-              hbox {
-                classes = Seq("app-toolbar__chooser", "app-toolbar__theme")
-
-                button(i18n"Light") {
-                  classes = Seq("app-toolbar__choice")
-                  classIf("is-active", AppTheme.modeProperty.map(_ == Mode.Light))
-                  onClick { _ => AppTheme.set(Mode.Light) }
+                  overflow = "auto"
                 }
 
-                button(i18n"Dark") {
-                  classes = Seq("app-toolbar__choice")
-                  classIf("is-active", AppTheme.modeProperty.map(_ == Mode.Dark))
-                  onClick { _ => AppTheme.set(Mode.Dark) }
+                div {
+                  classes = Seq("app-content-viewport")
+                  child(appRouter)
                 }
               }
 
               div {
-                classes = Seq("app-toolbar__version")
-                text("v1 demo") {}
-              }
-            }
-
-            viewport {
-              style {
-                flex = "1"
-                overflow = "auto"
-              }
-
-              div {
-                classes = Seq("app-content-viewport")
-                child(appRouter)
-              }
-            }
-
-            div {
-              classes = Seq("app-footer")
-              div {
-                classes = Seq("app-footer__text")
-                text(i18n"Pure Scala.js architecture, rebuilt around the modules that actually exist here.") {}
+                classes = Seq("app-footer")
+                div {
+                  classes = Seq("app-footer__text")
+                  text(i18n"Pure Scala.js architecture, rebuilt around the modules that actually exist here.") {}
+                }
               }
             }
           }

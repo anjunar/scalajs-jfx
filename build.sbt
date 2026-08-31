@@ -2,6 +2,7 @@ import org.scalajs.linker.interface.{ESVersion, ModuleKind}
 import org.scalajs.sbtplugin.ScalaJSPlugin
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import sbt.url
+import ScalaJsViteSupport._
 
 ThisBuild / version := "1.0.0-SNAPSHOT"
 ThisBuild / organization := "com.anjunar"
@@ -176,6 +177,28 @@ lazy val app = Project(id = "scalajs-jfx-demo", base = file("application"))
   )
   .settings(
     scalaJSUseMainModuleInitializer := false,
+    viteFastLinkJS := {
+      val linked = (Compile / fastLinkJS).value
+      sanitizeScalaJsSourceMap(
+        (LocalRootProject / baseDirectory).value,
+        (Compile / fastLinkJS / scalaJSLinkerOutputDirectory).value,
+        streams.value.log
+      )
+      linked
+    },
+    viteFullLinkJS := {
+      val linked = (Compile / fullLinkJS).value
+      sanitizeScalaJsSourceMap(
+        (LocalRootProject / baseDirectory).value,
+        (Compile / fullLinkJS / scalaJSLinkerOutputDirectory).value,
+        streams.value.log
+      )
+      linked
+    },
+    Compile / fastLinkJS / scalaJSLinkerOutputDirectory :=
+      baseDirectory.value / "target" / "vite" / "fastopt",
+    Compile / fullLinkJS / scalaJSLinkerOutputDirectory :=
+      baseDirectory.value / "target" / "vite" / "fullopt",
     publish / skip := true
   )
   .settings(commonJsSettings)

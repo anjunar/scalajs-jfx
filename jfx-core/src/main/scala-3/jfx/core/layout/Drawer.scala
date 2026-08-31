@@ -1,7 +1,7 @@
 package jfx.core.layout
 
 import jfx.core.component.AbstractComponent
-import jfx.core.dsl.ClassDsl.classIf
+import jfx.core.dsl.ClassDsl.{classIf, classes}
 import jfx.core.dsl.DslLayerTwo.{child, render}
 import jfx.core.dsl.EventDsl.{onClick, onWindowKeyDown}
 import jfx.core.dsl.StyleDsl.*
@@ -47,7 +47,7 @@ final class Drawer extends AbstractComponent {
 
     render(this, cursor) {
       div {
-        addClass("jfx-drawer__panel-shell")
+        classes = Seq("jfx-drawer__panel-shell")
 
         style {
           width = panelShellWidth
@@ -56,7 +56,7 @@ final class Drawer extends AbstractComponent {
         }
 
         div {
-          addClass("jfx-drawer__panel")
+          classes = Seq("jfx-drawer__panel")
 
           style {
             width = drawerWidthProperty
@@ -65,7 +65,7 @@ final class Drawer extends AbstractComponent {
           }
 
           navigationHost = div {
-            addClass("jfx-drawer__navigation")
+            classes = Seq("jfx-drawer__navigation")
 
             style {
               display = "flex"
@@ -77,7 +77,7 @@ final class Drawer extends AbstractComponent {
       }
 
       div {
-        addClass("jfx-drawer__scrim")
+        classes = Seq("jfx-drawer__scrim")
 
         onClick { _ =>
           if (closeOnScrimClickProperty.get && openProperty.get) {
@@ -87,7 +87,7 @@ final class Drawer extends AbstractComponent {
       }
 
       contentHost = div {
-        addClass("jfx-drawer__content")
+        classes = Seq("jfx-drawer__content")
 
         style {
           display = "flex"
