@@ -179,18 +179,23 @@ ausgeschlossen.
 ### JSON-Mapping
 
 `jfx-json` ist als Neuimplementierung aus den fachlichen Anforderungen des
-JFX2-Mappers entstanden. Die oeffentliche `JsonMapper`-API und die Annotationen
-`JsonId`, `JsonIgnore`, `JsonProperty` und `JsonType` bleiben erhalten. Intern
-sind Mapping-Kontext, Typklassifikation und generische Bindungen,
-Annotations-/Polymorphie-Metadaten, Wertkonvertierung, Serialisierung und
-Deserialisierung getrennte Bausteine.
+JFX2-Mappers entstanden. Die `JsonMapper`-Operationen und die Annotationen
+`JsonId`, `JsonIgnore`, `JsonProperty` und `JsonType` bleiben erhalten. Modelle
+werden lokal durch ein typisiertes `JsonSchema` beschrieben. Dadurch benoetigt
+der Mapper weder `ReflectClassLoader` noch die globale `ClassDescriptor`-
+Registry. Abhaengige Modelle und erlaubte polymorphe Subtypen sind Bestandteil
+des Schemas und werden in einem mapperlokalen Katalog aufgeloest.
+
+Intern sind Mapping-Kontext, Typklassifikation und generische Bindungen,
+Schema-Katalog, Annotations-/Polymorphie-Metadaten, Wertkonvertierung,
+Serialisierung und Deserialisierung getrennte Bausteine.
 
 Der Mapper unterstuetzt `Property`, `ListProperty`, Optionen, Maps, Scala- und
 JavaScript-Collections, primitive Werte, UUIDs, Raw-JSON, polymorphe Modelle und
 explizite Reflection-Metadaten. Deserialisierte State-Properties uebernehmen
 den gelesenen Wert zugleich als Default. Scala-Arrays werden anhand ihres
 Elementtyps erzeugt; damit wird insbesondere der alte `Array[Any]`-Fehler bei
-primitiven und registrierten Modell-Arrays vermieden.
+primitiven und schema-beschriebenen Modell-Arrays vermieden.
 
 ## Entscheidungen festhalten
 

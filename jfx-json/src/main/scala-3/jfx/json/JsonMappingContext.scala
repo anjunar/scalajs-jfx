@@ -4,7 +4,8 @@ import reflect.{ParameterizedTypeDescriptor, TypeDescriptor}
 
 private[json] final case class JsonMappingContext(
     expectedType: TypeDescriptor,
-    bindings: Map[String, TypeDescriptor]
+    bindings: Map[String, TypeDescriptor],
+    schemas: JsonSchemaCatalog
 ) {
 
   def resolvedType: TypeDescriptor =
@@ -19,12 +20,12 @@ private[json] final case class JsonMappingContext(
         Map.empty
     }
 
-    JsonMappingContext(resolved, bindings ++ childBindings)
+    JsonMappingContext(resolved, bindings ++ childBindings, schemas)
   }
 }
 
 private[json] object JsonMappingContext {
 
-  def root(meta: TypeDescriptor): JsonMappingContext =
-    JsonMappingContext(meta, JsonTypeModel.typeBindings(meta))
+  def root(meta: TypeDescriptor, schemas: JsonSchemaCatalog): JsonMappingContext =
+    JsonMappingContext(meta, JsonTypeModel.typeBindings(meta), schemas)
 }

@@ -15,12 +15,12 @@ private[json] object JsonMetadata {
   private val JsonIdAnnotation     = "jfx.json.JsonId"
 
   def serializationProperties(descriptor: ClassDescriptor): Array[PropertyDescriptor] =
-    descriptor.resolved.properties
+    descriptor.properties
       .filter(isPublicJsonProperty)
       .filter(isSerializable)
 
   def deserializationProperties(descriptor: ClassDescriptor): Array[PropertyDescriptor] =
-    descriptor.resolved.properties
+    descriptor.properties
       .filter(isPublicJsonProperty)
       .filter(isDeserializable)
 
@@ -54,19 +54,21 @@ private[json] object JsonMetadata {
 
   def descriptorForSerialization(
       value: Any,
-      declaredDescriptor: ClassDescriptor
+      declaredDescriptor: ClassDescriptor,
+      schemas: JsonSchemaCatalog
   ): ClassDescriptor = {
-    val declared = declaredDescriptor.resolved
+    val declared = schemas.resolve(declaredDescriptor)
     if (!declared.isAbstract) declared
-    else runtimeDescriptor(value, declared)
+    else runtimeDescriptor(value, declared, schemas)
   }
 
   def descriptorForDeserialization(
       declaredDescriptor: ClassDescriptor,
-      jsonObject: js.Dictionary[js.Any]
+      jsonObject: js.Dictionary[js.Any],
+      schemas: JsonSchemaCatalog
   ): ClassDescriptor = {
-    val declared   = declaredDescriptor.resolved
-    val candidates = subtypeCandidates(declared)
+    val declared   = schemas.resolve(declaredDescriptor)
+    val candidates = subtypeCandidates(declared, schemas)
     val jsonType   = jsonObject.get(TypeField).map(_.toString)
     val jsonId     = jsonObject.get(IdField).map(_.toString)
 
@@ -75,9 +77,9 @@ private[json] object JsonMetadata {
       candidates
         .find(matchesTypeName(_, typeName))
         .orElse {
-          ClassDescriptor
-            .maybeForName(typeName)
-            .filter(candidate => isAssignableTo(candidate, declared.typeName))
+          schemas
+            .find(typeName)
+            .filter(candidate => schemas.isAllowedSubtype(candidate, declared))
         }
     }
 
@@ -110,16 +112,17 @@ private[json] object JsonMetadata {
     }
   }
 
-  private def runtimeDescriptor(value: Any, declared: ClassDescriptor): ClassDescriptor = {
+  private def runtimeDescriptor(
+      value: Any,
+      declared: ClassDescriptor,
+      schemas: JsonSchemaCatalog
+  ): ClassDescriptor = {
     val runtimeNames = candidateRuntimeNames(value)
-    val registered   = runtimeNames.iterator
-      .flatMap(ClassDescriptor.maybeForName)
-      .toSeq
-      .headOption
+    val registered   = runtimeNames.iterator.flatMap(schemas.find).toSeq.headOption
 
     registered
       .orElse {
-        subtypeCandidates(declared).find { candidate =>
+        subtypeCandidates(declared, schemas).find { candidate =>
           runtimeNames.contains(candidate.typeName) || runtimeNames.contains(candidate.simpleName)
         }
       }
@@ -130,15 +133,12 @@ private[json] object JsonMetadata {
       }
   }
 
-  private def subtypeCandidates(descriptor: ClassDescriptor): List[ClassDescriptor] =
-    (ClassDescriptor.maybeResolve(descriptor).toList ++
-      ClassDescriptor.all
-        .filter(candidate => isAssignableTo(candidate, descriptor.typeName))
-        .toList)
+  private def subtypeCandidates(
+      descriptor: ClassDescriptor,
+      schemas: JsonSchemaCatalog
+  ): List[ClassDescriptor] =
+    (descriptor :: schemas.candidatesFor(descriptor.typeName).toList)
       .distinctBy(_.typeName)
-
-  private def isAssignableTo(descriptor: ClassDescriptor, superTypeName: String): Boolean =
-    descriptor.typeName == superTypeName || descriptor.isAssignableTo(superTypeName)
 
   private def matchesTypeName(descriptor: ClassDescriptor, jsonType: String): Boolean = {
     val descriptorNames =

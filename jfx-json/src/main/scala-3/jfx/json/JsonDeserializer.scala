@@ -63,7 +63,11 @@ private[json] object JsonDeserializer {
   ): Any = {
     val jsonObject = JsonValueCodec.asObject(value)
     val descriptor =
-      JsonMetadata.descriptorForDeserialization(declaredDescriptor, jsonObject)
+      JsonMetadata.descriptorForDeserialization(
+        declaredDescriptor,
+        jsonObject,
+        parentContext.schemas
+      )
     val context    = objectContext(parentContext, descriptor)
     val instance   = descriptor.requireCreateInstance()
     val properties = JsonMetadata.deserializationProperties(descriptor)
@@ -142,7 +146,7 @@ private[json] object JsonDeserializer {
       case "scala.scalajs.js.Array" =>
         js.Array(items*)
       case "scala.Array" =>
-        createScalaArray(items, elementType)
+        createScalaArray(items, elementType, context.schemas)
       case "scala.collection.immutable.List" =>
         items.toList
       case "scala.collection.immutable.Seq" | "scala.collection.Seq" =>
@@ -214,7 +218,8 @@ private[json] object JsonDeserializer {
 
   private def createScalaArray(
       items: Seq[Any],
-      elementType: reflect.TypeDescriptor
+      elementType: reflect.TypeDescriptor,
+      schemas: JsonSchemaCatalog
   ): Array[?] =
     elementType.typeName match {
       case "scala.Boolean" | "boolean"                => items.map(_.asInstanceOf[Boolean]).toArray
@@ -232,9 +237,9 @@ private[json] object JsonDeserializer {
       case _ =>
         val runtimeClass = elementType match {
           case parameterized: ParameterizedTypeDescriptor =>
-            parameterized.rawType.resolved.runtimeClass
+            schemas.resolve(parameterized.rawType).runtimeClass
           case descriptor: ClassDescriptor =>
-            descriptor.resolved.runtimeClass
+            schemas.resolve(descriptor).runtimeClass
           case _ =>
             None
         }
@@ -255,6 +260,7 @@ private[json] object JsonDeserializer {
   ): JsonMappingContext =
     JsonMappingContext(
       descriptor,
-      parent.bindings ++ JsonTypeModel.typeBindings(parent.resolvedType, descriptor)
+      parent.bindings ++ JsonTypeModel.typeBindings(parent.resolvedType, descriptor),
+      parent.schemas
     )
 }

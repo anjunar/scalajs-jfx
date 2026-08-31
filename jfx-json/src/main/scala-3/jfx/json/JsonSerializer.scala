@@ -44,7 +44,7 @@ private[json] object JsonSerializer {
       parentContext: JsonMappingContext
   ): js.Dynamic = {
     val runtimeDescriptor =
-      JsonMetadata.descriptorForSerialization(model, declaredDescriptor)
+      JsonMetadata.descriptorForSerialization(model, declaredDescriptor, parentContext.schemas)
     val context    = objectContext(parentContext)
     val properties = JsonMetadata.serializationProperties(runtimeDescriptor)
     val result     = js.Dictionary.empty[js.Any]
@@ -206,7 +206,7 @@ private[json] object JsonSerializer {
       parentContext: JsonMappingContext
   ): Boolean = {
     val runtimeDescriptor =
-      JsonMetadata.descriptorForSerialization(model, declaredDescriptor)
+      JsonMetadata.descriptorForSerialization(model, declaredDescriptor, parentContext.schemas)
     val context = objectContext(parentContext)
 
     JsonMetadata
@@ -223,7 +223,8 @@ private[json] object JsonSerializer {
   private def objectContext(parent: JsonMappingContext): JsonMappingContext =
     JsonMappingContext(
       parent.resolvedType,
-      parent.bindings ++ JsonTypeModel.typeBindings(parent.resolvedType)
+      parent.bindings ++ JsonTypeModel.typeBindings(parent.resolvedType),
+      parent.schemas
     )
 
   private def propertyValueType(context: JsonMappingContext) =

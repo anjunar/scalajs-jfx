@@ -3,13 +3,11 @@ package jfx.json
 import jfx.core.state.{ListProperty, Property}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import reflect.{ClassDescriptor, ReflectClassLoader}
 import reflect.macros.ReflectMacros
 
 import java.util.UUID
 import scala.annotation.meta.field
 import scala.collection.immutable.ListMap
-import scala.reflect.ClassTag
 import scala.scalajs.js
 import scala.scalajs.js.Dynamic.literal
 
@@ -36,7 +34,9 @@ class JsonMapperSpec extends AnyFlatSpec with Matchers {
     restored.age.get shouldBe 41
   }
 
-  it should "provide the inline companion API for registered model metadata" in {
+  it should "provide the inline companion API from a local JsonSchema" in {
+    given JsonSchema[AnnotatedPerson] = JsonMapperSpec.annotatedPersonSchema
+
     val person = AnnotatedPerson()
     person.name.set("Inline")
     person.age.set(21)
@@ -48,8 +48,25 @@ class JsonMapperSpec extends AnyFlatSpec with Matchers {
     restored.age.get shouldBe 21
   }
 
+  it should "resolve nested models from local schema dependencies" in {
+    given JsonSchema[Profile] =
+      JsonMapperSpec.profileSchema.withDependencies(JsonMapperSpec.nestedInfoSchema)
+
+    val profile = Profile()
+    profile.id.set("profile-1")
+    profile.info.get.id.set("info-1")
+    profile.info.get.firstName.set("Nested")
+
+    val json     = JsonMapper.serialize(profile)
+    val restored = JsonMapper.deserialize[Profile](json)
+
+    restored.id.get shouldBe "profile-1"
+    restored.info.get.id.get shouldBe "info-1"
+    restored.info.get.firstName.get shouldBe "Nested"
+  }
+
   it should "ignore JsonIgnore properties in both directions by default" in {
-    val mapper = JsonMapper()
+    val mapper = JsonMapperSpec.mapper
     val user   = IgnoredSecret()
     user.visible.set("public")
     user.secret.set("private")
@@ -69,7 +86,7 @@ class JsonMapperSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "support directional JsonIgnore properties" in {
-    val mapper = JsonMapper()
+    val mapper = JsonMapperSpec.mapper
     val model  = DirectionalIgnore()
     model.readOnly.set("server-value")
     model.writeOnly.set("server-secret")
@@ -89,7 +106,7 @@ class JsonMapperSpec extends AnyFlatSpec with Matchers {
   }
 
   "JsonMapper polymorphism" should "use JsonType values in both directions" in {
-    val mapper = JsonMapper()
+    val mapper = JsonMapperSpec.mapper
     val circle = Circle()
     circle.radius.set(12)
 
@@ -108,7 +125,7 @@ class JsonMapperSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "reject unknown and missing types for abstract models" in {
-    val mapper = JsonMapper()
+    val mapper = JsonMapperSpec.mapper
 
     val missing = intercept[IllegalArgumentException] {
       mapper.deserialize[Shape](literal(radius = 9), JsonMapperSpec.shapeMeta)
@@ -125,7 +142,7 @@ class JsonMapperSpec extends AnyFlatSpec with Matchers {
   }
 
   "JsonMapper state values" should "serialize mutated ListProperty contents" in {
-    val mapper = JsonMapper()
+    val mapper = JsonMapperSpec.mapper
     val thread = CommentThread()
     val reply  = Reply()
     reply.text.set("Hallo")
@@ -139,7 +156,7 @@ class JsonMapperSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "include only dirty nested payload plus JsonId fields" in {
-    val mapper  = JsonMapper()
+    val mapper  = JsonMapperSpec.mapper
     val profile = Profile()
     profile.id.set("user-1")
     profile.info.get.id.set("info-1")
@@ -159,7 +176,7 @@ class JsonMapperSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "reset Property and ListProperty defaults after deserialization" in {
-    val mapper   = JsonMapper()
+    val mapper   = JsonMapperSpec.mapper
     val restored = mapper.deserialize[CommentThread](
       literal(replies = js.Array(literal(text = "stable"))),
       JsonMapperSpec.commentThreadMeta
@@ -171,7 +188,7 @@ class JsonMapperSpec extends AnyFlatSpec with Matchers {
   }
 
   "JsonMapper value types" should "roundtrip options, maps, collections, UUIDs, and raw JSON" in {
-    val mapper = JsonMapper()
+    val mapper = JsonMapperSpec.mapper
     val id     = UUID.fromString("92707f9f-a861-4d45-9d4b-47832fe06741")
     val model  = ValueTypes()
     model.optional.set(Some("present"))
@@ -212,7 +229,7 @@ class JsonMapperSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "map a single map property as an inline JSON object" in {
-    val mapper = JsonMapper()
+    val mapper = JsonMapperSpec.mapper
     val labels = Labels(Map("de" -> "Hallo", "en" -> "Hello"))
 
     val json = mapper.serialize(labels, JsonMapperSpec.labelsMeta)
@@ -228,7 +245,7 @@ class JsonMapperSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "deserialize arrays and treat null arrays as empty" in {
-    val mapper = JsonMapper()
+    val mapper = JsonMapperSpec.mapper
     val json   = js.Array[js.Dynamic](
       literal(fullName = "Ada", age = 37),
       literal(fullName = "Grace", age = 41)
@@ -245,7 +262,7 @@ class JsonMapperSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "resolve generic property types from parameterized metadata" in {
-    val mapper = JsonMapper()
+    val mapper = JsonMapperSpec.mapper
     val model  = GenericBox[String]()
     model.value.set("typed")
 
@@ -261,39 +278,45 @@ class JsonMapperSpec extends AnyFlatSpec with Matchers {
 }
 
 object JsonMapperSpec {
-  private val loader = ReflectClassLoader.create()
+  val annotatedPersonSchema   = JsonSchema(() => AnnotatedPerson())
+  val ignoredSecretSchema     = JsonSchema(() => IgnoredSecret())
+  val directionalIgnoreSchema = JsonSchema(() => DirectionalIgnore())
+  val circleSchema            = JsonSchema(() => Circle())
+  val shapeSchema             = JsonSchema.abstractType[Shape](circleSchema)
+  val replySchema             = JsonSchema(() => Reply())
+  val commentThreadSchema     = JsonSchema(() => CommentThread())
+  val nestedInfoSchema        = JsonSchema(() => NestedInfo())
+  val profileSchema           = JsonSchema(() => Profile())
+  val valueTypesSchema        = JsonSchema(() => ValueTypes())
+  val labelsSchema            = JsonSchema(() => Labels())
+  val genericBoxSchema        = JsonSchema(() => GenericBox[String]())
 
-  private inline def register[T](
-      inline factory: () => T,
-      clazz: Class[T]
-  )(using ClassTag[T]): ClassDescriptor = {
-    val descriptor = ReflectMacros.reflectWithAccessors[T]
-    descriptor.bindRuntimeClass(clazz)
-    loader.register[T](descriptor, factory)
-    descriptor
-  }
+  val annotatedPersonMeta   = annotatedPersonSchema.descriptor
+  val ignoredSecretMeta     = ignoredSecretSchema.descriptor
+  val directionalIgnoreMeta = directionalIgnoreSchema.descriptor
+  val shapeMeta             = shapeSchema.descriptor
+  val commentThreadMeta     = commentThreadSchema.descriptor
+  val profileMeta           = profileSchema.descriptor
+  val valueTypesMeta        = valueTypesSchema.descriptor
+  val labelsMeta            = labelsSchema.descriptor
+  val stringBoxMeta         = ReflectMacros.reflectType[GenericBox[String]]
 
-  val annotatedPersonMeta   = register(() => AnnotatedPerson(), classOf[AnnotatedPerson])
-  val ignoredSecretMeta     = register(() => IgnoredSecret(), classOf[IgnoredSecret])
-  val directionalIgnoreMeta =
-    register(() => DirectionalIgnore(), classOf[DirectionalIgnore])
-  val circleMeta        = register(() => Circle(), classOf[Circle])
-  val replyMeta         = register(() => Reply(), classOf[Reply])
-  val commentThreadMeta = register(() => CommentThread(), classOf[CommentThread])
-  val nestedInfoMeta    = register(() => NestedInfo(), classOf[NestedInfo])
-  val profileMeta       = register(() => Profile(), classOf[Profile])
-  val valueTypesMeta    = register(() => ValueTypes(), classOf[ValueTypes])
-  val labelsMeta        = register(() => Labels(), classOf[Labels])
-  val genericBoxMeta    =
-    register(() => GenericBox[String](), classOf[GenericBox[String]])
-  val stringBoxMeta = ReflectMacros.reflectType[GenericBox[String]]
+  private val schemas = Seq(
+    annotatedPersonSchema,
+    ignoredSecretSchema,
+    directionalIgnoreSchema,
+    shapeSchema,
+    replySchema,
+    commentThreadSchema,
+    nestedInfoSchema,
+    profileSchema,
+    valueTypesSchema,
+    labelsSchema,
+    genericBoxSchema
+  )
 
-  val shapeMeta = {
-    val descriptor = ReflectMacros.reflectWithAccessors[Shape]
-    descriptor.bindRuntimeClass(classOf[Shape])
-    loader.registerByTypeName(descriptor.typeName, descriptor)
-    descriptor
-  }
+  def mapper: JsonMapper =
+    JsonMapper(schemas*)
 }
 
 final class AnnotatedPerson(
