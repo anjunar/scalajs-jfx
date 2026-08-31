@@ -8,8 +8,11 @@ final class HydratingCursor private (
     private var nextNode: Option[dom.Node],
     stopBefore: Option[dom.Node],
     mode: HydrationMode = HydrationMode.Strict,
-    currentAsyncContext: Option[AsyncRenderContext] = None
+    currentAsyncContext: Option[AsyncRenderContext] = None,
+    session: HydratingCursor.HydrationSession
 ) extends Cursor {
+
+  session.register(this)
 
   override def supportsAnchors: Boolean =
     true
@@ -25,6 +28,15 @@ final class HydratingCursor private (
 
   override def asyncContext: Option[AsyncRenderContext] =
     currentAsyncContext
+
+  override def parentHost: Option[HostElement] =
+    parent match {
+      case element: dom.Element => Some(new DomHostElement(element))
+      case _                    => None
+    }
+
+  override def completeHydration(): Unit =
+    session.complete()
 
   def claimElement(tag: String): HostElement = {
     val node =
@@ -115,7 +127,8 @@ final class HydratingCursor private (
         nextNode = Option(startNode.nextSibling).filter(_ != endNode),
         stopBefore = Some(endNode),
         mode = HydrationMode.Strict,
-        currentAsyncContext = currentAsyncContext
+        currentAsyncContext = currentAsyncContext,
+        session = session
       )
 
     VirtualRange(start, end, inner)
@@ -137,7 +150,8 @@ final class HydratingCursor private (
       nextNode = Option(raw.firstChild),
       stopBefore = None,
       mode = nextMode,
-      currentAsyncContext = currentAsyncContext
+      currentAsyncContext = currentAsyncContext,
+      session = session
     )
   }
 
@@ -231,6 +245,27 @@ final class HydratingCursor private (
          |
          |Hinweis: SSR-HTML und Client-Komponentenbaum unterscheiden sich an dieser Position.""".stripMargin
     )
+
+  private[render] def assertFullyClaimed(): Unit =
+    if (mode == HydrationMode.Strict) {
+      firstUnclaimedNode.foreach { node =>
+        throw hydrationFault(
+          "Serverseitig gerenderte Nodes wurden nicht vom Client-Komponentenbaum beansprucht.",
+          expected = "Ende des aktuellen Hydration-Bereichs",
+          found = Some(node)
+        )
+      }
+    }
+
+  private def firstUnclaimedNode: Option[dom.Node] = {
+    var current = nextNode
+
+    while (current.nonEmpty && HydratingCursor.isIgnorableWhitespace(current.get)) {
+      current = Option(current.get.nextSibling).filter(next => !stopBefore.contains(next))
+    }
+
+    current.filter(node => !stopBefore.contains(node))
+  }
 
   private def describeContext(focus: Option[dom.Node]): String = {
     val contextParent = focus.flatMap(node => Option(node.parentNode)).getOrElse(parent)
@@ -337,20 +372,46 @@ final class HydratingCursor private (
 
 object HydratingCursor {
 
-  def root(container: dom.Element): HydratingCursor =
-    new HydratingCursor(
-      parent = container,
-      nextNode = firstHydratableChild(container),
-      stopBefore = None
-    )
+  private final class HydrationSession {
+    private val cursors = scala.collection.mutable.ArrayBuffer.empty[HydratingCursor]
+    private var completed = false
 
-  def root(container: dom.Element, asyncContext: AsyncRenderContext): HydratingCursor =
+    def register(cursor: HydratingCursor): Unit =
+      if (completed) {
+        throw new IllegalStateException(
+          "Nach Abschluss der Hydration wurde ein weiterer HydratingCursor erzeugt."
+        )
+      } else {
+        cursors += cursor
+      }
+
+    def complete(): Unit =
+      if (!completed) {
+        completed = true
+        cursors.toVector.foreach(_.assertFullyClaimed())
+      }
+  }
+
+  def root(container: dom.Element): HydratingCursor = {
+    val session = new HydrationSession()
     new HydratingCursor(
       parent = container,
       nextNode = firstHydratableChild(container),
       stopBefore = None,
-      currentAsyncContext = Some(asyncContext)
+      session = session
     )
+  }
+
+  def root(container: dom.Element, asyncContext: AsyncRenderContext): HydratingCursor = {
+    val session = new HydrationSession()
+    new HydratingCursor(
+      parent = container,
+      nextNode = firstHydratableChild(container),
+      stopBefore = None,
+      currentAsyncContext = Some(asyncContext),
+      session = session
+    )
+  }
 
   private def firstHydratableChild(parent: dom.Node): Option[dom.Node] = {
     var current = parent.firstChild

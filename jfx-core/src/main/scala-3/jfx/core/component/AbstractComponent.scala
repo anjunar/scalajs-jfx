@@ -15,6 +15,8 @@ abstract class AbstractComponent extends ClassDsl with EventDsl {
 
   private[jfx] var _host: HostNode                    = _
   private[jfx] var _parent: Option[AbstractComponent] = None
+  private[jfx] var _mountParentHost: Option[HostElement] = None
+  private[jfx] var _contentCursor: Cursor = _
   private[jfx] val _children                          = mutable.ArrayBuffer.empty[AbstractComponent]
   private[jfx] val disposables                        = new CompositeDisposable()
   private[jfx] val _contextValues                     = mutable.HashMap.empty[AnyRef, AnyRef]
@@ -108,6 +110,8 @@ abstract class AbstractComponent extends ClassDsl with EventDsl {
     disposables.dispose()
     _host = null
     _parent = None
+    _mountParentHost = None
+    _contentCursor = null
   }
 
   def classCondition(name: String, condition: ReadOnlyProperty[Boolean]): Unit =

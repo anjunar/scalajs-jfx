@@ -2,7 +2,7 @@ package jfx.core.layout
 
 import jfx.core.component.AbstractComponent
 import jfx.core.dsl.ClassDsl.{classIf, classes}
-import jfx.core.dsl.DslLayer.{child, render}
+import jfx.core.dsl.DslLayer.{child, render, renderInto}
 import jfx.core.dsl.EventDsl.{onClick, onWindowKeyDown}
 import jfx.core.dsl.StyleDsl.*
 import jfx.core.layout.Div.div
@@ -120,8 +120,7 @@ object Drawer {
   def drawerNavigation(
       body: AbstractComponent ?=> Cursor ?=> Unit
   )(using drawer: Drawer, cursor: Cursor): Unit = {
-    val childCursor = cursor.sub(drawer.navigationSlot.host)
-    render(drawer.navigationSlot, childCursor) {
+    renderInto(drawer.navigationSlot) {
       body
     }
   }
@@ -129,8 +128,7 @@ object Drawer {
   def drawerContent(
       body: AbstractComponent ?=> Cursor ?=> Unit
   )(using drawer: Drawer, cursor: Cursor): Unit = {
-    val childCursor = cursor.sub(drawer.contentSlot.host)
-    render(drawer.contentSlot, childCursor) {
+    renderInto(drawer.contentSlot) {
       body
     }
   }

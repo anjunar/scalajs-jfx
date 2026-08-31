@@ -1,6 +1,6 @@
 package jfx.core.layout
 
-import jfx.core.component.{AbstractComponent, AbstractCustomComponent, Runtime}
+import jfx.core.component.{AbstractComponent, AbstractCustomComponent, DynamicMountPoint, Runtime}
 import jfx.core.render.Cursor
 import jfx.core.state.ReadOnlyProperty
 
@@ -9,15 +9,18 @@ class Condition(active: ReadOnlyProperty[Boolean], create: () => AbstractCompone
   private var mounted: Option[AbstractComponent] = None
 
   override def compose(cursor: Cursor): Unit = {
+    val mountPoint = new DynamicMountPoint(this, cursor)
+
     def sync(value: Boolean): Unit =
       if (value && mounted.isEmpty) {
-        mounted = Some(Runtime.mount(create(), cursor, Some(this)))
+        mounted = Some(Runtime.mount(create(), mountPoint.appendCursor, Some(this)))
       } else if (!value) {
         mounted.foreach(Runtime.unmount)
         mounted = None
       }
 
     sync(active.get)
-    addDisposable(active.observe(sync))
+    mountPoint.finishInitialComposition()
+    addDisposable(active.observeWithoutInitial(sync))
   }
 }

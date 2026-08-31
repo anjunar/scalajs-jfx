@@ -15,7 +15,9 @@ class RouterUrlResolverSpec extends AnyFlatSpec with Matchers {
   private val i18n =
     I18nRuntime(
       Property(I18nLocale.En),
-      I18nResolver(MessageCatalog.empty)
+      I18nResolver(MessageCatalog.empty),
+      configuredSupportedLocales = Seq(I18nLocale("de"), I18nLocale.En),
+      configuredDefaultLocale = I18nLocale.En
     )
 
   "RouterUrlResolver" should "strip base path and locale before route matching" in {

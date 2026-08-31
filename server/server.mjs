@@ -76,15 +76,16 @@ app.use(async (req, res, next) => {
     try {
         const template = await loadTemplate(url)
         const serverModule = await loadServerModule()
-        const appHtml = await serverModule.render(
+        const rendered = await serverModule.render(
             req.originalUrl,
             req.method,
             JSON.stringify(req.headers)
         )
-        const html = template.replace("<!--app-html-->", appHtml)
+        const html = template.replace("<!--app-html-->", rendered.html)
         res
-            .status(200)
-            .set({ "Content-Type": "text/html" })
+            .status(rendered.status)
+            .set(rendered.headers)
+            .type("html")
             .end(html)
     } catch (error) {
         if (!isProduction && vite) {

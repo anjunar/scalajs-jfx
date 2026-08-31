@@ -15,50 +15,67 @@ object Runtime {
       component: C,
       cursor: Cursor,
       parent: Option[AbstractComponent] = None
-  ): C = {
+  ): C =
+    mountWithCursor(component, cursor, parent)._1
+
+  private[jfx] def mountWithCursor[C <: AbstractComponent](
+      component: C,
+      cursor: Cursor,
+      parent: Option[AbstractComponent] = None
+  ): (C, Cursor) = {
     component._parent = parent
     parent.foreach(_._children += component)
+    component._mountParentHost = cursor.parentHost.orElse(parentHostElement(parent))
 
-    component._host = if (component.isVirtual) {
-      if (cursor.supportsAnchors) {
-        val range = cursor.claimRange(component.getClass.getSimpleName)
-        new VirtualHost(
-          parentHostElement(parent),
-          Some(range.start),
-          Some(range.end),
-          Some(range.cursor)
-        )
+    try {
+      component._host = if (component.isVirtual) {
+        if (cursor.supportsAnchors) {
+          val range = cursor.claimRange(component.getClass.getSimpleName)
+          new VirtualHost(
+            component._mountParentHost,
+            Some(range.start),
+            Some(range.end),
+            Some(range.cursor)
+          )
+        } else {
+          new VirtualHost(component._mountParentHost)
+        }
+      } else if (component.isText) {
+        val initial = component match {
+          case text: TextComponent => text.getText
+          case _                   => ""
+        }
+        val textNode = cursor.claimText(initial)
+        component match {
+          case text: TextComponent => text.setTextNode(textNode)
+          case _                   => ()
+        }
+        textNode
       } else {
-        new VirtualHost(parentHostElement(parent))
+        cursor.claimElement(component.tagName)
       }
-    } else if (component.isText) {
-      val initial = component match {
-        case text: TextComponent => text.getText
-        case _                   => ""
-      }
-      val textNode = cursor.claimText(initial)
-      component match {
-        case text: TextComponent => text.setTextNode(textNode)
-        case _                   => ()
-      }
-      textNode
-    } else {
-      cursor.claimElement(component.tagName)
+
+      component.hostBound()
+
+      val subCursor: Cursor =
+        component._host match {
+          case host: VirtualHost      => host.cursor.getOrElse(cursor)
+          case _ if !component.isText => cursor.sub(component.host)
+          case _                      => cursor
+        }
+
+      component._contentCursor = subCursor
+
+      component.compose(subCursor)
+      component.afterCompose(subCursor)
+
+      component -> subCursor
+    } catch {
+      case error: Throwable =>
+        detach(component)
+        component.dispose()
+        throw error
     }
-
-    component.hostBound()
-
-    val subCursor: Cursor =
-      component._host match {
-        case host: VirtualHost      => host.cursor.getOrElse(cursor)
-        case _ if !component.isText => cursor.sub(component.host)
-        case _                      => cursor
-      }
-
-    component.compose(subCursor)
-    component.afterCompose(subCursor)
-
-    component
   }
 
   def renderToString(build: SsrCursor => AbstractComponent): String = {
@@ -81,17 +98,21 @@ object Runtime {
   }
 
   def unmount(component: AbstractComponent): Unit = {
-    component._parent match {
-      case Some(parent) =>
-        nearestPhysicalParent(parent).foreach { physicalParent =>
-          component.physicalHosts.foreach(physicalParent.host.removeChild)
-        }
-        val idx = parent._children.indexOf(component)
-        if (idx >= 0) parent._children.remove(idx)
-        component._parent = None
-      case None => ()
-    }
+    detach(component)
     component.dispose()
+  }
+
+  private def detach(component: AbstractComponent): Unit = {
+    component._mountParentHost.foreach { physicalParent =>
+      component.physicalHosts.foreach(physicalParent.removeChild)
+    }
+
+    component._parent.foreach { parent =>
+      val idx = parent._children.indexOf(component)
+      if (idx >= 0) parent._children.remove(idx)
+    }
+
+    component._parent = None
   }
 
   private def renderMountedRoot(component: AbstractComponent, cursor: SsrCursor): String =

@@ -147,7 +147,34 @@ Der Editor beginnt erst, wenn sein Forms-Control-Vertrag stabil ist.
 | `jfx-editor` | noch offen |
 | `jfx-json` | noch offen |
 | `jfx-webAuthn` | noch offen |
-| `jfx-ssr` | noch offen |
+| `jfx-ssr` | HTTP-Response-Vertrag vorhanden; Node-Facades und wiederverwendbare Renderer noch offen |
+
+## Runtime-Entscheidungen
+
+### Dynamische Bereiche und Hydration
+
+`Condition`, `Foreach`, `DynamicComponentRenderer`, `FetchComponent` und die
+asynchrone DSL verwenden einen gemeinsamen `DynamicMountPoint`. Während der
+initialen Hydration beansprucht er vorhandene SSR-Nodes. Nach Abschluss dieser
+Phase fügt er Änderungen ausschließlich vor dem Endanker des virtuellen
+Bereichs ein.
+
+Komponenten und nachgelagerte DSL-Bodies teilen denselben Content-Cursor.
+Benannte Slots verwenden `DslLayer.renderInto`, damit nicht versehentlich ein
+zweiter Hydration-Cursor für denselben Host entsteht.
+
+Nach dem Drain aller initialen Async-Tasks wird die gesamte Hydration-Session
+abgeschlossen. Nicht beanspruchte SSR-Nodes gelten als struktureller Fehler.
+
+### SSR-Fehler und HTTP-Antwort
+
+Fehler aus initialen Async-Tasks werden nicht als erfolgreiche Teil-Renderings
+behandelt, sondern bis zum Server propagiert. Der Anwendungseinstieg liefert
+einen `SsrResponse` mit HTML, Status und Headern. Nicht gefundene Routen werden
+dadurch mit Status 404 ausgeliefert.
+
+Noch nicht portierte Module bleiben bis zu ihrer Implementierung vom Publishing
+ausgeschlossen.
 
 ## Entscheidungen festhalten
 

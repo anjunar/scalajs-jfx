@@ -24,6 +24,9 @@ final class SsrCursor private (
   override def asyncContext: Option[AsyncRenderContext] =
     currentAsyncContext
 
+  override def parentHost: Option[HostElement] =
+    parent
+
   def claimElement(tag: String): HostElement = {
     val element = new SsrHostElement(tag)
     insert(element)

@@ -105,9 +105,7 @@ class Router(
               }
 
             case Some(scala.util.Failure(error)) =>
-              if (token == renderToken) {
-                componentProperty.set(Router.errorComponent(error))
-              }
+              if (token == renderToken) throw error
 
             case None =>
               throw new IllegalStateException(
@@ -118,9 +116,7 @@ class Router(
           }
         } catch {
           case error: Throwable =>
-            if (token == renderToken) {
-              componentProperty.set(Router.errorComponent(error))
-            }
+            if (token == renderToken) throw error
         }
 
       case None =>
@@ -197,7 +193,7 @@ class Router(
 
         case Some(Failure(error)) =>
           if (token == renderToken) {
-            componentProperty.set(Router.errorComponent(error))
+            handleRouteFailure(error)
           }
 
         case None =>
@@ -211,7 +207,11 @@ class Router(
                     componentProperty.set(new RoutedComponent(component))
 
                   case Failure(error) =>
-                    componentProperty.set(Router.errorComponent(error))
+                    if (browserEnabled) {
+                      componentProperty.set(Router.errorComponent(error))
+                    } else {
+                      throw error
+                    }
                 }
               }
 
@@ -223,10 +223,14 @@ class Router(
     } catch {
       case error: Throwable =>
         if (token == renderToken) {
-          componentProperty.set(Router.errorComponent(error))
+          handleRouteFailure(error)
         }
     }
   }
+
+  private def handleRouteFailure(error: Throwable): Unit =
+    if (browserEnabled) componentProperty.set(Router.errorComponent(error))
+    else throw error
 
   private def resolve(url: String, preferredLocale: Option[I18nLocale]): RouterState = {
     val resolved =

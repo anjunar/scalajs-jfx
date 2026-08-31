@@ -1,6 +1,6 @@
 package jfx.core.layout
 
-import jfx.core.component.AbstractComponent
+import jfx.core.component.{AbstractComponent, DynamicMountPoint}
 import jfx.core.dsl.DslLayer
 import jfx.core.render.{Cursor, VirtualHost}
 
@@ -17,25 +17,27 @@ class FetchComponent[A](
   override val tagName: String = ""
 
   override def compose(cursor: Cursor): Unit = {
-    val slotCursor =
+    val initialCursor =
       _host match {
         case host: VirtualHost => host.cursor.getOrElse(cursor)
         case _                 => cursor
       }
+    val mountPoint = new DynamicMountPoint(this, initialCursor)
 
     cursor.asyncContext match {
       case Some(async) =>
         async.add {
           load().map { value =>
             given AbstractComponent = this
-            given Cursor            = slotCursor
+            given Cursor            = mountPoint.appendCursor
 
             renderLoaded(value)
+            mountPoint.finishInitialComposition()
           }(ec)
         }
 
       case None =>
-        ()
+        mountPoint.finishInitialComposition()
     }
   }
 }

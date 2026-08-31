@@ -2,7 +2,7 @@ package jfx.layout
 
 import jfx.core.component.{AbstractComponent, Runtime}
 import jfx.core.dsl.ClassDsl.classes
-import jfx.core.dsl.DslLayer.render
+import jfx.core.dsl.DslLayer.{render, renderInto}
 import jfx.core.dsl.StyleDsl.*
 import jfx.core.layout.Div
 import jfx.core.layout.Div.div
@@ -127,11 +127,10 @@ object Viewport {
   def viewport(
       body: AbstractComponent ?=> Viewport ?=> Cursor ?=> Unit = {}
   )(using parent: AbstractComponent, cursor: Cursor): Viewport = {
-    val mounted     = Runtime.mount(new Viewport(), cursor, Some(parent))
-    val childCursor = cursor.sub(mounted.contentHost.host)
+    val mounted = Runtime.mount(new Viewport(), cursor, Some(parent))
 
-    render(mounted.contentHost, childCursor) {
-      body(using mounted.contentHost)(using mounted)(using childCursor)
+    renderInto(mounted.contentHost) {
+      body(using mounted.contentHost)(using mounted)(using summon[Cursor])
     }
 
     mounted

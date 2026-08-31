@@ -2,7 +2,7 @@ package app.components
 
 import jfx.core.component.AbstractComponent
 import jfx.core.dsl.ClassDsl.classes
-import jfx.core.dsl.DslLayer.render
+import jfx.core.dsl.DslLayer.{render, renderInto}
 import jfx.core.layout.Div
 import jfx.core.layout.Div.div
 import jfx.core.layout.TextComponent.text
@@ -42,8 +42,7 @@ object Showcase {
       }
     }
 
-    val childCursor = cursor.sub(contentHost.host)
-    render(contentHost, childCursor) {
+    renderInto(contentHost) {
       content
     }
   }
@@ -200,8 +199,7 @@ object Showcase {
       }
     }
 
-    val childCursor = cursor.sub(contentHost.host)
-    render(contentHost, childCursor) {
+    renderInto(contentHost) {
       content
     }
   }
@@ -232,8 +230,7 @@ object Showcase {
       }
     }
 
-    val childCursor = cursor.sub(contentHost.host)
-    render(contentHost, childCursor) {
+    renderInto(contentHost) {
       content
     }
   }
@@ -274,8 +271,7 @@ object Showcase {
       }
     }
 
-    val childCursor = cursor.sub(contentHost.host)
-    render(contentHost, childCursor) {
+    renderInto(contentHost) {
       content
     }
   }
@@ -302,8 +298,7 @@ object Showcase {
       }
     }
 
-    val childCursor = cursor.sub(contentHost.host)
-    render(contentHost, childCursor) {
+    renderInto(contentHost) {
       content
     }
   }
@@ -330,8 +325,7 @@ object Showcase {
       }
     }
 
-    val childCursor = cursor.sub(contentHost.host)
-    render(contentHost, childCursor) {
+    renderInto(contentHost) {
       content
     }
   }

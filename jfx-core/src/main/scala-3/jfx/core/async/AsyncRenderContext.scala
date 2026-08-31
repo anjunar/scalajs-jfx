@@ -1,7 +1,5 @@
 package jfx.core.async
 
-import org.scalajs.dom.console
-
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -9,9 +7,7 @@ final class AsyncRenderContext(using ExecutionContext) {
   private val tasks = ArrayBuffer.empty[Future[Unit]]
 
   def add(task: Future[Unit]): Unit =
-    tasks += task.recover { case e =>
-      console.error(s"AsyncRender failed: $e")
-    }
+    tasks += task
 
   def drain(): Future[Unit] = {
     def loop(offset: Int, depth: Int = 0): Future[Unit] = {

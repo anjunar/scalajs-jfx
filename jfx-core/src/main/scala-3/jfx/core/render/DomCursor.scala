@@ -21,6 +21,12 @@ final class DomCursor private (
   override def asyncContext: Option[AsyncRenderContext] =
     currentAsyncContext
 
+  override def parentHost: Option[HostElement] =
+    parent match {
+      case element: dom.Element => Some(new DomHostElement(element))
+      case _                    => None
+    }
+
   def claimElement(tag: String): HostElement = {
     val element = dom.document.createElement(tag)
     insert(element)

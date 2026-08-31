@@ -4,6 +4,7 @@ import jfx.core.async.AsyncRenderContext
 import jfx.core.component.{AbstractComponent, Runtime}
 import jfx.core.render.{Cursor, HydratingCursor}
 import jfx.core.request.{RequestContext, RequestHeaders, RequestHeadersJson}
+import jfx.ssr.SsrResponse
 import org.scalajs.dom
 import org.scalajs.dom.document
 
@@ -22,7 +23,7 @@ object Main {
     Runtime.mount(new App(request, initialUrl), cursor)
 
   @JSExportTopLevel("boot")
-  def boot(): Unit = {
+  def boot(): js.Promise[Unit] = {
     given ExecutionContext = ExecutionContext.global
 
     val async = new AsyncRenderContext()
@@ -40,11 +41,16 @@ object Main {
 
     render(hydratingCursor, request, url)
 
-    async.drain()
+    async
+      .drain()
+      .map { _ =>
+        hydratingCursor.completeHydration()
+      }
+      .toJSPromise
   }
 
   @JSExportTopLevel("renderSsr")
-  def render(path: String, method: String, headersJson: String): js.Promise[String] = {
+  def render(path: String, method: String, headersJson: String): js.Promise[js.Object] = {
     given ExecutionContext = ExecutionContext.global
 
     val request =
@@ -52,8 +58,15 @@ object Main {
         RequestHeadersJson.parse(headersJson)
       )
 
-    Runtime.renderToStringAsync { cursor =>
-      render(cursor, request, path)
-    }.toJSPromise
+    val app = new App(request, path)
+
+    Runtime
+      .renderToStringAsync { cursor =>
+        Runtime.mount(app, cursor)
+      }
+      .map { html =>
+        SsrResponse(html, status = app.ssrStatus).toJsObject
+      }
+      .toJSPromise
   }
 }

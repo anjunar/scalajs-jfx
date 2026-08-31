@@ -2,7 +2,7 @@ package jfx.layout
 
 import jfx.core.component.AbstractComponent
 import jfx.core.dsl.ClassDsl.{classIf, classes}
-import jfx.core.dsl.DslLayer.{child, render}
+import jfx.core.dsl.DslLayer.{child, render, renderInto}
 import jfx.core.dsl.EventDsl
 import jfx.core.dsl.EventDsl.*
 import jfx.core.dsl.StyleDsl.*
@@ -79,8 +79,7 @@ final class Window(conf: Viewport.WindowConf) extends AbstractComponent {
       }
     }
 
-    val childCursor = cursor.sub(containerHost.host)
-    render(containerHost, childCursor) {
+    renderInto(containerHost) {
       conf.body
     }
   }

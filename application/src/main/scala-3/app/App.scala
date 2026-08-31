@@ -78,10 +78,14 @@ class App(
   private val routes =
     AppRoutes.routes
 
-  override def compose(cursor: Cursor): Unit = {
-    val appRouter =
-      new Router(routes, initialLocation, routerConfig)
+  private[app] val appRouter =
+    new Router(routes, initialLocation, routerConfig)
 
+  private[app] def ssrStatus: Int =
+    if (appRouter.state.get.currentMatchOption.isDefined) 200
+    else 404
+
+  override def compose(cursor: Cursor): Unit = {
     RequestContext.provide(request)(using this)
     I18nRuntime.provide(i18nRuntime)(using this)
     Router.provide(appRouter)(using this)

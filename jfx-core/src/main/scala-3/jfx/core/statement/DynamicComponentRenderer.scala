@@ -1,8 +1,8 @@
 package jfx.core.statement
 
-import jfx.core.component.{AbstractComponent, AbstractCustomComponent, Runtime}
+import jfx.core.component.{AbstractComponent, AbstractCustomComponent, DynamicMountPoint, Runtime}
 import jfx.core.dsl.DslLayer
-import jfx.core.render.{Cursor, HostNode, VirtualHost}
+import jfx.core.render.Cursor
 import jfx.core.state.ReadOnlyProperty
 
 class DynamicComponentRenderer(
@@ -10,13 +10,13 @@ class DynamicComponentRenderer(
 ) extends AbstractCustomComponent {
 
   private var mounted: Option[AbstractComponent] = None
-  private var mountedCursor: Cursor              = _
-  private var initialMount                       = true
+  private var mountPoint: DynamicMountPoint      = _
 
   override def compose(cursor: Cursor): Unit = {
-    mountedCursor = cursor
+    mountPoint = new DynamicMountPoint(this, cursor)
 
     replace(componentProperty.get)
+    mountPoint.finishInitialComposition()
 
     addDisposable {
       componentProperty.observeWithoutInitial { component =>
@@ -41,13 +41,10 @@ class DynamicComponentRenderer(
   }
 
   private def mount(component: AbstractComponent): Unit = {
-    val cursor = insertionCursor
-
     mounted = Some(component)
 
     try {
-      Runtime.mount(component, cursor, Some(this))
-      initialMount = false
+      Runtime.mount(component, mountPoint.appendCursor, Some(this))
     } catch {
       case error: Throwable =>
         mounted = None
@@ -55,33 +52,6 @@ class DynamicComponentRenderer(
     }
   }
 
-  private def insertionCursor: Cursor =
-    if (initialMount && mountedCursor.isHydrating) {
-      mountedCursor
-    } else {
-      mounted match {
-        case Some(component) =>
-          firstHost(component).map(mountedCursor.before).getOrElse(endCursor)
-
-        case None =>
-          endCursor
-      }
-    }
-
-  private def firstHost(component: AbstractComponent): Option[HostNode] =
-    component.physicalHosts.headOption
-
-  private def endCursor: Cursor =
-    _host match {
-      case host: VirtualHost =>
-        host.end match {
-          case Some(end) => mountedCursor.before(end)
-          case None      => host.cursor.getOrElse(mountedCursor)
-        }
-
-      case _ =>
-        mountedCursor
-    }
 }
 
 object DynamicComponentRenderer {

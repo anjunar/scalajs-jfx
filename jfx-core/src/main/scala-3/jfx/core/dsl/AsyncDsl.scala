@@ -1,7 +1,7 @@
 package jfx.core.dsl
 
-import jfx.core.component.{AsyncSlot, Runtime}
-import jfx.core.render.RenderScope
+import jfx.core.component.{AsyncSlot, DynamicMountPoint, Runtime}
+import jfx.core.render.{RenderScope, VirtualHost}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -16,17 +16,24 @@ object AsyncDsl {
       Some(scope.parent)
     )
 
-    val slotCursor = scope.cursor
+    val initialCursor =
+      slot._host match {
+        case host: VirtualHost => host.cursor.getOrElse(scope.cursor)
+        case _                 => scope.cursor
+      }
+    val mountPoint = new DynamicMountPoint(slot, initialCursor)
 
     val asyncScope =
       RenderScope(
-        cursor = slotCursor,
+        cursor = mountPoint.appendCursor,
         parent = slot,
         async = scope.async
       )
 
     scope.async.add {
-      body(using asyncScope)
+      body(using asyncScope).map { _ =>
+        mountPoint.finishInitialComposition()
+      }
     }
   }
 }

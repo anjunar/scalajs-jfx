@@ -1,7 +1,7 @@
 package jfx.core.dsl
 
 import jfx.core.component.{AbstractComponent, Runtime}
-import jfx.core.render.{Cursor, HostElement, VirtualHost}
+import jfx.core.render.Cursor
 
 object DslLayer {
 
@@ -10,20 +10,31 @@ object DslLayer {
   ): Unit =
     body(using root)(using cursor)
 
+  def renderInto[A <: AbstractComponent](target: A)(
+      body: A ?=> Cursor ?=> Unit
+  ): Unit = {
+    val cursor = Option(target._contentCursor).getOrElse {
+      throw new IllegalStateException(
+        s"Component '${target.getClass.getSimpleName}' has no mounted content cursor."
+      )
+    }
+
+    body(using target)(using cursor)
+  }
+
   def child[A <: AbstractComponent](component: A)(
       body: A ?=> Cursor ?=> Unit
   )(using parent: AbstractComponent, cursor: Cursor): A = {
-    val mounted = Runtime.mount(component, cursor, Some(parent))
+    val (mounted, childCursor) =
+      Runtime.mountWithCursor(component, cursor, Some(parent))
 
-    val childCursor =
-      mounted._host match {
-        case host: VirtualHost => host.cursor.getOrElse(cursor)
-        case host: HostElement => cursor.sub(host)
-        case _                 => cursor
-      }
-
-    body(using mounted)(using childCursor)
-
-    mounted
+    try {
+      body(using mounted)(using childCursor)
+      mounted
+    } catch {
+      case error: Throwable =>
+        Runtime.unmount(mounted)
+        throw error
+    }
   }
 }

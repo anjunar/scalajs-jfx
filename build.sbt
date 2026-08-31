@@ -106,7 +106,8 @@ lazy val jfxJson = Project(id = "scalajs-jfx-json", base = file("jfx-json"))
   .settings(
     name := "scalajs-jfx-json",
     moduleName := "scalajs-jfx-json",
-    libraryDependencies += "com.anjunar" %%% "scala-reflect" % "1.1.3"
+    libraryDependencies += "com.anjunar" %%% "scala-reflect" % "1.1.3",
+    publish / skip := true
   )
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
@@ -116,7 +117,8 @@ lazy val jfxControls = Project(id = "scalajs-jfx-controls", base = file("jfx-con
   .dependsOn(jfxCore, jfxRouter, jfxViewport % "test->compile")
   .settings(
     name := "scalajs-jfx-controls",
-    moduleName := "scalajs-jfx-controls"
+    moduleName := "scalajs-jfx-controls",
+    publish / skip := true
   )
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
@@ -137,7 +139,8 @@ lazy val jfxEditor = Project(id = "scalajs-jfx-editor", base = file("jfx-editor"
   .settings(
     name := "scalajs-jfx-editor",
     moduleName := "scalajs-jfx-editor",
-    libraryDependencies += "com.anjunar" %%% "scalajs-lexical" % "1.3.0"
+    libraryDependencies += "com.anjunar" %%% "scalajs-lexical" % "1.3.0",
+    publish / skip := true
   )
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
@@ -147,7 +150,8 @@ lazy val jfxWebAuthn = Project(id = "scalajs-jfx-webauthn", base = file("jfx-web
   .dependsOn(jfxCore)
   .settings(
     name := "scalajs-jfx-webauthn",
-    moduleName := "scalajs-jfx-webauthn"
+    moduleName := "scalajs-jfx-webauthn",
+    publish / skip := true
   )
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
@@ -157,7 +161,8 @@ lazy val jfxSsr = Project(id = "scalajs-jfx-ssr", base = file("jfx-ssr"))
   .dependsOn(jfxCore)
   .settings(
     name := "scalajs-jfx-ssr",
-    moduleName := "scalajs-jfx-ssr"
+    moduleName := "scalajs-jfx-ssr",
+    publish / skip := true
   )
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)

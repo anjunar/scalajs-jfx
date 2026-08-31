@@ -1,8 +1,8 @@
 package jfx.core.statement
 
-import jfx.core.component.{AbstractComponent, AbstractCustomComponent, Runtime}
+import jfx.core.component.{AbstractComponent, AbstractCustomComponent, DynamicMountPoint, Runtime}
 import jfx.core.dsl.DslLayer
-import jfx.core.render.{Cursor, HostNode, VirtualHost}
+import jfx.core.render.{Cursor, HostNode}
 import jfx.core.state.{ListProperty, ReadOnlyProperty}
 
 import scala.collection.mutable
@@ -16,30 +16,29 @@ class Foreach[V](
   import ListProperty.*
 
   private val mounted               = mutable.ArrayBuffer.empty[ForeachItem[V]]
-  private var initialized           = false
-  private var mountedCursor: Cursor = _
+  private var mountPoint: DynamicMountPoint = _
 
   override def compose(cursor: Cursor): Unit = {
-    mountedCursor = cursor
-    resetAll(cursor)
-    initialized = true
+    mountPoint = new DynamicMountPoint(this, cursor)
+    resetAll()
+    mountPoint.finishInitialComposition()
     addDisposable(items.observeChanges(sync))
   }
 
   private def sync(change: Change[V]): Unit =
     change match {
       case Reset(_) =>
-        resetAll(mountedCursor)
+        resetAll()
       case Add(element, _) =>
-        mountAt(mounted.length, element, mountedCursor)
+        mountAt(mounted.length, element)
       case Insert(index, element, _) =>
         if (reindexOnStructuralChange) rebuildFrom(index)
-        else mountAt(index, element, mountedCursor)
+        else mountAt(index, element)
       case InsertAll(index, elements, _) =>
         if (reindexOnStructuralChange) rebuildFrom(index)
         else
           elements.toSeq.zipWithIndex.foreach { case (element, offset) =>
-            mountAt(index + offset, element, mountedCursor)
+            mountAt(index + offset, element)
           }
       case RemoveAt(index, _, _) =>
         if (reindexOnStructuralChange) rebuildFrom(index)
@@ -54,16 +53,16 @@ class Foreach[V](
         else {
           unmountRange(from, removed.length)
           inserted.toSeq.zipWithIndex.foreach { case (element, offset) =>
-            mountAt(from + offset, element, mountedCursor)
+            mountAt(from + offset, element)
           }
         }
       case Clear(_, _) =>
         clearMounted()
     }
 
-  private def resetAll(cursor: Cursor): Unit = {
+  private def resetAll(): Unit = {
     clearMounted()
-    items.get.toSeq.zipWithIndex.foreach { case (value, index) => mountAt(index, value, cursor) }
+    items.get.toSeq.zipWithIndex.foreach { case (value, index) => mountAt(index, value) }
   }
 
   private def rebuildFrom(index: Int): Unit = {
@@ -73,23 +72,23 @@ class Foreach[V](
     unmountRange(from, count)
 
     items.get.toSeq.drop(from).zipWithIndex.foreach { case (value, offset) =>
-      mountAt(from + offset, value, mountedCursor)
+      mountAt(from + offset, value)
     }
   }
 
   private def replaceAt(index: Int, value: V): Unit =
     if (index >= 0 && index < mounted.length) {
       unmountAt(index)
-      mountAt(index, value, mountedCursor)
+      mountAt(index, value)
     } else {
-      resetAll(mountedCursor)
+      resetAll()
     }
 
-  private def mountAt(index: Int, value: V, cursor: Cursor): Unit = {
+  private def mountAt(index: Int, value: V): Unit = {
     val safeIndex = index.max(0).min(mounted.length)
     val item      = new ForeachItem(value, safeIndex, build)
 
-    Runtime.mount(item, insertionCursorAt(safeIndex, cursor), Some(this))
+    Runtime.mount(item, insertionCursorAt(safeIndex), Some(this))
     mounted.insert(safeIndex, item)
     syncChildOrder()
   }
@@ -100,7 +99,7 @@ class Foreach[V](
       Runtime.unmount(item)
       syncChildOrder()
     } else {
-      resetAll(mountedCursor)
+      resetAll()
     }
 
   private def unmountRange(index: Int, count: Int): Unit = {
@@ -121,22 +120,12 @@ class Foreach[V](
     _children ++= mounted
   }
 
-  private def insertionCursorAt(index: Int, cursor: Cursor): Cursor =
-    if (!initialized) cursor
-    else mounted.lift(index).flatMap(firstHost).map(cursor.before).getOrElse(endCursor(cursor))
+  private def insertionCursorAt(index: Int): Cursor =
+    mountPoint.cursorBefore(mounted.lift(index).flatMap(firstHost))
 
   private def firstHost(component: AbstractComponent): Option[HostNode] =
     component.physicalHosts.headOption
 
-  private def endCursor(cursor: Cursor): Cursor =
-    _host match {
-      case host: VirtualHost =>
-        host.end match {
-          case Some(end) => cursor.before(end)
-          case None      => host.cursor.getOrElse(cursor)
-        }
-      case _ => cursor
-    }
 }
 
 object Foreach {

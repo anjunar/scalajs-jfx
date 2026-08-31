@@ -15,6 +15,16 @@ trait Cursor {
   def asyncContext: Option[AsyncRenderContext] =
     None
 
+  /** The physical host into which this cursor inserts nodes, when one exists. */
+  def parentHost: Option[HostElement] =
+    None
+
+  /**
+   * Completes a hydration session and verifies that every server-rendered node was claimed.
+   * Non-hydrating cursors have nothing to complete.
+   */
+  def completeHydration(): Unit = ()
+
   def claimElement(tag: String): HostElement
 
   def claimText(initial: String): TextNode
