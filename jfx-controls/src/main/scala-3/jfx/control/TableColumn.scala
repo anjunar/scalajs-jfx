@@ -54,12 +54,19 @@ object TableColumn {
   }
 
   @targetName("columnWithPrefWidthAndRenderer")
-  def column[S, T](text: String, prefWidth: Double)(renderer: CellRenderer[S])(using
+  def column[S, T](
+      text: String,
+      prefWidth: Double,
+      sortable: Boolean = false,
+      sortKey: String = ""
+  )(renderer: CellRenderer[S])(using
       table: TableView[S],
       cursor: Cursor
   ): TableColumn[S, T] = {
     val column = new TableColumn[S, T](text)
     column.$prefWidthProperty.set(prefWidth)
+    column.$sortableProperty.set(sortable)
+    column.$sortKeyProperty.set(Option(sortKey).map(_.trim).filter(_.nonEmpty))
     column.setCellRenderer(renderer)
     table.registerColumn(column)
     column

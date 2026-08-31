@@ -5,23 +5,26 @@ import jfx.control.TableColumn.column
 import jfx.control.TableView.*
 import jfx.core.component.AbstractComponent
 import jfx.core.dsl.ClassDsl.classes
-import jfx.core.dsl.EventDsl.onClick
 import jfx.core.dsl.StyleDsl.*
-import jfx.core.layout.Button.button
 import jfx.core.layout.Div.div
 import jfx.core.layout.HBox.hbox
 import jfx.core.layout.TextComponent.text
 import jfx.core.layout.VBox.vbox
 import jfx.core.render.Cursor
-import jfx.core.state.{ListProperty, Property}
+import jfx.core.state.{ListProperty, Property, RemoteListProperty}
 import jfx.i18n.i18n
 
 import scala.scalajs.js
 
 object TableViewPage {
   final case class Book(title: String, author: String, year: Int)
+  final case class BookQuery(
+      offset: Int,
+      limit: Int,
+      sorting: Vector[ListProperty.RemoteSort] = Vector.empty
+  )
 
-  private val initialBooks = Seq(
+  private val bookCatalog = Vector(
     Book("Der Hobbit", "J. R. R. Tolkien", 1937),
     Book("1984", "George Orwell", 1949),
     Book("Siddhartha", "Hermann Hesse", 1922),
@@ -32,9 +35,80 @@ object TableViewPage {
     Book("Stolz und Vorurteil", "Jane Austen", 1813)
   )
 
+  private def generatedBooks(count: Int): Vector[Book] =
+    Vector.tabulate(math.max(0, count)) { index =>
+      val template = bookCatalog(index % bookCatalog.length)
+      template.copy(title = s"${template.title} #${index + 1}")
+    }
+
+  private def createRemoteBooks(
+      rowCount: Int = 1000,
+      pageSize: Int = 50
+  ): RemoteListProperty[Book, BookQuery] = {
+    val allBooks = generatedBooks(rowCount)
+    val normalizedPageSize = math.max(1, pageSize)
+    val initialQuery = BookQuery(offset = 0, limit = normalizedPageSize)
+
+    val remote = ListProperty.remote[Book, BookQuery](
+      loader = ListProperty.RemoteLoader { query =>
+        val sorted = sortBooks(allBooks, query.sorting)
+        val page = sorted.slice(query.offset, query.offset + query.limit)
+        val nextOffset = query.offset + page.length
+
+        js.Promise.resolve(
+          ListProperty.RemotePage[Book, BookQuery](
+            items = page,
+            offset = Some(query.offset),
+            nextQuery = Option.when(nextOffset < sorted.length)(
+              query.copy(offset = nextOffset, limit = normalizedPageSize)
+            ),
+            totalCount = Some(sorted.length),
+            hasMore = Some(nextOffset < sorted.length)
+          )
+        )
+      },
+      initialQuery = initialQuery,
+      underlying = js.Array(allBooks.take(normalizedPageSize)*),
+      sortUpdater = Some((query, sorting) =>
+        query.copy(offset = 0, limit = normalizedPageSize, sorting = sorting.toVector)
+      ),
+      rangeQueryUpdater = Some((query, offset, limit) =>
+        query.copy(offset = offset, limit = math.max(1, limit))
+      )
+    )
+
+    remote.totalCountProperty.set(Some(allBooks.length))
+    remote.hasMoreProperty.set(allBooks.length > normalizedPageSize)
+    remote.nextQueryProperty.set(
+      Option.when(allBooks.length > normalizedPageSize)(
+        initialQuery.copy(offset = normalizedPageSize)
+      )
+    )
+    remote
+  }
+
+  private def sortBooks(
+      books: Vector[Book],
+      sorting: Vector[ListProperty.RemoteSort]
+  ): Vector[Book] =
+    sorting.headOption match {
+      case Some(sort) =>
+        val sorted = sort.field match {
+          case "title"  => books.sortBy(_.title.toLowerCase)
+          case "author" => books.sortBy(_.author.toLowerCase)
+          case "year"   => books.sortBy(_.year)
+          case _        => books
+        }
+        if (sort.ascending) sorted else sorted.reverse
+      case None => books
+    }
+
   def render()(using AbstractComponent, Cursor): Unit = {
-    val books = ListProperty(js.Array(initialBooks*))
+    val books = createRemoteBooks()
     val status = Property("Double-click a row to inspect it.")
+    val loadedStatus = books.totalCountProperty.flatMap { totalCount =>
+      books.map(loaded => s"${loaded.length} of ${totalCount.getOrElse(loaded.length)} rows loaded")
+    }
 
     showcasePage(i18n"TableView", i18n"Reactive rows with a stable SSR and hydration structure.") {
       vbox {
@@ -43,26 +117,21 @@ object TableViewPage {
         sectionIntro(
           i18n"Data view",
           i18n"A table should keep changing data calm.",
-          i18n"Columns are configured before the table tree is composed. Rows then follow ListProperty mutations through stable Foreach mount points."
+          i18n"A generated in-memory data source exposes 1,000 rows through RemoteListProperty. The table requests only the visible ranges."
         )
 
         componentShowcase(
-          i18n"Mutable book table",
-          i18n"Insert and remove rows without rebuilding or managing DOM nodes manually."
+          i18n"Remote in-memory book table",
+          i18n"Scroll through generated data and sort columns while RemoteListProperty loads pages from memory."
         ) {
           vbox {
             style { gap = "16px" }
 
             hbox {
               style { gap = "10px"; flexWrap = "wrap" }
-              button(i18n"Add book") {
-                onClick { _ =>
-                  val number = books.length + 1
-                  books.addOne(Book(s"New book $number", "Unknown", 2026))
-                }
-              }
-              button(i18n"Remove first") {
-                onClick { _ => if (books.nonEmpty) books.remove(0) }
+              div {
+                classes = Seq("showcase-note")
+                text(loadedStatus) {}
               }
               div {
                 classes = Seq("showcase-note")
@@ -81,15 +150,30 @@ object TableViewPage {
                 rowHeight = 44.0
                 items = books
 
-                column[Book, String]("Title", prefWidth = 300.0) { book =>
+                column[Book, String](
+                  "Title",
+                  prefWidth = 300.0,
+                  sortable = true,
+                  sortKey = "title"
+                ) { book =>
                   text(book.title) {}
                 }
 
-                column[Book, String]("Author", prefWidth = 240.0) { book =>
+                column[Book, String](
+                  "Author",
+                  prefWidth = 240.0,
+                  sortable = true,
+                  sortKey = "author"
+                ) { book =>
                   text(book.author) {}
                 }
 
-                column[Book, Int]("Year", prefWidth = 100.0) { book =>
+                column[Book, Int](
+                  "Year",
+                  prefWidth = 100.0,
+                  sortable = true,
+                  sortKey = "year"
+                ) { book =>
                   text(book.year.toString) {}
                 }
 
@@ -107,7 +191,7 @@ object TableViewPage {
                 placeholder {
                   div {
                     classes = Seq("jfx-table-default-placeholder")
-                    text(i18n"Add a book to fill the table.") {}
+                    text(i18n"Loading generated books...") {}
                   }
                 }
 
@@ -118,9 +202,9 @@ object TableViewPage {
         }
 
         insightGrid(
-          (i18n"Lists", i18n"Mutations stay local", i18n"Insert, update, patch, and remove operations replace only the affected virtual rows."),
+          (i18n"Memory", i18n"The source stays local", i18n"A deterministic catalog generates 1,000 rows without a server or network request."),
           (i18n"SSR", i18n"Initial structure is deterministic", i18n"Configuration runs before dynamic row and column mount points are created."),
-          (i18n"Remote", i18n"Large sources remain lazy", i18n"RemoteListProperty supports range loading, placeholders, and server-side sorting state.")
+          (i18n"Remote", i18n"Large sources remain lazy", i18n"RemoteListProperty exposes range loading, placeholders, and sortable query state.")
         )
 
         apiSection(i18n"Table DSL", i18n"Columns keep their renderer next to the data they display.") {
@@ -137,7 +221,12 @@ object TableViewPage {
                |    rowHeight = 44.0
                |    items = books
                |
-               |    column[Book, String]("Title", prefWidth = 300.0) { book =>
+               |    column[Book, String](
+               |      "Title",
+               |      prefWidth = 300.0,
+               |      sortable = true,
+               |      sortKey = "title"
+               |    ) { book =>
                |      text(book.title) {}
                |    }
                |
@@ -148,6 +237,30 @@ object TableViewPage {
                |    onRowDoubleClick(openBook)
                |  }
                |}""".stripMargin
+          )
+        }
+
+        apiSection(i18n"In-memory RemoteListProperty", i18n"The loader slices and sorts one generated Vector.") {
+          codeBlock(
+            "scala",
+            """|val books = ListProperty.remote[Book, BookQuery](
+               |  loader = ListProperty.RemoteLoader { query =>
+               |    val sorted = sortBooks(generatedBooks, query.sorting)
+               |    val page = sorted.slice(query.offset, query.offset + query.limit)
+               |
+               |    js.Promise.resolve(
+               |      ListProperty.RemotePage(
+               |        items = page,
+               |        offset = Some(query.offset),
+               |        totalCount = Some(sorted.length)
+               |      )
+               |    )
+               |  },
+               |  initialQuery = BookQuery(offset = 0, limit = 50),
+               |  rangeQueryUpdater = Some((query, offset, limit) =>
+               |    query.copy(offset = offset, limit = limit)
+               |  )
+               |)""".stripMargin
           )
         }
       }
