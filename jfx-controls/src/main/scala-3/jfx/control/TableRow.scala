@@ -14,8 +14,8 @@ class TableRow[S] private[control] (
 ) extends AbstractComponent {
   override val tagName: String = "div"
 
-  val $itemProperty: Property[S | Null] = Property(null)
-  val $indexProperty: Property[Int] = Property(-1)
+  val itemProperty: Property[S | Null] = Property(null)
+  val indexProperty: Property[Int] = Property(-1)
 
   private var tableView: TableView[S] | Null = null
   private var columns: Seq[TableColumn[S, ?]] = Seq.empty
@@ -26,7 +26,7 @@ class TableRow[S] private[control] (
 
     DslLayer.render(this, cursor) {
       addClass("jfx-table-row")
-      if ($indexProperty.get % 2 == 0) addClass("jfx-table-row-even")
+      if (indexProperty.get % 2 == 0) addClass("jfx-table-row-even")
       else addClass("jfx-table-row-odd")
 
       style {
@@ -41,13 +41,13 @@ class TableRow[S] private[control] (
         host.setAttribute("aria-selected", "false")
       } else {
         val table = requireTableView()
-        val selected = table.$selectedIndexProperty.map(_ == $indexProperty.get)
+        val selected = table.selectedIndexProperty.map(_ == indexProperty.get)
         classIf("jfx-table-row-selected", selected)
         addDisposable(selected.observe(value => host.setAttribute("aria-selected", value.toString)))
 
-        onClick(_ => table.select($indexProperty.get))
+        onClick(_ => table.select(indexProperty.get))
         onDoubleClick { _ =>
-          $itemProperty.get match {
+          itemProperty.get match {
             case item: S @unchecked => table.fireRowDoubleClick(item)
             case null               => ()
           }
@@ -63,7 +63,7 @@ class TableRow[S] private[control] (
             Option.when(placeholder)("jfx-table-cell-loading-placeholder")
 
           val widthProperty = requireTableView().renderedWidthsProperty.map { widths =>
-            s"${widths.lift(columnIndex).getOrElse(typedColumn.$prefWidth)}px"
+            s"${widths.lift(columnIndex).getOrElse(typedColumn.prefWidth)}px"
           }
           style {
             width = widthProperty
@@ -72,9 +72,9 @@ class TableRow[S] private[control] (
           }
 
           if (!placeholder) {
-            $itemProperty.get match {
+            itemProperty.get match {
               case item: S @unchecked =>
-                typedColumn.$cellRenderer.get.foreach { renderer =>
+                typedColumn.cellRenderer.get.foreach { renderer =>
                   renderer(item)(using summon[AbstractComponent])(using summon[Cursor])
                 }
               case null => ()
@@ -91,8 +91,8 @@ class TableRow[S] private[control] (
       owner: TableView[S],
       rowColumns: Seq[TableColumn[S, ?]]
   ): Unit = {
-    $indexProperty.set(rowIndex)
-    $itemProperty.set(rowValue)
+    indexProperty.set(rowIndex)
+    itemProperty.set(rowValue)
     tableView = owner
     columns = rowColumns
     placeholder = false
@@ -103,8 +103,8 @@ class TableRow[S] private[control] (
       owner: TableView[S],
       rowColumns: Seq[TableColumn[S, ?]]
   ): Unit = {
-    $indexProperty.set(rowIndex)
-    $itemProperty.set(null)
+    indexProperty.set(rowIndex)
+    itemProperty.set(null)
     tableView = owner
     columns = rowColumns
     placeholder = true

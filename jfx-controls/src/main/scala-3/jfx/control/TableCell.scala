@@ -10,19 +10,19 @@ import jfx.core.state.Property
 class TableCell[S, T] extends AbstractComponent {
   override val tagName: String = "div"
 
-  val $itemProperty: Property[T | Null] = Property(null)
-  val $emptyProperty: Property[Boolean] = Property(true)
+  val itemProperty: Property[T | Null] = Property(null)
+  val emptyProperty: Property[Boolean] = Property(true)
 
   override def compose(cursor: Cursor): Unit =
     DslLayer.render(this, cursor) {
       addClass("jfx-table-cell")
-      classIf("jfx-table-cell-empty", $emptyProperty)
-      text($itemProperty.map(item => Option(item).fold("")(_.toString))) {}
+      classIf("jfx-table-cell-empty", emptyProperty)
+      text(itemProperty.map(item => Option(item).fold("")(_.toString))) {}
     }
 
   private[control] def applyRenderedItem(item: T | Null, empty: Boolean): Unit = {
-    $itemProperty.set(item)
-    $emptyProperty.set(empty)
+    itemProperty.set(item)
+    emptyProperty.set(empty)
   }
 }
 

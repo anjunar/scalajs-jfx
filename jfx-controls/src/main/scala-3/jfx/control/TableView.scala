@@ -30,19 +30,19 @@ final class TableView[S] private (
   override val tagName: String = "div"
 
   private val itemsRefProperty = Property[ListProperty[S]](ListProperty[S]())
-  val $columns: ListProperty[TableColumn[S, ?]] = ListProperty()
-  val $showHeaderProperty: Property[Boolean] = Property(true)
-  val $rowHeightProperty: Property[Double] = Property(32.0)
-  val $prefWidthProperty: Property[Option[Double]] = Property(None)
-  val $fixedHeightProperty: Property[Option[Double]] = Property(None)
-  val $scrollTopProperty: Property[Double] = Property(0.0)
-  val $scrollLeftProperty: Property[Double] = Property(0.0)
-  val $viewportWidthProperty: Property[Double] = Property(800.0)
-  val $viewportHeightProperty: Property[Double] = Property(400.0)
-  val $crawlableProperty: Property[Boolean] = Property(false)
-  val $selectedIndexProperty: Property[Int] = Property(-1)
-  val $selectedItemProperty: Property[S | Null] = Property(null)
-  val $rowDoubleClickHandlerProperty: Property[Option[S => Unit]] = Property(None)
+  val columns: ListProperty[TableColumn[S, ?]] = ListProperty()
+  val showHeaderProperty: Property[Boolean] = Property(true)
+  val rowHeightProperty: Property[Double] = Property(32.0)
+  val prefWidthProperty: Property[Option[Double]] = Property(None)
+  val fixedHeightProperty: Property[Option[Double]] = Property(None)
+  val scrollTopProperty: Property[Double] = Property(0.0)
+  val scrollLeftProperty: Property[Double] = Property(0.0)
+  val viewportWidthProperty: Property[Double] = Property(800.0)
+  val viewportHeightProperty: Property[Double] = Property(400.0)
+  val crawlableProperty: Property[Boolean] = Property(false)
+  val selectedIndexProperty: Property[Int] = Property(-1)
+  val selectedItemProperty: Property[S | Null] = Property(null)
+  val rowDoubleClickHandlerProperty: Property[Option[S => Unit]] = Property(None)
 
   private final case class VisibleRow(index: Int, item: Option[S])
 
@@ -63,9 +63,9 @@ final class TableView[S] private (
   private var browserRendering = false
 
   val renderedWidthsProperty: ReadOnlyProperty[Vector[Double]] =
-    $viewportWidthProperty.flatMap { viewportWidth =>
+    viewportWidthProperty.flatMap { viewportWidth =>
       columnStateRevisionProperty.map { _ =>
-        resolveRenderedColumnWidths($columns.toSeq, viewportWidth)
+        resolveRenderedColumnWidths(columns.toSeq, viewportWidth)
       }
     }
 
@@ -83,16 +83,16 @@ final class TableView[S] private (
 
   def $items: ListProperty[S] = getItems
   def $items_=(value: ListProperty[S]): Unit = setItems(value)
-  def $getColumns: ListProperty[TableColumn[S, ?]] = $columns
-  def $getFixedCellSize: Double = $rowHeightProperty.get
-  def setFixedCellSize(value: Double): Unit = $rowHeightProperty.set(value)
+  def $getColumns: ListProperty[TableColumn[S, ?]] = columns
+  def $getFixedCellSize: Double = rowHeightProperty.get
+  def setFixedCellSize(value: Double): Unit = rowHeightProperty.set(value)
 
   private[control] def registerColumn(column: TableColumn[S, ?]): Unit = {
-    if (!$columns.contains(column)) {
-      $columns.addOne(column)
-      addDisposable(column.$prefWidthProperty.observeWithoutInitial(_ => bumpColumnState()))
-      addDisposable(column.$sortableProperty.observeWithoutInitial(_ => bumpHeaderState()))
-      addDisposable(column.$sortKeyProperty.observeWithoutInitial(_ => bumpHeaderState()))
+    if (!columns.contains(column)) {
+      columns.addOne(column)
+      addDisposable(column.prefWidthProperty.observeWithoutInitial(_ => bumpColumnState()))
+      addDisposable(column.sortableProperty.observeWithoutInitial(_ => bumpHeaderState()))
+      addDisposable(column.sortKeyProperty.observeWithoutInitial(_ => bumpHeaderState()))
       addDisposable(Disposable(column.dispose()))
     }
   }
@@ -127,12 +127,12 @@ final class TableView[S] private (
         overflow = "hidden"
       }
 
-      addDisposable($prefWidthProperty.observe {
+      addDisposable(prefWidthProperty.observe {
         case Some(value) => host.setStyle("width", s"${value}px")
         case None        => ()
       })
 
-      addDisposable($fixedHeightProperty.observe {
+      addDisposable(fixedHeightProperty.observe {
         case Some(value) =>
           val cssHeight = s"${math.max(0.0, value)}px"
           host.setStyle("height", cssHeight)
@@ -141,7 +141,7 @@ final class TableView[S] private (
         case None => ()
       })
 
-      when($showHeaderProperty) {
+      when(showHeaderProperty) {
         div {
           classes = Seq("jfx-table-header-viewport")
           style {
@@ -149,7 +149,7 @@ final class TableView[S] private (
             overflow = "hidden"
             width = "100%"
             flex = "0 0 auto"
-            height = $rowHeightProperty.map(value => s"${math.max(30.0, value)}px")
+            height = rowHeightProperty.map(value => s"${math.max(30.0, value)}px")
           }
 
           div {
@@ -159,16 +159,16 @@ final class TableView[S] private (
               width = totalColumnWidthProperty.map(value => s"${value}px")
               minWidth = totalColumnWidthProperty.map(value => s"${value}px")
               height = "100%"
-              transform = $scrollLeftProperty.map(value => s"translateX(-${value}px)")
+              transform = scrollLeftProperty.map(value => s"translateX(-${value}px)")
             }
 
-            foreachIndexed($columns) { (column, columnIndex) =>
+            foreachIndexed(columns) { (column, columnIndex) =>
               val typedColumn = column.asInstanceOf[TableColumn[S, Any]]
               val headerCell = div {
                 classes = Seq("jfx-table-header-cell") ++
-                  Option.when(columnIndex == $columns.length - 1)("jfx-table-header-cell-last")
+                  Option.when(columnIndex == columns.length - 1)("jfx-table-header-cell-last")
                 val widthProperty = renderedWidthsProperty.map { widths =>
-                  s"${widths.lift(columnIndex).getOrElse(typedColumn.$prefWidth)}px"
+                  s"${widths.lift(columnIndex).getOrElse(typedColumn.prefWidth)}px"
                 }
                 style {
                   width = widthProperty
@@ -177,7 +177,7 @@ final class TableView[S] private (
                   boxSizing = "border-box"
                 }
                 onClick(_ => toggleRemoteSort(typedColumn))
-                text(column.$textProperty) {}
+                text(column.textProperty) {}
               }
               headerCell.classCondition(
                 "jfx-table-header-cell-sortable",
@@ -260,10 +260,10 @@ final class TableView[S] private (
                   classes = Seq("jfx-table-row-slot")
                   style {
                     position = "absolute"
-                    top = s"${rowDefinition.index * $rowHeightProperty.get}px"
+                    top = s"${rowDefinition.index * rowHeightProperty.get}px"
                     left = "0"
                     width = totalColumnWidthProperty.map(value => s"${value}px")
-                    height = s"${$rowHeightProperty.get}px"
+                    height = s"${rowHeightProperty.get}px"
                     display = "flex"
                   }
 
@@ -274,15 +274,15 @@ final class TableView[S] private (
                           rowDefinition.index,
                           value,
                           TableView.this,
-                          $columns.toSeq,
-                          $rowHeightProperty.get
+                          columns.toSeq,
+                          rowHeightProperty.get
                         )
                       case None =>
                         placeholderRow(
                           rowDefinition.index,
                           TableView.this,
-                          $columns.toSeq,
-                          $rowHeightProperty.get
+                          columns.toSeq,
+                          rowHeightProperty.get
                         )
                     }
                   }
@@ -300,7 +300,7 @@ final class TableView[S] private (
                 display = "block"
                 padding = "20px"
                 textAlign = "center"
-                if (!browserRendering) marginTop = s"${(offset + limit) * $rowHeightProperty.get}px"
+                if (!browserRendering) marginTop = s"${(offset + limit) * rowHeightProperty.get}px"
               }
             }
           }
@@ -342,16 +342,16 @@ final class TableView[S] private (
 
   private def installObservers(): Unit = {
     addDisposable(itemsRefProperty.observeWithoutInitial(_ => rewireItemsObserver()))
-    addDisposable($scrollTopProperty.observeWithoutInitial(_ => recomputeVisibleRows()))
-    addDisposable($viewportHeightProperty.observeWithoutInitial(_ => recomputeVisibleRows()))
-    addDisposable($viewportWidthProperty.observeWithoutInitial(_ => recomputeVisibleRows()))
-    addDisposable($columns.observeChanges(_ => {
+    addDisposable(scrollTopProperty.observeWithoutInitial(_ => recomputeVisibleRows()))
+    addDisposable(viewportHeightProperty.observeWithoutInitial(_ => recomputeVisibleRows()))
+    addDisposable(viewportWidthProperty.observeWithoutInitial(_ => recomputeVisibleRows()))
+    addDisposable(columns.observeChanges(_ => {
       bumpColumnState()
       recomputeVisibleRows()
     }))
-    addDisposable($rowHeightProperty.observeWithoutInitial(_ => recomputeVisibleRows()))
-    addDisposable($crawlableProperty.observeWithoutInitial(_ => refreshItemState()))
-    addDisposable($selectedIndexProperty.observeWithoutInitial(_ => refreshSelectedItem()))
+    addDisposable(rowHeightProperty.observeWithoutInitial(_ => recomputeVisibleRows()))
+    addDisposable(crawlableProperty.observeWithoutInitial(_ => refreshItemState()))
+    addDisposable(selectedIndexProperty.observeWithoutInitial(_ => refreshSelectedItem()))
     addDisposable(contentHeaderHeightProperty.observeWithoutInitial(_ => refreshItemState()))
     addDisposable(Disposable {
       itemsObserver.dispose()
@@ -408,15 +408,15 @@ final class TableView[S] private (
   }
 
   private def visibleRange(total: Int): (Int, Int) =
-    if (!browserRendering && $crawlableProperty.get) {
+    if (!browserRendering && crawlableProperty.get) {
       val (offset, limit) = crawlParams
       val start = math.min(offset, total)
       (start, math.min(total, start + limit))
     } else {
-      val rowHeight = math.max(1.0, $rowHeightProperty.get)
-      val effectiveScrollTop = math.max(0.0, $scrollTopProperty.get - contentHeaderHeight)
+      val rowHeight = math.max(1.0, rowHeightProperty.get)
+      val effectiveScrollTop = math.max(0.0, scrollTopProperty.get - contentHeaderHeight)
       val firstVisible = math.floor(effectiveScrollTop / rowHeight).toInt
-      val visibleCount = math.ceil(math.max(1.0, $viewportHeightProperty.get) / rowHeight).toInt + 1
+      val visibleCount = math.ceil(math.max(1.0, viewportHeightProperty.get) / rowHeight).toInt + 1
       val start = math.max(0, firstVisible - TableView.overscanRows)
       val end = math.min(total, firstVisible + visibleCount + TableView.overscanRows)
       (start, end)
@@ -440,8 +440,8 @@ final class TableView[S] private (
   }
 
   private def refreshSelectedItem(): Unit = {
-    val index = $selectedIndexProperty.get
-    $selectedItemProperty.set(if (index >= 0 && index < totalItemCount) itemAt(index).orNull else null)
+    val index = selectedIndexProperty.get
+    selectedItemProperty.set(if (index >= 0 && index < totalItemCount) itemAt(index).orNull else null)
   }
 
   private def currentRemoteItems: RemoteListProperty[S, ?] | Null =
@@ -463,7 +463,7 @@ final class TableView[S] private (
 
   private def contentHeightProperty: ReadOnlyProperty[String] =
     itemStateRevisionProperty.flatMap(_ =>
-      $rowHeightProperty.map(rowHeight => s"${totalItemCount * rowHeight}px")
+      rowHeightProperty.map(rowHeight => s"${totalItemCount * rowHeight}px")
     )
 
   private def placeholderTextProperty: ReadOnlyProperty[String] =
@@ -482,7 +482,7 @@ final class TableView[S] private (
 
   private def hasMoreCrawlPage: Boolean = {
     val (offset, limit) = crawlParams
-    $crawlableProperty.get && offset + limit < totalItemCount
+    crawlableProperty.get && offset + limit < totalItemCount
   }
 
   private def nextCrawlHref(offset: Int, limit: Int): String = {
@@ -497,14 +497,14 @@ final class TableView[S] private (
     Option(currentRemoteItems).fold(Vector.empty[ListProperty.RemoteSort])(_.getSorting)
 
   private def sortKeyOf(column: TableColumn[S, Any]): Option[String] =
-    column.$sortKeyProperty.get.map(_.trim).filter(_.nonEmpty)
+    column.sortKeyProperty.get.map(_.trim).filter(_.nonEmpty)
 
   private def currentSortFor(column: TableColumn[S, Any]): Option[ListProperty.RemoteSort] =
     sortKeyOf(column).flatMap(key => currentRemoteSorting.find(_.field == key))
 
   private def isRemoteSortable(column: TableColumn[S, Any]): Boolean =
     Option(currentRemoteItems).exists(remote =>
-      remote.supportsSorting && column.$sortableProperty.get && sortKeyOf(column).nonEmpty
+      remote.supportsSorting && column.sortableProperty.get && sortKeyOf(column).nonEmpty
     )
 
   private def toggleRemoteSort(column: TableColumn[S, Any]): Unit =
@@ -520,7 +520,7 @@ final class TableView[S] private (
     }
 
   def select(index: Int): Unit =
-    $selectedIndexProperty.set(if (index >= 0 && index < totalItemCount) index else -1)
+    selectedIndexProperty.set(if (index >= 0 && index < totalItemCount) index else -1)
 
   def select(item: S): Unit = {
     val index = currentRemoteItems match {
@@ -532,10 +532,10 @@ final class TableView[S] private (
   }
 
   def setRowDoubleClickHandler(handler: S => Unit): Unit =
-    $rowDoubleClickHandlerProperty.set(Option(handler))
+    rowDoubleClickHandlerProperty.set(Option(handler))
 
   private[control] def fireRowDoubleClick(item: S): Unit =
-    $rowDoubleClickHandlerProperty.get.foreach(_(item))
+    rowDoubleClickHandlerProperty.get.foreach(_(item))
 
   private def bumpItemState(): Unit =
     itemStateRevisionProperty.set(itemStateRevisionProperty.get + 1)
@@ -576,14 +576,14 @@ final class TableView[S] private (
     }
 
   private def updateScrollState(element: dom.html.Element): Unit = {
-    $scrollTopProperty.set(element.scrollTop)
-    $scrollLeftProperty.set(element.scrollLeft)
+    scrollTopProperty.set(element.scrollTop)
+    scrollLeftProperty.set(element.scrollLeft)
     updateViewportSize(element)
   }
 
   private def updateViewportSize(element: dom.html.Element): Unit = {
-    if (element.clientWidth > 0) $viewportWidthProperty.set(element.clientWidth.toDouble)
-    if (element.clientHeight > 0) $viewportHeightProperty.set(element.clientHeight.toDouble)
+    if (element.clientWidth > 0) viewportWidthProperty.set(element.clientWidth.toDouble)
+    if (element.clientHeight > 0) viewportHeightProperty.set(element.clientHeight.toDouble)
   }
 
   private def domElement(component: AbstractComponent | Null): Option[dom.html.Element] =
@@ -605,7 +605,7 @@ final class TableView[S] private (
   ): Vector[Double] = {
     if (columns.isEmpty) return Vector.empty
 
-    val widths = columns.map(_.$prefWidth).toVector
+    val widths = columns.map(_.prefWidth).toVector
     val minimums = Vector.fill(columns.length)(40.0)
     val target = math.max(minimums.sum, viewportWidth)
     val delta = target - widths.sum
@@ -665,33 +665,33 @@ object TableView {
       case _                         => table.$items.setAll(value)
     }
 
-  def rowHeight(using table: TableView[?]): Double = table.$rowHeightProperty.get
-  def rowHeight_=(value: Double)(using table: TableView[?]): Unit = table.$rowHeightProperty.set(value)
+  def rowHeight(using table: TableView[?]): Double = table.rowHeightProperty.get
+  def rowHeight_=(value: Double)(using table: TableView[?]): Unit = table.rowHeightProperty.set(value)
 
-  def fixedCellSize(using table: TableView[?]): Double = table.$rowHeightProperty.get
-  def fixedCellSize_=(value: Double)(using table: TableView[?]): Unit = table.$rowHeightProperty.set(value)
+  def fixedCellSize(using table: TableView[?]): Double = table.rowHeightProperty.get
+  def fixedCellSize_=(value: Double)(using table: TableView[?]): Unit = table.rowHeightProperty.set(value)
 
-  def showHeader(using table: TableView[?]): Boolean = table.$showHeaderProperty.get
-  def showHeader_=(value: Boolean)(using table: TableView[?]): Unit = table.$showHeaderProperty.set(value)
+  def showHeader(using table: TableView[?]): Boolean = table.showHeaderProperty.get
+  def showHeader_=(value: Boolean)(using table: TableView[?]): Unit = table.showHeaderProperty.set(value)
 
-  def tablePrefWidth(using table: TableView[?]): Option[Double] = table.$prefWidthProperty.get
-  def tablePrefWidth_=(value: Double)(using table: TableView[?]): Unit = table.$prefWidthProperty.set(Some(value))
+  def tablePrefWidth(using table: TableView[?]): Option[Double] = table.prefWidthProperty.get
+  def tablePrefWidth_=(value: Double)(using table: TableView[?]): Unit = table.prefWidthProperty.set(Some(value))
   def tablePrefWidth_=(value: ReadOnlyProperty[Double])(using table: TableView[?]): Unit =
-    table.addDisposable(value.observe(width => table.$prefWidthProperty.set(Some(width))))
+    table.addDisposable(value.observe(width => table.prefWidthProperty.set(Some(width))))
 
-  def fixedHeight(using table: TableView[?]): Option[Double] = table.$fixedHeightProperty.get
+  def fixedHeight(using table: TableView[?]): Option[Double] = table.fixedHeightProperty.get
   def fixedHeight_=(value: Double)(using table: TableView[?]): Unit =
-    table.$fixedHeightProperty.set(Some(value))
+    table.fixedHeightProperty.set(Some(value))
   def fixedHeight_=(value: ReadOnlyProperty[Double])(using table: TableView[?]): Unit =
-    table.addDisposable(value.observe(height => table.$fixedHeightProperty.set(Some(height))))
+    table.addDisposable(value.observe(height => table.fixedHeightProperty.set(Some(height))))
 
-  def crawlable(using table: TableView[?]): Boolean = table.$crawlableProperty.get
-  def crawlable_=(value: Boolean)(using table: TableView[?]): Unit = table.$crawlableProperty.set(value)
+  def crawlable(using table: TableView[?]): Boolean = table.crawlableProperty.get
+  def crawlable_=(value: Boolean)(using table: TableView[?]): Unit = table.crawlableProperty.set(value)
 
-  def selectedIndex(using table: TableView[?]): Int = table.$selectedIndexProperty.get
+  def selectedIndex(using table: TableView[?]): Int = table.selectedIndexProperty.get
   def selectedIndex_=(value: Int)(using table: TableView[?]): Unit = table.select(value)
 
-  def selectedItem[S](using table: TableView[S]): S | Null = table.$selectedItemProperty.get
+  def selectedItem[S](using table: TableView[S]): S | Null = table.selectedItemProperty.get
 
   def header[S](body: AbstractComponent ?=> Cursor ?=> Unit)(using table: TableView[S]): Unit =
     table.setContentHeader(body)
@@ -702,5 +702,5 @@ object TableView {
   def onRowDoubleClick[S](handler: S => Unit)(using table: TableView[S]): Unit =
     table.setRowDoubleClickHandler(handler)
 
-  def columns[S](using table: TableView[S]): ListProperty[TableColumn[S, ?]] = table.$columns
+  def columns[S](using table: TableView[S]): ListProperty[TableColumn[S, ?]] = table.columns
 }
