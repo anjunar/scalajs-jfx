@@ -1,12 +1,11 @@
 import {
   existsSync,
-  mkdirSync,
   readFileSync,
   readdirSync,
   writeFileSync
 } from "node:fs"
 import { spawnSync } from "node:child_process"
-import { basename, dirname, relative, resolve, sep } from "node:path"
+import { basename, dirname, resolve } from "node:path"
 import { homedir } from "node:os"
 import { argv, exit } from "node:process"
 
@@ -23,7 +22,6 @@ if (!existsSync(sourceMapPath)) {
 }
 
 const sourceMapDirectory = dirname(sourceMapPath)
-const shadowSourcesRoot = resolve(sourceMapDirectory, ".sourcemap-sources")
 const sourceMap = JSON.parse(readFileSync(sourceMapPath, "utf8"))
 const sourceJars = findSourceJars()
 const jarEntriesCache = new Map()
@@ -52,8 +50,6 @@ for (const [index, originalSource] of sourceMap.sources.entries()) {
     continue
   }
 
-  const shadowFile = materializeShadowSource(originalSource, content)
-  sourceMap.sources[index] = relative(sourceMapDirectory, shadowFile).split(sep).join("/")
   sourceMap.sourcesContent[index] = content
   rewrittenSources += 1
 }
@@ -109,18 +105,6 @@ function buildCandidateSuffixes(source) {
   }
 
   return [...suffixes]
-}
-
-function materializeShadowSource(source, content) {
-  const candidateSuffixes = buildCandidateSuffixes(source)
-  const bestSuffix =
-    candidateSuffixes.find((suffix) => suffix.includes("/")) ?? candidateSuffixes[0]
-  const shadowFile = resolve(shadowSourcesRoot, bestSuffix)
-
-  mkdirSync(dirname(shadowFile), { recursive: true })
-  writeFileSync(shadowFile, content)
-
-  return shadowFile
 }
 
 function findSourceJars() {

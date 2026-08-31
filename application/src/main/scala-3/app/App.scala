@@ -232,7 +232,7 @@ class App(
 
                 div {
                   classes = Seq("app-content-viewport")
-                  child(appRouter)
+                  child(appRouter) {}
                 }
               }
 

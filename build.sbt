@@ -178,6 +178,10 @@ lazy val app = Project(id = "scalajs-jfx-demo", base = file("application"))
   .settings(
     scalaJSUseMainModuleInitializer := false,
     viteFastLinkJS := {
+      clearLegacyShadowSources(
+        (Compile / fastLinkJS / scalaJSLinkerOutputDirectory).value,
+        streams.value.log
+      )
       val linked = (Compile / fastLinkJS).value
       sanitizeScalaJsSourceMap(
         (LocalRootProject / baseDirectory).value,
@@ -187,6 +191,10 @@ lazy val app = Project(id = "scalajs-jfx-demo", base = file("application"))
       linked
     },
     viteFullLinkJS := {
+      clearLegacyShadowSources(
+        (Compile / fullLinkJS / scalaJSLinkerOutputDirectory).value,
+        streams.value.log
+      )
       val linked = (Compile / fullLinkJS).value
       sanitizeScalaJsSourceMap(
         (LocalRootProject / baseDirectory).value,

@@ -13,6 +13,15 @@ object ScalaJsViteSupport {
     "Links the demo for Vite production and sanitizes the generated sourcemap."
   )
 
+  def clearLegacyShadowSources(outputDirectory: File, log: Logger): Unit = {
+    val legacyShadowSources = outputDirectory / ".sourcemap-sources"
+
+    if (legacyShadowSources.exists()) {
+      log.info(s"Removing legacy sourcemap shadow sources from ${legacyShadowSources.getAbsolutePath}.")
+      IO.delete(legacyShadowSources)
+    }
+  }
+
   def sanitizeScalaJsSourceMap(
       repoRoot: File,
       outputDirectory: File,
