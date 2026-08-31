@@ -8,11 +8,7 @@ object DslLayerTwo {
   def render(root: AbstractComponent, cursor: Cursor)(
       body: AbstractComponent ?=> Cursor ?=> Unit
   ): Unit =
-    root.withCursor(cursor) {
-      given AbstractComponent = root
-
-      body(using root)(using cursor)
-    }
+    body(using root)(using cursor)
 
   def child[A <: AbstractComponent](component: A)(
       body: A ?=> Cursor ?=> Unit

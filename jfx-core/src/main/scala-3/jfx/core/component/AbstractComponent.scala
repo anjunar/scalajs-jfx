@@ -1,6 +1,6 @@
 package jfx.core.component
 
-import jfx.core.dsl.{ClassDsl, EventDsl, DslLayerOne}
+import jfx.core.dsl.{ClassDsl, EventDsl}
 import jfx.core.render.{CommentNode, Cursor, HostElement, HostNode, UiEvent, VirtualHost}
 import jfx.core.state.{CompositeDisposable, Disposable, ReadOnlyProperty}
 import org.scalajs.dom
@@ -9,7 +9,7 @@ import scala.scalajs.js
 
 import scala.collection.mutable
 
-abstract class AbstractComponent extends DslLayerOne with ClassDsl with EventDsl {
+abstract class AbstractComponent extends ClassDsl with EventDsl {
 
   val tagName: String
 
