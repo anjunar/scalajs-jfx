@@ -10,6 +10,7 @@ import jfx.forms.Form.FormContext
 import jfx.forms.validators.Validator
 
 import org.scalajs.dom
+import scala.scalajs.js
 
 class Input(val name: String, val standalone: Boolean = false)
     extends AbstractComponent,
@@ -27,10 +28,10 @@ class Input(val name: String, val standalone: Boolean = false)
         val value = event.raw match {
           case domEvent: dom.Event =>
             domEvent.target match {
-              case input: dom.HTMLInputElement => input.value
-              case _                           => host.property[String]("value").getOrElse("")
+              case input: dom.HTMLInputElement => Option(input.value).getOrElse("")
+              case _                           => nativeValue
             }
-          case _ => host.property[String]("value").getOrElse("")
+          case _ => nativeValue
         }
 
         if (editableProperty.get) {
@@ -69,12 +70,20 @@ class Input(val name: String, val standalone: Boolean = false)
   }
 
   override protected def setPlaceholder(value: String): Unit =
-    host.setAttribute("placeholder", value)
+    host.setAttribute("placeholder", Option(value).getOrElse(""))
+
+  private def nativeValue: String =
+    host.property[js.Any]("value")
+      .filter(value => value != null && !js.isUndefined(value))
+      .map(_.toString)
+      .getOrElse("")
 
   override def toString = s"Input($name)"
 }
 
 object Input {
+  export Editable.{editable, editable_=, editableProperty}
+
   def input(
       name: String,
       standalone: Boolean = false
@@ -95,4 +104,10 @@ object Input {
     input.validators
 
   def errorsProperty(using input: Input): jfx.core.state.ListProperty[String] = input.errors
+
+  @deprecated("Use input(name, standalone = true) instead.", "1.0.0")
+  def standaloneInput(
+      name: String
+  )(body: Input ?=> Cursor ?=> Unit = {})(using AbstractComponent, Cursor): Input =
+    input(name, standalone = true)(body)
 }

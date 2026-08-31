@@ -54,21 +54,21 @@
     grid-column: 1 / -1;
 }
 
-.form-page .input-container {
+.form-page__form .jfx-input-container {
     min-width: 0;
 }
 
-.form-page .input-container .label {
+.form-page__form .jfx-input-container__label {
     min-height: 14px;
     margin-bottom: 6px;
 }
 
-.form-page .input-container.empty .label {
+.form-page__form .jfx-input-container.empty .jfx-input-container__label {
     min-height: 0;
     margin-bottom: 0;
 }
 
-.form-page .input-container .label span.placeholder {
+.form-page__form .jfx-input-container__label .placeholder {
     font-size: 0.72rem;
     font-weight: 700;
     letter-spacing: 0.08em;
@@ -76,14 +76,14 @@
     color: var(--aj-ink-muted);
 }
 
-.form-page .input-container .control {
+.form-page__form .jfx-input-container__control {
     padding: 10px 12px;
     border: 1px solid var(--aj-line-strong);
     border-radius: 16px;
     background: var(--aj-surface-overlay);
 }
 
-.form-page .input-container .control input::placeholder {
+.form-page__form .jfx-input-container__control input::placeholder {
     color: var(--aj-ink-muted);
     opacity: 1;
 }

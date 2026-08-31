@@ -9,16 +9,20 @@ import jfx.forms.Form.FormContext
 
 import scala.collection.mutable
 
-class FieldSet(val name: String) extends AbstractComponent, Control[Unit] {
+class FieldSet(val name: String) extends AbstractComponent, Control[Unit], FormController {
 
   val tagName = "fieldset"
   val valueProperty: Property[Unit] = Property(())
+  private var contextPrefix: String = name
+
+  override def prefix: String = contextPrefix
 
   val fields = mutable.LinkedHashMap.empty[String, Control[?]]
 
   def register(field: Control[?]): Unit = {
+    fields.get(field.name).filterNot(_ eq field).foreach(unregister)
     fields.put(field.name, field)
-    field.addDisposable(() => unregister(field))
+    field.editableProperty.set(editableProperty.get)
   }
 
   def unregister(field: Control[?]): Unit =
@@ -36,28 +40,42 @@ class FieldSet(val name: String) extends AbstractComponent, Control[Unit] {
       }
     }
 
+  def resetInteractionState(): Unit =
+    fields.values.foreach { field =>
+      field.setDirty(false)
+      field.setFocused(false)
+      field.setErrors(Nil)
+      field match {
+        case nested: FormController => nested.resetInteractionState()
+        case _                      => ()
+      }
+    }
+
   def setErrorResponses(errors: Seq[ErrorResponse]): Unit =
     errors.groupBy(_.path.headOption.getOrElse(""))
       .foreach { case (fieldName, fieldErrors) =>
         fields.get(fieldName).foreach {
-          case nested: FieldSet => nested.setErrorResponses(fieldErrors.map(_.withoutHead))
-          case field => field.errors.setAll(fieldErrors.map(_.message))
+          case nested: Formular[?] => nested.setErrorResponses(fieldErrors.map(_.withoutHead))
+          case array: ArrayForm[?] => array.setErrorResponses(fieldErrors.map(_.withoutHead))
+          case nested: FieldSet    => nested.setErrorResponses(fieldErrors.map(_.withoutHead))
+          case field               => field.errors.setAll(fieldErrors.map(_.message))
         }
       }
 
   override def compose(cursor: Cursor): Unit = {
     render(this, cursor) {
-      val ctrl = FormContext.inject
-      ctrl
-        .getOrElse(throw new RuntimeException("FormController not found"))
-        .register(this)
-
-      val newCtrl = new FormController("inner") {
-        override def register(field: Control[?]): Unit = FieldSet.this.register(field)
-        override def unregister(field: Control[?]): Unit = FieldSet.this.unregister(field)
-      }
-
-      FormContext.provide(newCtrl)
+      val ctrl = FormContext.inject.getOrElse(
+        throw new IllegalStateException(s"FieldSet '$name' requires a Form context.")
+      )
+      ctrl.register(this)
+      addDisposable(() => ctrl.unregister(this))
+      contextPrefix = s"${ctrl.prefix}.$name"
+      host.setProperty("disabled", !editableProperty.get)
+      addDisposable(editableProperty.observe { editable =>
+        host.setProperty("disabled", !editable)
+        fields.values.foreach(_.editableProperty.set(editable))
+      })
+      FormContext.provide(this)
     }
   }
 

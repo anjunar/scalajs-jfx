@@ -127,7 +127,8 @@ lazy val jfxForms = Project(id = "scalajs-jfx-forms", base = file("jfx-forms"))
   .dependsOn(jfxCore, jfxControls, jfxViewport)
   .settings(
     name := "scalajs-jfx-forms",
-    moduleName := "scalajs-jfx-forms"
+    moduleName := "scalajs-jfx-forms",
+    libraryDependencies += "io.github.cquiroz" %%% "scala-java-time" % "2.6.0"
   )
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)

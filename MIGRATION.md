@@ -111,10 +111,10 @@ Der aktuelle JFX3-Unterbau (`Form`, `FormController`, `Input`, `Control`,
 `FieldSet`, `Placeholder`) ist vorhanden, bildet aber noch nicht den gesamten
 JFX2-Funktionsumfang ab.
 
-- [ ] Wertbindung und Editierbarkeit von `Input` vervollstaendigen
-- [ ] Validatoren und Fehlermodell portieren
-- [ ] `Formular`, `SubForm` und `ArrayForm` portieren
-- [ ] `InputContainer` portieren
+- [x] Wertbindung und Editierbarkeit von `Input` vervollstaendigen
+- [x] Validatoren und Fehlermodell portieren
+- [x] `Formular`, `SubForm` und `ArrayForm` portieren
+- [x] `InputContainer` portieren
 - [ ] `ComboBox` nach Abschluss der Tabellenbasis portieren
 - [ ] `ImageCropper` nach `Image` und Viewport-Integration portieren
 
@@ -142,7 +142,7 @@ Der Editor beginnt erst, wenn sein Forms-Control-Vertrag stabil ist.
 | `jfx-router` | portiert und von JFX2 fachlich weiterentwickelt |
 | `jfx-viewport` | portiert (`Viewport`, `Window`, `Notification`) |
 | `jfx-i18n` | nach `jfx-core` integriert |
-| `jfx-forms` | Forms-Kern portiert: Kontextregistrierung, verschachtelte Fieldsets, Input-Zustand, Fehlerzuordnung und Basisvalidatoren; Controls-gebundene Komponenten offen |
+| `jfx-forms` | Forms-Kern vollstaendig portiert: typisierte Modellbindung, Editierbarkeit, Annotation-Validatoren, rekursive Fehlerzuordnung, `SubForm`, `ArrayForm` und `InputContainer`; `ComboBox`/`ImageCropper` warten auf ihre Controls-Abhaengigkeiten |
 | `jfx-controls` | noch offen |
 | `jfx-editor` | noch offen |
 | `jfx-json` | portiert; neuer reflektionsbasierter Mapper mit getrennten Komponenten fuer Typmodell, Metadaten, Serialisierung und Deserialisierung |

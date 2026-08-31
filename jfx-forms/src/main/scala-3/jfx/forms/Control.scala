@@ -4,29 +4,28 @@ import jfx.core.component.AbstractComponent
 import jfx.core.state.{Disposable, ListProperty, Property, ReadOnlyProperty}
 import jfx.forms.validators.Validator
 
-trait Control[V] { self: AbstractComponent =>
+trait Control[V] extends Editable { self: AbstractComponent =>
 
   val name: String
 
-  val valueProperty: Property[V]
+  val valueProperty: ReadOnlyProperty[V]
 
   def addDisposable(disposable: Disposable): Unit
-  val editableProperty: Property[Boolean] = Property(true)
   val focusedProperty: Property[Boolean]  = Property(false)
   val dirtyProperty: Property[Boolean]    = Property(false)
   val validators: ListProperty[Validator[V]] = ListProperty()
   val errors: ListProperty[String]            = ListProperty()
+  val invalidProperty: ReadOnlyProperty[Boolean] = errors.map(_.nonEmpty)
 
   def value: ReadOnlyProperty[V] = valueProperty
 
-  def editable: Boolean = editableProperty.get
+  def invalid: ReadOnlyProperty[Boolean] = invalidProperty
 
-  def editable_=(value: Boolean): Unit = editableProperty.set(value)
+  def setDirty(value: Boolean): Unit = dirtyProperty.set(value)
 
-  def editable_=(value: ReadOnlyProperty[Boolean]): Unit =
-    self.addDisposable(value.observe(editableProperty.set))
+  def setFocused(value: Boolean): Unit = focusedProperty.set(value)
 
-  def invalid: ReadOnlyProperty[Boolean] = errors.map(_.nonEmpty)
+  def setErrors(values: IterableOnce[String]): Unit = errors.setAll(values)
 
   def validate(forceVisible: Boolean = false): Seq[String] = {
     val validationErrors =

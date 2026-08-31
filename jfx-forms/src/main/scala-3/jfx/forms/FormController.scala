@@ -1,11 +1,15 @@
 package jfx.forms
 
-import scala.collection.mutable
+trait FormController {
 
-trait FormController(val prefix: String) {
+  def prefix: String
 
   def register(field: Control[?]): Unit
 
   def unregister(field: Control[?]): Unit
+
+  def clearErrors(): Unit
+
+  def resetInteractionState(): Unit
 
 }

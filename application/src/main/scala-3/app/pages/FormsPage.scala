@@ -3,7 +3,7 @@ package app.pages
 import app.AppI18n
 import app.components.Showcase
 import jfx.core.component.AbstractComponent
-import jfx.core.dsl.ClassDsl.{classIf, classes}
+import jfx.core.dsl.ClassDsl.classes
 import jfx.core.dsl.EventDsl.onClick
 import jfx.core.layout.Button.button
 import jfx.core.layout.Div.div
@@ -11,76 +11,137 @@ import jfx.core.layout.TextComponent.text
 import jfx.core.layout.VBox.vbox
 import jfx.core.render.Cursor
 import jfx.core.state.Property
-import jfx.i18n.{I18nRuntime, RuntimeMessage, i18n}
+import jfx.forms.Form.form
+import jfx.forms.Input.input
+import jfx.forms.InputContainer.inputContainer
+import jfx.forms.validators.{EmailConstraint, NotBlank}
+import jfx.i18n.{I18nRuntime, i18n}
+
+import scala.annotation.meta.field
 
 object FormsPage {
-  def render()(using AbstractComponent, Cursor): Unit = {
-    val locale =
-      I18nRuntime.require.locale
+  def render()(using parent: AbstractComponent, cursor: Cursor): Unit = {
+    val locale = I18nRuntime.require.locale
+    val profile = DemoProfile()
+    profile.name.set("Ada Lovelace")
+    profile.email.set("ada@example.org")
 
-    val activeStage =
-      Property("register")
+    val validationStatus = Property(
+      AppI18n.resolve(i18n"Edit a value or validate the complete form.", locale.get)
+    )
+    val snapshot = Property("")
+    def updateSnapshot(): Unit =
+      snapshot.set(s"name = ${profile.name.get}\nemail = ${profile.email.get}")
 
-    def stageButton(id: String, label: RuntimeMessage): Unit =
-      button(label) {
-        classes = Seq("form-page__transition-button")
-        classIf("is-active", activeStage.map(_ == id))
-        onClick { _ => activeStage.set(id) }
-      }
+    parent.addDisposable(profile.name.observe(_ => updateSnapshot()))
+    parent.addDisposable(profile.email.observe(_ => updateSnapshot()))
 
     Showcase.showcasePage(
       i18n"Forms architecture",
-      i18n"The demo documents the form model without pretending that JFX2 controls already exist here."
+      i18n"Typed model binding, nested controls and validation now run through one form contract."
     ) {
       Showcase.sectionIntro(
-        i18n"Focus",
-        i18n"Registration, control contract and shared context",
-        i18n"jfx-forms is present in this repository, but the visual showcase is rewritten around the architecture instead of copying a feature matrix from another project."
+        i18n"Live form",
+        i18n"Model binding and validation",
+        i18n"Both inputs are bound bidirectionally to Property values. The validators come directly from model annotations."
       )
 
       Showcase.componentShowcase(
-        i18n"Lifecycle states",
-        i18n"These buttons describe how the form stack is wired."
+        i18n"Interactive profile",
+        i18n"Change the model, force validation, or reset the interaction state."
       ) {
-        vbox {
-          classes = Seq("form-page__state-strip")
+        var mountedForm: jfx.forms.Form[DemoProfile] = null
 
-          div {
-            classes = Seq("form-page__transition-row")
-            stageButton("register", i18n"Register controls")
-            stageButton("bind", i18n"Bind values")
-            stageButton("validate", i18n"Validate")
+        div {
+          classes = Seq("form-page__layout")
+
+          mountedForm = form(profile) {
+            classes = Seq("form-page__form", "form-page__workspace")
+
+            div {
+              classes = Seq("form-page__field-grid")
+
+              inputContainer(i18n"Name") {
+                input("name") {}
+              }
+
+              inputContainer(i18n"Email address") {
+                input("email") {
+                  jfx.forms.Input.inputType = "email"
+                }
+              }
+            }
+
+            div {
+              classes = Seq("form-page__actions")
+
+              button(i18n"Reset state") {
+                classes = Seq("calm-action", "calm-action--secondary")
+                onClick { _ =>
+                  mountedForm.resetInteractionState()
+                  validationStatus.set(
+                    AppI18n.resolve(i18n"Interaction state cleared.", locale.get)
+                  )
+                }
+              }
+
+              button(i18n"Validate form") {
+                classes = Seq("calm-action", "calm-action--primary")
+                onClick { _ =>
+                  val errors = mountedForm.validate()
+                  validationStatus.set(
+                    if (errors.isEmpty) AppI18n.resolve(i18n"The form is valid.", locale.get)
+                    else AppI18n.resolve(i18n"Please correct the highlighted values.", locale.get)
+                  )
+                }
+              }
+            }
           }
 
-          div {
-            classes = Seq("form-page__prompt")
-            div { classes = Seq("form-page__prompt-title"); text(activeStage.map {
-              case "register" => AppI18n.resolve(i18n"Registration", locale.get)
-              case "bind"     => AppI18n.resolve(i18n"Binding", locale.get)
-              case _          => AppI18n.resolve(i18n"Validation", locale.get)
-            }) {} }
-            div { classes = Seq("form-page__prompt-copy"); text(activeStage.map {
-              case "register" => AppI18n.resolve(i18n"Inputs register themselves through FormContext so the form owns a concrete field map.", locale.get)
-              case "bind"     => AppI18n.resolve(i18n"Controls then expose their own contract for reading and writing values.", locale.get)
-              case _          => AppI18n.resolve(i18n"Validation stays near the control layer instead of hiding in a remote action handler.", locale.get)
-            }) {} }
+          vbox {
+            classes = Seq("form-page__context")
+            div {
+              classes = Seq("form-page__prompt")
+              div { classes = Seq("form-page__prompt-title"); text(i18n"Validation status") {} }
+              div { classes = Seq("form-page__prompt-copy"); text(validationStatus) {} }
+            }
+            div {
+              classes = Seq("form-page__snapshot")
+              text(snapshot) {}
+            }
           }
         }
       }
 
       Showcase.apiSection(
-        i18n"Current primitives",
-        i18n"What exists right now in this repository."
+        i18n"Typed form API",
+        i18n"Formular also powers SubForm and ArrayForm for nested models and lists."
       ) {
         Showcase.codeBlock(
           "scala",
-          """Form.form {
-            |  Input.input("name") {
-            |    // registers itself through FormContext
+          """form(profile) {
+            |  inputContainer("Name") {
+            |    input("name") {}
+            |  }
+            |
+            |  subForm[Address]("address") {
+            |    input("street") {}
             |  }
             |}""".stripMargin
         )
       }
     }
   }
+}
+
+private final class DemoProfile(
+    @(NotBlank @field)("Name is required")
+    var name: Property[String] = Property(""),
+    @(NotBlank @field)("Email is required")
+    @(EmailConstraint @field)()
+    var email: Property[String] = Property("")
+)
+
+private object DemoProfile {
+  def apply(): DemoProfile = new DemoProfile()
 }
