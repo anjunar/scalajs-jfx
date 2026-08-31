@@ -3,7 +3,7 @@ package jfx.core.dsl
 import jfx.core.component.{AbstractComponent, Runtime}
 import jfx.core.render.{Cursor, HostElement, VirtualHost}
 
-object DslLayerTwo {
+object DslLayer {
 
   def render(root: AbstractComponent, cursor: Cursor)(
       body: AbstractComponent ?=> Cursor ?=> Unit

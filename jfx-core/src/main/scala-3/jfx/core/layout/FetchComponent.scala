@@ -1,7 +1,7 @@
 package jfx.core.layout
 
 import jfx.core.component.AbstractComponent
-import jfx.core.dsl.DslLayerTwo
+import jfx.core.dsl.DslLayer
 import jfx.core.render.{Cursor, VirtualHost}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -51,5 +51,5 @@ object FetchComponent {
       cursor: Cursor,
       ec: ExecutionContext
   ): FetchComponent[A] =
-    DslLayerTwo.child(new FetchComponent(load)(renderLoaded)(ec)) {}
+    DslLayer.child(new FetchComponent(load)(renderLoaded)(ec)) {}
 }

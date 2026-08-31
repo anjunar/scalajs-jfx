@@ -1,8 +1,8 @@
 package jfx.forms
 
 import jfx.core.component.AbstractComponent
-import jfx.core.dsl.DslLayerTwo
-import jfx.core.dsl.DslLayerTwo.render
+import jfx.core.dsl.DslLayer
+import jfx.core.dsl.DslLayer.render
 import jfx.core.dsl.EventDsl.on
 import jfx.core.render.Cursor
 import jfx.core.state.Property
@@ -79,7 +79,7 @@ object Input {
       name: String,
       standalone: Boolean = false
   )(body: Input ?=> Cursor ?=> Unit = {})(using AbstractComponent, Cursor): Input =
-    DslLayerTwo.child(new Input(name, standalone)) {
+    DslLayer.child(new Input(name, standalone)) {
       body
     }
 

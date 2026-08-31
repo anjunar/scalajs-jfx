@@ -2,7 +2,7 @@ package jfx.router
 
 import jfx.core.component.{AbstractComponent, AbstractCustomComponent, Runtime}
 import jfx.core.di.Context
-import jfx.core.dsl.DslLayerTwo
+import jfx.core.dsl.DslLayer
 import jfx.core.layout.Div.div
 import jfx.core.layout.TextComponent.text
 import jfx.core.render.Cursor
@@ -50,7 +50,7 @@ class Router(
       prepareInitialHydrationRoute()
     }
 
-    DslLayerTwo.render(this, cursor) {
+    DslLayer.render(this, cursor) {
       dynamic(componentProperty)
     }
 
@@ -292,7 +292,7 @@ object Router {
       if (initial != null) initial
       else cursor.browserUrl.getOrElse("/")
 
-    DslLayerTwo.child(new Router(routes, startUrl, config)) {}
+    DslLayer.child(new Router(routes, startUrl, config)) {}
   }
 
   def current(using component: AbstractComponent): Option[Router] =
@@ -321,7 +321,7 @@ object Router {
   private def loadingComponent(): AbstractComponent =
     new AbstractCustomComponent {
       override def compose(cursor: Cursor): Unit =
-        DslLayerTwo.render(this, cursor) {
+        DslLayer.render(this, cursor) {
           div {
             text("Loading...") {}
           }
@@ -331,7 +331,7 @@ object Router {
   private def errorComponent(error: Throwable): AbstractComponent =
     new AbstractCustomComponent {
       override def compose(cursor: Cursor): Unit =
-        DslLayerTwo.render(this, cursor) {
+        DslLayer.render(this, cursor) {
           div {
             text(
               Option(error.getMessage).filter(_.nonEmpty).getOrElse("Route could not be loaded")
@@ -343,7 +343,7 @@ object Router {
   private def notFoundComponent(path: String): AbstractComponent =
     new AbstractCustomComponent {
       override def compose(cursor: Cursor): Unit =
-        DslLayerTwo.render(this, cursor) {
+        DslLayer.render(this, cursor) {
           div {
             text(s"No route matched for: $path") {}
           }

@@ -1,8 +1,8 @@
 package jfx.forms
 
 import jfx.core.component.AbstractComponent
-import jfx.core.dsl.DslLayerTwo
-import jfx.core.dsl.DslLayerTwo.render
+import jfx.core.dsl.DslLayer
+import jfx.core.dsl.DslLayer.render
 import jfx.core.render.Cursor
 import jfx.core.state.Property
 import jfx.forms.Form.FormContext
@@ -68,7 +68,7 @@ object FieldSet {
   def fieldSet(
       name: String
   )(body: FieldSet ?=> Cursor ?=> Unit = {})(using AbstractComponent, Cursor): FieldSet =
-    DslLayerTwo.child(new FieldSet(name)) {
+    DslLayer.child(new FieldSet(name)) {
       body
     }
 }

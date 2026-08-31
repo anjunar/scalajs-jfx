@@ -1,7 +1,7 @@
 package jfx.core.layout
 
 import jfx.core.component.AbstractComponent
-import jfx.core.dsl.DslLayerTwo
+import jfx.core.dsl.DslLayer
 import jfx.core.render.Cursor
 import jfx.core.text.TextValue
 
@@ -31,7 +31,7 @@ object Anchor {
   def anchor()(
       body: Anchor ?=> Cursor ?=> Unit
   )(using AbstractComponent, Cursor): Anchor =
-    DslLayerTwo.child(new Anchor()) {
+    DslLayer.child(new Anchor()) {
       body
     }
 
@@ -44,7 +44,7 @@ object Anchor {
   ): Anchor = {
     val link = new Anchor()
 
-    DslLayerTwo.child(link) {
+    DslLayer.child(link) {
       TextComponent.text(label) {}
       body
     }

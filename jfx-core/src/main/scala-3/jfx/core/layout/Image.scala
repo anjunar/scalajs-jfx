@@ -1,7 +1,7 @@
 package jfx.core.layout
 
 import jfx.core.component.AbstractComponent
-import jfx.core.dsl.DslLayerTwo
+import jfx.core.dsl.DslLayer
 import jfx.core.render.Cursor
 import jfx.core.state.ReadOnlyProperty
 
@@ -28,7 +28,7 @@ object Image {
   def image(
       body: Image ?=> Cursor ?=> Unit = {}
   )(using AbstractComponent, Cursor): Image =
-    DslLayerTwo.child(new Image()) {
+    DslLayer.child(new Image()) {
       body
     }
 

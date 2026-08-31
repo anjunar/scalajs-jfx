@@ -1,7 +1,7 @@
 package jfx.core.layout
 
 import jfx.core.component.{AbstractComponent, Runtime}
-import jfx.core.dsl.DslLayerTwo
+import jfx.core.dsl.DslLayer
 import jfx.core.render.Cursor
 import jfx.core.state.ReadOnlyProperty
 import jfx.core.state.Property
@@ -34,7 +34,7 @@ object Button {
       TextValue[T]
   ): Button = {
     val buttonComponent = new Button()
-    DslLayerTwo.child(buttonComponent) {
+    DslLayer.child(buttonComponent) {
       label_=(label)(using buttonComponent, summon[TextValue[T]], summon[AbstractComponent])
       body
     }

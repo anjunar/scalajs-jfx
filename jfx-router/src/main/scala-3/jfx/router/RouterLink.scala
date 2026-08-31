@@ -2,7 +2,7 @@ package jfx.router
 
 import jfx.core.component.AbstractComponent
 import jfx.core.di.Context
-import jfx.core.dsl.DslLayerTwo
+import jfx.core.dsl.DslLayer
 import jfx.core.layout.Anchor
 import jfx.core.render.Cursor
 import jfx.core.state.ReadOnlyProperty
@@ -31,7 +31,7 @@ object RouterLink {
   )(using AbstractComponent, Cursor): Anchor = {
     val link = new Anchor()
 
-    DslLayerTwo.child(link) {
+    DslLayer.child(link) {
       body
       installNavigation(link, None)
     }
@@ -46,7 +46,7 @@ object RouterLink {
     val link = new Anchor()
     val activeMatcher = defaultActiveMatcher(to)
 
-    DslLayerTwo.child(link) {
+    DslLayer.child(link) {
       RouterLinkHandler.inject(using link).orElse(routerHandler(using link)) match {
         case Some(handler) if isAppPath(to) =>
           link.href = handler.hrefForAppPath(to)

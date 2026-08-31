@@ -1,7 +1,7 @@
 package jfx.core.layout
 
 import jfx.core.component.AbstractComponent
-import jfx.core.dsl.DslLayerTwo
+import jfx.core.dsl.DslLayer
 import jfx.core.render.Cursor
 
 class VBox extends AbstractComponent {
@@ -13,7 +13,7 @@ class VBox extends AbstractComponent {
 
 object VBox {
   def vbox(body: VBox ?=> Cursor ?=> Unit = {})(using AbstractComponent, Cursor): VBox =
-    DslLayerTwo.child(new VBox()) {
+    DslLayer.child(new VBox()) {
       body
     }
 }

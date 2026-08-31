@@ -1,7 +1,7 @@
 package jfx.core.layout
 
 import jfx.core.component.{AbstractComponent, AbstractCustomComponent, Runtime}
-import jfx.core.dsl.DslLayerTwo
+import jfx.core.dsl.DslLayer
 import jfx.core.render.{Cursor, TextNode, UiEvent}
 import jfx.core.state.{Disposable, ReadOnlyProperty}
 import jfx.core.text.TextValue
@@ -40,7 +40,7 @@ object TextComponent {
       Cursor,
       TextValue[T]
   ): TextComponent =
-    DslLayerTwo.child(bind(label)) {
+    DslLayer.child(bind(label)) {
       body
     }
 

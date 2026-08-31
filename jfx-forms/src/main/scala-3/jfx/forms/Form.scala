@@ -2,8 +2,8 @@ package jfx.forms
 
 import jfx.core.component.AbstractComponent
 import jfx.core.di.Context
-import jfx.core.dsl.DslLayerTwo
-import jfx.core.dsl.DslLayerTwo.render
+import jfx.core.dsl.DslLayer
+import jfx.core.dsl.DslLayer.render
 import jfx.core.dsl.EventDsl.on
 import jfx.core.render.Cursor
 import jfx.forms.Form.FormContext
@@ -62,7 +62,7 @@ object Form {
 
   def form(body: Form ?=> Cursor ?=> Unit = {})(using AbstractComponent, Cursor): Form = {
     val component = new Form()
-    DslLayerTwo.child(component) {
+    DslLayer.child(component) {
       body
     }
   }

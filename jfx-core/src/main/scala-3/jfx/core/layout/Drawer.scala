@@ -2,7 +2,7 @@ package jfx.core.layout
 
 import jfx.core.component.AbstractComponent
 import jfx.core.dsl.ClassDsl.{classIf, classes}
-import jfx.core.dsl.DslLayerTwo.{child, render}
+import jfx.core.dsl.DslLayer.{child, render}
 import jfx.core.dsl.EventDsl.{onClick, onWindowKeyDown}
 import jfx.core.dsl.StyleDsl.*
 import jfx.core.layout.Div.div

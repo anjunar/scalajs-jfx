@@ -1,7 +1,7 @@
 package jfx.router
 
 import jfx.core.component.{AbstractComponent, AbstractCustomComponent}
-import jfx.core.dsl.DslLayerTwo
+import jfx.core.dsl.DslLayer
 import jfx.core.render.Cursor
 
 import scala.concurrent.Future
@@ -20,7 +20,7 @@ object Route {
   ) extends AbstractCustomComponent {
 
     override def compose(cursor: Cursor): Unit = {
-      DslLayerTwo.render(this, cursor) {
+      DslLayer.render(this, cursor) {
         renderBlock(using this)(using cursor)
       }
     }

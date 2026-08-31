@@ -4,8 +4,8 @@ import app.AppTheme.Mode
 import app.pages.*
 import jfx.core.component.AbstractComponent
 import jfx.core.dsl.ClassDsl.{classIf, classes}
-import jfx.core.dsl.DslLayerTwo.render
-import jfx.core.dsl.DslLayerTwo.child
+import jfx.core.dsl.DslLayer.render
+import jfx.core.dsl.DslLayer.child
 import jfx.core.dsl.EventDsl.onClick
 import jfx.core.dsl.StyleDsl.*
 import jfx.core.layout.Anchor.*

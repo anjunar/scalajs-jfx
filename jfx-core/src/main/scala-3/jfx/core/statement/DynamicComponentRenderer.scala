@@ -1,7 +1,7 @@
 package jfx.core.statement
 
 import jfx.core.component.{AbstractComponent, AbstractCustomComponent, Runtime}
-import jfx.core.dsl.DslLayerTwo
+import jfx.core.dsl.DslLayer
 import jfx.core.render.{Cursor, HostNode, VirtualHost}
 import jfx.core.state.ReadOnlyProperty
 
@@ -89,5 +89,5 @@ object DynamicComponentRenderer {
   def dynamic(
       component: ReadOnlyProperty[AbstractComponent]
   )(using parent: AbstractComponent, cursor: Cursor): DynamicComponentRenderer =
-    DslLayerTwo.child(new DynamicComponentRenderer(component)) {}
+    DslLayer.child(new DynamicComponentRenderer(component)) {}
 }

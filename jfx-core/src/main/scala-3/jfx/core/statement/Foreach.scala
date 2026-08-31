@@ -1,7 +1,7 @@
 package jfx.core.statement
 
 import jfx.core.component.{AbstractComponent, AbstractCustomComponent, Runtime}
-import jfx.core.dsl.DslLayerTwo
+import jfx.core.dsl.DslLayer
 import jfx.core.render.{Cursor, HostNode, VirtualHost}
 import jfx.core.state.{ListProperty, ReadOnlyProperty}
 
@@ -143,12 +143,12 @@ object Foreach {
   def foreach[V](items: ListProperty[V])(
       body: V => AbstractComponent ?=> Cursor ?=> Unit
   )(using AbstractComponent, Cursor): Foreach[V] =
-    DslLayerTwo.child(new Foreach(items, (value, _) => body(value))) {}
+    DslLayer.child(new Foreach(items, (value, _) => body(value))) {}
 
   def foreach[V](
       items: ReadOnlyProperty[Seq[V]]
   )(body: V => AbstractComponent ?=> Cursor ?=> Unit)(using AbstractComponent, Cursor): Foreach[V] =
-    DslLayerTwo.child(
+    DslLayer.child(
       new PropertyForeach(
         items,
         listOf(items.get),
@@ -165,12 +165,12 @@ object Foreach {
   def foreachIndexed[V](items: ListProperty[V])(
       body: (V, Int) => AbstractComponent ?=> Cursor ?=> Unit
   )(using AbstractComponent, Cursor): Foreach[V] =
-    DslLayerTwo.child(new Foreach(items, body, reindexOnStructuralChange = true)) {}
+    DslLayer.child(new Foreach(items, body, reindexOnStructuralChange = true)) {}
 
   def foreachIndexed[V](items: ReadOnlyProperty[Seq[V]])(
       body: (V, Int) => AbstractComponent ?=> Cursor ?=> Unit
   )(using AbstractComponent, Cursor): Foreach[V] =
-    DslLayerTwo.child(
+    DslLayer.child(
       new PropertyForeach(items, listOf(items.get), body, reindexOnStructuralChange = true)
     ) {}
 

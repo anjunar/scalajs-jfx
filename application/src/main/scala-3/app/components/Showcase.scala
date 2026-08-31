@@ -2,7 +2,7 @@ package app.components
 
 import jfx.core.component.AbstractComponent
 import jfx.core.dsl.ClassDsl.classes
-import jfx.core.dsl.DslLayerTwo.render
+import jfx.core.dsl.DslLayer.render
 import jfx.core.layout.Div
 import jfx.core.layout.Div.div
 import jfx.core.layout.TextComponent.text
