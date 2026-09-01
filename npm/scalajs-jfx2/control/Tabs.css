@@ -1,0 +1,67 @@
+.jfx-tabs {
+    display: grid;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--aj-line);
+    border-radius: var(--aj-radius-panel);
+    background: var(--aj-surface);
+    box-shadow: var(--aj-shadow-panel);
+}
+
+.jfx-tabs__header {
+    display: flex;
+    min-width: 0;
+    gap: 4px;
+    overflow-x: auto;
+    padding: 8px 8px 0;
+    border-bottom: 1px solid var(--aj-line-soft);
+    background: var(--aj-surface-muted);
+}
+
+.jfx-tabs__trigger {
+    min-height: 38px;
+    flex: 0 0 auto;
+    padding: 8px 14px;
+    border: 1px solid transparent;
+    border-bottom: 0;
+    border-radius: var(--aj-radius-control) var(--aj-radius-control) 0 0;
+    color: var(--aj-ink-muted);
+    background: transparent;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.jfx-tabs__trigger:hover {
+    color: var(--aj-ink);
+    background: var(--aj-surface-hover);
+}
+
+.jfx-tabs__trigger:focus-visible {
+    position: relative;
+    z-index: 1;
+    box-shadow: var(--aj-shadow-focus);
+    outline: none;
+}
+
+.jfx-tabs__trigger--active {
+    margin-bottom: -1px;
+    border-color: var(--aj-line);
+    color: var(--aj-ink);
+    background: var(--aj-surface);
+}
+
+.jfx-tabs__content {
+    min-width: 0;
+    background: var(--aj-surface);
+}
+
+.jfx-tabs__panel {
+    min-width: 0;
+    padding: 22px;
+}
+
+.jfx-tabs--empty .jfx-tabs__header,
+.jfx-tabs--empty .jfx-tabs__content {
+    display: none;
+}

@@ -60,6 +60,7 @@ class App(
       NavEntry(i18n"Runtime", i18n"Rendering", i18n"SSR, hydration and shell stability", "/rendering"),
       NavEntry(i18n"Runtime", i18n"State", i18n"Reactive properties in plain sight", "/state"),
       NavEntry(i18n"Composition", i18n"Forms", i18n"Control registration and context", "/forms"),
+      NavEntry(i18n"Composition", i18n"Tabs", i18n"Panel lifecycle and keyboard selection", "/tabs"),
       NavEntry(i18n"Composition", i18n"ComboBox", i18n"Typed selection and stable identity", "/combo-box"),
       NavEntry(i18n"Composition", i18n"Table", i18n"Reactive rows and remote ranges", "/table"),
       NavEntry(i18n"Composition", i18n"DataGrid", i18n"Virtual cards and remote ranges", "/data-grid"),

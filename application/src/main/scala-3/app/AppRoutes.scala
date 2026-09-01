@@ -65,6 +65,11 @@ object AppRoutes {
           FormsPage.render()
         })
       },
+      Route.view("/tabs") { _ =>
+        Future.successful(Route.component {
+          TabsPage.render()
+        })
+      },
       Route.view("/combo-box") { _ =>
         Future.successful(Route.component {
           ComboBoxPage.render()

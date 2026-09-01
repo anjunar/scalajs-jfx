@@ -95,7 +95,7 @@ Komponenten erzeugen noch DSL-Anweisungen oder Listener verstecken.
 
 - [x] `Link`
 - [x] `Image`
-- [ ] `Tabs`
+- [x] `Tabs`
 - [ ] `Carousel`
 - [x] `TableCell`, `TableColumn`, `TableRow`, `TableView`
 - [ ] `VirtualListView`
@@ -142,8 +142,8 @@ Der Editor beginnt erst, wenn sein Forms-Control-Vertrag stabil ist.
 | `jfx-router` | portiert und von JFX2 fachlich weiterentwickelt |
 | `jfx-viewport` | portiert (`Viewport`, `Window`, `Notification`, `Overlay`) |
 | `jfx-i18n` | nach `jfx-core` integriert |
-| `jfx-forms` | Forms-Kern samt `ComboBox` portiert: typisierte Modellbindung, Editierbarkeit, Annotation-Validatoren, rekursive Fehlerzuordnung, `SubForm`, `ArrayForm` und `InputContainer`; `ImageCropper` wartet auf `Image` und Viewport-Integration |
-| `jfx-controls` | Tabellenbasis und `DataGrid` portiert: virtuelle Zeilen bzw. Karten, lokale/entfernte Listen, Range-Prefetch, Sortierstatus, Crawl-Paging sowie kontextuelle Header- und Placeholder-Slots; `Link` ist in `Anchor` und `RouterLink` aufgeteilt, `Image` als natives Core-Layout portiert; `Tabs`, `Carousel` und `VirtualListView` sind noch offen |
+| `jfx-forms` | Forms-Kern samt `ComboBox` portiert: typisierte Modellbindung, Editierbarkeit, Annotation-Validatoren, rekursive Fehlerzuordnung, `SubForm`, `ArrayForm` und `InputContainer`; `ImageCropper` wartet noch auf seine Viewport-Integration |
+| `jfx-controls` | Tabellenbasis, `DataGrid` und `Tabs` portiert: virtuelle Zeilen bzw. Karten, lokale/entfernte Listen, Range-Prefetch, Sortierstatus, Crawl-Paging sowie kontextuelle Header-, Placeholder- und Tab-Panel-Slots; `Link` ist in `Anchor` und `RouterLink` aufgeteilt, `Image` als natives Core-Layout portiert; `Carousel` und `VirtualListView` sind noch offen |
 | `jfx-editor` | noch offen |
 | `jfx-json` | portiert; neuer reflektionsbasierter Mapper mit getrennten Komponenten fuer Typmodell, Metadaten, Serialisierung und Deserialisierung |
 | `jfx-webAuthn` | noch offen |
@@ -225,6 +225,29 @@ Elementstruktur. `alt` verwendet wieder `TextValue` und kann dadurch statisch
 oder reaktiv gesetzt werden. Alle Beobachter gehoeren zum Lebenszyklus des
 Bildes. Tests decken SSR-Ausgabe, reaktive Aktualisierung, leere Quellen und
 Entsorgung ab; die Demo zeigt reaktive Quellen und Alternativtexte.
+
+### Tabs
+
+Die gesamte Tab-Konfiguration wird zu Beginn von `compose(cursor)` ausgewertet,
+bevor Header und Panel ihre dynamischen Mount-Points anlegen. Die DSL bleibt
+mit `tabs { tab(...) { ... } }` im Komponentenbaum. `renderMode` und
+`selectedIndex` werden darin als statische oder reaktive Eigenschaften gesetzt;
+Tab-Titel akzeptieren `TextValue` und reagieren damit auch auf einen
+Locale-Wechsel.
+
+Die Trigger werden mit `Foreach.foreachIndexed` erzeugt und besitzen
+`tablist`-/`tab`-Rollen, `aria-selected` und einen reaktiven `tabindex`.
+Click sowie Pfeil-, Home- und End-Tasten aktualisieren die geklemmte Auswahl.
+Im Modus `ActiveOnly` ersetzt `DynamicComponentRenderer` das aktuelle Panel an
+einem stabilen virtuellen Mount-Point und entsorgt das vorherige Panel. Im Modus
+`KeepMountedHidden` erzeugt ein zweites `Foreach.foreachIndexed` alle Panels
+einmalig und bindet nur Sichtbarkeit und `aria-hidden` an die Auswahl. Dadurch
+bleibt lokaler Panelzustand beim Wechsel erhalten.
+
+Tests decken SSR-Struktur und Accessibility-Attribute, beide Render-Modi,
+reaktive Titel und Auswahl, Listenmutation mit Index-Normalisierung,
+Moduswechsel, Click- und Tastaturauswahl sowie die Entsorgung aller Beobachter
+und Event-Handler ab. Die Demo ist unter `/tabs` erreichbar.
 
 ### Tabelle
 

@@ -1,6 +1,7 @@
 @import "./action/Button.css";
 
 @import "./control/Link.css";
+@import "./control/Tabs.css";
 
 @import "./control/DataGrid.css";
 @import "./control/Carousel.css";
