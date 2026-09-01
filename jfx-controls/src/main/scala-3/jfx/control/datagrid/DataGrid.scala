@@ -1,5 +1,6 @@
-package jfx.control
+package jfx.control.datagrid
 
+import jfx.control.{CrawlCookieState, DataGrid}
 import jfx.core.component.AbstractComponent
 import jfx.core.dsl.ClassDsl.{addClass, classIf, classes}
 import jfx.core.dsl.DslLayer
@@ -11,14 +12,7 @@ import jfx.core.layout.Div
 import jfx.core.layout.Div.div
 import jfx.core.layout.TextComponent.text
 import jfx.core.render.{Cursor, DomHostElement}
-import jfx.core.state.{
-  CompositeDisposable,
-  Disposable,
-  ListProperty,
-  Property,
-  ReadOnlyProperty,
-  RemoteListProperty
-}
+import jfx.core.state.*
 import jfx.core.statement.Foreach.foreach
 import jfx.router.Router
 import org.scalajs.dom

@@ -1,5 +1,6 @@
-package jfx.control
+package jfx.control.table
 
+import jfx.control.TableCell
 import jfx.core.component.AbstractComponent
 import jfx.core.dsl.ClassDsl.{addClass, classIf}
 import jfx.core.dsl.DslLayer

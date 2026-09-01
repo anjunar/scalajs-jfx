@@ -1,5 +1,6 @@
-package jfx.control
+package jfx.control.tabs
 
+import jfx.control.Tabs
 import jfx.control.Tabs.{RenderMode, TabSpec}
 import jfx.core.component.{AbstractComponent, AbstractCustomComponent}
 import jfx.core.dsl.ClassDsl.{addClass, classIf, classes}
@@ -214,63 +215,3 @@ object Tabs {
     tabs.renderModeProperty.set(value)
 }
 
-private final class ActiveTabsContent(tabs: Tabs) extends AbstractCustomComponent {
-  private val activePanelProperty: Property[AbstractComponent] =
-    Property(createPanel())
-
-  override def compose(cursor: Cursor): Unit = {
-    DslLayer.render(this, cursor) {
-      dynamic(activePanelProperty)
-    }
-
-    addDisposable(tabs.contentRevisionProperty.observeWithoutInitial { _ =>
-      activePanelProperty.setAlways(createPanel())
-    })
-  }
-
-  private def createPanel(): AbstractComponent =
-    tabs.activeTab match {
-      case Some((tab, index)) => new TabPanel(tabs, tab, index, keepMounted = false)
-      case None               => new EmptyTabsContent
-    }
-}
-
-private final class MountedTabsContent(tabs: Tabs) extends AbstractCustomComponent {
-  override def compose(cursor: Cursor): Unit =
-    DslLayer.render(this, cursor) {
-      foreachIndexed(tabs.tabsProperty) { (tab, index) =>
-        DslLayer.child(new TabPanel(tabs, tab, index, keepMounted = true)) {}
-      }
-    }
-}
-
-private final class TabPanel(
-    tabs: Tabs,
-    tab: TabSpec,
-    index: Int,
-    keepMounted: Boolean
-) extends AbstractComponent {
-  override val tagName: String = "div"
-
-  override def compose(cursor: Cursor): Unit =
-    DslLayer.render(this, cursor) {
-      addClass("jfx-tabs__panel")
-      host.setAttribute("role", "tabpanel")
-
-      if (keepMounted) {
-        val active = tabs.selectedIndexProperty.map(_ == index)
-        classIf("jfx-tabs__panel--active", active)
-        addDisposable(active.observe { selected =>
-          host.setAttribute("aria-hidden", (!selected).toString)
-          host.setStyle("display", if (selected) "" else "none")
-        })
-      } else {
-        addClass("jfx-tabs__panel--active")
-        host.setAttribute("aria-hidden", "false")
-      }
-
-      tab.render(using tabs)(using this)(using cursor)
-    }
-}
-
-private final class EmptyTabsContent extends AbstractCustomComponent

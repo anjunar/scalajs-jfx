@@ -1,4 +1,4 @@
-package jfx.control
+package jfx.control.table
 
 import jfx.core.component.{AbstractComponent, AbstractCustomComponent}
 import jfx.core.render.Cursor

@@ -1,4 +1,4 @@
-package jfx.control
+package jfx.control.table
 
 import jfx.control.TableRow.{placeholderRow, rowItem, tableRow}
 import jfx.core.component.AbstractComponent

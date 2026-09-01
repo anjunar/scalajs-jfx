@@ -1,4 +1,4 @@
-package jfx.control
+package jfx.control.table
 
 import jfx.core.component.AbstractComponent
 import jfx.core.dsl.ClassDsl.{addClass, classIf, classes}
