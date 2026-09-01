@@ -1,7 +1,7 @@
 package jfx.control.tabs
 
-import jfx.control.Tabs
-import jfx.control.Tabs.TabSpec
+import jfx.control.tabs.Tabs
+import jfx.control.tabs.Tabs.TabSpec
 import jfx.core.component.AbstractComponent
 import jfx.core.dsl.ClassDsl.classIf
 import jfx.core.dsl.DslLayer

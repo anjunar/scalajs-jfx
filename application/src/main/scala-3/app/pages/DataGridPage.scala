@@ -1,7 +1,7 @@
 package app.pages
 
 import app.components.Showcase.*
-import jfx.control.DataGrid.*
+import jfx.control.datagrid.DataGrid.*
 import jfx.core.component.AbstractComponent
 import jfx.core.dsl.ClassDsl.{classIf, classes}
 import jfx.core.dsl.EventDsl.onClick

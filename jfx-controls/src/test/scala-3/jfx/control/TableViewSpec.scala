@@ -1,7 +1,8 @@
 package jfx.control
 
-import jfx.control.TableColumn.*
-import jfx.control.TableView.*
+import jfx.control.table.TableColumn.*
+import jfx.control.table.TableView
+import jfx.control.table.TableView.*
 import jfx.core.component.{AbstractComponent, Runtime}
 import jfx.core.dsl.ClassDsl.addClass
 import jfx.core.dsl.DslLayer

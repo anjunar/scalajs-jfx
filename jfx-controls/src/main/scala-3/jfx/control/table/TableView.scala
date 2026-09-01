@@ -1,6 +1,7 @@
 package jfx.control.table
 
-import jfx.control.TableRow.{placeholderRow, rowItem, tableRow}
+import jfx.control.CrawlCookieState
+import jfx.control.table.TableRow.{placeholderRow, rowItem, tableRow}
 import jfx.core.component.AbstractComponent
 import jfx.core.dsl.ClassDsl.{addClass, classIf, classes}
 import jfx.core.dsl.DslLayer

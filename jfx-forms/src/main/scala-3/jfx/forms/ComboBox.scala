@@ -1,8 +1,8 @@
 package jfx.forms
 
-import jfx.control.{TableColumn, TableView}
-import jfx.control.TableColumn.*
-import jfx.control.TableView.*
+import jfx.control.table.{TableColumn, TableView}
+import jfx.control.table.TableColumn.*
+import jfx.control.table.TableView.*
 import jfx.core.component.AbstractComponent
 import jfx.core.dsl.ClassDsl.{addClass, classIf, classes}
 import jfx.core.dsl.DslLayer

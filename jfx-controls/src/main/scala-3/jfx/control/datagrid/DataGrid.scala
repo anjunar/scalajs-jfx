@@ -1,6 +1,7 @@
 package jfx.control.datagrid
 
-import jfx.control.{CrawlCookieState, DataGrid}
+import jfx.control.CrawlCookieState
+import jfx.control.datagrid.DataGrid
 import jfx.core.component.AbstractComponent
 import jfx.core.dsl.ClassDsl.{addClass, classIf, classes}
 import jfx.core.dsl.DslLayer

@@ -1,6 +1,7 @@
 package jfx.control
 
-import jfx.control.DataGrid.*
+import jfx.control.datagrid.DataGrid
+import jfx.control.datagrid.DataGrid.*
 import jfx.core.component.{AbstractComponent, Runtime}
 import jfx.core.dsl.ClassDsl.addClass
 import jfx.core.dsl.DslLayer

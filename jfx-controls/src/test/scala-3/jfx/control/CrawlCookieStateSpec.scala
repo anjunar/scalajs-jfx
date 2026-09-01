@@ -1,7 +1,9 @@
 package jfx.control
 
-import jfx.control.DataGrid.*
-import jfx.control.TableView.*
+import jfx.control.datagrid.DataGrid
+import jfx.control.datagrid.DataGrid.*
+import jfx.control.table.{TableColumn, TableView}
+import jfx.control.table.TableView.*
 import jfx.core.component.{AbstractComponent, Runtime}
 import jfx.core.dsl.DslLayer
 import jfx.core.layout.Div.div

@@ -1,8 +1,8 @@
 package app.pages
 
 import app.components.Showcase.*
-import jfx.control.TableColumn.*
-import jfx.control.TableView.*
+import jfx.control.table.TableColumn.*
+import jfx.control.table.TableView.*
 import jfx.core.component.AbstractComponent
 import jfx.core.dsl.ClassDsl.classes
 import jfx.core.dsl.StyleDsl.*

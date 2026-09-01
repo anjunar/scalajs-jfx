@@ -1,7 +1,7 @@
 package app.pages
 
 import app.components.Showcase.*
-import jfx.control.Tabs.*
+import jfx.control.tabs.Tabs.*
 import jfx.core.component.AbstractComponent
 import jfx.core.dsl.ClassDsl.classes
 import jfx.core.dsl.EventDsl.onClick

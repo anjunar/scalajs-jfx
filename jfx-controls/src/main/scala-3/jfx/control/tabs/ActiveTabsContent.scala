@@ -1,6 +1,6 @@
 package jfx.control.tabs
 
-import jfx.control.{EmptyTabsContent, Tabs}
+import jfx.control.tabs.{EmptyTabsContent, Tabs}
 import jfx.core.component.{AbstractComponent, AbstractCustomComponent}
 import jfx.core.dsl.DslLayer
 import jfx.core.render.Cursor

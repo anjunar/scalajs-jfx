@@ -1,6 +1,7 @@
 package jfx.control
 
-import jfx.control.Tabs.*
+import jfx.control.tabs.Tabs
+import jfx.control.tabs.Tabs.*
 import jfx.core.component.{AbstractComponent, Runtime}
 import jfx.core.dsl.DslLayer
 import jfx.core.layout.Div.div
