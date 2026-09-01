@@ -223,6 +223,20 @@ unbeladene Remote-Bereiche und Remote-Sortierstatus ab. `fixedHeight` begrenzt
 die Tabellenhoehe exakt; der Body-Viewport bleibt innerhalb dieser Hoehe mit
 `overflow: auto` scrollbar.
 
+Eine crawlbare `TableView` benoetigt eine feste `crawlId`. Unter dieser ID
+speichert sie den letzten Paging- und Remote-Sortierzustand im Cookie
+`jfx-crawl-<id>`. Der Cookie ist komponentenlokal und fuegt weder ID noch
+Paging oder Sortierung zur URL hinzu. Der Folgelink zeigt wieder auf denselben
+Pfad; vor der Navigation schreibt sein Click-Handler die naechste Seite in den
+Cookie. Nach der Hydration wird die Sortierpraeferenz erneut auf die
+`RemoteListProperty` angewendet; eine Sortieraktion springt auf Seite null
+zurueck. Beim Scrollen wird der erste sichtbare Datensatz als neuer Offset
+gespeichert, sodass ein Reload dieselbe Position wiederherstellt. Diese bewusst
+URL-lose Variante ist fuer Browser-Sitzungen geeignet;
+ein zustandsloser Crawler ohne JavaScript- und Cookie-Fortschreibung kann damit
+nur den initialen Ausschnitt sehen und keine eindeutig adressierbaren
+Folgeseiten traversieren.
+
 ### ComboBox
 
 Die `ComboBox` bleibt ein typisiertes `Control[T]` mit `Property[T]` fuer die
@@ -264,8 +278,14 @@ Quellen nahe dem Ende erweitert. Scroll-, Resize- und Remote-Listener werden
 mit `addDisposable` an den Komponentenlebenszyklus gebunden.
 
 SSR rendert standardmaessig das initial sichtbare Fenster. Im crawlbaren Modus
-bestimmen `offset` und `limit` einen deterministischen Ausschnitt samt echtem
-Folgelink; der Browser stellt aus demselben Offset die Scrollposition wieder
-her. Tests decken lokale Virtualisierung, flexible Kartenbreiten, unbeladene
-Remote-Bereiche, Crawl-Paging, kontextuelle Slots, Listenmutation und Entsorgung
-ab. Die Demo ist unter `/data-grid` erreichbar.
+bestimmen `offset` und `limit` aus dem komponentenlokalen Cookie einen
+deterministischen Ausschnitt; der Browser stellt aus demselben Offset die
+Scrollposition wieder her. Wie die Tabelle benoetigt auch ein crawlbares Grid
+eine feste `crawlId` und verwendet denselben Cookie-Vertrag fuer Paging und den
+Sortierzustand seiner `RemoteListProperty`. Komponenten-ID, Paging und
+Sortierung werden nicht in die URL geschrieben. Tests decken lokale
+Virtualisierung, flexible Kartenbreiten, unbeladene Remote-Bereiche,
+Cookie-Restore, Crawl-Paging, kontextuelle Slots, Listenmutation und Entsorgung
+ab. Der SSR-Abstand des Folgelinks wird bei der Hydration explizit auf null
+gesetzt, damit kein kuenstlicher leerer Scrollbereich hinter der virtuellen
+Surface verbleibt. Die Demo ist unter `/data-grid` erreichbar.

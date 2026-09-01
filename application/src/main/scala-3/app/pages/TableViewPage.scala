@@ -149,6 +149,8 @@ object TableViewPage {
                 style { height = "100%" }
                 rowHeight = 44.0
                 items = books
+                crawlable = true
+                crawlId = "table"
 
                 column[Book, String]("Title") {
                   prefWidth = 300.0

@@ -8,6 +8,7 @@ import jfx.core.dsl.DslLayer
 import jfx.core.layout.Div.div
 import jfx.core.layout.TextComponent.text
 import jfx.core.render.{Cursor, SsrCursor}
+import jfx.core.request.{RequestContext, RequestHeaders}
 import jfx.core.state.ListProperty
 import jfx.router.{Route, Router}
 import org.scalatest.flatspec.AnyFlatSpec
@@ -19,37 +20,48 @@ import scala.scalajs.js
 
 class TableViewSpec extends AnyFlatSpec with Matchers {
 
-  "TableView SSR" should "render the crawlable query range and a real next-page link" in {
+  "TableView SSR" should "render the crawlable cookie range without URL paging state" in {
     val members = (0 until 20).map(index => s"Member $index")
 
-    val html = Runtime.renderToString { cursor =>
-      Runtime.mount(
-        new Router(
-          Seq(
-            Route.view("/") { _ =>
-              Future.successful(Route.component {
-                tableView[String] {
-                  crawlable = true
-                  items = members
-                  column[String, String]("Name") {
-                    prefWidth = 240.0
-                    cell { item => text(item) {} }
-                  }
-                }
-              })
+    val router = new Router(
+      Seq(
+        Route.view("/") { _ =>
+          Future.successful(Route.component {
+            tableView[String] {
+              crawlable = true
+              crawlId = "members-table"
+              items = members
+              column[String, String]("Name") {
+                prefWidth = 240.0
+                cell { item => text(item) {} }
+              }
             }
-          ),
-          "/?offset=5&limit=5"
-        ),
-        cursor
+          })
+        }
+      ),
+      "/?offset=12&limit=2"
+    )
+    RequestContext.provide(
+      RequestContext(
+        RequestHeaders(
+          Map(
+            "cookie" -> Vector(s"jfx-crawl-members-table=${js.URIUtils.encodeURIComponent("5:5:")}")
+          )
+        )
       )
+    )(using router)
+
+    val html = Runtime.renderToString { cursor =>
+      Runtime.mount(router, cursor)
     }
 
     html should not include "Member 4"
     html should include("Member 5")
     html should include("Member 9")
     html should not include "Member 10"
-    html should include("href=\"?offset=10&amp;limit=5\"")
+    html should include("href=\"/\"")
+    html should not include "offset="
+    html should not include "limit="
     html should include("More items...")
   }
 
@@ -84,9 +96,9 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
   }
 
   "TableView list lifecycle" should "track inserts, updates and removals without stale rows" in {
-    val items = ListProperty(js.Array("Alice", "Cara"))
+    val items  = ListProperty(js.Array("Alice", "Cara"))
     val cursor = new SsrCursor()
-    val root = Runtime.mount(new MutableTableRoot(items), cursor)
+    val root   = Runtime.mount(new MutableTableRoot(items), cursor)
 
     visibleText(cursor.collectHtml()) should include("AliceCara")
 
@@ -112,31 +124,42 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
     remote.totalCountProperty.set(Some(20))
     remote.hasMoreProperty.set(true)
 
-    val html = Runtime.renderToString { cursor =>
-      Runtime.mount(
-        new Router(
-          Seq(
-            Route.view("/") { _ =>
-              Future.successful(Route.component {
-                tableView[String] {
-                  crawlable = true
-                  items = remote
-                  column[String, String]("Name") {
-                    cell { item => text(item) {} }
-                  }
-                }
-              })
+    val router = new Router(
+      Seq(
+        Route.view("/") { _ =>
+          Future.successful(Route.component {
+            tableView[String] {
+              crawlable = true
+              crawlId = "remote-members-table"
+              items = remote
+              column[String, String]("Name") {
+                cell { item => text(item) {} }
+              }
             }
-          ),
-          "/?offset=5&limit=5"
-        ),
-        cursor
+          })
+        }
+      ),
+      "/"
+    )
+    RequestContext.provide(
+      RequestContext(
+        RequestHeaders(
+          Map(
+            "cookie" -> Vector(
+              s"jfx-crawl-remote-members-table=${js.URIUtils.encodeURIComponent("5:5:")}"
+            )
+          )
+        )
       )
+    )(using router)
+
+    val html = Runtime.renderToString { cursor =>
+      Runtime.mount(router, cursor)
     }
 
     html should include("jfx-table-cell-loading-placeholder")
     html should include("top: 160px")
-    html should include("href=\"?offset=10&amp;limit=5\"")
+    html should include("href=\"/\"")
   }
 
   it should "reflect remote sorting state in the header" in {
@@ -164,7 +187,7 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
       loader = ListProperty.RemoteLoader { query =>
         val sorted = query.sorting.headOption match {
           case Some(sort) if sort.field == "name" && !sort.ascending => members.reverse
-          case _ => members
+          case _                                                     => members
         }
         val page = sorted.slice(query.index, query.index + query.limit)
         val next = query.index + page.length
@@ -190,7 +213,7 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
     Runtime.renderToString { cursor =>
       Runtime.mount(
         new AbstractComponent {
-          override val tagName: String = "main"
+          override val tagName: String                      = "main"
           override def compose(contentCursor: Cursor): Unit =
             DslLayer.render(this, contentCursor) {
               tableView[String] {

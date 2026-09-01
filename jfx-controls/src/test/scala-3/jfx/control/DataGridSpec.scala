@@ -7,6 +7,7 @@ import jfx.core.dsl.DslLayer
 import jfx.core.layout.Div.div
 import jfx.core.layout.TextComponent.text
 import jfx.core.render.{Cursor, SsrCursor}
+import jfx.core.request.{RequestContext, RequestHeaders}
 import jfx.core.state.ListProperty
 import jfx.router.{Route, Router}
 import org.scalatest.flatspec.AnyFlatSpec
@@ -53,30 +54,39 @@ class DataGridSpec extends AnyFlatSpec with Matchers {
     html should include("left: 400px")
   }
 
-  it should "render crawlable windows from query params" in {
+  it should "render crawlable windows from its component cookie" in {
     val members = (0 until 20).map(index => s"Member $index")
-    val html    = Runtime.renderToString { cursor =>
-      Runtime.mount(
-        new Router(
-          Seq(
-            Route.view("/") { _ =>
-              Future.successful(Route.component {
-                dataGrid[String] {
-                  items = members
-                  itemWidthPx = 400
-                  itemHeightPx = 100
-                  gapPx = 0
-                  overscanRows = 0
-                  crawlable = true
-                  cellRenderer = cellBody
-                }
-              })
+    val router  = new Router(
+      Seq(
+        Route.view("/") { _ =>
+          Future.successful(Route.component {
+            dataGrid[String] {
+              items = members
+              itemWidthPx = 400
+              itemHeightPx = 100
+              gapPx = 0
+              overscanRows = 0
+              crawlable = true
+              crawlId = "members-grid"
+              cellRenderer = cellBody
             }
-          ),
-          "/?offset=5&limit=4"
-        ),
-        cursor
+          })
+        }
+      ),
+      "/?offset=12&limit=2"
+    )
+    RequestContext.provide(
+      RequestContext(
+        RequestHeaders(
+          Map(
+            "cookie" -> Vector(s"jfx-crawl-members-grid=${js.URIUtils.encodeURIComponent("5:4:")}")
+          )
+        )
       )
+    )(using router)
+
+    val html = Runtime.renderToString { cursor =>
+      Runtime.mount(router, cursor)
     }
 
     html should not include "4:Member 4"
@@ -84,7 +94,9 @@ class DataGridSpec extends AnyFlatSpec with Matchers {
     html should include("8:Member 8")
     html should not include "9:Member 9"
     html should include("top: 200px")
-    html should include("href=\"?offset=9&amp;limit=4\"")
+    html should include("href=\"/\"")
+    html should not include "offset="
+    html should not include "limit="
   }
 
   it should "compose contextual header and placeholder slots" in {

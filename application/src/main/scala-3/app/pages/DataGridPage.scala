@@ -144,6 +144,7 @@ object DataGridPage {
                 overscanRows = 1
                 prefetchItems = 24
                 crawlable = true
+                crawlId = "showcase-tiles"
 
                 cellRenderer = { (item: Tile | Null, index: Int) =>
                   val tile     = Option(item)
@@ -257,6 +258,7 @@ object DataGridPage {
                |  overscanRows = 1
                |  prefetchItems = 24
                |  crawlable = true
+               |  crawlId = "showcase-tiles"
                |
                |  cellRenderer = { (tile, index) =>
                |    div { text(tile.title) {} }
