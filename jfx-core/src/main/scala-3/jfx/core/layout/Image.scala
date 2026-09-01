@@ -4,6 +4,7 @@ import jfx.core.component.AbstractComponent
 import jfx.core.dsl.DslLayer
 import jfx.core.render.Cursor
 import jfx.core.state.ReadOnlyProperty
+import jfx.core.text.TextValue
 
 final class Image extends AbstractComponent {
   val tagName = "img"
@@ -12,16 +13,24 @@ final class Image extends AbstractComponent {
     host.attribute("src").getOrElse("")
 
   def src_=(value: String): Unit =
-    host.setAttribute("src", value)
+    setSource(value)
 
   def src_=(value: ReadOnlyProperty[String]): Unit =
-    addDisposable(value.observe(next => host.setAttribute("src", Option(next).getOrElse(""))))
+    addDisposable(value.observe(setSource))
 
   def alt: String =
     host.attribute("alt").getOrElse("")
 
-  def alt_=(value: String): Unit =
-    host.setAttribute("alt", value)
+  def alt_=[T](value: T)(using textValue: TextValue[T]): Unit = {
+    val property = textValue.asReadOnlyProperty(value)(using this)
+    addDisposable(property.observe(next => host.setAttribute("alt", Option(next).getOrElse(""))))
+  }
+
+  private def setSource(value: String): Unit =
+    Option(value).filter(_.trim.nonEmpty) match {
+      case Some(source) => host.setAttribute("src", source)
+      case None         => host.removeAttribute("src")
+    }
 }
 
 object Image {
@@ -41,7 +50,7 @@ object Image {
   def src(using image: Image): String =
     image.src
 
-  def alt_=(value: String)(using image: Image): Unit =
+  def alt_=[T](value: T)(using image: Image, textValue: TextValue[T]): Unit =
     image.alt_=(value)
 
   def alt(using image: Image): String =

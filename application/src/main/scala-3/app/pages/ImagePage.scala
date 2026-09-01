@@ -37,18 +37,29 @@ object ImagePage {
 
         componentShowcase(i18n"Dynamic image source", i18n"The source can be bound to a property to swap images at runtime.") {
           val currentSrc = Property("https://images.unsplash.com/photo-1543852786-1cf6624b9987?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80")
+          val currentAlt = Property("Cat looking into the camera")
 
           vbox {
             style { gap = "15px"; alignItems = "center" }
             image {
               src = currentSrc
-              alt = "Dynamic image"
+              alt = currentAlt
               style { borderRadius = "50%"; width = "150px"; height = "150px"; objectFit = "cover"; border = "3px solid var(--aj-accent)" }
             }
             hbox {
               style { gap = "10px" }
-              button(i18n"Cat 1") { onClick { _ => currentSrc.set("https://images.unsplash.com/photo-1543852786-1cf6624b9987?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80") } }
-              button(i18n"Cat 2") { onClick { _ => currentSrc.set("https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=300&q=80") } }
+              button(i18n"Cat 1") {
+                onClick { _ =>
+                  currentSrc.set("https://images.unsplash.com/photo-1543852786-1cf6624b9987?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80")
+                  currentAlt.set("Cat looking into the camera")
+                }
+              }
+              button(i18n"Cat 2") {
+                onClick { _ =>
+                  currentSrc.set("https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=300&q=80")
+                  currentAlt.set("Cat looking to the side")
+                }
+              }
             }
           }
         }
@@ -62,8 +73,10 @@ object ImagePage {
 
 // Oder reaktiv:
 val myProperty = Property("...")
+val myAlt = Property("Description")
 image {
   src = myProperty
+  alt = myAlt
 }""")
         }
       }

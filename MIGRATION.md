@@ -93,8 +93,8 @@ Komponenten erzeugen noch DSL-Anweisungen oder Listener verstecken.
 
 ### 1. Controls (Grundlage fuer Forms)
 
-- [ ] `Link`
-- [ ] `Image`
+- [x] `Link`
+- [x] `Image`
 - [ ] `Tabs`
 - [ ] `Carousel`
 - [x] `TableCell`, `TableColumn`, `TableRow`, `TableView`
@@ -143,7 +143,7 @@ Der Editor beginnt erst, wenn sein Forms-Control-Vertrag stabil ist.
 | `jfx-viewport` | portiert (`Viewport`, `Window`, `Notification`, `Overlay`) |
 | `jfx-i18n` | nach `jfx-core` integriert |
 | `jfx-forms` | Forms-Kern samt `ComboBox` portiert: typisierte Modellbindung, Editierbarkeit, Annotation-Validatoren, rekursive Fehlerzuordnung, `SubForm`, `ArrayForm` und `InputContainer`; `ImageCropper` wartet auf `Image` und Viewport-Integration |
-| `jfx-controls` | Tabellenbasis und `DataGrid` portiert: virtuelle Zeilen bzw. Karten, lokale/entfernte Listen, Range-Prefetch, Sortierstatus, Crawl-Paging sowie kontextuelle Header- und Placeholder-Slots; weitere Controls noch offen |
+| `jfx-controls` | Tabellenbasis und `DataGrid` portiert: virtuelle Zeilen bzw. Karten, lokale/entfernte Listen, Range-Prefetch, Sortierstatus, Crawl-Paging sowie kontextuelle Header- und Placeholder-Slots; `Link` ist in `Anchor` und `RouterLink` aufgeteilt, `Image` als natives Core-Layout portiert; `Tabs`, `Carousel` und `VirtualListView` sind noch offen |
 | `jfx-editor` | noch offen |
 | `jfx-json` | portiert; neuer reflektionsbasierter Mapper mit getrennten Komponenten fuer Typmodell, Metadaten, Serialisierung und Deserialisierung |
 | `jfx-webAuthn` | noch offen |
@@ -203,6 +203,28 @@ Neue oder vom JFX2-Verhalten abweichende Entscheidungen werden hier direkt bei
 der betroffenen Komponente dokumentiert: Problem, gewaehlte JFX3-Loesung,
 Auswirkung auf die DSL und zugehoerige Tests. Damit bleibt die Migration
 nachvollziehbar und die DSL konsistent.
+
+### Link und Image
+
+Der JFX2-`Link` ist in JFX3 bewusst nach Verantwortung getrennt. `Anchor` in
+`jfx-core` bildet einen neutralen HTML-Link mit `href`, `target` und `rel` ab.
+`RouterLink` in `jfx-router` loest interne Anwendungsziele ueber den aktuellen
+Router auf, beobachtet den aktiven Pfad und delegiert nur interne Navigation an
+den Router. Externe Ziele verbleiben beim Browser. Damit ersetzt die
+kontextuelle DSL `anchor(...)` bzw. `routerLink(...)` den alten pauschal in die
+Browser-History schreibenden `link(href)`-Baustein. Tests decken Base-Path-
+Aufloesung, aktive Unterrouten, Click-Navigation, externe Ziele und die
+Entsorgung von Beobachtern und Event-Handlern ab.
+
+`Image` ist ein natives `<img>` in `jfx-core` und benoetigt nicht mehr den
+JFX2-Wrapper mit einem dynamisch montierten inneren Bild. `src` akzeptiert
+statische und reaktive Werte. Ein leerer oder nur aus Leerzeichen bestehender
+Wert entfernt das Attribut, verhindert damit eine unbeabsichtigte Anfrage an
+die aktuelle Seite und behaelt zugleich fuer SSR und Hydration dieselbe
+Elementstruktur. `alt` verwendet wieder `TextValue` und kann dadurch statisch
+oder reaktiv gesetzt werden. Alle Beobachter gehoeren zum Lebenszyklus des
+Bildes. Tests decken SSR-Ausgabe, reaktive Aktualisierung, leere Quellen und
+Entsorgung ab; die Demo zeigt reaktive Quellen und Alternativtexte.
 
 ### Tabelle
 
