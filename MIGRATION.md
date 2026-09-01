@@ -99,7 +99,7 @@ Komponenten erzeugen noch DSL-Anweisungen oder Listener verstecken.
 - [ ] `Carousel`
 - [x] `TableCell`, `TableColumn`, `TableRow`, `TableView`
 - [ ] `VirtualListView`
-- [ ] `DataGrid`
+- [x] `DataGrid`
 
 Bei Tabellen und virtuellen Listen sind stabile Einfuegepositionen,
 Listenmutation, Entsorgung und SSR/Hydration zuerst zu klaeren. Diese
@@ -143,7 +143,7 @@ Der Editor beginnt erst, wenn sein Forms-Control-Vertrag stabil ist.
 | `jfx-viewport` | portiert (`Viewport`, `Window`, `Notification`, `Overlay`) |
 | `jfx-i18n` | nach `jfx-core` integriert |
 | `jfx-forms` | Forms-Kern samt `ComboBox` portiert: typisierte Modellbindung, Editierbarkeit, Annotation-Validatoren, rekursive Fehlerzuordnung, `SubForm`, `ArrayForm` und `InputContainer`; `ImageCropper` wartet auf `Image` und Viewport-Integration |
-| `jfx-controls` | Tabellenbasis portiert (`TableCell`, `TableColumn`, `TableRow`, `TableView`) mit virtuellen Zeilen, lokaler/entfernter Liste, Sortierstatus, Crawl-Paging und Content-Header; weitere Controls noch offen |
+| `jfx-controls` | Tabellenbasis und `DataGrid` portiert: virtuelle Zeilen bzw. Karten, lokale/entfernte Listen, Range-Prefetch, Sortierstatus, Crawl-Paging sowie kontextuelle Header- und Placeholder-Slots; weitere Controls noch offen |
 | `jfx-editor` | noch offen |
 | `jfx-json` | portiert; neuer reflektionsbasierter Mapper mit getrennten Komponenten fuer Typmodell, Metadaten, Serialisierung und Deserialisierung |
 | `jfx-webAuthn` | noch offen |
@@ -246,3 +246,26 @@ decken das dynamische Overlay mit `TableView`, kontextuelle Renderer,
 Single-/Multi-Selection, stabile Identitaet, bidirektionale Formularbindung und
 die Entfernung der Overlay-Registrierung beim Unmount ab. Die Demo ist wieder
 unter `/combo-box` erreichbar.
+
+### DataGrid
+
+Das `DataGrid` ist eine eigenstaendige JFX3-Komponente und verwendet keinen
+alten Renderer oder manuell verwaltete DOM-Kinder. Seine strukturelle
+Konfiguration wird zu Beginn von `compose(cursor)` ausgewertet. Header,
+Loading-/Empty-Placeholder und Zell-Renderer sind kontextuelle DSL-Funktionen;
+die sichtbaren Zellen werden ueber `Foreach` an einem stabilen virtuellen
+Mount-Point erzeugt und entfernt.
+
+Die Zeilen- und Spaltenberechnung bleibt Eigentum der Komponente. Lokale Listen
+und `RemoteListProperty` teilen dasselbe virtuelle Fenstermodell. Noch nicht
+geladene Remote-Positionen erscheinen als masshaltige Placeholder-Zellen;
+Range-fähige Quellen werden mit konfigurierbarem Vorlauf geladen, sequentielle
+Quellen nahe dem Ende erweitert. Scroll-, Resize- und Remote-Listener werden
+mit `addDisposable` an den Komponentenlebenszyklus gebunden.
+
+SSR rendert standardmaessig das initial sichtbare Fenster. Im crawlbaren Modus
+bestimmen `offset` und `limit` einen deterministischen Ausschnitt samt echtem
+Folgelink; der Browser stellt aus demselben Offset die Scrollposition wieder
+her. Tests decken lokale Virtualisierung, flexible Kartenbreiten, unbeladene
+Remote-Bereiche, Crawl-Paging, kontextuelle Slots, Listenmutation und Entsorgung
+ab. Die Demo ist unter `/data-grid` erreichbar.

@@ -36,6 +36,8 @@ object AppI18n {
       de(i18n"Control registration and context", "Control-Registrierung und Kontext"),
       de(i18n"ComboBox", "ComboBox"),
       de(i18n"Typed selection and stable identity", "Typisierte Auswahl und stabile Identität"),
+      de(i18n"DataGrid", "DataGrid"),
+      de(i18n"Virtual cards and remote ranges", "Virtuelle Karten und entfernte Bereiche"),
       de(i18n"Viewport", "Viewport"),
       de(i18n"Notifications and windows", "Benachrichtigungen und Fenster"),
       de(i18n"Design inherited from JFX2, content rebuilt for scalajs-jfx.", "Design aus JFX2 übernommen, Inhalt für scalajs-jfx neu aufgebaut."),

@@ -75,6 +75,11 @@ object AppRoutes {
           TableViewPage.render()
         })
       },
+      Route.view("/data-grid") { _ =>
+        Future.successful(Route.component {
+          DataGridPage.render()
+        })
+      },
       Route.view("/viewport") { _ =>
         Future.successful(Route.component {
           ViewportPage.render()
