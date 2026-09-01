@@ -96,7 +96,7 @@ Komponenten erzeugen noch DSL-Anweisungen oder Listener verstecken.
 - [x] `Link`
 - [x] `Image`
 - [x] `Tabs`
-- [ ] `Carousel`
+- [x] `Carousel`
 - [x] `TableCell`, `TableColumn`, `TableRow`, `TableView`
 - [ ] `VirtualListView`
 - [x] `DataGrid`
@@ -143,7 +143,7 @@ Der Editor beginnt erst, wenn sein Forms-Control-Vertrag stabil ist.
 | `jfx-viewport` | portiert (`Viewport`, `Window`, `Notification`, `Overlay`) |
 | `jfx-i18n` | nach `jfx-core` integriert |
 | `jfx-forms` | Forms-Kern samt `ComboBox` portiert: typisierte Modellbindung, Editierbarkeit, Annotation-Validatoren, rekursive Fehlerzuordnung, `SubForm`, `ArrayForm` und `InputContainer`; `ImageCropper` wartet noch auf seine Viewport-Integration |
-| `jfx-controls` | Tabellenbasis, `DataGrid` und `Tabs` portiert: virtuelle Zeilen bzw. Karten, lokale/entfernte Listen, Range-Prefetch, Sortierstatus, Crawl-Paging sowie kontextuelle Header-, Placeholder- und Tab-Panel-Slots; `Link` ist in `Anchor` und `RouterLink` aufgeteilt, `Image` als natives Core-Layout portiert; `Carousel` und `VirtualListView` sind noch offen |
+| `jfx-controls` | Tabellenbasis, `DataGrid`, `Tabs` und `Carousel` portiert: virtuelle Zeilen bzw. Karten, lokale/entfernte Listen, Range-Prefetch, Sortierstatus, Crawl-Paging sowie kontextuelle Header-, Placeholder-, Tab-Panel- und Slide-Slots; `Link` ist in `Anchor` und `RouterLink` aufgeteilt, `Image` als natives Core-Layout portiert; `VirtualListView` ist noch offen |
 | `jfx-editor` | noch offen |
 | `jfx-json` | portiert; neuer reflektionsbasierter Mapper mit getrennten Komponenten fuer Typmodell, Metadaten, Serialisierung und Deserialisierung |
 | `jfx-webAuthn` | noch offen |
@@ -248,6 +248,36 @@ Tests decken SSR-Struktur und Accessibility-Attribute, beide Render-Modi,
 reaktive Titel und Auswahl, Listenmutation mit Index-Normalisierung,
 Moduswechsel, Click- und Tastaturauswahl sowie die Entsorgung aller Beobachter
 und Event-Handler ab. Die Demo ist unter `/tabs` erreichbar.
+
+### Carousel
+
+Das `Carousel` liegt im Paket `jfx.control.carousel`. Seine primaere API ist
+die eindeutige kontextuelle DSL `carousel[T] { items = ...; slideRenderer =
+... }`. Auf eine zweite, mit einem Konfigurationsblock mehrdeutige
+`carousel(items)(renderer)`-Ueberladung wird bewusst verzichtet: Scala 3 kann
+einen Block zwischen diesen beiden Formen nicht verlaesslich als kontextuelle
+DSL typisieren. Items, Renderer und initialer Zustand werden zu Beginn von
+`compose(cursor)` ausgewertet, bevor die dynamischen Bereiche entstehen.
+
+Im Standardmodus bleiben alle Slides ueber `Foreach.foreachIndexed` gemountet.
+Auswahl, Track-Transformation, Indikatoren, Status, Pfeil-/Home-/End-Tasten und
+Wrap- beziehungsweise Clamp-Verhalten verwenden denselben normalisierten
+`activeIndex`. Listenmutation und der Austausch der zugrunde liegenden
+`ListProperty` bauen die betroffenen Slides an stabilen Mount-Points neu auf.
+Dabei wird die Auswahl vor einem strukturellen Unmount normalisiert, damit kein
+bereits entsorgter Slide im selben synchronen Property-Zyklus erneut
+angesprochen wird.
+
+`ssrShowAllStates = true` rendert auf dem Server alle Slides untereinander und
+im Browser denselben Baum als verschiebbaren Track. Bei
+`ssrShowAllStates = false` mountet `DynamicComponentRenderer` konsequent nur
+den aktiven Slide, sowohl in SSR als auch im Browser. Diese JFX3-Auslegung
+schliesst den JFX2-Strukturwechsel zwischen SSR und Hydration aus. Autoplay wird
+nur fuer Browser-Cursor gestartet; Intervallwechsel, Itemwechsel und Unmount
+entsorgen den vorherigen Timer. Tests decken beide SSR-Modi, ARIA-Zustand,
+Wrap/Clamp, Listenmutation und -austausch, Moduswechsel, Click und Tastatur,
+Listener-Entsorgung sowie den Timer-Lebenszyklus ab. Die Demo ist unter
+`/carousel` erreichbar.
 
 ### Tabelle
 

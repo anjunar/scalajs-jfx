@@ -70,6 +70,11 @@ object AppRoutes {
           TabsPage.render()
         })
       },
+      Route.view("/carousel") { _ =>
+        Future.successful(Route.component {
+          CarouselPage.render()
+        })
+      },
       Route.view("/combo-box") { _ =>
         Future.successful(Route.component {
           ComboBoxPage.render()
