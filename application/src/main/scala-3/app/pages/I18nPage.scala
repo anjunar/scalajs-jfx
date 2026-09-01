@@ -21,15 +21,27 @@ object I18nPage {
       )
 
       Showcase.metricStrip(
-        "current" -> locale.map(_.code).get,
+        "current"  -> locale.map(_.code).get,
         "prefixes" -> "/de, /en",
         "fallback" -> "en"
       )
 
       Showcase.insightGrid(
-        ("Route", "Locale is part of the path", "Direct URLs, SSR and client navigation now agree on the same prefix semantics."),
-        ("Toolbar", "Switch keeps the current page", "Changing locale rewrites the URL but preserves the matched application path."),
-        ("Catalog", "Ready for message-based i18n", "The repository already contains a richer i18n model that can replace the lightweight demo copy step by step.")
+        (
+          i18n"Route",
+          i18n"Locale is part of the path",
+          i18n"Direct URLs, SSR and client navigation now agree on the same prefix semantics."
+        ),
+        (
+          i18n"Toolbar",
+          i18n"Switch keeps the current page",
+          i18n"Changing locale rewrites the URL but preserves the matched application path."
+        ),
+        (
+          i18n"Catalog",
+          i18n"Ready for message-based i18n",
+          i18n"The repository already contains a richer i18n model that can replace the lightweight demo copy step by step."
+        )
       )
 
       Showcase.apiSection(
