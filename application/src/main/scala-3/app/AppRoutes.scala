@@ -90,6 +90,11 @@ object AppRoutes {
           DataGridPage.render()
         })
       },
+      Route.view("/virtual-list") { _ =>
+        Future.successful(Route.component {
+          VirtualListViewPage.render()
+        })
+      },
       Route.view("/viewport") { _ =>
         Future.successful(Route.component {
           ViewportPage.render()

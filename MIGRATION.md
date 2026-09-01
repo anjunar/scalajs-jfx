@@ -98,7 +98,7 @@ Komponenten erzeugen noch DSL-Anweisungen oder Listener verstecken.
 - [x] `Tabs`
 - [x] `Carousel`
 - [x] `TableCell`, `TableColumn`, `TableRow`, `TableView`
-- [ ] `VirtualListView`
+- [x] `VirtualListView`
 - [x] `DataGrid`
 
 Bei Tabellen und virtuellen Listen sind stabile Einfuegepositionen,
@@ -143,7 +143,7 @@ Der Editor beginnt erst, wenn sein Forms-Control-Vertrag stabil ist.
 | `jfx-viewport` | portiert (`Viewport`, `Window`, `Notification`, `Overlay`) |
 | `jfx-i18n` | nach `jfx-core` integriert |
 | `jfx-forms` | Forms-Kern samt `ComboBox` portiert: typisierte Modellbindung, Editierbarkeit, Annotation-Validatoren, rekursive Fehlerzuordnung, `SubForm`, `ArrayForm` und `InputContainer`; `ImageCropper` wartet noch auf seine Viewport-Integration |
-| `jfx-controls` | Tabellenbasis, `DataGrid`, `Tabs` und `Carousel` portiert: virtuelle Zeilen bzw. Karten, lokale/entfernte Listen, Range-Prefetch, Sortierstatus, Crawl-Paging sowie kontextuelle Header-, Placeholder-, Tab-Panel- und Slide-Slots; `Link` ist in `Anchor` und `RouterLink` aufgeteilt, `Image` als natives Core-Layout portiert; `VirtualListView` ist noch offen |
+| `jfx-controls` | Controls-Portierung abgeschlossen: Tabellenbasis, `DataGrid`, `VirtualListView`, `Tabs` und `Carousel` tragen lokale und entfernte Listen, variable beziehungsweise feste virtuelle Bereiche, Range-Prefetch, Crawl-State sowie kontextuelle Header-, Placeholder-, Tab-Panel- und Slide-Slots; `Link` ist in `Anchor` und `RouterLink` aufgeteilt, `Image` als natives Core-Layout portiert |
 | `jfx-editor` | noch offen |
 | `jfx-json` | portiert; neuer reflektionsbasierter Mapper mit getrennten Komponenten fuer Typmodell, Metadaten, Serialisierung und Deserialisierung |
 | `jfx-webAuthn` | noch offen |
@@ -364,3 +364,38 @@ Cookie-Restore, Crawl-Paging, kontextuelle Slots, Listenmutation und Entsorgung
 ab. Der SSR-Abstand des Folgelinks wird bei der Hydration explizit auf null
 gesetzt, damit kein kuenstlicher leerer Scrollbereich hinter der virtuellen
 Surface verbleibt. Die Demo ist unter `/data-grid` erreichbar.
+
+### VirtualListView
+
+Die `VirtualListView` liegt im Paket `jfx.control.virtuallist`. Items, der
+kontextuelle Zell-Renderer, der optionale Header und die initialen
+Virtualisierungsparameter werden zu Beginn von `compose(cursor)` ausgewertet.
+Der Header bleibt im normalen Scrollfluss. Die sichtbaren Zellen werden mit
+`Foreach` innerhalb einer relativen Surface gemountet und dort absolut an den
+berechneten Offsets positioniert; es gibt keine manuell eingefuegten oder
+verschobenen DOM-Kinder.
+
+Fuer noch nicht gemessene Eintraege verwendet die Liste `estimateHeightPx`.
+Gemessene Zellhoehen werden pro Index gespeichert und in einer Prefixsumme
+zusammengefuehrt. Dadurch lassen sich sichtbarer Startindex, Zellpositionen,
+Gesamthoehe und `scrollTo` auch bei gemischten Hoehen bestimmen. Aendert sich
+eine bereits oberhalb des sichtbaren Ankers liegende Hoehe, wird `scrollTop` um
+die Differenz korrigiert. Strukturelle Listenmutation verwirft ungueltige
+Messungen; ein reines Update baut nur den betroffenen sichtbaren Slot neu auf.
+
+Lokale Listen und `RemoteListProperty` teilen dasselbe Fenstermodell. Bekannte,
+aber noch nicht geladene Remote-Indizes werden als masshaltige Placeholder
+gerendert. Range-faehige Quellen laden das sichtbare Fenster mit Vorlauf,
+sequentielle Quellen werden nahe dem geladenen Ende erweitert. Zell-
+`ResizeObserver`, Viewport-`ResizeObserver`, Scroll-/Window-Listener und
+Remote-Beobachter sind an den jeweiligen Komponentenlebenszyklus gebunden.
+
+Wie `TableView` und `DataGrid` verlangt eine crawlbare Liste eine feste
+`crawlId`. Der Cookie `jfx-crawl-<id>` bestimmt das SSR-/Hydration-Fenster und
+speichert im Browser den ersten sichtbaren Index; der Folgelink behaelt den
+aktuellen Pfad ohne Paging-Parameter bei. Damit ersetzt die Portierung bewusst
+die alten `offset`-/`limit`-Queryparameter durch den einheitlichen
+komponentenlokalen Crawl-State. Tests decken lokale SSR-Virtualisierung,
+Remote-Placeholder, Header-Komposition, variable Messhoehen, Cookie-Restore,
+Listenmutation, verpflichtende IDs und Entsorgung ab. Die Demo ist unter
+`/virtual-list` erreichbar.
