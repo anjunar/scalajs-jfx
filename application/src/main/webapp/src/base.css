@@ -1,0 +1,64 @@
+/* Document base: element resets and the icon font the demo provides.
+ * The `.material-icons` rule itself lives in @anjunar/scalajs-jfx —
+ * this file only supplies the font binary behind it.
+ */
+
+html,
+body,
+#root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+@font-face {
+    font-family: 'Material Icons';
+    font-style: normal;
+    font-weight: 400;
+    src: url(./material.ttf) format('truetype');
+}
+
+
+* {
+    box-sizing: border-box;
+    scrollbar-width: thin;
+    scrollbar-color: var(--aj-accent-ring) transparent;
+}
+
+html {
+    font-family: "Aptos", "Candara", "Trebuchet MS", sans-serif;
+    font-size: 16px;
+    background: var(--app-shell-bg);
+    color: var(--aj-ink);
+}
+
+body {
+    min-height: 100%;
+    color: var(--aj-ink);
+    line-height: 1.5;
+}
+
+::selection {
+    background: var(--aj-accent-muted);
+    color: var(--aj-ink);
+}
+
+button,
+input,
+select,
+textarea {
+    font: inherit;
+}
+
+input {
+    color-scheme: light;
+}
+
+select {
+    color-scheme: light;
+}
+
+html[data-theme="dark"] input,
+html[data-theme="dark"] select {
+    color-scheme: dark;
+}

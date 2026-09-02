@@ -1,0 +1,295 @@
+/* Demo-only: the landing shell and route showcase on top of the library.
+ * Nothing here styles a class a JFX module renders.
+ */
+
+.jfx2-demo {
+    min-height: 100%;
+    position: relative;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    padding: clamp(24px, 6vw, 72px);
+}
+
+.jfx2-demo__ambient {
+    position: absolute;
+    inset: 8%;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 22% 18%, color-mix(in srgb, var(--aj-accent) 24%, transparent), transparent 28%),
+        radial-gradient(circle at 80% 76%, color-mix(in srgb, var(--aj-info) 20%, transparent), transparent 30%),
+        conic-gradient(from 210deg at 50% 50%, transparent, color-mix(in srgb, var(--aj-warning) 10%, transparent), transparent);
+    filter: blur(6px);
+    opacity: 0.92;
+}
+
+.jfx2-demo__panel {
+    position: relative;
+    width: min(760px, 100%);
+    padding: clamp(28px, 5vw, 56px);
+    border: 1px solid var(--aj-line);
+    border-radius: 34px;
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--aj-surface-overlay) 92%, transparent), color-mix(in srgb, var(--aj-surface-raised) 82%, transparent)),
+        var(--aj-surface);
+    box-shadow: 0 28px 90px var(--aj-shadow-strong);
+    backdrop-filter: blur(var(--aj-glass-blur));
+}
+
+.jfx2-demo__eyebrow {
+    width: fit-content;
+    margin-bottom: 18px;
+    padding: 7px 12px;
+    border: 1px solid var(--aj-line);
+    border-radius: 999px;
+    color: var(--aj-accent-strong);
+    background: var(--aj-accent-muted);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.jfx2-demo__title {
+    max-width: 10ch;
+    color: var(--aj-ink);
+    font-size: clamp(3.5rem, 10vw, 7.5rem);
+    font-weight: 900;
+    letter-spacing: -0.09em;
+    line-height: 0.82;
+}
+
+.jfx2-demo__copy {
+    max-width: 62ch;
+    margin-top: 26px;
+    color: var(--aj-ink-soft);
+    font-size: clamp(1.02rem, 2vw, 1.2rem);
+}
+
+.jfx2-demo__card {
+    display: grid;
+    gap: 14px;
+    margin-top: 34px;
+    padding: clamp(18px, 4vw, 28px);
+    border: 1px solid var(--aj-line-soft);
+    border-radius: 24px;
+    background: var(--aj-surface-muted);
+}
+
+.jfx2-demo__label {
+    color: var(--aj-ink-muted);
+    font-size: 0.85rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.jfx2-demo__input {
+    width: 100%;
+    min-height: 52px;
+    border: 1px solid var(--aj-line);
+    border-radius: 16px;
+    padding: 0 16px;
+    color: var(--aj-ink);
+    background: var(--aj-surface-overlay);
+    outline: none;
+    box-shadow: inset 0 1px 0 color-mix(in srgb, white 18%, transparent);
+}
+
+.jfx2-demo__input:focus {
+    border-color: var(--aj-accent);
+    box-shadow: var(--aj-shadow-focus);
+}
+
+.jfx2-demo__result {
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    border-radius: 16px;
+    padding: 14px 16px;
+    color: var(--aj-ink);
+    background: color-mix(in srgb, var(--aj-accent) 12%, transparent);
+    font-weight: 750;
+}
+
+.jfx2-demo__button {
+    width: fit-content;
+    min-height: 48px;
+    border: 0;
+    border-radius: 999px;
+    padding: 0 20px;
+    color: var(--aj-ink-inverse);
+    background: linear-gradient(135deg, var(--aj-accent-strong), color-mix(in srgb, var(--aj-info) 44%, var(--aj-accent-strong)));
+    box-shadow: 0 14px 32px var(--aj-shadow-medium);
+    cursor: pointer;
+}
+
+.jfx2-demo__button:hover {
+    transform: translateY(-1px);
+}
+
+.jfx2-demo__slot-status {
+    border-radius: 16px;
+    padding: 12px 14px;
+    color: var(--aj-ink);
+    background: color-mix(in srgb, var(--aj-info) 12%, transparent);
+    font-weight: 750;
+}
+
+.jfx2-demo__slot-status.is-odd {
+    background: color-mix(in srgb, var(--aj-warning) 14%, transparent);
+}
+
+.jfx2-demo__router {
+    display: grid;
+    gap: 12px;
+    border-radius: 22px;
+    padding: 16px;
+    background:
+        radial-gradient(circle at top left, color-mix(in srgb, var(--aj-info) 14%, transparent), transparent 36%),
+        color-mix(in srgb, var(--aj-surface-overlay) 64%, transparent);
+}
+
+.jfx2-demo__route-page {
+    display: grid;
+    gap: 7px;
+    border: 1px solid color-mix(in srgb, var(--aj-info) 26%, var(--aj-line));
+    border-radius: 18px;
+    padding: 16px;
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--aj-surface-overlay) 84%, transparent), color-mix(in srgb, var(--aj-info) 8%, transparent));
+}
+
+.jfx2-demo__route-page.is-accent {
+    border-color: color-mix(in srgb, var(--aj-accent) 34%, var(--aj-line));
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--aj-accent) 13%, transparent), color-mix(in srgb, var(--aj-surface-overlay) 72%, transparent));
+}
+
+.jfx2-demo__route-page.is-editor {
+    border-style: dashed;
+}
+
+.jfx2-demo__route-page.is-missing {
+    border-color: color-mix(in srgb, var(--aj-danger) 36%, var(--aj-line));
+    background: color-mix(in srgb, var(--aj-danger) 8%, transparent);
+}
+
+.jfx2-demo__route-kicker {
+    color: var(--aj-ink-muted);
+    font-size: 0.76rem;
+    font-weight: 850;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.jfx2-demo__route-title {
+    color: var(--aj-ink);
+    font-size: 1.08rem;
+    font-weight: 850;
+    letter-spacing: -0.03em;
+}
+
+.jfx2-demo__route-copy {
+    color: var(--aj-ink-soft);
+    font-size: 0.95rem;
+}
+
+.jfx2-demo__route-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.jfx2-demo__route-button {
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--aj-line);
+    border-radius: 999px;
+    padding: 0 13px;
+    color: var(--aj-ink);
+    background: var(--aj-surface-overlay);
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.jfx2-demo__route-button:hover {
+    border-color: var(--aj-accent);
+    background: var(--aj-accent-muted);
+}
+
+.jfx2-demo__milestones {
+    display: grid;
+    gap: 8px;
+}
+
+.jfx2-demo__milestone {
+    border-left: 3px solid var(--aj-accent);
+    border-radius: 10px;
+    padding: 9px 12px;
+    color: var(--aj-ink-soft);
+    background: color-mix(in srgb, var(--aj-surface-overlay) 62%, transparent);
+}
+
+.jfx2-demo__client-fallback,
+.jfx2-demo__client-widget {
+    border-radius: 18px;
+    padding: 16px;
+}
+
+.jfx2-demo__client-fallback {
+    border: 1px dashed color-mix(in srgb, var(--aj-warning) 52%, var(--aj-line));
+    color: var(--aj-ink-soft);
+    background:
+        linear-gradient(90deg, transparent, color-mix(in srgb, var(--aj-warning) 12%, transparent), transparent),
+        var(--aj-surface-muted);
+}
+
+.jfx2-demo__client-widget {
+    border: 1px solid color-mix(in srgb, var(--aj-accent) 32%, var(--aj-line));
+    color: var(--aj-ink);
+    background:
+        radial-gradient(circle at top right, color-mix(in srgb, var(--aj-accent) 20%, transparent), transparent 34%),
+        var(--aj-surface-overlay);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, white 12%, transparent);
+}
+
+.jfx2-demo__client-widget-title {
+    font-weight: 850;
+    letter-spacing: -0.02em;
+}
+
+.jfx2-demo__client-widget-copy {
+    margin-top: 6px;
+    color: var(--aj-ink-soft);
+    font-size: 0.95rem;
+}
+.jfx2-demo__note {
+    margin-top: 24px;
+    color: var(--aj-ink-muted);
+    font-size: 0.92rem;
+}
+
+@media (max-width: 620px) {
+    .jfx2-demo {
+        padding: 18px;
+    }
+
+    .jfx2-demo__panel {
+        border-radius: 24px;
+    }
+
+    .jfx2-demo__button {
+        width: 100%;
+    }
+
+    .jfx2-demo__route-actions {
+        display: grid;
+    }
+
+    .jfx2-demo__route-button {
+        width: 100%;
+    }
+}

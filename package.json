@@ -12,7 +12,7 @@
     "prerender": "node server/prerender-pages.mjs"
   },
   "dependencies": {
-    "@anjunar/scalajs-jfx2": "file:./npm/scalajs-jfx2",
+    "@anjunar/scalajs-jfx": "file:./npm/scalajs-jfx",
     "@anjunar/scalajs-lexical": "^1.0.9",
     "@anjunar/ui": "^1.0.1",
     "express": "^5.2.1"

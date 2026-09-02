@@ -1,0 +1,270 @@
+/* Demo-only: how this application dresses the editor and the code blocks.
+ * These rules override `.jfx-editor*` classes from @anjunar/scalajs-jfx
+ * on purpose — see that package's README on overrides.
+ */
+
+.codemirror-wrapper .cm-editor {
+    background: var(--aj-code-bg);
+    color: var(--aj-ink);
+    border: 1px solid var(--aj-line-soft);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.codemirror-wrapper .cm-scroller {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+.codemirror-wrapper .cm-content,
+.codemirror-wrapper .cm-gutters {
+    background: var(--aj-code-bg);
+}
+
+.codemirror-wrapper .cm-gutters {
+    color: var(--aj-ink-faint);
+    border-right: 1px solid var(--aj-line-soft);
+    background: linear-gradient(180deg, var(--aj-code-gutter-bg), transparent);
+}
+
+.codemirror-wrapper .cm-activeLine,
+.codemirror-wrapper .cm-activeLineGutter {
+    background: color-mix(in srgb, var(--aj-accent-muted) 52%, transparent);
+}
+
+.codemirror-wrapper .cm-selectionBackground,
+.codemirror-wrapper .cm-content ::selection {
+    background: var(--aj-code-selection) !important;
+}
+
+.codemirror-wrapper .cm-cursor,
+.codemirror-wrapper .cm-dropCursor {
+    border-left-color: var(--aj-code-caret) !important;
+}
+
+.codemirror-wrapper .cm-focused {
+    outline: none;
+}
+
+.codemirror-wrapper .cm-editor.cm-focused {
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--aj-accent) 36%, transparent);
+}
+
+.jfx-editor-host {
+    min-height: 220px;
+    display: block;
+    border: 1px solid color-mix(in srgb, var(--aj-accent) 28%, var(--aj-line));
+    border-radius: 20px;
+    overflow: hidden;
+    background: var(--aj-surface-overlay);
+}
+
+.jfx-editor-host[data-jfx-editor-loading="true"] {
+    opacity: 0.78;
+}
+
+.jfx-editor-fallback {
+    min-height: 220px;
+    display: grid;
+    place-items: center;
+    padding: 18px;
+    color: var(--aj-ink-soft);
+    background:
+        linear-gradient(90deg, transparent, color-mix(in srgb, var(--aj-accent) 11%, transparent), transparent),
+        var(--aj-surface-muted);
+}
+
+.jfx-editor-readonly {
+    min-height: 220px;
+    display: grid;
+    gap: 12px;
+    padding: 18px;
+    color: var(--aj-ink);
+    background: var(--aj-surface-overlay);
+}
+
+.jfx-editor-readonly .lexical-paragraph,
+.jfx-editor-readonly .lexical-heading,
+.jfx-editor-readonly .lexical-quote {
+    margin: 0;
+}
+
+.jfx-editor-readonly .lexical-heading {
+    font-size: 1.35rem;
+    font-weight: 850;
+    letter-spacing: -0.04em;
+}
+
+.jfx-editor-readonly .lexical-quote {
+    border-left: 3px solid var(--aj-accent);
+    padding-left: 14px;
+    color: var(--aj-ink-soft);
+}
+
+.jfx-editor-readonly__placeholder {
+    margin: 0;
+    color: var(--aj-ink-muted);
+}
+
+.jfx-editor-code {
+    margin: 0;
+    border: 1px solid var(--aj-line-soft);
+    border-radius: 16px;
+    padding: 14px;
+    overflow: auto;
+    color: var(--aj-ink);
+    background: var(--aj-surface-muted);
+    font-family: "Cascadia Code", "JetBrains Mono", "Fira Code", monospace;
+    font-size: 0.9rem;
+    line-height: 1.55;
+}
+
+.jfx-editor-code__content {
+    white-space: pre;
+}
+
+.hljs-keyword {
+    color: #b15c00;
+    font-weight: 800;
+}
+
+html[data-theme="dark"] .hljs-keyword {
+    color: var(--aj-accent-strong);
+}
+
+.hljs-string {
+    color: #436d3d;
+}
+
+html[data-theme="dark"] .hljs-string {
+    color: var(--aj-warning);
+}
+
+.hljs-number {
+    color: #2b5b82;
+}
+
+html[data-theme="dark"] .hljs-number {
+    color: var(--aj-info);
+}
+
+.hljs-comment {
+    color: var(--aj-ink-muted);
+    font-style: italic;
+}
+
+.hljs-tag,
+.hljs-name,
+.hljs-attr,
+.hljs-attribute {
+    color: var(--aj-accent-strong);
+}
+
+.jfx2-demo__lexical {
+    min-height: 240px;
+}
+
+.jfx-editor,
+.jfx-editor__shell {
+    min-height: inherit;
+    height: 100%;
+}
+
+.jfx-editor__shell {
+    display: grid;
+    grid-template-rows: auto 1fr;
+}
+
+.jfx-editor__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 10px;
+    padding: 10px;
+    border-bottom: 1px solid var(--aj-line-soft);
+    background: color-mix(in srgb, var(--aj-surface-muted) 72%, transparent);
+}
+
+.jfx-editor__toolbar-group {
+    display: grid;
+    gap: 5px;
+    align-content: start;
+}
+
+.jfx-editor__toolbar-group-label {
+    padding-left: 4px;
+    color: var(--aj-ink-faint);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.jfx-editor__toolbar-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.jfx-editor__toolbar-button {
+    min-height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: 1px solid var(--aj-line);
+    border-radius: 999px;
+    padding: 0 12px;
+    color: var(--aj-ink);
+    background: var(--aj-surface-overlay);
+    cursor: pointer;
+    font: inherit;
+}
+
+.jfx-editor__toolbar-button:hover {
+    border-color: var(--aj-accent);
+    background: var(--aj-accent-muted);
+}
+
+.jfx-editor__toolbar-button.is-active,
+.jfx-editor__toolbar-button.active {
+    border-color: var(--aj-accent);
+    color: var(--aj-accent-strong);
+    background: color-mix(in srgb, var(--aj-accent-muted) 86%, transparent);
+}
+
+.jfx-editor__toolbar-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.58;
+}
+
+.jfx-editor__toolbar-icon {
+    font-size: 18px;
+}
+
+.jfx-editor__surface-wrap {
+    position: relative;
+    min-height: 180px;
+}
+
+.jfx-editor__surface {
+    min-height: 180px;
+    height: 100%;
+    padding: 18px;
+    color: var(--aj-ink);
+    outline: none;
+}
+
+.jfx-editor__surface:focus {
+    box-shadow: inset var(--aj-shadow-focus);
+}
+
+.jfx-editor__placeholder {
+    position: absolute;
+    top: 18px;
+    left: 18px;
+    right: 18px;
+    pointer-events: none;
+    color: var(--aj-ink-muted);
+}
+

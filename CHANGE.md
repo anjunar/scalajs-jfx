@@ -624,7 +624,7 @@ die Sorte Fehler, die erst unter Last sichtbar wird.
 
 ---
 
-### [ ] P5-2 · Styling: vier Systeme auf eins reduzieren
+### [~] P5-2 · Styling: vier Systeme auf eins reduzieren
 
 **Problem.** Parallel im Einsatz:
 
@@ -653,6 +653,32 @@ Maven zieht, bekommt keine Styles und hat keine Möglichkeit, sie zu bekommen.
    Komponenten-CSS, was in Inline-Styles? Ohne Regel wandert das zurück.
 4. Demo-spezifisches CSS (`Showcase.css`, `Demo.css`) klar vom
    Bibliotheks-CSS trennen.
+
+**Ergebnis.** Entscheidung zu Schritt 1: Die Komponenten-CSS ist Teil der
+Bibliothek. Das Paket heißt jetzt `@anjunar/scalajs-jfx` (die eigene README
+dokumentierte diesen Namen schon, nur `package.json` hieß noch `scalajs-jfx2`),
+liegt unter `npm/scalajs-jfx/` und trägt die Version des Scala-Majors — npm-Major
+folgt Maven-Major. Die Repository-URLs zeigten auf ein `scalajs-jfx2`-Repo, das
+es nicht gibt; korrigiert. Der hartkodierte `version`-Export in `index.js` war
+schon von `package.json` abgedriftet (2.2.3 gegen 2.1.0) und ist ersatzlos raus.
+
+Inhaltlich: `form/SubForm.css` war ein globaler `fieldset`-Reset ohne Klasse und
+nirgends importiert — gelöscht, weil ein Bibliothekspaket keine nackten Elemente
+anfasst. `.material-icons` rendern drei Module selbst, gestylt war die Klasse
+aber nur im Demo-CSS; die Regel liegt jetzt in `base/Icons.css` im Paket, die
+Schriftdatei bleibt Sache der Anwendung (8,4 MB gehören nicht in ein CSS-Paket).
+`InputContainer.css` war doppelt importiert.
+
+Schritt 3 steht als Tabelle in `npm/scalajs-jfx/README.md`: wer besitzt Tokens,
+wer Komponentenregeln, wer Utilities, wer Anwendungs-CSS. P5-7 verweist darauf.
+Schritt 4: `style.css` ist nur noch die Importliste; die Regeln liegen nach
+Rolle in `theme.css` (Tokens), `base.css` (Element-Reset, Icon-Font) und
+`app/DemoShell.css` / `app/EditorDemo.css` (demo-eigen). Reine Umzüge — das
+gebaute CSS ist regelweise identisch geblieben.
+
+Offen bleibt Schritt 2, der Publish-Vorgang selbst: `npm publish` gehört nicht
+in einen Agentenlauf.
+
 
 **Fertig wenn.** Ein leeres Projekt kann `scalajs-jfx-core` + das npm-Paket
 installieren und bekommt korrekt gestylte Komponenten.

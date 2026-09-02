@@ -1,18 +1,18 @@
 {
-  "name": "@anjunar/scalajs-jfx2",
-  "version": "2.1.0",
-  "description": "NPM companion package for scalajs-jfx: the default JFX component CSS.",
+  "name": "@anjunar/scalajs-jfx",
+  "version": "3.0.0",
+  "description": "Default component CSS for the scalajs-jfx Scala.js modules.",
   "type": "module",
   "license": "MIT",
   "author": "Patrick Bittner",
-  "homepage": "https://github.com/anjunar/scalajs-jfx2#readme",
+  "homepage": "https://github.com/anjunar/scalajs-jfx#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/anjunar/scalajs-jfx2.git",
-    "directory": "npm/scalajs-jfx2"
+    "url": "git+https://github.com/anjunar/scalajs-jfx.git",
+    "directory": "npm/scalajs-jfx"
   },
   "bugs": {
-    "url": "https://github.com/anjunar/scalajs-jfx2/issues"
+    "url": "https://github.com/anjunar/scalajs-jfx/issues"
   },
   "publishConfig": {
     "access": "public",
@@ -34,10 +34,10 @@
     "index.js",
     "index.css",
     "action",
+    "base",
     "control",
     "form",
     "layout",
-    "material.ttf",
     "README.md"
   ],
   "peerDependencies": {
