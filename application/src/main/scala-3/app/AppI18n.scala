@@ -31,6 +31,7 @@ object AppI18n {
       RenderingPageTranslations.entries,
       StatePageTranslations.entries,
       FormsPageTranslations.entries,
+      ImageCropperPageTranslations.entries,
       TabsPageTranslations.entries,
       CarouselPageTranslations.entries,
       ComboBoxPageTranslations.entries,

@@ -65,6 +65,11 @@ object AppRoutes {
           FormsPage.render()
         })
       },
+      Route.view("/image-cropper") { _ =>
+        Future.successful(Route.component {
+          ImageCropperPage.render()
+        })
+      },
       Route.view("/tabs") { _ =>
         Future.successful(Route.component {
           TabsPage.render()

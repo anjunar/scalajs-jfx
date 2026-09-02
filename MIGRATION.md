@@ -116,7 +116,7 @@ JFX2-Funktionsumfang ab.
 - [x] `Formular`, `SubForm` und `ArrayForm` portieren
 - [x] `InputContainer` portieren
 - [x] `ComboBox` nach Abschluss der Tabellenbasis portieren
-- [ ] `ImageCropper` nach `Image` und Viewport-Integration portieren
+- [x] `ImageCropper` nach `Image` und Viewport-Integration portieren
 
 ### 3. Editor
 
@@ -142,7 +142,7 @@ Der Editor beginnt erst, wenn sein Forms-Control-Vertrag stabil ist.
 | `jfx-router` | portiert und von JFX2 fachlich weiterentwickelt |
 | `jfx-viewport` | portiert (`Viewport`, `Window`, `Notification`, `Overlay`) |
 | `jfx-i18n` | nach `jfx-core` integriert |
-| `jfx-forms` | Forms-Kern samt `ComboBox` portiert: typisierte Modellbindung, Editierbarkeit, Annotation-Validatoren, rekursive Fehlerzuordnung, `SubForm`, `ArrayForm` und `InputContainer`; `ImageCropper` wartet noch auf seine Viewport-Integration |
+| `jfx-forms` | vollstaendig portiert: typisierte Modellbindung, Editierbarkeit, Annotation-Validatoren, rekursive Fehlerzuordnung, `SubForm`, `ArrayForm`, `InputContainer`, `ComboBox` und `ImageCropper` mit Viewport-Crop-Dialog |
 | `jfx-controls` | Controls-Portierung abgeschlossen: Tabellenbasis, `DataGrid`, `VirtualListView`, `Tabs` und `Carousel` tragen lokale und entfernte Listen, variable beziehungsweise feste virtuelle Bereiche, Range-Prefetch, Crawl-State sowie kontextuelle Header-, Placeholder-, Tab-Panel- und Slide-Slots; `Link` ist in `Anchor` und `RouterLink` aufgeteilt, `Image` als natives Core-Layout portiert |
 | `jfx-editor` | noch offen |
 | `jfx-json` | portiert; neuer reflektionsbasierter Mapper mit getrennten Komponenten fuer Typmodell, Metadaten, Serialisierung und Deserialisierung |
@@ -311,6 +311,34 @@ URL-lose Variante ist fuer Browser-Sitzungen geeignet;
 ein zustandsloser Crawler ohne JavaScript- und Cookie-Fortschreibung kann damit
 nur den initialen Ausschnitt sehen und keine eindeutig adressierbaren
 Folgeseiten traversieren.
+
+### ImageCropper
+
+Der `ImageCropper` bleibt ein `Control[Media]` mit der kontextuellen DSL
+`imageCropper(name) { ... }`. Die bereits oeffentlichen JFX2-Domänentypen
+`Media` und `Thumbnail` liegen weiterhin unter `jfx.domain`; ihre UUIDs werden
+unter Scala.js ueber Web Crypto erzeugt, ohne die nicht linkbare
+`SecureRandom`-Implementierung vorauszusetzen. Placeholder, Editierbarkeit,
+Validatoren und Formularregistrierung verwenden denselben Vertrag wie die
+anderen JFX3-Controls.
+
+Der geschlossene, deterministische Komponentenbaum enthaelt Toolbar,
+Dateieingabe, Vorschau und Placeholder vollstaendig in `compose(cursor)`. Der
+Crop-Dialog wird als `Viewport.WindowConf` registriert und durch den normalen
+Viewport-`Foreach` gemountet. Canvas- und Window-Listener, laufende FileReader,
+Bild-Load-Handler sowie Animation Frames werden an den Lebenszyklus der
+jeweiligen Komponente gebunden. SSR rendert nur das geschlossene Control; der
+Dialog initialisiert Bild und Canvas ausschliesslich mit einem Browser-Cursor.
+
+JFX3 trennt das zugeschnittene Hauptbild und sein Thumbnail korrekt: Die
+`outputMaxWidth`-/`outputMaxHeight`-Grenzen bestimmen `Media.data`, während
+`thumbnailMaxWidth`/`thumbnailMaxHeight` eine zweite Canvas-Ausgabe fuer
+`Thumbnail.data` begrenzen. JFX2 hatte trotz beider Konfigurationen das
+Original als Hauptbild behalten und die Output-Ausgabe als Thumbnail
+verwendet; die Thumbnail-Grenzen blieben dadurch wirkungslos. Tests decken
+SSR-Struktur, reaktive Thumbnail-Vorschau, Readonly und Validierung,
+Viewport-Mounting, URL-/Data-URL-Konvertierung sowie seitenverhaeltnistreue
+Skalierung ab. Die Demo ist unter `/image-cropper` erreichbar.
 
 ### ComboBox
 
