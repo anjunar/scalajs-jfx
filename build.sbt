@@ -70,6 +70,12 @@ lazy val commonLibrarySettings = Seq(
   libraryDependencies += "org.scalatest" %%% "scalatest" % "3.2.19" % Test
 )
 
+// Publish-Regel: Ein publiziertes Modul darf nur auf publizierte Module und externe
+// Artefakte haengen. Sonst verweist der erzeugte POM auf ein Artefakt, das in Maven
+// Central nie existiert, und das Modul ist fuer externe Konsumenten unaufloesbar.
+// Publiziert: core, router, viewport, json, controls, forms, webauthn.
+// Nicht publiziert (`publish / skip := true`): editor, demo.
+
 lazy val jfxCore = Project(id = "scalajs-jfx-core", base = file("jfx-core"))
   .enablePlugins(ScalaJSPlugin)
   .settings(
@@ -116,8 +122,7 @@ lazy val jfxControls = Project(id = "scalajs-jfx-controls", base = file("jfx-con
   .dependsOn(jfxCore, jfxRouter, jfxViewport % "test->compile")
   .settings(
     name := "scalajs-jfx-controls",
-    moduleName := "scalajs-jfx-controls",
-    publish / skip := true
+    moduleName := "scalajs-jfx-controls"
   )
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
