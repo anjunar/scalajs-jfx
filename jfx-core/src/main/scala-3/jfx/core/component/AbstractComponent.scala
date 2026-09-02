@@ -22,6 +22,18 @@ abstract class AbstractComponent
   private[jfx] var _parent: Option[AbstractComponent] = None
   private[jfx] var _mountParentHost: Option[HostElement] = None
   private[jfx] var _contentCursor: Cursor = _
+  /**
+   * Die Kinder dieser Komponente.
+   *
+   * Eigentuemer ist [[jfx.core.component.Runtime]]: `mount` traegt ein --
+   * angehaengt oder an der uebergebenen Position --, `unmount` traegt aus.
+   * Container fuehren daneben keine zweite Liste, aus der sie diese
+   * rekonstruieren; genau das tat Foreach bis P4-3, und alles, was auf anderem
+   * Weg gemountet wurde, verschwand dabei stillschweigend.
+   *
+   * Einzige Ausnahme ist [[dispose]]: dort raeumt eine Komponente ihre eigene
+   * Liste ab, waehrend sie stirbt. Das ist kein Verwalten fremder Kinder.
+   */
   private[jfx] val _children                          = mutable.ArrayBuffer.empty[AbstractComponent]
   private[jfx] val disposables                        = new CompositeDisposable()
   private[jfx] val _contextValues                     = mutable.HashMap.empty[AnyRef, AnyRef]

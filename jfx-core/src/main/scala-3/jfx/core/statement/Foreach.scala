@@ -88,16 +88,17 @@ class Foreach[V](
     val safeIndex = index.max(0).min(mounted.length)
     val item      = new ForeachItem(value, safeIndex, build)
 
-    Runtime.mount(item, insertionCursorAt(safeIndex), Some(this))
+    // Die Position geht an Runtime, statt die Kinderliste hinterher zu
+    // korrigieren. Siehe CHANGE.md P4-3.
+    Runtime.mount(item, insertionCursorAt(safeIndex), Some(this), Some(safeIndex))
     mounted.insert(safeIndex, item)
-    syncChildOrder()
   }
 
   private def unmountAt(index: Int): Unit =
     if (index >= 0 && index < mounted.length) {
       val item = mounted.remove(index)
+      // Runtime.unmount traegt das Kind selbst aus der Kinderliste aus.
       Runtime.unmount(item)
-      syncChildOrder()
     } else {
       resetAll()
     }
@@ -112,12 +113,6 @@ class Foreach[V](
   private def clearMounted(): Unit = {
     mounted.toVector.foreach(Runtime.unmount)
     mounted.clear()
-    syncChildOrder()
-  }
-
-  private def syncChildOrder(): Unit = {
-    _children.clear()
-    _children ++= mounted
   }
 
   private def insertionCursorAt(index: Int): Cursor =

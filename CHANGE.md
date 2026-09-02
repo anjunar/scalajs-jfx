@@ -567,7 +567,7 @@ Das trifft genau die Listen, die durch Phase 3 groß werden sollen.
 
 ---
 
-### [ ] P4-3 · Doppelte Kind-Buchführung in `Foreach`
+### [x] P4-3 · Doppelte Kind-Buchführung in `Foreach`
 
 **Problem.** `Runtime.mountWithCursor` trägt das Kind bereits via
 `parent._children += component` ein. `Foreach.mountAt` ruft danach
