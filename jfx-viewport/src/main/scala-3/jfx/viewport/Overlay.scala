@@ -1,4 +1,4 @@
-package jfx.layout
+package jfx.viewport
 
 import jfx.core.component.{AbstractComponent, AbstractCustomComponent, Runtime}
 import jfx.core.dsl.ClassDsl.addClass
@@ -9,7 +9,7 @@ import jfx.core.render.{Cursor, DomHostElement}
 import jfx.core.state.{Disposable, Property, ReadOnlyProperty}
 import org.scalajs.dom
 
-final class Overlay private[layout] (conf: Viewport.OverlayConf) extends AbstractComponent {
+final class Overlay private[viewport] (conf: Viewport.OverlayConf) extends AbstractComponent {
   override val tagName: String = "div"
 
   def effectiveWidthProperty: ReadOnlyProperty[Double] = conf.effectiveWidthProperty
@@ -121,7 +121,7 @@ object Overlay {
   def effectiveWidth(using overlay: Overlay): ReadOnlyProperty[Double] =
     overlay.effectiveWidthProperty
 
-  private[layout] def render(conf: Viewport.OverlayConf)(using
+  private[viewport] def render(conf: Viewport.OverlayConf)(using
       AbstractComponent,
       Cursor
   ): Overlay =

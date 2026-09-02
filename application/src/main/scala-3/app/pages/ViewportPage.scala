@@ -11,8 +11,8 @@ import jfx.core.layout.TextComponent.text
 import jfx.core.layout.VBox.vbox
 import jfx.core.render.Cursor
 import jfx.i18n.{I18nRuntime, i18n}
-import jfx.layout.Viewport
-import jfx.layout.Viewport.NotificationKind
+import jfx.viewport.Viewport
+import jfx.viewport.Viewport.NotificationKind
 
 object ViewportPage {
   def render()(using AbstractComponent, Cursor): Unit = {

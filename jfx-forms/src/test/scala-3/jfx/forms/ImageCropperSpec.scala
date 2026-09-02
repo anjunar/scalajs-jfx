@@ -5,8 +5,8 @@ import jfx.core.dsl.DslLayer.render
 import jfx.core.render.{Cursor, SsrCursor}
 import jfx.core.state.Property
 import jfx.forms.ImageCropper.*
-import jfx.layout.Viewport
-import jfx.layout.Viewport.viewport
+import jfx.viewport.Viewport
+import jfx.viewport.Viewport.viewport
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 

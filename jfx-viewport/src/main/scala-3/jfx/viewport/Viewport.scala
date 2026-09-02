@@ -1,4 +1,4 @@
-package jfx.layout
+package jfx.viewport
 
 import jfx.core.component.{AbstractComponent, Runtime}
 import jfx.core.dsl.ClassDsl.classes

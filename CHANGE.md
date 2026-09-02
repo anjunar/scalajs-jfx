@@ -164,7 +164,7 @@ Konsumenten von `scalajs-jfx-core` an ein Datenmodell, das ihn nichts angeht.
 
 ---
 
-### [ ] P1-3 · Zwei „layout"-Pakete vereinheitlichen
+### [x] P1-3 · Zwei „layout"-Pakete vereinheitlichen
 
 **Problem.** `jfx-core` nutzt `jfx.core.layout` (Div, HBox, VBox, Drawer,
 Button …), `jfx-viewport` nutzt `jfx.layout` (Viewport, Window, Overlay,
@@ -214,6 +214,25 @@ Tabelle darf nicht wissen, dass es Routing gibt.
 
 **Fertig wenn.** `grep -rn "jfx.router" jfx-controls/src/main` ist leer und
 `build.sbt` kennt keine Kante `jfxControls → jfxRouter` mehr.
+
+---
+
+### [ ] P1-5 · `jfx.i18n` unter die Modulwurzel ziehen
+
+**Gefunden bei P1-3.** Die dort festgelegte Regel — Paketwurzel = Modulname —
+gilt auch für `jfx.i18n`: das Paket liegt in `jfx-core`, aber aus dem Import
+`import jfx.i18n.*` ist das Modul nicht ablesbar. Derselbe Befund wie bei
+`jfx.layout`, nur im Kernmodul und deshalb bei der Durchsicht durchgerutscht.
+
+**Dateien.** `jfx-core/src/main/scala-3/jfx/i18n/**` (I18nInterpolator,
+I18nModel, I18nUrlResolver), `jfx-core/src/test/scala-3/jfx/i18n/I18nSpec.scala`,
+plus 55 importierende Dateien in allen Modulen.
+
+**Schritte.**
+1. `jfx.i18n` → `jfx.core.i18n`.
+2. Importe nachziehen, `private[i18n]`-Qualifier prüfen.
+
+**Fertig wenn.** `jfx-core` hat genau eine Paketwurzel: `jfx.core`.
 
 ---
 

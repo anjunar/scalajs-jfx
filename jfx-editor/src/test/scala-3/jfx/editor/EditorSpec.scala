@@ -6,8 +6,8 @@ import jfx.core.render.{Cursor, SsrCursor}
 import jfx.editor.Editor.*
 import jfx.editor.plugins.*
 import jfx.forms.{Control, Form, FormController}
-import jfx.layout.Viewport
-import jfx.layout.Viewport.viewport
+import jfx.viewport.Viewport
+import jfx.viewport.Viewport.viewport
 import org.scalajs.dom.HTMLElement
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers

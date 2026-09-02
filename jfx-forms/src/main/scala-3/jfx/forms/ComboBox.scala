@@ -16,8 +16,8 @@ import jfx.core.render.Cursor
 import jfx.core.state.{ListProperty, Property, ReadOnlyProperty}
 import jfx.core.statement.Foreach.foreach
 import jfx.forms.Form.FormContext
-import jfx.layout.Overlay
-import jfx.layout.Overlay.*
+import jfx.viewport.Overlay
+import jfx.viewport.Overlay.*
 import org.scalajs.dom
 
 final class ComboBox[T] private (

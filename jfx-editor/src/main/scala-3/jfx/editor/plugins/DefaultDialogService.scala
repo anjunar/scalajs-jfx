@@ -10,7 +10,7 @@ import jfx.core.layout.Div
 import jfx.core.layout.Div.div
 import jfx.core.render.{Cursor, DomHostElement}
 import jfx.core.state.Disposable
-import jfx.layout.Viewport
+import jfx.viewport.Viewport
 import lexical.DialogService
 import org.scalajs.dom.HTMLElement
 

@@ -15,7 +15,7 @@ import jfx.core.render.{Cursor, DomHostElement}
 import jfx.core.state.{CompositeDisposable, Disposable, ListProperty, Property, ReadOnlyProperty}
 import jfx.core.text.TextValue
 import jfx.forms.Form.FormContext
-import jfx.layout.Viewport
+import jfx.viewport.Viewport
 import org.scalajs.dom
 import org.scalajs.dom.{
   CanvasRenderingContext2D,
