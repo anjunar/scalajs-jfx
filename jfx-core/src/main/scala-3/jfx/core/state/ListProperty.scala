@@ -454,7 +454,5 @@ object ListProperty {
   private def encodeURIComponent(value: String): String =
     js.URIUtils.encodeURIComponent(value)
 
-  private[state] def alreadyLoadingFailure: IllegalStateException =
-    IllegalStateException("A remote load is already in progress for this ListProperty")
 
 }

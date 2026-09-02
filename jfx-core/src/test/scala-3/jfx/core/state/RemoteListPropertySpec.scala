@@ -10,8 +10,9 @@ import org.scalatest.matchers.should.Matchers
 
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+import scala.concurrent.{Future, Promise}
 import scala.scalajs.js
+import scala.util.{Failure, Success}
 
 class RemoteListPropertySpec extends AnyFlatSpec with Matchers {
 
@@ -152,6 +153,138 @@ class RemoteListPropertySpec extends AnyFlatSpec with Matchers {
 
     info(f"100 Einzel-Removes auf 10 000 Eintraegen: $elapsedMillis%.1f ms")
     elapsedMillis should be < 250.0
+  }
+
+  "Parallel loading" should "deduplicate identical in-flight requests instead of rejecting them" in {
+    val controllable = new ControllableLoader(total = 1000)
+    val remote       = remoteWith(controllable)
+
+    val first  = remote.ensureRangeLoaded(100, 110)
+    val second = remote.ensureRangeLoaded(100, 110)
+
+    // Eine einzige Anfrage am Loader, beide Aufrufer teilen sich das Future.
+    controllable.requestCount shouldBe 1
+    first should be theSameInstanceAs second
+
+    controllable.completeAll()
+    remote.isRangeLoaded(100, 110) shouldBe true
+  }
+
+  it should "load non-overlapping ranges in parallel instead of rejecting the second" in {
+    val controllable = new ControllableLoader(total = 1000)
+    val remote       = remoteWith(controllable)
+
+    val rejected = collectRejections(remote.ensureRangeLoaded(100, 110))
+    val second   = collectRejections(remote.ensureRangeLoaded(200, 210))
+    val third    = collectRejections(remote.ensureRangeLoaded(300, 310))
+
+    controllable.requestCount shouldBe 3
+    remote.loadingProperty.get shouldBe true
+
+    controllable.completeAll()
+
+    // Kein einziger abgelehnter Vorgang -- vorher lehnte der globale Lock die
+    // zweite und dritte Anfrage ab, und niemand behandelte die Rejection.
+    Seq(rejected, second, third).flatMap(_.future.value.toSeq.flatMap(_.get)) shouldBe empty
+    remote.isRangeLoaded(100, 110) shouldBe true
+    remote.isRangeLoaded(200, 210) shouldBe true
+    remote.isRangeLoaded(300, 310) shouldBe true
+    remote.loadingProperty.get shouldBe false
+  }
+
+  it should "derive loadingProperty from the pending requests" in {
+    val controllable = new ControllableLoader(total = 1000)
+    val remote       = remoteWith(controllable)
+
+    remote.loadingProperty.get shouldBe false
+    remote.ensureRangeLoaded(100, 110)
+    remote.loadingProperty.get shouldBe true
+    remote.ensureRangeLoaded(200, 210)
+    remote.loadingProperty.get shouldBe true
+
+    controllable.completeNext()
+    remote.loadingProperty.get shouldBe true
+
+    controllable.completeNext()
+    remote.loadingProperty.get shouldBe false
+  }
+
+  it should "not let a stale range load overwrite data loaded after a reload" in {
+    val controllable = new ControllableLoader(total = 1000)
+    val remote       = remoteWith(controllable)
+
+    // Alter Bereichs-Load geht raus, bleibt aber unterwegs.
+    remote.ensureRangeLoaded(100, 110)
+    controllable.requestCount shouldBe 1
+
+    // Danach ein Neuladen, das zuerst zurueckkommt. Die Abfrage steht hier
+    // explizit, weil ensureRangeLoaded queryProperty ueberschreibt -- siehe P2-6.
+    remote.reload(PageQuery(0, 10))
+    controllable.completeLast()
+    val afterReload = remote.get.toSeq
+
+    // Jetzt trifft die veraltete Antwort ein. Sie darf nichts mehr aendern.
+    controllable.completeAll()
+    remote.get.toSeq shouldBe afterReload
+    remote.isRangeLoaded(100, 110) shouldBe false
+  }
+
+  private def collectRejections(result: Future[?]): Promise[Seq[Throwable]] = {
+    val collected = Promise[Seq[Throwable]]()
+    result.onComplete {
+      case Failure(error) => collected.success(Seq(error))
+      case Success(_)     => collected.success(Seq.empty)
+    }
+    collected
+  }
+
+  private def remoteWith(loader: ControllableLoader): RemoteListProperty[String, PageQuery] =
+    ListProperty.remote[String, PageQuery](
+      loader = loader,
+      initialQuery = PageQuery(0, 10),
+      executionContext = ExecutionContext.parasitic,
+      rangeQueryUpdater = Some((query, index, limit) => query.copy(index = index, limit = limit))
+    )
+
+  /** Loader, der Antworten erst auf Zuruf liefert -- so lassen sich mehrere
+    * gleichzeitig laufende Anfragen ueberhaupt beobachten. */
+  private final class ControllableLoader(total: Int)
+      extends ListProperty.RemoteLoader[String, PageQuery] {
+
+    private val pending =
+      mutable.ArrayBuffer.empty[(PageQuery, Promise[ListProperty.RemotePage[String, PageQuery]])]
+
+    var requestCount: Int = 0
+
+    override def load(
+        query: PageQuery
+    ): Future[ListProperty.RemotePage[String, PageQuery]] = {
+      requestCount += 1
+      val promise = Promise[ListProperty.RemotePage[String, PageQuery]]()
+      pending += (query -> promise)
+      promise.future
+    }
+
+    def completeNext(): Unit = complete(0)
+
+    def completeLast(): Unit = complete(pending.length - 1)
+
+    def completeAll(): Unit = while (pending.nonEmpty) complete(0)
+
+    private def complete(position: Int): Unit = {
+      val (query, promise) = pending.remove(position)
+      val from             = math.max(0, query.index)
+      val to               = math.min(total, from + query.limit)
+      promise.success(
+        ListProperty.RemotePage[String, PageQuery](
+          items = (from until to).map(index => s"Member $index"),
+          offset = Some(from),
+          nextQuery = Option.when(to < total)(PageQuery(to, query.limit)),
+          totalCount = Some(total),
+          hasMore = Some(to < total)
+        )
+      )
+    }
   }
 
   private def recordChanges(

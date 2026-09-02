@@ -1,9 +1,10 @@
 package jfx.core.state
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.collection.mutable
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.*
-import scala.util.control.NonFatal
+import scala.util.{Failure, Success}
 
 final class RemoteListProperty[V, Query](
     val loader: ListProperty.RemoteLoader[V, Query],
@@ -21,6 +22,17 @@ final class RemoteListProperty[V, Query](
   private val loadedRanges = new LoadedRanges[V]
   if (underlying.length > 0) loadedRanges.put(0, underlying.toSeq)
   private var applyingRemotePage = false
+
+  // Ein Lade-Vorgang pro Anfrage statt eines globalen Locks. Ueberlappende
+  // Anfragen werden dedupliziert, nicht abgewiesen. Siehe loadQuery.
+  private val pendingLoads = mutable.Map.empty[LoadKey, Future[js.Array[V]]]
+
+  // Generationszaehler, analog zum renderToken im Router: ein Neuladen macht
+  // alles ungueltig, was davor losgeschickt wurde. Kommt eine alte Antwort
+  // danach zurueck, wird sie verworfen statt neuere Daten zu ueberschreiben.
+  private var loadGeneration = 0
+
+  private final case class LoadKey(query: Query, replaceExisting: Boolean)
 
   val queryProperty: Property[Query]                             = Property(initialQuery)
   val sortingProperty: Property[Vector[ListProperty.RemoteSort]] = Property(Vector.empty)
@@ -165,32 +177,71 @@ final class RemoteListProperty[V, Query](
       expectedOffset = if (append) Some(length) else Some(0)
     )
 
+  /**
+   * Startet eine Anfrage oder haengt sich an eine gleichlautende laufende an.
+   *
+   * Vorher stand hier ein globaler Lade-Lock: lief irgendein Laden, wurde jede
+   * weitere Anfrage mit einem abgelehnten Promise beantwortet. VirtualListView
+   * und DataGrid prefetchen mehrere Bereiche gleichzeitig, im Normalbetrieb
+   * entstanden dadurch beim Scrollen abgelehnte Promises, die niemand behandelt
+   * hat.
+   *
+   * Jetzt gilt: ein laufender Vorgang pro Anfrage. Gleiche Anfragen werden
+   * dedupliziert und teilen sich ein Future, verschiedene laufen parallel.
+   */
   private def loadQuery(
       query: Query,
       replaceExisting: Boolean,
       expectedOffset: Option[Int]
-  ): Future[js.Array[V]] =
-    if (loadingProperty.get) {
-      Future.failed(ListProperty.alreadyLoadingFailure)
-    } else {
-      queryProperty.set(query)
-      loadingProperty.set(true)
-      errorProperty.set(None)
-
-      loader
-        .load(query)
-        .map { page =>
-          applyPage(page, replaceExisting, expectedOffset)
-          get
-        }
-        .recoverWith { case NonFatal(error) =>
-          errorProperty.set(Some(error))
-          Future.failed(error)
-        }
-        .andThen { case _ =>
-          loadingProperty.set(false)
-        }
+  ): Future[js.Array[V]] = {
+    if (replaceExisting) {
+      // Ein echtes Neuladen macht alles ungueltig, was vorher losgeschickt wurde.
+      loadGeneration += 1
+      pendingLoads.clear()
     }
+
+    val key = LoadKey(query, replaceExisting)
+
+    pendingLoads.get(key) match {
+      case Some(inFlight) => inFlight
+      case None           =>
+        val startedGeneration = loadGeneration
+        val completion        = Promise[js.Array[V]]()
+
+        queryProperty.set(query)
+        errorProperty.set(None)
+
+        // Der Eintrag muss vor dem Start stehen: mit einem synchron
+        // erfuellten Future liefe onComplete sonst vor der Registrierung und
+        // der Schluessel bliebe fuer immer in der Map.
+        pendingLoads.update(key, completion.future)
+        refreshLoadingState()
+
+        loader.load(query).onComplete { result =>
+          pendingLoads.remove(key)
+          refreshLoadingState()
+
+          val isCurrent = startedGeneration == loadGeneration
+
+          result match {
+            case Success(page) =>
+              if (isCurrent) applyPage(page, replaceExisting, expectedOffset)
+              completion.success(get)
+            case Failure(error) =>
+              if (isCurrent) errorProperty.set(Some(error))
+              completion.failure(error)
+          }
+        }
+
+        completion.future
+    }
+  }
+
+  /**
+   * loadingProperty ist abgeleiteter Zustand fuer die UI, nicht mehr die Sperre.
+   */
+  private def refreshLoadingState(): Unit =
+    loadingProperty.set(pendingLoads.nonEmpty)
 
   private def applyPage(
       page: ListProperty.RemotePage[V, Query],

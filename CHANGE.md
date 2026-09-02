@@ -324,7 +324,7 @@ läuft in vertretbarer Zeit; kein `sortBy` mehr auf dem Mutationspfad.
 
 ---
 
-### [ ] P2-4 · `RemoteListProperty`: paralleles Laden statt globalem Lock
+### [x] P2-4 · `RemoteListProperty`: paralleles Laden statt globalem Lock
 
 **Problem.** `loadQuery` prüft `if (loadingProperty.get)` und lehnt sonst mit
 `js.Promise.reject(alreadyLoadingFailure)` ab. Ein einziger globaler Lade-Lock
@@ -372,6 +372,36 @@ Sortier- und Query-Semantik sitzt damit im Fundament neben `Property` und
    Spezielle und sollte verschwinden.
 
 **Fertig wenn.** `ListProperty` kennt keinen Remote-Begriff mehr.
+
+---
+
+### [ ] P2-6 · `queryProperty` wird von Bereichs-Ladevorgängen überschrieben
+
+**Gefunden bei P2-4.** `loadQuery` setzt `queryProperty` auf die Abfrage, die es
+gerade lädt — auch bei `ensureRangeLoaded`. Nach einem Bereichs-Ladevorgang
+steht dort also die Bereichs-Abfrage, und ein anschließendes `reload()` ohne
+Argument lädt diesen Bereich neu, als wäre er die ganze Liste:
+
+```scala
+remote.ensureRangeLoaded(100, 110)  // queryProperty = PageQuery(100, 10)
+remote.reload()                     // laedt PageQuery(100, 10) mit replaceExisting
+```
+
+Vorher fiel das kaum auf, weil der globale Lock ohnehin nur einen Ladevorgang
+zuließ. Seit P2-4 laufen mehrere Bereiche parallel — welche Abfrage am Ende in
+`queryProperty` steht, hängt jetzt von der Reihenfolge ab.
+
+**Dateien.** `jfx-core/src/main/scala-3/jfx/core/state/RemoteListProperty.scala`
+
+**Schritte.**
+1. Klären, was `queryProperty` bedeuten soll: die *Basis*-Abfrage der Liste
+   (Filter, Sortierung) oder die zuletzt ausgeführte Abfrage.
+2. Vermutlich Ersteres. Dann darf `ensureRangeLoaded` sie nicht überschreiben —
+   die Bereichs-Abfrage ist eine abgeleitete Größe, kein neuer Zustand.
+3. `loadMore` prüfen: `nextQueryProperty` verhält sich vermutlich gleich.
+
+**Fertig wenn.** `ensureRangeLoaded` gefolgt von `reload()` lädt dieselbe Liste
+wie `reload()` allein. Ein Test belegt das.
 
 ---
 

@@ -49,7 +49,6 @@ final class DataGrid[T] private (
   private val itemStateRevisionProperty   = Property(0)
   private val remoteStateRevisionProperty = Property(0)
   private val headerHeightProperty        = Property(0.0)
-  private val pendingRangeLoads           = mutable.Set.empty[(Int, Int)]
 
   private var lastVisibleCells                               = Vector.empty[DataGrid.VisibleCell[T]]
   private var cellRendererBody: Option[DataGrid.Renderer[T]] = None
@@ -309,7 +308,6 @@ final class DataGrid[T] private (
   private def rewireItemsObserver(): Unit = {
     itemsObserver.dispose()
     remoteItemsObserver.dispose()
-    pendingRangeLoads.clear()
     bumpRemoteState()
 
     itemsObserver = items.observeChanges(_ => refreshItemState())
@@ -419,16 +417,11 @@ final class DataGrid[T] private (
           total,
           math.max(pageFrom + 1, ((requestTo + pageSize - 1) / pageSize) * pageSize)
         )
-        val key = pageFrom -> pageTo
-
-        if (
-          pageTo > pageFrom && !remote.isRangeLoaded(pageFrom, pageTo) && !pendingRangeLoads
-            .contains(key)
-        ) {
-          pendingRangeLoads += key
-          remote
-            .ensureRangeLoaded(pageFrom, pageTo)
-            .onComplete(_ => pendingRangeLoads -= key)
+        // Deduplizierung liegt in RemoteListProperty: gleichlautende Anfragen
+        // teilen sich dort ein Future. Das Control muss darueber nicht Buch
+        // fuehren.
+        if (pageTo > pageFrom && !remote.isRangeLoaded(pageFrom, pageTo)) {
+          discardResult(remote.ensureRangeLoaded(pageFrom, pageTo))
         }
       case remote if remote.hasMoreProperty.get || remote.nextQueryProperty.get.nonEmpty =>
         val threshold = math.max(1, prefetchItemsProperty.get / 2)

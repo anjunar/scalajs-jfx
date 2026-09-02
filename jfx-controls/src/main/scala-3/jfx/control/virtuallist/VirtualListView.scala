@@ -44,7 +44,6 @@ final class VirtualListView[T] private (
   private val itemStateRevisionProperty   = Property(0)
   private val remoteStateRevisionProperty = Property(0)
   private val headerHeightProperty        = Property(0.0)
-  private val pendingRangeLoads           = mutable.Set.empty[(Int, Int)]
   private val heights                     = mutable.ArrayBuffer.empty[Double]
   private val prefix                      = mutable.ArrayBuffer(0.0)
 
@@ -252,7 +251,6 @@ final class VirtualListView[T] private (
   private def rewireItemsObserver(): Unit = {
     itemsObserver.dispose()
     remoteItemsObserver.dispose()
-    pendingRangeLoads.clear()
     bumpRemoteState()
 
     val remote = currentRemoteItems
@@ -400,14 +398,11 @@ final class VirtualListView[T] private (
           total,
           math.max(pageFrom + 1, ((requestTo + pageSize - 1) / pageSize) * pageSize)
         )
-        val key = pageFrom -> pageTo
-
-        if (
-          pageTo > pageFrom && !remote.isRangeLoaded(pageFrom, pageTo) &&
-          !pendingRangeLoads.contains(key)
-        ) {
-          pendingRangeLoads += key
-          remote.ensureRangeLoaded(pageFrom, pageTo).onComplete(_ => pendingRangeLoads -= key)
+        // Deduplizierung liegt in RemoteListProperty: gleichlautende Anfragen
+        // teilen sich dort ein Future. Das Control muss darueber nicht Buch
+        // fuehren.
+        if (pageTo > pageFrom && !remote.isRangeLoaded(pageFrom, pageTo)) {
+          discardResult(remote.ensureRangeLoaded(pageFrom, pageTo))
         }
       case remote if canStillGrow =>
         val threshold = math.max(1, prefetchItemsProperty.get / 2)
@@ -455,7 +450,6 @@ final class VirtualListView[T] private (
     prefixDirtyFrom = Int.MaxValue
     tailPaddingItems = defaultTailPadding
     lastVisibleSlots = Vector.empty
-    pendingRangeLoads.clear()
   }
 
   private def ensureHeightsSize(size: Int): Unit =
