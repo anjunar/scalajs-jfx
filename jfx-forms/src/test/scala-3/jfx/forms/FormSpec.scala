@@ -103,11 +103,12 @@ class FormSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "connect InputContainer labels, state classes, and validation messages" in {
-    var container: jfx.core.layout.Div = null
+    var container: InputContainer = null
     var nameInput: Input = null
+    val label = Property("Name")
 
     val root = mount {
-      container = inputContainer("Name") {
+      container = inputContainer(label) {
         nameInput = input("name", standalone = true) {
           summon[Input].validators += NotBlankValidator("Required")
         }
@@ -122,6 +123,10 @@ class FormSpec extends AnyFlatSpec with Matchers {
 
     nameInput.valueProperty.set("Ada")
     container.host.attribute("class").getOrElse("") should not include "empty"
+
+    label.set("Display name")
+    nameInput.host.attribute("placeholder") shouldBe Some("Display name")
+    descendantText(container) should contain("Display name")
 
     Runtime.unmount(root)
   }

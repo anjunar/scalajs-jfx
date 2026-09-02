@@ -1,26 +1,33 @@
 package jfx.forms
 
 import jfx.core.component.AbstractComponent
+import jfx.core.dsl.DslLayer
+import jfx.core.dsl.DslLayer.render
 import jfx.core.layout.Div
 import jfx.core.layout.Div.div
 import jfx.core.layout.TextComponent.text
 import jfx.core.render.Cursor
+import jfx.core.state.{Property, ReadOnlyProperty}
 import jfx.core.text.TextValue
 
 import scala.scalajs.js
 
-object InputContainer {
+final class InputContainer(body: => (AbstractComponent ?=> Cursor ?=> Unit))
+    extends AbstractComponent {
 
-  def inputContainer[T](label: T)(body: => (AbstractComponent ?=> Cursor ?=> Unit))(using
-      textValue: TextValue[T],
-      parent: AbstractComponent,
-      cursor: Cursor
-  ): Div = {
-    val labelProperty = textValue.asReadOnlyProperty(label)
+  override val tagName: String = "div"
 
-    div {
-      val container = summon[Div]
-      container.addClass("jfx-input-container")
+  private val labelProperty = Property("")
+
+  def label(value: String): Unit =
+    labelProperty.set(Option(value).getOrElse(""))
+
+  def label(value: ReadOnlyProperty[String]): Unit =
+    addDisposable(value.observe(labelProperty.set))
+
+  override def compose(cursor: Cursor): Unit =
+    render(this, cursor) {
+      addClass("jfx-input-container")
 
       val labelHost = div {
         summon[Div].addClass("jfx-input-container__label")
@@ -47,11 +54,11 @@ object InputContainer {
       collectControls(controlHost).headOption.foreach { control =>
         control match {
           case placeholder: Placeholder =>
-            container.addDisposable(labelProperty.observe(placeholder.placeholder))
+            addDisposable(labelProperty.observe(placeholder.placeholder))
           case _ => ()
         }
 
-        container.classCondition("empty", control.value.map(isEmpty))
+        classCondition("empty", control.value.map(isEmpty))
         labelHost.classCondition("focus", control.focusedProperty)
         divider.classCondition("focus", control.focusedProperty)
         labelHost.classCondition("dirty", control.dirtyProperty)
@@ -59,12 +66,11 @@ object InputContainer {
         labelHost.classCondition("invalid", control.invalidProperty)
         divider.classCondition("invalid", control.invalidProperty)
 
-        jfx.core.dsl.DslLayer.renderInto(errorsHost) {
+        DslLayer.renderInto(errorsHost) {
           text(control.errors.map((values: js.Array[String]) => values.mkString(", "))) {}
         }
       }
     }
-  }
 
   private def collectControls(component: AbstractComponent): Seq[Control[?]] =
     component.children.flatMap {
@@ -74,10 +80,38 @@ object InputContainer {
 
   private def isEmpty(value: Any): Boolean =
     value match {
-      case null                  => true
-      case text: String          => text.trim.isEmpty
-      case values: js.Array[?]   => values.isEmpty
-      case values: Iterable[?]   => values.isEmpty
-      case _                     => false
+      case null                => true
+      case text: String        => text.trim.isEmpty
+      case values: js.Array[?] => values.isEmpty
+      case values: Iterable[?] => values.isEmpty
+      case _                   => false
     }
+}
+
+object InputContainer {
+
+  def inputContainer[T](label: T)(body: => (AbstractComponent ?=> Cursor ?=> Unit))(using
+      textValue: TextValue[T],
+      parent: AbstractComponent,
+      cursor: Cursor
+  ): InputContainer = {
+    val container = new InputContainer(body)
+
+    DslLayer.child(container) {
+      label_=(label)(using container, textValue, container)
+    }
+  }
+
+  def label_=(value: String)(using container: InputContainer): Unit =
+    container.label(value)
+
+  def label_=(value: ReadOnlyProperty[String])(using container: InputContainer): Unit =
+    container.label(value)
+
+  def label_=[T](value: T)(using
+      container: InputContainer,
+      textValue: TextValue[T],
+      component: AbstractComponent
+  ): Unit =
+    container.label(textValue.asReadOnlyProperty(value))
 }
