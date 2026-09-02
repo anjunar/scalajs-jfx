@@ -82,11 +82,20 @@
     pointer-events: auto;
 }
 
-.jfx-viewport-notification {
+.jfx-viewport-notification-host {
     position: fixed;
     top: 64px;
     right: 12px;
     z-index: 100000;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.jfx-viewport-notification {
+    pointer-events: auto;
     min-width: 240px;
     max-width: 420px;
     padding: 10px 12px;

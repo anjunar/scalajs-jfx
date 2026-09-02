@@ -49,8 +49,12 @@ final class Viewport extends AbstractComponent {
         Overlay.render(conf)
       }
 
-      Foreach.foreach(notifications) { conf =>
-        Notification.notification(conf)
+      div {
+        classes = Seq("jfx-viewport-notification-host")
+
+        Foreach.foreach(notifications) { conf =>
+          Notification.notification(conf)
+        }
       }
     }
   }
@@ -60,11 +64,7 @@ final class Viewport extends AbstractComponent {
       kind: Viewport.NotificationKind,
       durationMs: Int
   ): Viewport.NotificationConf = {
-    val conf =
-      new Viewport.NotificationConf(
-        kind = kind,
-        topPx = 64.0 + notifications.length * 72.0
-      )
+    val conf = new Viewport.NotificationConf(kind = kind)
 
     attach(conf, "notification")
     conf.message = message
@@ -250,8 +250,7 @@ object Viewport {
   }
 
   final class NotificationConf(
-      val kind: NotificationKind = NotificationKind.Info,
-      val topPx: Double
+      val kind: NotificationKind = NotificationKind.Info
   ) extends OwnedConf {
     val messageProperty: Property[String]  = Property("")
     val visible: Property[Boolean]         = Property(true)

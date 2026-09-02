@@ -60,6 +60,29 @@ class ViewportStateSpec extends AnyFlatSpec with Matchers {
     Runtime.unmount(rootB)
   }
 
+  it should "stack later notifications structurally after an earlier one is removed" in {
+    val cursor                 = new SsrCursor()
+    var viewport: Viewport     = null
+    val root                   = Runtime.mount(new ViewportRoot(value => viewport = value), cursor)
+    val first                  = Viewport.notify("A", durationMs = 60000)(using viewport)
+    val second                 = Viewport.notify("B", durationMs = 60000)(using viewport)
+    val third                  = Viewport.notify("C", durationMs = 60000)(using viewport)
+
+    viewport.notifications.remove(0) shouldBe first
+    first.detachFrom(viewport)
+    val fourth = Viewport.notify("D", durationMs = 60000)(using viewport)
+
+    viewport.notifications.toSeq shouldBe Seq(second, third, fourth)
+
+    val html = cursor.collectHtml()
+    html should include("jfx-viewport-notification-host")
+    html should not include "top:"
+    html.indexOf("B") should be < html.indexOf("C")
+    html.indexOf("C") should be < html.indexOf("D")
+
+    Runtime.unmount(root)
+  }
+
   private final class ViewportRoot(capture: Viewport => Unit) extends AbstractComponent {
     override val tagName: String = "main"
 
