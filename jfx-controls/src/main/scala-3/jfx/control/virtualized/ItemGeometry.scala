@@ -147,19 +147,22 @@ final class GridGeometry(
 /**
  * Gemessene Hoehen, eine Spalte -- das Modell von VirtualListView.
  *
- * Traegt die gemessenen Hoehen und deren Praefixsummen. Solange eine Zeile nicht
- * gemessen wurde, gilt die Schaetzung; `prefixDirtyFrom` merkt sich, ab wo die
- * Summen neu gebildet werden muessen, damit eine Messung nicht die ganze Liste
+ * Traegt die gemessenen Hoehen und deren Praefixsummen. Was noch nicht gemessen
+ * wurde, gilt mit der Schaetzung; `prefixDirtyFrom` merkt sich, ab wo die Summen
+ * neu gebildet werden muessen, damit eine einzelne Messung nicht die ganze Liste
  * neu berechnet.
  *
- * Der Ueberhang ist in Pixeln angegeben, nicht in Zeilen -- bei variablen Hoehen
+ * Ueber den gemessenen Bereich hinaus wird mit der Schaetzung extrapoliert --
+ * `renderableCount` darf groesser sein als die Zahl gemessener Zeilen, etwa
+ * durch die Tail-Padding-Reserve beim Nachladen.
+ *
+ * Der Ueberhang ist in Pixeln angegeben, nicht in Zeilen: bei variablen Hoehen
  * ist eine Zeilenzahl keine sinnvolle Groesse.
  */
 final class MeasuredRowGeometry(
     estimateHeight: () => Double,
     headerHeightValue: () => Double,
-    overscanPx: () => Double,
-    maxSlots: Double => Int
+    overscanPx: () => Double
 ) extends ItemGeometry {
 
   private val heights = scala.collection.mutable.ArrayBuffer.empty[Double]
@@ -167,44 +170,48 @@ final class MeasuredRowGeometry(
 
   private var prefixDirtyFrom = Int.MaxValue
 
-  private def estimate: Double = math.max(1.0, estimateHeight())
+  private def estimate: Double = estimateHeight()
 
   override def headerOffset: Double = headerHeightValue()
 
-  def size: Int = heights.length
+  def measuredCount: Int = heights.length
 
-  def ensureSize(total: Int): Unit = {
-    while (heights.length < total) {
+  def ensureSize(size: Int): Unit =
+    while (heights.length < size) {
       heights += estimate
-      markDirtyFrom(heights.length - 1)
+      prefix += prefix.last + estimate
     }
-    if (heights.length > total) {
-      heights.remove(total, heights.length - total)
-      markDirtyFrom(total)
-    }
-  }
 
   def heightFor(index: Int): Double =
-    if (index >= 0 && index < heights.length) heights(index) else estimate
+    heights.lift(index).getOrElse(estimate)
 
-  /** Traegt eine gemessene Hoehe ein. Liefert true, wenn sie sich geaendert hat. */
-  def setHeight(index: Int, value: Double): Boolean =
-    if (index < 0 || index >= heights.length || math.abs(heights(index) - value) < 0.5) false
+  /**
+   * Traegt eine gemessene Hoehe ein und liefert die Differenz zur bisherigen,
+   * oder None, wenn sie sich nicht nennenswert geaendert hat.
+   */
+  def updateHeight(index: Int, newHeight: Double): Option[Double] =
+    if (index < 0) None
     else {
-      heights(index) = value
-      markDirtyFrom(index)
-      true
+      ensureSize(index + 1)
+      val previous = heights(index)
+      val delta    = newHeight - previous
+      if (math.abs(delta) <= 0.5) None
+      else {
+        heights(index) = newHeight
+        prefixDirtyFrom = math.min(prefixDirtyFrom, index + 1)
+        Some(delta)
+      }
     }
 
-  /** Setzt alle Hoehen auf die Schaetzung zurueck. */
-  def resetHeights(): Unit = {
-    var index = 0
-    while (index < heights.length) {
-      heights(index) = estimate
-      index += 1
+  def rebuildPrefixIfDirty(): Unit =
+    if (prefixDirtyFrom != Int.MaxValue) {
+      var index = math.max(1, math.min(prefixDirtyFrom, prefix.length - 1))
+      while (index < prefix.length) {
+        prefix(index) = prefix(index - 1) + heights(index - 1)
+        index += 1
+      }
+      prefixDirtyFrom = Int.MaxValue
     }
-    markDirtyFrom(0)
-  }
 
   def clear(): Unit = {
     heights.clear()
@@ -213,53 +220,53 @@ final class MeasuredRowGeometry(
     prefixDirtyFrom = Int.MaxValue
   }
 
-  private def markDirtyFrom(index: Int): Unit =
-    prefixDirtyFrom = math.min(prefixDirtyFrom, math.max(0, index))
-
-  private def rebuildPrefix(): Unit = {
-    if (prefixDirtyFrom == Int.MaxValue && prefix.length == heights.length + 1) return
-
-    val from = math.min(prefixDirtyFrom, math.max(0, prefix.length - 1))
-    while (prefix.length > from + 1) prefix.remove(prefix.length - 1)
-
-    var index = from
-    while (index < heights.length) {
-      prefix += prefix(index) + heights(index)
-      index += 1
-    }
-
-    prefixDirtyFrom = Int.MaxValue
-  }
-
-  /** Abstand vom ersten Element bis zur oberen Kante von `index`. */
+  /** Abstand vom ersten Element bis zur oberen Kante von `index`, ohne Header. */
   def offsetFor(index: Int): Double = {
-    rebuildPrefix()
-    val bounded = math.max(0, math.min(index, prefix.length - 1))
-    prefix(bounded)
+    val loaded = heights.length
+    if (index <= loaded) prefix.lift(index).getOrElse(prefix.last)
+    else prefix.last + (index - loaded) * estimate
   }
 
   override def topForIndex(index: Int): Double =
     headerOffset + offsetFor(math.max(0, index))
 
   override def indexForOffset(offset: Double): Int = {
-    rebuildPrefix()
+    val normalized = math.max(0.0, offset)
+    val loaded     = heights.length
 
-    val target = math.max(0.0, offset)
-    var low    = 0
-    var high   = math.max(0, prefix.length - 2)
-
-    while (low < high) {
-      val mid = (low + high + 1) >>> 1
-      if (prefix(mid) <= target) low = mid else high = mid - 1
+    if (loaded == 0) math.floor(normalized / estimate).toInt
+    else if (normalized >= prefix.last)
+      loaded + math.floor((normalized - prefix.last) / estimate).toInt
+    else {
+      var low  = 0
+      var high = loaded
+      while (low < high) {
+        val middle = (low + high) / 2
+        if (prefix(middle + 1) <= normalized) low = middle + 1
+        else high = middle
+      }
+      low
     }
-
-    low
   }
 
   override def contentHeight(total: Int): Double = {
-    rebuildPrefix()
-    val bounded = math.max(0, math.min(total, prefix.length - 1))
-    prefix(bounded)
+    rebuildPrefixIfDirty()
+    val measured      = math.min(total, heights.length)
+    val measuredHeight = prefix.lift(measured).getOrElse(0.0)
+    measuredHeight + math.max(0, total - measured) * estimate
+  }
+
+  /**
+   * Obergrenze fuer die Zahl gleichzeitig gemounteter Zeilen.
+   *
+   * Ohne sie wuerde eine Liste, deren Zeilen alle deutlich niedriger als die
+   * Schaetzung ausfallen, beliebig viele Zeilen in den sichtbaren Bereich
+   * ziehen.
+   */
+  private def maxSlotsForViewport(viewportHeight: Double): Int = {
+    val minimum = math.max(12.0, math.min(estimate, math.max(estimate / 2.0, 1.0)))
+    val area    = viewportHeight + 2 * math.max(0.0, overscanPx())
+    math.min(600, math.max(32, math.ceil(area / minimum).toInt + 8))
   }
 
   override def visibleRange(
@@ -272,8 +279,8 @@ final class MeasuredRowGeometry(
     val effectiveScroll = math.max(0.0, scrollTop - headerOffset)
     val startOffset     = math.max(0.0, effectiveScroll - overscan)
     val endOffset       = effectiveScroll + height + overscan
-    val start           = math.max(0, math.min(indexForOffset(startOffset), math.max(0, total - 1)))
-    val maximum         = maxSlots(height)
+    val start           = math.max(0, math.min(indexForOffset(startOffset), total - 1))
+    val maximum         = maxSlotsForViewport(height)
 
     var index = start
     var top   = offsetFor(index)
@@ -282,6 +289,6 @@ final class MeasuredRowGeometry(
       index += 1
     }
 
-    (start, math.max(start, index))
+    (start, math.max(start + 1, index).min(total))
   }
 }

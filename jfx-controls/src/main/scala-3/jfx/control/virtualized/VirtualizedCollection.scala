@@ -219,6 +219,60 @@ abstract class VirtualizedCollection[T] extends AbstractComponent {
       ()
     }
 
+  /**
+   * Haengt die Item-Beobachter an und sorgt dafuer, dass sie beim Entsorgen der
+   * Komponente wieder abgehen. Von installObservers der Unterklasse aufzurufen.
+   */
+  protected def installItemObservers(): Unit = {
+    addDisposable(Disposable {
+      itemsObserver.dispose()
+      remoteItemsObserver.dispose()
+    })
+    rewireItemsObserver()
+  }
+
+  /**
+   * Beobachtet die Groesse des Viewports.
+   *
+   * Stand in allen drei Controls wortgleich in afterCompose -- ein ResizeObserver
+   * auf dem Viewport plus ein resize-Listener am Fenster, beide auf
+   * scheduleViewportMeasure.
+   */
+  protected def observeViewportSize(): Unit = {
+    domElement(viewportComponent).foreach { element =>
+      val observer = new dom.ResizeObserver((_, _) => scheduleViewportMeasure())
+      observer.observe(element)
+      addDisposable(Disposable(observer.disconnect()))
+    }
+
+    val listener: dom.Event => Unit = _ => scheduleViewportMeasure()
+    dom.window.addEventListener("resize", listener)
+    addDisposable(Disposable(dom.window.removeEventListener("resize", listener)))
+  }
+
+  /**
+   * Misst die Hoehe eines Header-Elements laufend und schreibt sie in
+   * `target`. Die drei Controls unterscheiden sich nur darin, welches Element
+   * und welche Property sie uebergeben.
+   */
+  protected def observeHeaderHeight(
+      header: AbstractComponent | Null,
+      target: Property[Double]
+  ): Unit =
+    domElement(header).foreach { element =>
+      val measure = () => {
+        val value = math.max(0.0, element.offsetHeight.toDouble)
+        if (math.abs(target.get - value) > 0.5) target.set(value)
+      }
+      val frame    = dom.window.requestAnimationFrame(_ => measure())
+      val observer = new dom.ResizeObserver((_, _) => measure())
+      observer.observe(element)
+      addDisposable(Disposable {
+        dom.window.cancelAnimationFrame(frame)
+        observer.disconnect()
+      })
+    }
+
   protected def domElement(component: AbstractComponent | Null): Option[dom.html.Element] =
     Option(component).flatMap { current =>
       current.host match {
