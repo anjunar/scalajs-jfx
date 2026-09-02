@@ -602,7 +602,7 @@ anderem Weg in einen `Foreach` gemountet würde, verschwindet stillschweigend.
 
 ## Phase 5 — Querschnitt und Aufräumen
 
-### [ ] P5-1 · `AppTheme` aus dem globalen Singleton lösen
+### [x] P5-1 · `AppTheme` aus dem globalen Singleton lösen
 
 **Problem.** `object AppTheme { val modeProperty = Property(Mode.Light) }`. Das
 SSR-Bundle wird von Node **einmal** geladen und für alle Requests

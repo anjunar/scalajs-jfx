@@ -28,8 +28,6 @@ object Main {
     val async = new AsyncRenderContext()
     val url   = s"${dom.window.location.pathname}${dom.window.location.search}"
 
-    AppTheme.syncFromDocument()
-
     val request =
       RequestContext.withUserAgent(dom.window.navigator.userAgent)
 

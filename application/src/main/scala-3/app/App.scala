@@ -45,6 +45,9 @@ class App(
   private val initialLocation =
     Option(initialUrl).getOrElse("/")
 
+  private val appTheme =
+    AppTheme.forEnvironment()
+
   private val i18nRuntime =
     I18nRuntime.managed(AppI18n.config, initialLocation, routerConfig.basePath)
 
@@ -136,6 +139,7 @@ class App(
   override def compose(cursor: Cursor): Unit = {
     RequestContext.provide(request)(using this)
     I18nRuntime.provide(i18nRuntime)(using this)
+    AppTheme.provide(appTheme)(using this)
     Router.provide(appRouter)(using this)
 
     render(this, cursor) {
@@ -260,14 +264,14 @@ class App(
 
                   button(i18n"Light") {
                     classes = Seq("app-toolbar__choice")
-                    classIf("is-active", AppTheme.modeProperty.map(_ == Mode.Light))
-                    onClick { _ => AppTheme.set(Mode.Light) }
+                    classIf("is-active", appTheme.modeProperty.map(_ == Mode.Light))
+                    onClick { _ => appTheme.set(Mode.Light) }
                   }
 
                   button(i18n"Dark") {
                     classes = Seq("app-toolbar__choice")
-                    classIf("is-active", AppTheme.modeProperty.map(_ == Mode.Dark))
-                    onClick { _ => AppTheme.set(Mode.Dark) }
+                    classIf("is-active", appTheme.modeProperty.map(_ == Mode.Dark))
+                    onClick { _ => appTheme.set(Mode.Dark) }
                   }
                 }
 
