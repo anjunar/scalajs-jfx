@@ -28,14 +28,11 @@
     },
     "./index.css": "./index.css",
     "./css": "./index.css",
-    "./ssr/dev-server": "./ssr/dev-server.mjs",
-    "./ssr/prod-server": "./ssr/prod-server.mjs",
     "./package.json": "./package.json"
   },
   "files": [
     "index.js",
     "index.css",
-    "ssr",
     "action",
     "control",
     "form",

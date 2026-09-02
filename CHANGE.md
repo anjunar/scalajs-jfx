@@ -81,7 +81,7 @@ es ist der bewusst gewählte Deploy-Pfad und als solcher kommentiert.
 
 ---
 
-### [ ] P0-3 · Tote SSR-Duplikate entfernen
+### [x] P0-3 · Tote SSR-Duplikate entfernen
 
 **Problem.** `npm/scalajs-jfx2/ssr/dev-server.mjs` und `prod-server.mjs`
 duplizieren `server/server.mjs`, werden von nichts eingebunden und driften
