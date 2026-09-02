@@ -63,9 +63,8 @@ final class TableView[S] private (
   private var placeholderBody: Option[AbstractComponent ?=> Cursor ?=> Unit]   = None
   private var contentHeaderComponent: Div | Null                               = null
 
-  /** Feste Zeilenhoehe, eine Spalte. Das ist alles, was TableView von DataGrid und VirtualListView
-    * unterscheidet -- die Spaltenbreiten sind eine Frage der Darstellung, nicht der
-    * Virtualisierung.
+  /** Fixed row height, one column. This is all that distinguishes TableView from DataGrid and
+    * VirtualListView -- column widths are a presentation concern, not a virtualization concern.
     */
   override protected val geometry: FixedRowGeometry =
     new FixedRowGeometry(
@@ -79,17 +78,17 @@ final class TableView[S] private (
 
   override protected def renderableCount: Int = math.max(0, dataSource.totalLength)
 
-  /** TableView rechnet bei jeder Aenderung neu -- bei fester Zeilenhoehe verschiebt jede Einfuegung
-    * alle folgenden Zeilen.
+  /** TableView recomputes on every change -- with fixed row height, every insertion shifts all
+    * following rows.
     */
   override protected def handleLocalItemsChange(change: ListProperty.Change[S]): Unit =
     refreshItemState()
 
-  /** Nur TableView scrollt horizontal. */
+  /** Only TableView scrolls horizontally. */
   override protected def onScrollLeftChanged(scrollLeft: Double): Unit =
     scrollLeftProperty.set(scrollLeft)
 
-  /** Die Spaltenbreiten werden auf die gemessene Breite verteilt. */
+  /** Column widths are distributed across the measured width. */
   override protected def onViewportWidthMeasured(width: Double): Unit =
     viewportWidthProperty.set(width)
 
@@ -396,11 +395,10 @@ final class TableView[S] private (
     }
   }
 
-  /** TableView haengt zwei eigene Nachlaeufer an die geerbten Zaehler.
+  /** TableView adds two follow-ups to the inherited counters.
     *
-    * Beide gingen beim Zusammenlegen in P3-1 zunaechst verloren, weil die Basis die Fassungen der
-    * anderen Controls uebernahm -- nur TableView hat einen Kopfbereich mit Sortieranzeigen und eine
-    * Auswahl.
+    * Both were initially lost during consolidation in P3-1 because the base adopted versions from
+    * the other controls -- only TableView has a header with sort indicators and a selection.
     */
   override protected def bumpRemoteState(): Unit = {
     super.bumpRemoteState()

@@ -46,8 +46,8 @@ final class DataGrid[T] private (
   private val visibleCellsProperty = ListProperty[DataGrid.VisibleCell[T]]()
   private val headerHeightProperty = Property(0.0)
 
-  /** Feste Zellengroesse in einem Raster mit N Spalten. Das ist alles, was DataGrid von TableView
-    * und VirtualListView unterscheidet.
+  /** Fixed cell size in a grid with N columns. This is all that distinguishes DataGrid from
+    * TableView and VirtualListView.
     */
   override protected val geometry: GridGeometry =
     new GridGeometry(
@@ -58,7 +58,7 @@ final class DataGrid[T] private (
       overscanRows = () => overscanRowsProperty.get
     )
 
-  /** Die Spaltenzahl haengt an der gemessenen Breite. */
+  /** The column count depends on the measured width. */
   override protected def onViewportWidthMeasured(width: Double): Unit =
     viewportWidthProperty.set(width)
 
@@ -351,8 +351,8 @@ final class DataGrid[T] private (
 
   override protected def renderableCount: Int = math.max(0, dataSource.totalLength)
 
-  /** DataGrid rechnet bei jeder Aenderung neu -- die Rasterposition jeder Zelle kann sich
-    * verschieben, sobald sich die Anzahl aendert.
+  /** DataGrid recomputes on every change -- each cell's grid position can shift whenever the count
+    * changes.
     */
   override protected def handleLocalItemsChange(change: ListProperty.Change[T]): Unit =
     refreshItemState()

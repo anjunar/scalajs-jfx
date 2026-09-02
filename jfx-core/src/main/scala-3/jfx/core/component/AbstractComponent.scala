@@ -23,15 +23,15 @@ abstract class AbstractComponent
   private[jfx] var _mountParentHost: Option[HostElement] = None
   private[jfx] var _contentCursor: Cursor                = _
 
-  /** Die Kinder dieser Komponente.
+  /** This component's children.
     *
-    * Eigentuemer ist [[jfx.core.component.Runtime]]: `mount` traegt ein -- angehaengt oder an der
-    * uebergebenen Position --, `unmount` traegt aus. Container fuehren daneben keine zweite Liste,
-    * aus der sie diese rekonstruieren; genau das tat Foreach bis P4-3, und alles, was auf anderem
-    * Weg gemountet wurde, verschwand dabei stillschweigend.
+    * [[jfx.core.component.Runtime]] owns them: `mount` adds an entry -- appended or at the supplied
+    * position -- and `unmount` removes it. Containers maintain no second list from which to
+    * reconstruct them; Foreach did exactly that until P4-3, silently losing anything mounted by
+    * another path.
     *
-    * Einzige Ausnahme ist [[dispose]]: dort raeumt eine Komponente ihre eigene Liste ab, waehrend
-    * sie stirbt. Das ist kein Verwalten fremder Kinder.
+    * The only exception is [[dispose]], where a component clears its own list while it is being
+    * destroyed. That is not management of foreign children.
     */
   private[jfx] val _children      = mutable.ArrayBuffer.empty[AbstractComponent]
   private[jfx] val disposables    = new CompositeDisposable()
@@ -61,11 +61,11 @@ abstract class AbstractComponent
       virtualStart.toSeq ++ adoptedNodes ++
         _children.flatMap(_.physicalHosts).toSeq ++ virtualEnd.toSeq
 
-  /** Uebernimmt diese Komponente beim Hydrieren den server-gerenderten Inhalt ungeprueft, statt ihn
-    * nachzubauen?
+  /** Does this component adopt server-rendered content during hydration without validating it,
+    * rather than rebuilding it?
     *
-    * Nur fuer Komponenten gedacht, die ihren Inhalt erst spaeter kennen -- etwa eine Route, deren
-    * Loader noch laeuft. Siehe CHANGE.md P4-1.
+    * Intended only for components whose content is not known until later -- for example, a route
+    * whose loader is still running. See CHANGE.md P4-1.
     */
   private[jfx] def adoptsHydratedContent: Boolean = false
 
@@ -74,11 +74,11 @@ abstract class AbstractComponent
     case _                 => Nil
   }
 
-  /** Der erste DOM-Knoten dieser Komponente, ohne die uebrigen zu sammeln.
+  /** This component's first DOM node, without collecting the others.
     *
-    * [[physicalHosts]] baut den kompletten Teilbaum auf. Wer nur den Anfang braucht -- etwa Foreach
-    * fuer die Einfuegeposition -- bezahlt das sonst mit, und zwar pro Einfuegung. Siehe CHANGE.md
-    * P4-2.
+    * [[physicalHosts]] builds the complete subtree. Callers that only need its start -- for example,
+    * Foreach to determine an insertion position -- would otherwise pay that cost for every insert.
+    * See CHANGE.md P4-2.
     */
   def firstPhysicalHost: Option[HostNode] =
     if (!isVirtual && _host != null) Some(_host)

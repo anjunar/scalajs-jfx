@@ -18,21 +18,19 @@ final class RemoteListProperty[V, Query](
 ) extends RemoteListDataSource[V] {
 
   private given ExecutionContext = executionContext
-  // Geladene Ausschnitte als zusammenhaengende Bereiche statt als Map von
-  // absolutem Index auf Wert. Siehe LoadedRanges -- die Map trug keine Ordnung,
-  // also musste jede ordnungsabhaengige Operation erst sortieren.
+  // Loaded slices are contiguous ranges rather than a map from absolute index to value. See
+  // LoadedRanges -- a map has no ordering, so every order-dependent operation had to sort first.
   private val initialItems = underlying.slice(0, underlying.length)
   private val loadedItems  = ListProperty[V](initialItems)
   private val loadedRanges = new LoadedRanges[V]
   if (initialItems.length > 0) loadedRanges.put(0, initialItems.toSeq)
 
-  // Ein Lade-Vorgang pro Anfrage statt eines globalen Locks. Ueberlappende
-  // Anfragen werden dedupliziert, nicht abgewiesen. Siehe loadQuery.
+  // One load per request rather than a global lock. Overlapping requests are deduplicated rather
+  // than rejected. See loadQuery.
   private val pendingLoads = mutable.Map.empty[LoadKey, PendingLoad]
 
-  // Generationszaehler, analog zum renderToken im Router: ein Neuladen macht
-  // alles ungueltig, was davor losgeschickt wurde. Kommt eine alte Antwort
-  // danach zurueck, wird sie verworfen statt neuere Daten zu ueberschreiben.
+  // Generation counter analogous to the router's renderToken: a reload invalidates everything sent
+  // before it. A later old response is discarded rather than overwriting newer data.
   private var loadGeneration = 0
 
   private final case class LoadKey(query: Query, replaceExisting: Boolean, sequential: Boolean)
@@ -136,9 +134,8 @@ final class RemoteListProperty[V, Query](
           val normalizedFrom  = math.max(0, fromIndex)
           val normalizedCount = math.max(1, toExclusive - normalizedFrom)
           loadQuery(
-            // Eine Bereichs-Abfrage ist abgeleitet, nicht der neue Zustand der
-            // Liste: sie darf weder queryProperty noch den Paging-Cursor
-            // ueberschreiben. Siehe CHANGE.md P2-6.
+            // A range query is derived, not the list's new state: it must not overwrite either
+            // queryProperty or the paging cursor. See CHANGE.md P2-6.
             updateRange(queryProperty.get, normalizedFrom, normalizedCount),
             replaceExisting = false,
             expectedOffset = Some(normalizedFrom),
@@ -199,15 +196,14 @@ final class RemoteListProperty[V, Query](
       sequential = true
     )
 
-  /** Startet eine Anfrage oder haengt sich an eine gleichlautende laufende an.
+  /** Starts a request or joins an identical request already in flight.
     *
-    * Vorher stand hier ein globaler Lade-Lock: lief irgendein Laden, wurde jede weitere Anfrage mit
-    * einem abgelehnten Promise beantwortet. VirtualListView und DataGrid prefetchen mehrere
-    * Bereiche gleichzeitig, im Normalbetrieb entstanden dadurch beim Scrollen abgelehnte Promises,
-    * die niemand behandelt hat.
+    * This previously used a global loading lock: while any load was running, every additional
+    * request received a rejected Promise. VirtualListView and DataGrid prefetch multiple ranges
+    * concurrently, so ordinary scrolling produced rejected Promises that no one handled.
     *
-    * Jetzt gilt: ein laufender Vorgang pro Anfrage. Gleiche Anfragen werden dedupliziert und teilen
-    * sich ein Future, verschiedene laufen parallel.
+    * Now there is one in-flight operation per request. Identical requests are deduplicated and
+    * share a Future; different requests run in parallel.
     */
   private def loadQuery(
       query: Query,
@@ -221,8 +217,8 @@ final class RemoteListProperty[V, Query](
       case Some(inFlight) => inFlight.future
       case None           =>
         if (replaceExisting) {
-          // Ein echtes Neuladen macht alles ungueltig, was vorher losgeschickt wurde.
-          // Ein identisches, bereits laufendes Neuladen wurde oben schon dedupliziert.
+          // A real reload invalidates everything sent before it. An identical reload already in
+          // flight was deduplicated above.
           invalidatePendingLoads()
         }
 
@@ -230,15 +226,13 @@ final class RemoteListProperty[V, Query](
         val completion        = Promise[js.Array[V]]()
         val pending           = new PendingLoad(completion.future)
 
-        // queryProperty ist die Basis-Abfrage der Liste -- Filter und Sortierung,
-        // auf denen reload() aufsetzt. Nur ein Neuladen definiert sie neu.
-        // Bereichs- und Folgeseiten-Abfragen sind daraus abgeleitet.
+        // queryProperty is the list's base query -- the filters and sorting on which reload()
+        // builds. Only a reload redefines it. Range and subsequent-page queries derive from it.
         if (replaceExisting) queryProperty.set(query)
         errorProperty.set(None)
 
-        // Der Eintrag muss vor dem Start stehen: mit einem synchron
-        // erfuellten Future liefe onComplete sonst vor der Registrierung und
-        // der Schluessel bliebe fuer immer in der Map.
+        // The entry must exist before starting: with a synchronously completed Future, onComplete
+        // would otherwise run before registration and leave the key in the map forever.
         pendingLoads.update(key, pending)
         refreshLoadingState()
 
@@ -247,8 +241,8 @@ final class RemoteListProperty[V, Query](
           catch { case error: Throwable => Future.failed(error) }
 
         loaded.onComplete { result =>
-          // Ein alter Abschluss darf keinen neueren Request entfernen, der nach
-          // einem reload unter demselben Schluessel registriert wurde.
+          // An old completion must not remove a newer request registered under the same key after
+          // a reload.
           pendingLoads.get(key).filter(_ eq pending).foreach { _ =>
             pendingLoads.remove(key)
             refreshLoadingState()
@@ -270,7 +264,7 @@ final class RemoteListProperty[V, Query](
     }
   }
 
-  /** loadingProperty ist abgeleiteter Zustand fuer die UI, nicht mehr die Sperre.
+  /** loadingProperty is derived UI state rather than the lock.
     */
   private def refreshLoadingState(): Unit =
     loadingProperty.set(pendingLoads.nonEmpty)
@@ -296,20 +290,18 @@ final class RemoteListProperty[V, Query](
         }
 
     if (replaceExisting) {
-      // Echtes Neuladen: die Liste ist danach eine andere. Reset ist hier die
-      // richtige Aussage, und Foreach muss tatsaechlich alles neu aufbauen.
+      // A real reload produces a different list. Reset is the correct change here, and Foreach
+      // must actually rebuild everything.
       loadedRanges.clear()
       loadedRanges.put(pageOffset, page.items)
       loadedItems.setAll(loadedRanges.denseItems)
     } else {
-      // Nachladen: nur der Bereich, den die Seite abdeckt, aendert sich.
+      // Loading more changes only the range covered by the page.
       //
-      // loadedRanges traegt absolute Indizes mit Luecken, die ListProperty
-      // darunter eine dichte Liste. Die dichte Position eines absoluten Index
-      // ist die Anzahl geladener Indizes davor. Weil der Seitenbereich in
-      // absoluten Indizes zusammenhaengend ist, liegen die Positionen der darin
-      // bereits geladenen Eintraege ebenfalls zusammenhaengend -- ab
-      // insertPosition.
+      // loadedRanges holds absolute indices with gaps; the underlying ListProperty is a dense
+      // list. The dense position of an absolute index is the number of loaded indices before it.
+      // Since the page range is contiguous in absolute indices, positions of entries already loaded
+      // within it are also contiguous, starting at insertPosition.
       val pageEnd        = pageOffset + page.items.length
       val insertPosition = loadedRanges.countBefore(pageOffset)
       val replacedCount  = loadedRanges.countIn(pageOffset, pageEnd)
@@ -320,10 +312,9 @@ final class RemoteListProperty[V, Query](
       else loadedItems.patchInPlace(insertPosition, page.items, replacedCount)
     }
 
-    // Ein Reload definiert die Liste neu und darf daher auch einen zuvor
-    // bekannten Gesamtumfang auf unbekannt setzen. Bei abgeleiteten Range- und
-    // Paging-Loads ist ein fehlender Count dagegen keine neue Information; ein
-    // explizit gelieferter Count darf den bekannten Wert weiterhin korrigieren.
+    // A reload redefines the list and may therefore change a previously known total to unknown.
+    // For derived range and paging loads, a missing count is not new information; an explicitly
+    // supplied count may still correct the known value.
     if (replaceExisting) totalCountProperty.set(page.totalCount)
     else page.totalCount.foreach(count => totalCountProperty.set(Some(count)))
 
@@ -343,8 +334,8 @@ final class RemoteListProperty[V, Query](
 
 object RemoteListProperty {
 
-  /** Ersetzt das fruehere ListProperty.remote(...). Die Factory gehoert zum Remote-Typ, nicht zum
-    * allgemeinen ListProperty -- siehe CHANGE.md P2-5.
+  /** Replaces the former ListProperty.remote(...). The factory belongs to the remote type, not the
+    * general ListProperty -- see CHANGE.md P2-5.
     */
   def apply[V, Query](
       loader: RemoteLoader[V, Query],

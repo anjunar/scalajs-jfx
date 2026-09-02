@@ -25,20 +25,19 @@ private[control] object CrawlCookieState {
   private val IdPattern    = "[A-Za-z][A-Za-z0-9_-]*".r
   private val CookiePrefix = "jfx-crawl-"
 
-  /** Sieben Tage, vorher ein Jahr.
+  /** Seven days; previously one year.
     *
-    * Der Wert traegt Scroll-Offset, Seitengroesse und Sortierung -- eine Bequemlichkeit fuer "Seite
-    * neu geladen, ich will weiterlesen", keine Einstellung. Ein Jahr war dafuer weit ueber die
-    * Nutzungsdauer hinaus.
+    * The value carries scroll offset, page size, and sorting -- a convenience for "the page was
+    * reloaded and I want to continue reading", not a preference. A year exceeded its useful life.
     *
-    * Das kostet, weil der Cookie unter Path=/ liegt und pro Control-ID einzeln angelegt wird: jede
-    * crawlbare Liste, die ein Besucher je gescrollt hat, haengt danach an *jeder* Anfrage an diese
-    * Herkunft, Assets eingeschlossen. Bei einem Jahr sammelt sich das dauerhaft an.
+    * This has a cost because the cookie uses Path=/ and is created individually per control ID:
+    * every crawlable list a visitor has ever scrolled is then attached to *every* request to this
+    * origin, including assets. Over a year, this accumulates permanently.
     *
-    * Path=/ bleibt: die SSR-Seite liest den Zustand aus dem cookie-Header, und das Control kennt
-    * seine Route nicht, kann den Pfad also nicht einschraenken.
+    * Path=/ remains: the SSR page reads the state from the cookie header, while the control does not
+    * know its route and therefore cannot narrow the path.
     *
-    * Siehe CHANGE.md P3-2.
+    * See CHANGE.md P3-2.
     */
   private val CookieMaxAgeSeconds = 7L * 24L * 60L * 60L
 

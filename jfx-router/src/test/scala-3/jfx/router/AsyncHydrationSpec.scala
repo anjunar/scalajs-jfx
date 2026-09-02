@@ -10,16 +10,14 @@ import org.scalatest.matchers.should.Matchers
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
-/** Routen sind asynchron -- alle, ohne Ausnahme.
+/** Routes are asynchronous -- all of them, without exception.
   *
-  * Vor P4-1 warf der Router beim Hydrieren, sobald ein Loader nicht synchron fertig war. Das fiel
-  * nur deshalb nicht auf, weil saemtliche Demo-Routen mit Future.successful arbeiteten; die erste
-  * echte Datenroute haette die Hydration gebrochen. SSR war damit faktisch nur fuer statische
-  * Seiten benutzbar.
+  * Before P4-1 the router threw during hydration whenever a loader did not finish synchronously.
+  * This went unnoticed only because every demo route used Future.successful; the first real data
+  * route would have broken hydration. SSR was therefore effectively usable only for static pages.
   *
-  * Jetzt uebernimmt der Router den server-gerenderten Baum ungeprueft und ersetzt ihn, sobald der
-  * Loader liefert. Der Preis ist ein zweiter Ladevorgang -- bewusst so gewaehlt statt eines
-  * SSR-Datencaches.
+  * The router now adopts the server-rendered tree without validation and replaces it when the loader
+  * completes. The cost is a second load -- deliberately chosen instead of an SSR data cache.
   */
 class AsyncHydrationSpec extends AnyFlatSpec with Matchers {
 
@@ -31,7 +29,7 @@ class AsyncHydrationSpec extends AnyFlatSpec with Matchers {
 
     Runtime.mount(routerFor(pending.future), cursor)
 
-    // Der Bereich der Route wurde uebernommen, nicht nachgebaut.
+    // The route range was adopted rather than rebuilt.
     cursor.adopted should contain("RoutedComponent")
     cursor.claimed should not contain "RoutedComponent"
   }
@@ -53,7 +51,7 @@ class AsyncHydrationSpec extends AnyFlatSpec with Matchers {
 
     pending.success(Route.component { text("geladen") {} })
 
-    // Der echte Baum wird jetzt regulaer beansprucht, nicht mehr uebernommen.
+    // The real tree is now claimed normally rather than adopted.
     cursor.adopted.count(_ == "RoutedComponent") shouldBe adoptedBefore
     cursor.texts should contain("geladen")
   }
@@ -82,11 +80,10 @@ class AsyncHydrationSpec extends AnyFlatSpec with Matchers {
     new Router(Seq(Route.view("/")(_ => loaded)), "/")
 }
 
-/** Cursor, der eine laufende Hydration vortaeuscht und mitschreibt, welche Bereiche beansprucht und
-  * welche uebernommen wurden.
+/** Cursor that simulates a running hydration and records which ranges were claimed and adopted.
   *
-  * Ein echter HydratingCursor braucht ein DOM; die Testumgebung hat keines. Fuer die Frage, die
-  * hier zaehlt -- beansprucht der Router oder uebernimmt er -- genuegt der Mitschrieb.
+  * A real HydratingCursor needs a DOM, which the test environment lacks. For the relevant question
+  * here -- does the router claim or adopt -- the record is sufficient.
   */
 private final class HydrationTestCursor extends Cursor {
 

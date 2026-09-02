@@ -3,24 +3,22 @@ package jfx.core.context
 import jfx.core.component.AbstractComponent
 import jfx.core.di.Context
 
-/** Der Pfad, unter dem die aktuell dargestellte Seite erreichbar ist.
+/** The path at which the currently displayed page is reachable.
   *
-  * Virtualisierende Controls (TableView, DataGrid, VirtualListView) rendern fuer Crawler einen Link
-  * auf die naechste Datenseite. Dafuer brauchen sie genau eine Information: den Pfad der aktuellen
-  * Seite. Sie brauchen dafuer kein Routing -- eine generische Tabelle darf nicht wissen, dass es
-  * einen Router gibt.
+  * Virtualizing controls (TableView, DataGrid, VirtualListView) render a link to the next data page
+  * for crawlers. They need exactly one piece of information: the current page's path. They do not
+  * need routing for this -- a generic table must not know that a router exists.
   *
-  * Wer den Scope bereitstellt, entscheidet die Anwendung. Im Normalfall ist das der Router
-  * (jfx-router stellt sich in seiner `compose` selbst als CrawlScope bereit); eine Anwendung ohne
-  * Router kann jede andere Quelle einsetzen.
+  * The application decides who provides the scope. Usually it is the router (jfx-router provides
+  * itself as a CrawlScope in `compose`); an application without a router may use any other source.
   *
-  * Fehlt der Scope, liefert [[CrawlScope.path]] den leeren String -- die Controls rendern dann
-  * keinen Crawl-Link. Das ist der richtige Ausfallmodus: ohne bekannten Pfad gibt es keinen Link,
-  * den ein Crawler sinnvoll folgen koennte.
+  * When the scope is missing, [[CrawlScope.path]] returns an empty string -- the controls then render
+  * no crawl link. This is the correct failure mode: without a known path, there is no link a crawler
+  * can meaningfully follow.
   */
 trait CrawlScope {
 
-  /** Pfad der aktuellen Seite, ohne Basis-Pfad, z. B. "/table". */
+  /** Current page path without the base path, e.g. "/table". */
   def path: String
 }
 
@@ -35,11 +33,11 @@ object CrawlScope {
   def provide(scope: CrawlScope)(using component: AbstractComponent): Unit =
     CrawlScopeContext.provide(scope)
 
-  /** Pfad der aktuellen Seite, oder "" wenn kein Scope bereitsteht. */
+  /** Current page path, or "" when no scope is available. */
   def path(using component: AbstractComponent): String =
     current.map(_.path).filter(_.nonEmpty).getOrElse("")
 
-  /** CrawlScope aus einer Funktion, die den Pfad bei jedem Aufruf frisch liest. */
+  /** CrawlScope backed by a function that reads the path afresh on every call. */
   def apply(currentPath: () => String): CrawlScope =
     new CrawlScope {
       override def path: String = currentPath()

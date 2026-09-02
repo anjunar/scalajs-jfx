@@ -7,18 +7,18 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.*
 
-/** Remote-Paging: HTTP-Abfrage, Seiten, Sortierung.
+/** Remote paging: HTTP requests, pages, and sorting.
   *
-  * Lag vorher in jfx.core.state neben Property und Disposable -- HTTP-Paging-, Sortier- und
-  * Query-Semantik sass damit im Fundament, und jeder Konsument von scalajs-jfx-core bekam sie mit.
-  * Siehe CHANGE.md P2-5.
+  * It previously lived in jfx.core.state beside Property and Disposable, placing HTTP paging,
+  * sorting, and query semantics in the foundation and exposing them to every scalajs-jfx-core
+  * consumer. See CHANGE.md P2-5.
   */
 
-/** Laedt eine Seite. Das Ergebnis ist ein Future -- Future ist das interne Async-Modell des
-  * Frameworks (siehe ARCHITECTURE.md). js.Promise erscheint nur an der JS-Exportgrenze und in
-  * Facades gegenueber JS-Bibliotheken.
+/** Loads a page. The result is a Future -- Future is the framework's internal async model (see
+  * ARCHITECTURE.md). js.Promise appears only at the JavaScript export boundary and in facades for
+  * JavaScript libraries.
   *
-  * Wer einen Loader gegen eine JS-API schreibt, nimmt [[RemoteLoader.fromPromise]].
+  * Loaders targeting a JavaScript API should use [[RemoteLoader.fromPromise]].
   */
 trait RemoteLoader[V, Query] {
   def load(query: Query): Future[RemotePage[V, Query]]
@@ -32,8 +32,8 @@ object RemoteLoader {
         loadFn(query)
     }
 
-  /** JS-Grenze: adaptiert einen Promise-basierten Loader auf das interne Future-Modell. Genau eine
-    * Konvertierung, an einer benannten Stelle.
+  /** JavaScript boundary: adapts a Promise-based loader to the internal Future model. Exactly one
+    * conversion at a named location.
     */
   def fromPromise[V, Query](
       loadFn: Query => js.Promise[RemotePage[V, Query]]

@@ -41,9 +41,8 @@ class Router(
   override def compose(cursor: Cursor): Unit = {
     Router.RouterContext.provide(this)(using this)
 
-    // Die virtualisierenden Controls brauchen fuer ihren Crawl-Link nur den
-    // aktuellen Pfad, nicht den Router. Die Abhaengigkeit zeigt deshalb in diese
-    // Richtung: der Router kennt den CrawlScope, jfx-controls kennt kein Routing.
+    // Virtualizing controls need only the current path for their crawl link, not the router. The
+    // dependency therefore points this way: the router knows CrawlScope; jfx-controls knows no routing.
     CrawlScope.provide(CrawlScope(() => stateProperty.get.path))(using this)
 
     initializeStateIfNeeded()
@@ -114,19 +113,17 @@ class Router(
               if (token == renderToken) throw error
 
             case None =>
-              // Der Loader laeuft noch. Frueher warf der Router hier -- damit war
-              // SSR nur fuer Routen benutzbar, deren Loader synchron fertig ist.
+              // The loader is still running. The router used to throw here, making SSR usable only
+              // for routes whose loader completed synchronously.
               //
-              // Stattdessen uebernimmt der Router den server-gerenderten Baum
-              // ungeprueft (RoutedComponent ohne Kind adoptiert ihn) und laesst
-              // ihn stehen. Der Besucher sieht durchgehend Inhalt. Sobald der
-              // Loader liefert, tritt der echte Baum an seine Stelle und die
-              // uebernommenen Knoten verschwinden mit dem Platzhalter.
+              // Instead, the router adopts the server-rendered tree without validation (a
+              // RoutedComponent without a child adopts it) and leaves it in place. The visitor sees
+              // uninterrupted content. Once the loader completes, the real tree replaces it and the
+              // adopted nodes disappear with the placeholder.
               //
-              // Der Preis ist ein zweiter Ladevorgang: der Server hat die Daten
-              // schon geholt, der Client holt sie erneut. Bewusst so gewaehlt --
-              // die Alternative waere ein SSR-Datencache samt Serialisierung und
-              // Schluesselwahl. Siehe CHANGE.md P4-1.
+              // The cost is a second load: the server already fetched the data and the client fetches
+              // it again. This is deliberate -- the alternative would be an SSR data cache with
+              // serialization and key selection. See CHANGE.md P4-1.
               componentProperty.set(RoutedComponent.adoptingServerRender)
 
               val handed =
@@ -302,12 +299,11 @@ class Router(
       }
     }
 
-  /** Der Rahmen um die gerenderte Route.
+  /** The wrapper around the rendered route.
     *
-    * Ohne Kind ist es der Platzhalter fuer die Hydration: er uebernimmt den server-gerenderten
-    * Bereich ungeprueft, statt ihn nachzubauen. Der Klassenname bestimmt das Anker-Label, deshalb
-    * muessen beide Faelle dieselbe Klasse sein -- sonst passt der Anker nicht auf das, was der
-    * Server geschrieben hat.
+    * Without a child it is the hydration placeholder: it adopts the server-rendered range without
+    * validation instead of rebuilding it. The class name determines the anchor label, so both cases
+    * must use the same class -- otherwise the anchor does not match what the server wrote.
     */
   private final class RoutedComponent(
       child: AbstractComponent | Null
@@ -321,7 +317,7 @@ class Router(
 
   private object RoutedComponent {
 
-    /** Platzhalter, der den server-gerenderten Baum uebernimmt und stehen laesst. */
+    /** Placeholder that adopts and retains the server-rendered tree. */
     def adoptingServerRender: RoutedComponent = new RoutedComponent(null)
   }
 }

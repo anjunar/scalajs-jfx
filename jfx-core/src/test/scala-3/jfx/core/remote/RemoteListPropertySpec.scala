@@ -73,8 +73,8 @@ class RemoteListPropertySpec extends AnyFlatSpec with Matchers {
     remote.reload()
     changes.clear()
 
-    // Bereich 10..20 ist bereits geladen. ensureRangeLoaded wuerde abkuerzen,
-    // also die Seite direkt anfordern -- so wie es nach einem Datenwechsel kaeme.
+    // Range 10..20 is already loaded. ensureRangeLoaded would short-circuit, so request the page
+    // directly -- as could happen after a data change.
     remote.loadMore(PageQuery(10, 10))
 
     changes.map(_.getClass.getSimpleName) shouldBe Seq("Patch")
@@ -205,8 +205,8 @@ class RemoteListPropertySpec extends AnyFlatSpec with Matchers {
   }
 
   it should "survive 10 000 entries with 100 single updates in reasonable time" in {
-    // Abnahme aus P2-3. Vorher sortierte absoluteIndexForLoadedPosition bei jedem
-    // update und remove die komplette Index-Map -- O(n log n) pro Einzeloperation.
+    // Acceptance criterion from P2-3. Previously absoluteIndexForLoadedPosition sorted the complete
+    // index map on every update and remove -- O(n log n) per individual operation.
     val remote = pagedMembers(total = 10000, pageSize = 10000)
     remote.reload()
     remote.length shouldBe 10000
@@ -247,7 +247,7 @@ class RemoteListPropertySpec extends AnyFlatSpec with Matchers {
     val first  = remote.ensureRangeLoaded(100, 110)
     val second = remote.ensureRangeLoaded(100, 110)
 
-    // Eine einzige Anfrage am Loader, beide Aufrufer teilen sich das Future.
+    // Exactly one loader request; both callers share the Future.
     controllable.requestCount shouldBe 1
     first should be theSameInstanceAs second
 
@@ -282,8 +282,8 @@ class RemoteListPropertySpec extends AnyFlatSpec with Matchers {
 
     controllable.completeAll()
 
-    // Kein einziger abgelehnter Vorgang -- vorher lehnte der globale Lock die
-    // zweite und dritte Anfrage ab, und niemand behandelte die Rejection.
+    // Not a single rejected operation -- previously the global lock rejected the second and third
+    // requests, and nobody handled the rejection.
     Seq(rejected, second, third).flatMap(_.future.value.toSeq.flatMap(_.get)) shouldBe empty
     remote.isRangeLoaded(100, 110) shouldBe true
     remote.isRangeLoaded(200, 210) shouldBe true
@@ -312,17 +312,17 @@ class RemoteListPropertySpec extends AnyFlatSpec with Matchers {
     val controllable = new ControllableLoader(total = 1000)
     val remote       = remoteWith(controllable)
 
-    // Alter Bereichs-Load geht raus, bleibt aber unterwegs.
+    // An old range load is sent but remains in flight.
     remote.ensureRangeLoaded(100, 110)
     controllable.requestCount shouldBe 1
 
-    // Danach ein Neuladen, das zuerst zurueckkommt. Die Abfrage steht hier
-    // explizit, weil ensureRangeLoaded queryProperty ueberschreibt -- siehe P2-6.
+    // Then a reload that returns first. The query is explicit here because ensureRangeLoaded
+    // overwrites queryProperty -- see P2-6.
     remote.reload(PageQuery(0, 10))
     controllable.completeLast()
     val afterReload = remote.get.toSeq
 
-    // Jetzt trifft die veraltete Antwort ein. Sie darf nichts mehr aendern.
+    // The stale response now arrives. It must not change anything.
     controllable.completeAll()
     remote.get.toSeq shouldBe afterReload
     remote.isRangeLoaded(100, 110) shouldBe false
@@ -384,7 +384,7 @@ class RemoteListPropertySpec extends AnyFlatSpec with Matchers {
     remote.ensureRangeLoaded(500, 510)
     remote.nextQueryProperty.get shouldBe cursorAfterReload
 
-    // loadMore blaettert weiter hinter der ersten Seite, nicht hinter dem Bereich.
+    // loadMore continues after the first page, not after the range.
     remote.loadMore()
     remote.get.toSeq.take(20) shouldBe (0 until 20).map(index => s"Member $index")
   }
@@ -406,8 +406,8 @@ class RemoteListPropertySpec extends AnyFlatSpec with Matchers {
       rangeQueryUpdater = Some((query, index, limit) => query.copy(index = index, limit = limit))
     )
 
-  /** Loader, der Antworten erst auf Zuruf liefert -- so lassen sich mehrere gleichzeitig laufende
-    * Anfragen ueberhaupt beobachten.
+  /** Loader that returns responses only on command, allowing observation of multiple concurrent
+    * requests.
     */
   private final class ControllableLoader(total: Int) extends RemoteLoader[String, PageQuery] {
 

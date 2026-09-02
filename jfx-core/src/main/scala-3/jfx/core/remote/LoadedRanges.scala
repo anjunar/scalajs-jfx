@@ -2,26 +2,25 @@ package jfx.core.remote
 
 import scala.collection.mutable
 
-/** Die geladenen Ausschnitte einer Remote-Liste, als zusammenhaengende Bereiche.
+/** Loaded slices of a remote list, represented as contiguous ranges.
   *
-  * Vorher lag das als `mutable.Map[Int, V]` von absolutem Index auf Wert vor. Das ist die falsche
-  * Struktur fuer den Zweck: die Map traegt keine Ordnung, also musste jede Operation, die Ordnung
-  * braucht, erst sortieren -- `O(n log n)` pro Einzel-Update in einer Klasse, deren Zweck grosse
-  * Datenmengen sind.
+  * Previously this was a `mutable.Map[Int, V]` from absolute index to value. That is the wrong
+  * structure here: a map has no ordering, so every operation that requires order had to sort first
+  * -- `O(n log n)` per individual update in a class intended for large datasets.
   *
-  * Geladene Daten sind aber nie verstreute Einzelindizes, sondern Seiten: wenige zusammenhaengende
-  * Bereiche mit Luecken dazwischen. Genau das bildet diese Struktur ab. Alle Operationen laufen in
-  * `O(r)` oder `O(log r)`, wobei `r` die Anzahl der Bereiche ist -- typischerweise eine Handvoll,
-  * unabhaengig davon, wie viele Eintraege geladen sind.
+  * Loaded data is never scattered single indices, but pages: a small number of contiguous ranges
+  * with gaps between them. This structure models exactly that. All operations run in `O(r)` or
+  * `O(log r)`, where `r` is the number of ranges -- typically only a handful, regardless of how
+  * many entries are loaded.
   *
-  * Invarianten:
-  *   - `ranges` ist nach `start` aufsteigend sortiert.
-  *   - Bereiche ueberlappen nicht und grenzen nicht aneinander; beruehrende Bereiche werden
-  *     verschmolzen. Zwischen zwei Bereichen liegt also immer eine echte Luecke.
-  *   - Kein Bereich ist leer.
+  * Invariants:
+  *   - `ranges` is sorted by ascending `start`.
+  *   - Ranges neither overlap nor touch; adjacent ranges are merged. There is therefore always a
+  *     real gap between two ranges.
+  *   - No range is empty.
   *
-  * "Absolut" meint den Index in der vollstaendigen Remote-Liste, "dicht" den Index in der
-  * ListProperty darunter, die nur die geladenen Eintraege haelt.
+  * "Absolute" refers to the index in the complete remote list; "dense" refers to the index in the
+  * underlying ListProperty, which only holds loaded entries.
   */
 private[remote] final class LoadedRanges[V] {
 
@@ -35,7 +34,7 @@ private[remote] final class LoadedRanges[V] {
 
   def isEmpty: Boolean = ranges.isEmpty
 
-  /** Anzahl geladener Eintraege insgesamt, also die Laenge der dichten Liste. */
+  /** Total number of loaded entries, i.e. the length of the dense list. */
   def size: Int = {
     var total = 0
     var index = 0
@@ -48,8 +47,8 @@ private[remote] final class LoadedRanges[V] {
 
   def clear(): Unit = ranges.clear()
 
-  /** Index des Bereichs, der `absolute` enthaelt. Ist er in keinem Bereich, wird
-    * `-(Einfuegeposition) - 1` geliefert -- dieselbe Konvention wie
+  /** Index of the range containing `absolute`. If no range contains it, returns
+    * `-(insertionPosition) - 1` -- the same convention as
     * `java.util.Arrays.binarySearch`.
     */
   private def search(absolute: Int): Int = {
@@ -80,7 +79,7 @@ private[remote] final class LoadedRanges[V] {
     }
   }
 
-  /** Ist `[from, untilExclusive)` vollstaendig geladen? Ein leerer Bereich gilt als geladen. */
+  /** Is `[from, untilExclusive)` fully loaded? An empty range is considered loaded. */
   def isRangeLoaded(from: Int, untilExclusive: Int): Boolean =
     if (untilExclusive <= from) true
     else {
@@ -88,11 +87,11 @@ private[remote] final class LoadedRanges[V] {
       index >= 0 && ranges(index).untilExclusive >= untilExclusive
     }
 
-  /** Hoechster geladener absoluter Index + 1, oder 0 wenn nichts geladen ist. */
+  /** Highest loaded absolute index + 1, or 0 when nothing is loaded. */
   def nextSequentialAbsolute: Int =
     if (ranges.isEmpty) 0 else ranges.last.untilExclusive
 
-  /** Anzahl geladener Eintraege mit absolutem Index kleiner als `absolute`. */
+  /** Number of loaded entries whose absolute index is less than `absolute`. */
   def countBefore(absolute: Int): Int = {
     var count = 0
     var index = 0
@@ -106,11 +105,11 @@ private[remote] final class LoadedRanges[V] {
     count
   }
 
-  /** Anzahl geladener Eintraege im Bereich `[from, untilExclusive)`. */
+  /** Number of loaded entries in `[from, untilExclusive)`. */
   def countIn(from: Int, untilExclusive: Int): Int =
     countBefore(untilExclusive) - countBefore(from)
 
-  /** Absoluter Index an der dichten Position `position`. */
+  /** Absolute index at dense position `position`. */
   def absoluteAt(position: Int): Int = {
     if (position < 0) throw IndexOutOfBoundsException(s"$position")
 
@@ -127,11 +126,11 @@ private[remote] final class LoadedRanges[V] {
     throw IndexOutOfBoundsException(s"$position")
   }
 
-  /** Alle geladenen Werte in aufsteigender absoluter Reihenfolge. */
+  /** All loaded values in ascending absolute order. */
   def denseItems: Seq[V] =
     ranges.iterator.flatMap(_.items).toSeq
 
-  /** Setzt einen einzelnen bereits geladenen Wert; ist er nicht geladen, wird er eingetragen. */
+  /** Updates one loaded value; inserts it when it is not yet loaded. */
   def update(absolute: Int, value: V): Unit = {
     val index = search(absolute)
     if (index >= 0) {
@@ -142,8 +141,8 @@ private[remote] final class LoadedRanges[V] {
     }
   }
 
-  /** Traegt eine zusammenhaengende Seite ein. Ueberlappende und angrenzende Bereiche werden mit ihr
-    * verschmolzen; wo sich alte und neue Daten ueberschneiden, gewinnen die neuen.
+  /** Inserts a contiguous page. Overlapping and adjacent ranges are merged with it; where old and
+    * new data overlap, the new data wins.
     */
   def put(startAbsolute: Int, items: Seq[V]): Unit = {
     if (items.isEmpty) return
@@ -153,13 +152,13 @@ private[remote] final class LoadedRanges[V] {
 
     var index = 0
 
-    // Bereiche, die komplett davor liegen und nicht angrenzen, bleiben unberuehrt.
+    // Ranges entirely before it and not adjacent remain untouched.
     while (index < ranges.length && ranges(index).untilExclusive < startAbsolute) {
       result += ranges(index)
       index += 1
     }
 
-    // Ueberlappende und angrenzende Bereiche einsammeln.
+    // Collect overlapping and adjacent ranges.
     val touching = mutable.ArrayBuffer.empty[Range]
     while (index < ranges.length && ranges(index).start <= newUntil) {
       touching += ranges(index)
@@ -169,9 +168,8 @@ private[remote] final class LoadedRanges[V] {
     if (touching.isEmpty) {
       result += new Range(startAbsolute, mutable.ArrayBuffer.from(items))
     } else {
-      // Der verschmolzene Bereich hat keine Luecken: die eingesammelten Bereiche
-      // beruehren [startAbsolute, newUntil) jeweils mindestens, und Luecken
-      // zwischen ihnen liegen vollstaendig innerhalb der neuen Seite.
+      // The merged range has no gaps: every collected range touches
+      // [startAbsolute, newUntil), and gaps between them lie entirely within the new page.
       val first  = touching.head
       val last   = touching.last
       val buffer = mutable.ArrayBuffer.empty[V]
@@ -198,8 +196,8 @@ private[remote] final class LoadedRanges[V] {
     ranges ++= result
   }
 
-  /** Entfernt den Eintrag am absoluten Index und schiebt alles danach um eins nach unten -- die
-    * Liste wird kuerzer, nicht luecken-behafteter.
+  /** Removes the entry at the absolute index and shifts every later entry down by one -- the list
+    * becomes shorter rather than gaining a gap.
     */
   def removeAt(absolute: Int): Unit = {
     val index = search(absolute)
@@ -220,7 +218,7 @@ private[remote] final class LoadedRanges[V] {
     mergeAdjacent()
   }
 
-  /** Stellt die Invariante wieder her, dass Bereiche nicht aneinandergrenzen. */
+  /** Restores the invariant that ranges do not touch. */
   private def mergeAdjacent(): Unit = {
     var index = 0
     while (index < ranges.length - 1) {

@@ -1,10 +1,10 @@
 package jfx.core.render
 
-/** Ein durch Kommentar-Anker begrenzter Bereich.
+/** A range delimited by comment anchors.
   *
-  * `adopted` traegt die Knoten zwischen den Ankern, wenn der Bereich uebernommen statt beansprucht
-  * wurde. Sie gehoeren dann der Komponente und werden mit ihr entfernt -- sonst blieben sie beim
-  * Austausch im DOM zurueck.
+  * `adopted` holds nodes between the anchors when the range was adopted rather than claimed. They
+  * then belong to the component and are removed with it -- otherwise they would remain in the DOM
+  * when it is replaced.
   */
 final case class VirtualRange(
     start: CommentNode,

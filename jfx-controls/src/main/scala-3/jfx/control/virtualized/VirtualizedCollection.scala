@@ -9,50 +9,50 @@ import org.scalajs.dom
 
 import scala.concurrent.Future
 
-/** Gemeinsame Basis von TableView, DataGrid und VirtualListView.
+/** Shared base for TableView, DataGrid, and VirtualListView.
   *
-  * Vor P3-1 teilten sich die drei rund 70 bis 100 identisch benannte Member -- Scroll-Zustand,
-  * Viewport-Messung, Remote-Anbindung, Item-Zustand, Revisionszaehler und DOM-Zugriff lagen dreimal
-  * parallel. Jede Korrektur musste dreimal gemacht werden; bei `requestLazyLoadIfNecessary` wurde
-  * sie es nicht (siehe jfx-controls/VIRTUALIZATION.md).
+  * Before P3-1, the three shared about 70 to 100 identically named members -- scroll state,
+  * viewport measurement, remote integration, item state, revision counters, and DOM access were
+  * implemented three times. Every fix had to be made three times; `requestLazyLoadIfNecessary` was
+  * not (see jfx-controls/VIRTUALIZATION.md).
   *
-  * Was die drei tatsaechlich unterscheidet, steckt in [[ItemGeometry]].
+  * What actually distinguishes the three lives in [[ItemGeometry]].
   *
-  * Die Unterklasse liefert:
-  *   - [[geometry]] -- wo liegt Element i, was ist sichtbar
-  *   - [[renderableCount]] -- wie viele Elemente insgesamt darstellbar sind
-  *   - [[recomputeVisible]] -- den controlspezifischen Neuaufbau der Sichtliste
-  *   - [[handleLocalItemsChange]] und [[resetMeasurements]]
+  * The subclass provides:
+  *   - [[geometry]] -- where item i is located and what is visible
+  *   - [[renderableCount]] -- how many items can be rendered in total
+  *   - [[recomputeVisible]] -- rebuilding the control-specific visible list
+  *   - [[handleLocalItemsChange]] and [[resetMeasurements]]
   */
 abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource[T])
     extends AbstractComponent {
 
-  // --- von der Unterklasse zu liefern -------------------------------------
+  // --- supplied by the subclass -------------------------------------------
 
   protected def geometry: ItemGeometry
 
-  /** Anzahl darstellbarer Elemente. Bei einer Remote-Liste ist das die Gesamtzahl, nicht die Zahl
-    * der bereits geladenen.
+  /** Number of renderable items. For a remote list, this is the total number rather than the number
+    * already loaded.
     */
   protected def renderableCount: Int
 
-  /** Baut die controlspezifische Liste sichtbarer Elemente neu auf. */
+  /** Rebuilds the control-specific list of visible items. */
   protected def recomputeVisible(): Unit
 
-  /** Reaktion auf eine Aenderung einer lokalen (nicht remote) Liste. */
+  /** Responds to a change in a local (non-remote) list. */
   protected def handleLocalItemsChange(change: ListProperty.Change[T]): Unit
 
-  /** Verwirft zwischengespeicherte Messungen; Standard: nichts zu tun. */
+  /** Discards cached measurements; default: nothing to do. */
   protected def resetMeasurements(): Unit = ()
 
-  /** Darf die Liste noch wachsen? Steuert das Nachladen am Ende. */
+  /** Can the list still grow? Controls loading more at the end. */
   protected def canStillGrow: Boolean =
     currentRemoteItems match {
       case null   => false
       case remote => remote.canLoadMore
     }
 
-  // --- Zustand -------------------------------------------------------------
+  // --- state ---------------------------------------------------------------
 
   val scrollTopProperty: Property[Double]      = Property(0.0)
   val viewportHeightProperty: Property[Double] = Property(400.0)
@@ -69,7 +69,7 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
   protected var browserRendering         = false
   protected var hydrating                = false
 
-  /** Die Item-Liste als Remote-Liste, oder null.
+  /** The item list as a remote list, or null.
     */
   protected def currentRemoteItems: RemoteListDataSource[T] | Null =
     dataSource match {
@@ -91,7 +91,7 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
       case remote => remote.errorProperty.get
     }
 
-  // --- Revisionszaehler ----------------------------------------------------
+  // --- revision counters ---------------------------------------------------
 
   protected def bumpItemState(): Unit =
     itemStateRevisionProperty.setAlways(itemStateRevisionProperty.get + 1)
@@ -104,10 +104,10 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
     recomputeVisible()
   }
 
-  // --- Beobachter ----------------------------------------------------------
+  // --- observers -----------------------------------------------------------
 
-  /** Haengt die Beobachter an die beim Bau uebergebene Datenquelle. [[onRemoteSortingChanged]] ist
-    * der Haken fuer CrawlableCollection.
+  /** Attaches observers to the data source supplied at construction. [[onRemoteSortingChanged]] is
+    * the hook for CrawlableCollection.
     */
   protected def wireItemsObserver(): Unit = {
     itemsObserver.dispose()
@@ -161,12 +161,12 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
     refreshItemState()
   }
 
-  /** Haken fuer CrawlableCollection; ohne Crawl-Zustand nichts zu tun. */
+  /** Hook for CrawlableCollection; nothing to do without crawl state. */
   protected def onRemoteSortingChanged(
       sorting: Vector[jfx.core.remote.RemoteSort]
   ): Unit = ()
 
-  // --- Scroll und Messung --------------------------------------------------
+  // --- scrolling and measurement ------------------------------------------
 
   protected def updateScrollState(element: dom.html.Element): Unit = {
     scrollTopProperty.set(element.scrollTop)
@@ -174,27 +174,25 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
     updateViewportSize(element)
   }
 
-  /** Haken fuer horizontal scrollende Controls; nur TableView braucht ihn. */
+  /** Hook for horizontally scrolling controls; only TableView needs it. */
   protected def onScrollLeftChanged(scrollLeft: Double): Unit = ()
 
   protected def updateViewportSize(element: dom.html.Element): Unit =
     applyViewportSize(element.clientWidth.toDouble, element.clientHeight.toDouble)
 
-  /** Uebernimmt eine gemessene Viewport-Groesse.
+  /** Applies a measured viewport size.
     *
-    * Getrennt von [[updateViewportSize]], damit die Uebernahme ohne DOM testbar ist. Der Fehler,
-    * den das absichert, sass genau hier: die Basis uebernahm zunaechst nur die Hoehe, weil sie aus
-    * VirtualListView stammte. TableView und DataGrid brauchen aber auch die Breite -- ohne sie
-    * blieben beide bei ihrem Startwert von 800 stehen, das Grid zeigte eine Spalte zu wenig und die
-    * Tabelle verteilte ihre Spaltenbreiten auf eine zu schmale Flaeche.
+    * Separated from [[updateViewportSize]] so applying it is testable without a DOM. The protected
+    * bug was here: the base initially applied only height because it came from VirtualListView.
+    * TableView and DataGrid also need width; without it both remained at their initial 800, the grid
+    * showed one column too few, and the table distributed widths over too narrow a surface.
     */
   private[control] def applyViewportSize(width: Double, height: Double): Unit = {
     if (width > 0) onViewportWidthMeasured(width)
     if (height > 0) viewportHeightProperty.set(height)
   }
 
-  /** Haken fuer Controls mit horizontaler Ausdehnung. VirtualListView ist einspaltig und braucht
-    * die Breite nicht.
+  /** Hook for controls with horizontal extent. VirtualListView is single-column and needs no width.
     */
   protected def onViewportWidthMeasured(width: Double): Unit = ()
 
@@ -210,25 +208,24 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
       ()
     }
 
-  /** Der Rumpf einer Viewport-Messung: Groesse uebernehmen, dann die Nachlaeufer benachrichtigen.
+  /** Body of a viewport measurement: apply size, then notify follow-ups.
     *
-    * Vom requestAnimationFrame getrennt, damit die Verkettung ohne DOM pruefbar ist. Genau hier
-    * sass ein Fehler: beim Zusammenlegen in P3-1 ist der zweite Schritt verloren gegangen, wodurch
-    * die gespeicherte Scroll-Position nie wiederhergestellt wurde und hydrating dauerhaft true
-    * blieb -- was wiederum das Nachladen blockierte.
+    * Separated from requestAnimationFrame so the chain is testable without a DOM. A bug lived here:
+    * consolidation in P3-1 lost the second step, so saved scroll position was never restored and
+    * hydrating remained true permanently, which in turn blocked loading more.
     */
   private[control] def measureViewport(width: Double, height: Double): Unit = {
     applyViewportSize(width, height)
     onViewportMeasured()
   }
 
-  /** Haken nach einer Viewport-Messung. CrawlableCollection stellt darueber die gespeicherte
-    * Scroll-Position wieder her und gibt die Hydration frei.
+  /** Hook after a viewport measurement. CrawlableCollection uses it to restore saved scroll position
+    * and release hydration.
     */
   protected def onViewportMeasured(): Unit = ()
 
-  /** Haengt die Item-Beobachter an und sorgt dafuer, dass sie beim Entsorgen der Komponente wieder
-    * abgehen. Von installObservers der Unterklasse aufzurufen.
+  /** Attaches item observers and ensures they are removed when the component is disposed. Called by
+    * the subclass's installObservers.
     */
   protected def installItemObservers(): Unit = {
     addDisposable(Disposable {
@@ -238,10 +235,10 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
     wireItemsObserver()
   }
 
-  /** Beobachtet die Groesse des Viewports.
+  /** Observes the viewport size.
     *
-    * Stand in allen drei Controls wortgleich in afterCompose -- ein ResizeObserver auf dem Viewport
-    * plus ein resize-Listener am Fenster, beide auf scheduleViewportMeasure.
+    * This appeared identically in afterCompose of all three controls: a ResizeObserver on the
+    * viewport plus a window resize listener, both targeting scheduleViewportMeasure.
     */
   protected def observeViewportSize(): Unit = {
     domElement(viewportComponent).foreach { element =>
@@ -255,8 +252,8 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
     addDisposable(Disposable(dom.window.removeEventListener("resize", listener)))
   }
 
-  /** Misst die Hoehe eines Header-Elements laufend und schreibt sie in `target`. Die drei Controls
-    * unterscheiden sich nur darin, welches Element und welche Property sie uebergeben.
+  /** Continuously measures a header element's height and writes it to `target`. The three controls
+    * differ only in which element and property they provide.
     */
   protected def observeHeaderHeight(
       header: AbstractComponent | Null,
@@ -291,12 +288,11 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
   protected def topForIndex(index: Int): Double =
     geometry.topForIndex(index)
 
-  /** Sichtbarer Bereich als `[start, end)`.
+  /** Visible range as `[start, end)`.
     *
-    * Der vordere Zweig ist in allen drei Controls wortgleich: beim Server-Rendering und waehrend
-    * der Hydration bestimmt der Crawl-Zustand den Ausschnitt, nicht die Scroll-Position -- sonst
-    * waere der gerenderte Ausschnitt nicht reproduzierbar. Erst der else-Zweig unterscheidet sich,
-    * und der liegt in der Geometrie.
+    * The first branch is identical in all three controls: during server rendering and hydration,
+    * crawl state determines the slice rather than scroll position, otherwise the rendered slice
+    * would not be reproducible. Only the else branch differs and belongs to geometry.
     */
   protected def visibleRange(total: Int): (Int, Int) =
     if ((!browserRendering || hydrating) && crawlWindow.nonEmpty) {
@@ -307,18 +303,16 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
       geometry.visibleRange(total, scrollTopProperty.get, viewportHeightProperty.get)
     }
 
-  /** Der beim Server-Rendering zu zeigende Ausschnitt, oder None. CrawlableCollection ueberschreibt
-    * das.
+  /** Slice to show during server rendering, or None. CrawlableCollection overrides this.
     */
   protected def crawlWindow: Option[(Int, Int)] = None
 
-  // --- Nachladen -----------------------------------------------------------
+  // --- loading more --------------------------------------------------------
 
-  /** Faehrt den Prefetch fuer den sichtbaren Bereich.
+  /** Runs prefetching for the visible range.
     *
-    * Diese Fassung stammt aus DataGrid und VirtualListView; TableView hatte eine aeltere ohne
-    * Prefetch-Fenster und ohne Seiten-Ausrichtung und erbt die Verbesserung hier mit. Siehe
-    * VIRTUALIZATION.md.
+    * This version comes from DataGrid and VirtualListView; TableView had an older one without a
+    * prefetch window or page alignment and inherits the improvement here. See VIRTUALIZATION.md.
     */
   protected def requestLazyLoadIfNecessary(start: Int, end: Int): Unit =
     currentRemoteItems match {
@@ -335,9 +329,8 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
           total,
           math.max(pageFrom + 1, ((requestTo + pageSize - 1) / pageSize) * pageSize)
         )
-        // Deduplizierung liegt in RemoteListProperty: gleichlautende Anfragen
-        // teilen sich dort ein Future. Das Control muss darueber nicht Buch
-        // fuehren.
+        // Deduplication belongs to RemoteListProperty: identical requests share a Future there. The
+        // control need not keep bookkeeping for them.
         if (pageTo > pageFrom && !remote.isRangeLoaded(pageFrom, pageTo)) {
           discardResult(remote.ensureRangeLoaded(pageFrom, pageTo))
         }
@@ -349,9 +342,8 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
       case _ => ()
     }
 
-  /** Ein Lade-Future, dessen Ergebnis das Control nicht braucht. Der recover verhindert eine
-    * unbehandelte Fehlermeldung -- der Fehler selbst steht in RemoteListProperty.errorProperty und
-    * wird von dort gerendert.
+  /** A loading Future whose result the control does not need. recover prevents an unhandled failure;
+    * the error itself lives in RemoteListProperty.errorProperty and is rendered from there.
     */
   protected def discardResult(result: Future[?]): Unit = {
     result.recover { case _ => () }(using scala.concurrent.ExecutionContext.global)

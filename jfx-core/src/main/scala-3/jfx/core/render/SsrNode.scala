@@ -2,11 +2,10 @@ package jfx.core.render
 
 import scala.collection.mutable
 
-/** Gemeinsame Basis der server-seitigen Knoten.
+/** Common base of server-side nodes.
   *
-  * Traegt einen Hinweis auf die eigene Position in der Geschwisterliste. Ohne ihn muss jede
-  * Einfuegemarke linear gesucht werden, was den Aufbau grosser Listen quadratisch macht -- siehe
-  * CHANGE.md P4-2.
+  * Carries a hint for its own position in the sibling list. Without it, every insertion marker must
+  * be found linearly, making construction of large lists quadratic -- see CHANGE.md P4-2.
   */
 private[render] trait SsrNode {
   private[render] var siblingHint: Int = -1
@@ -24,15 +23,13 @@ private[render] object SsrNode {
     case _            => ()
   }
 
-  /** Position von `node` in `nodes`, ueber den Hinweis abgekuerzt.
+  /** Position of `node` in `nodes`, accelerated by the hint.
     *
-    * Der Hinweis wird beim Einfuegen gesetzt, wo die Position ohnehin bekannt ist. Er veraltet nur
-    * nach hinten -- Einfuegungen vor einem Knoten schieben ihn weiter, nie zurueck -- und ist damit
-    * eine untere Schranke. Deshalb genuegt eine Vorwaertssuche ab dort, ueber die wenigen
-    * Positionen, um die er seitdem gerueckt ist.
+    * The hint is set during insertion, when the position is known anyway. It becomes stale only
+    * forward -- inserts before a node move it onward, never backward -- so it is a lower bound. A
+    * forward search from there over the few positions it has moved since is therefore sufficient.
     *
-    * Gefunden wird gegen die tatsaechliche Liste; schlaegt die Vorwaertssuche fehl, folgt die volle
-    * Suche.
+    * Lookup uses the actual list; if the forward search fails, a full search follows.
     */
   def indexIn(nodes: mutable.ArrayBuffer[HostNode], node: HostNode): Int = {
     val hint  = hintOf(node)
@@ -45,7 +42,7 @@ private[render] object SsrNode {
     found
   }
 
-  /** Fuegt `child` an `index` ein und haelt den Hinweis nach. */
+  /** Inserts `child` at `index` and updates its hint. */
   def insertInto(
       nodes: mutable.ArrayBuffer[HostNode],
       index: Int,
@@ -57,7 +54,7 @@ private[render] object SsrNode {
     setHint(child, safeIndex)
   }
 
-  /** Haengt `child` hinten an und haelt den Hinweis nach. */
+  /** Appends `child` and updates its hint. */
   def appendTo(nodes: mutable.ArrayBuffer[HostNode], child: HostNode): Unit = {
     nodes += child
     setHint(child, nodes.length - 1)

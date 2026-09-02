@@ -3,8 +3,8 @@ package jfx.core.remote
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-/** Das Verhalten bei Luecken war vorher implizit -- es ergab sich daraus, dass eine Map keine
-  * Ordnung hat und jede Operation neu sortierte. Hier ist es festgeschrieben.
+/** Gap behavior used to be implicit -- it followed from a map having no order and every operation
+  * sorting again. It is specified here.
   */
 class LoadedRangesSpec extends AnyFlatSpec with Matchers {
 
@@ -150,7 +150,7 @@ class LoadedRangesSpec extends AnyFlatSpec with Matchers {
 
     ranges.denseItems shouldBe Seq("b", "k", "l")
     ranges.get(0) shouldBe Some("b")
-    // Der hintere Bereich ist um eins nach unten gerueckt.
+    // The trailing range shifted down by one.
     ranges.get(9) shouldBe Some("k")
     ranges.get(10) shouldBe Some("l")
   }
@@ -172,9 +172,8 @@ class LoadedRangesSpec extends AnyFlatSpec with Matchers {
     ranges.put(0, Seq("a", "b"))
     ranges.put(3, Seq("d"))
 
-    // Luecke ist genau ein Index (2). Entfernt man einen geladenen Eintrag davor,
-    // schrumpfen Bereich und Folge-Start gleichermassen -- die Luecke wandert,
-    // sie schliesst sich nicht.
+    // The gap is exactly one index (2). Removing a loaded entry before it shrinks the range and the
+    // following start equally -- the gap moves; it does not close.
     ranges.removeAt(0)
 
     ranges.denseItems shouldBe Seq("b", "d")
@@ -188,8 +187,8 @@ class LoadedRangesSpec extends AnyFlatSpec with Matchers {
     ranges.put(0, Seq("a", "b"))
     ranges.put(3, Seq("d"))
 
-    // Index 2 ist nicht geladen. Er faellt trotzdem weg, alles danach rueckt auf
-    // -- damit grenzen die beiden Bereiche aneinander und werden verschmolzen.
+    // Index 2 is not loaded. It is removed nevertheless and everything after it shifts up -- the two
+    // ranges then become adjacent and are merged.
     ranges.removeAt(2)
 
     ranges.denseItems shouldBe Seq("a", "b", "d")

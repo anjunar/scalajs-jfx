@@ -88,8 +88,8 @@ class Foreach[V](
     val safeIndex = index.max(0).min(mounted.length)
     val item      = new ForeachItem(value, safeIndex, build)
 
-    // Die Position geht an Runtime, statt die Kinderliste hinterher zu
-    // korrigieren. Siehe CHANGE.md P4-3.
+    // Pass the position to Runtime instead of correcting the children list afterwards. See
+    // CHANGE.md P4-3.
     Runtime.mount(item, insertionCursorAt(safeIndex), Some(this), Some(safeIndex))
     mounted.insert(safeIndex, item)
   }
@@ -97,7 +97,7 @@ class Foreach[V](
   private def unmountAt(index: Int): Unit =
     if (index >= 0 && index < mounted.length) {
       val item = mounted.remove(index)
-      // Runtime.unmount traegt das Kind selbst aus der Kinderliste aus.
+      // Runtime.unmount removes the child from the children list itself.
       Runtime.unmount(item)
     } else {
       resetAll()

@@ -11,11 +11,11 @@ import scala.scalajs.js.timers.setTimeout
 
 object AppRoutes {
 
-  /** Ein Loader, der erst nach `millis` liefert.
+  /** A loader that completes only after `millis`.
     *
-    * Steht hier, damit mindestens eine Demo-Route den asynchronen Pfad wirklich durchlaeuft. Alle
-    * anderen Routen haben ihre Daten sofort zur Hand und liefern ein bereits erfuelltes Future --
-    * an denen wuerde nie auffallen, wenn die Hydration einen laufenden Loader nicht aushielte.
+    * This exists so at least one demo route actually exercises the asynchronous path. All other
+    * routes have their data immediately available and return an already completed Future -- they
+    * would never reveal whether hydration could tolerate a running loader.
     */
   private def delayed(millis: Int)(component: => AbstractComponent): Future[AbstractComponent] = {
     val promise = Promise[AbstractComponent]()
@@ -65,10 +65,9 @@ object AppRoutes {
           I18nPage.render()
         })
       },
-      // Bewusst mit echter Verzoegerung: das ist die Route, an der sich zeigt,
-      // dass Hydration einen noch laufenden Loader aushaelt. Bis P4-1 warf der
-      // Router hier -- die uebrigen Routen verdecken das, weil ihr Future schon
-      // erfuellt ist. Siehe CHANGE.md P4-1.
+      // Deliberately delayed: this route demonstrates that hydration tolerates a loader still in
+      // flight. Before P4-1 the router threw here; the other routes concealed it because their
+      // Futures were already completed. See CHANGE.md P4-1.
       Route.view("/rendering") { _ =>
         delayed(120) {
           Route.component {

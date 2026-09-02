@@ -115,10 +115,10 @@ final class HydratingCursor private (
   override def claimRange(label: String): VirtualRange =
     rangeFor(label, adopt = false)
 
-  /** Uebernimmt den Bereich, ohne seinen Inhalt zu pruefen.
+  /** Adopts the range without validating its contents.
     *
-    * Die Knoten dazwischen gehen an die Komponente, damit sie beim Austausch mit ihr verschwinden.
-    * Siehe [[HydrationMode.Adopt]].
+    * The nodes between the anchors belong to the component so that they disappear when it is
+    * replaced. See [[HydrationMode.Adopt]].
     */
   override def adoptRange(label: String): VirtualRange =
     rangeFor(label, adopt = true)
@@ -270,8 +270,8 @@ final class HydratingCursor private (
     )
 
   private[render] def assertFullyClaimed(): Unit =
-    // Adopt: der Bereich wurde bewusst ungeprueft uebernommen, dort ist
-    // "nicht beansprucht" der Normalfall und kein Fehler.
+    // Adopt: the range was deliberately adopted without validation, so "unclaimed" is normal there
+    // rather than an error.
     if (mode == HydrationMode.Strict) {
       firstUnclaimedNode.foreach { node =>
         throw hydrationFault(

@@ -107,7 +107,7 @@ object ImagePage {
   style { width = "100%" }
 }
 
-// Oder reaktiv:
+// Or reactively:
 val myProperty = Property("...")
 val myAlt = Property("Description")
 image {

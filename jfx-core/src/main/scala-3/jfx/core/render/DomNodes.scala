@@ -12,7 +12,7 @@ private[jfx] object DomNodes {
         throw new IllegalArgumentException(s"Not a browser DOM node: ${other.getClass.getName}")
     }
 
-  /** Gegenstueck zu [[raw]]: huellt einen DOM-Knoten in den passenden HostNode. */
+  /** Counterpart to [[raw]]: wraps a DOM node in the matching HostNode. */
   def wrap(node: dom.Node): HostNode =
     node match {
       case element: dom.Element => new DomHostElement(element)

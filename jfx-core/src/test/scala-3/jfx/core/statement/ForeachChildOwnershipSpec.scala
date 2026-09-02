@@ -11,15 +11,13 @@ import org.scalatest.matchers.should.Matchers
 
 import scala.scalajs.js
 
-/** Wer besitzt die Kinderliste eines Containers?
+/** Who owns a container's children list?
   *
-  * Vor P4-3 gab es zwei Antworten. `Runtime.mountWithCursor` trug das Kind ein, und
-  * `Foreach.mountAt` baute die Liste danach mit `syncChildOrder()` aus seiner eigenen Buchfuehrung
-  * neu auf. Solange nur Foreach selbst mountete, fiel das nicht auf -- alles andere verschwand beim
-  * naechsten Abgleich stillschweigend.
+  * Before P4-3 there were two answers. `Runtime.mountWithCursor` added the child, and
+  * `Foreach.mountAt` then rebuilt the list with `syncChildOrder()` from its own bookkeeping. This
+  * went unnoticed while only Foreach mounted children -- everything else vanished at reconciliation.
   *
-  * Jetzt schreibt nur noch Runtime: beim Mounten an der uebergebenen Position, beim Unmounten
-  * wieder heraus.
+  * Now only Runtime writes: at the supplied position during mount and removes during unmount.
   */
 class ForeachChildOwnershipSpec extends AnyFlatSpec with Matchers {
 
@@ -59,9 +57,8 @@ class ForeachChildOwnershipSpec extends AnyFlatSpec with Matchers {
 
     foreach.children should contain(stranger)
 
-    // Und es bleibt drin, wenn die Liste sich danach aendert. Vorher raeumte
-    // syncChildOrder() alles weg, was nicht aus Foreachs eigener Buchfuehrung
-    // stammte.
+    // It remains when the list changes afterwards. Previously syncChildOrder() removed everything
+    // not originating from Foreach's own bookkeeping.
     items.addOne("c")
 
     foreach.children should contain(stranger)

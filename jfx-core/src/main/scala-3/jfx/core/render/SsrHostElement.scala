@@ -32,8 +32,8 @@ final class SsrHostElement(val tagName: String) extends HostElement, SsrNode {
     if (names.isEmpty) attrs.remove("class")
     else attrs("class") = names.mkString(" ")
 
-  // Einfuegen laeuft ueber SsrNode: dort steht, warum die Position einer
-  // Einfuegemarke nicht mehr linear gesucht wird. Siehe CHANGE.md P4-2.
+  // Insertion goes through SsrNode, which explains why an insertion marker's position is no longer
+  // found by linear search. See CHANGE.md P4-2.
   def insertChild(index: Int, child: HostNode): Unit =
     SsrNode.insertInto(children, index, child)
 
@@ -43,7 +43,7 @@ final class SsrHostElement(val tagName: String) extends HostElement, SsrNode {
         SsrNode.indexIn(children, node) match {
           case index if index >= 0 =>
             SsrNode.insertInto(children, index, child)
-            // Die Marke ist um genau eine Position nach hinten gerueckt.
+            // The marker moved back by exactly one position.
             SsrNode.setHint(node, index + 1)
           case _ =>
             SsrNode.appendTo(children, child)

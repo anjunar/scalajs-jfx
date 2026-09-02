@@ -6,15 +6,14 @@ import jfx.core.dsl.DslLayer
 import jfx.core.render.Cursor
 import jfx.core.request.{RequestContext, RequestHeaders}
 
-/** Wurzelkomponente fuer die Crawl-Tests der virtualisierenden Controls.
+/** Root component for crawl tests of virtualizing controls.
   *
-  * Frueher haengten diese Tests einen echten Router um das Control, nur damit `nextCrawlHref` einen
-  * Pfad findet. Seit P1-4 haengt jfx-controls nicht mehr an jfx-router, und das ist auch die
-  * richtige Testgrenze: ein Control-Test soll das Control gegen seine eigene Naht pruefen -- den
-  * CrawlScope -- nicht gegen eine bestimmte Implementierung davon.
+  * These tests formerly wrapped the control in a real router just so `nextCrawlHref` could find a
+  * path. Since P1-4, jfx-controls no longer depends on jfx-router, which is also the correct test
+  * boundary: a control test must test the control against its own seam -- CrawlScope -- rather than
+  * against one specific implementation.
   *
-  * Dass der Router einen brauchbaren CrawlScope bereitstellt, prueft RouterCrawlScopeSpec in
-  * jfx-router.
+  * RouterCrawlScopeSpec in jfx-router verifies that the router provides a useful CrawlScope.
   */
 abstract class CrawlTestRoot(
     crawlPath: String = "/",

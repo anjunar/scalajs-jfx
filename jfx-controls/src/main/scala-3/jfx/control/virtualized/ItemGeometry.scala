@@ -1,52 +1,52 @@
 package jfx.control.virtualized
 
-/** Wo liegt Element `index`, und welche Elemente sind sichtbar?
+/** Where is item `index`, and which items are visible?
   *
-  * Das ist der einzige echte Unterschied zwischen TableView, DataGrid und VirtualListView. Alles
-  * andere -- Scroll-Zustand, Messung, Remote-Anbindung, Crawl-Zustand -- war dreimal dieselbe Logik
-  * und liegt jetzt in [[VirtualizedCollection]] beziehungsweise [[CrawlableCollection]].
+  * This is the only real difference between TableView, DataGrid, and VirtualListView. Everything
+  * else -- scroll state, measurement, remote integration, crawl state -- was the same logic three
+  * times and now lives in [[VirtualizedCollection]] and [[CrawlableCollection]].
   *
-  * Die Achse ist zweidimensional, nicht nur "feste gegen gemessene Hoehe":
+  * The axis is two-dimensional, not merely "fixed versus measured height":
   *
   * {{{
-  *                    Hoehe                Spalten   Ueberhang
-  *   TableView        fix (rowHeight)      1         overscanRows (Konstante)
-  *   DataGrid         fix (itemHeight+gap) N         overscanRows (Property)
-  *   VirtualListView  gemessen             1         overscanPx   (Property)
+  *                    Height               Columns   Overscan
+  *   TableView        fixed (rowHeight)    1         overscanRows (constant)
+  *   DataGrid         fixed (itemHeight+gap) N       overscanRows (Property)
+  *   VirtualListView  measured             1         overscanPx   (Property)
   * }}}
   *
-  * Implementierungen duerfen Zustand halten -- [[MeasuredRowGeometry]] traegt die gemessenen Hoehen
-  * und deren Praefixsummen.
+  * Implementations may keep state -- [[MeasuredRowGeometry]] holds measured heights and their prefix
+  * sums.
   *
-  * Siehe jfx-controls/VIRTUALIZATION.md und CHANGE.md P3-1.
+  * See jfx-controls/VIRTUALIZATION.md and CHANGE.md P3-1.
   */
 trait ItemGeometry {
 
-  /** Abstand oberhalb des ersten Elements, etwa durch einen Header. */
+  /** Space above the first item, for example due to a header. */
   def headerOffset: Double
 
-  /** Obere Kante von Element `index`, inklusive [[headerOffset]]. */
+  /** Top edge of item `index`, including [[headerOffset]]. */
   def topForIndex(index: Int): Double
 
-  /** Index des Elements an der Scroll-Position `offset`, wobei `offset` bereits um [[headerOffset]]
-    * bereinigt ist.
+  /** Index of the item at scroll position `offset`, where `offset` has already been adjusted for
+    * [[headerOffset]].
     */
   def indexForOffset(offset: Double): Int
 
-  /** Gesamthoehe des Inhalts fuer `total` Elemente, ohne [[headerOffset]]. */
+  /** Total content height for `total` items, excluding [[headerOffset]]. */
   def contentHeight(total: Int): Double
 
-  /** Sichtbarer Bereich als `[start, end)`.
+  /** Visible range as `[start, end)`.
     *
-    * Nur der Nicht-Crawl-Fall: der Crawl-Zweig ist in allen drei Controls wortgleich und liegt in
+    * Only the non-crawl case: the crawl branch is identical in all three controls and lives in
     * [[VirtualizedCollection.visibleRange]].
     */
   def visibleRange(total: Int, scrollTop: Double, viewportHeight: Double): (Int, Int)
 }
 
-/** Feste Zeilenhoehe, eine Spalte -- das Modell von TableView.
+/** Fixed row height, one column -- the TableView model.
   *
-  * Der Ueberhang ist in Zeilen angegeben.
+  * Overscan is expressed in rows.
   */
 final class FixedRowGeometry(
     rowHeight: () => Double,
@@ -84,14 +84,13 @@ final class FixedRowGeometry(
   }
 }
 
-/** Feste Zellengroesse in einem Raster mit N Spalten -- das Modell von DataGrid.
+/** Fixed cell size in a grid with N columns -- the DataGrid model.
   *
-  * Der Ueberhang ist in Zeilen angegeben: es werden immer vollstaendige Rasterzeilen sichtbar
-  * gemacht.
+  * Overscan is expressed in rows: complete grid rows are always made visible.
   *
-  * itemHeight und gap stehen einzeln und nicht als fertiger rowStep, weil die Gesamthoehe die
-  * Luecken zwischen den Zeilen zaehlt und nicht hinter der letzten:
-  * `rows * itemHeight + (rows - 1) * gap`. Mit rowStep waere eine Luecke zu viel drin.
+  * itemHeight and gap are separate rather than a finished rowStep because total height counts gaps
+  * between rows, not after the last one: `rows * itemHeight + (rows - 1) * gap`. rowStep would add
+  * one gap too many.
   */
 final class GridGeometry(
     columnCount: () => Int,
@@ -104,7 +103,7 @@ final class GridGeometry(
   private def effectiveColumns: Int    = math.max(1, columnCount())
   private def effectiveRowStep: Double = math.max(1.0, itemHeight() + gap())
 
-  /** Anzahl Rasterzeilen fuer `total` Elemente. */
+  /** Number of grid rows for `total` items. */
   private def rowCountFor(total: Int): Int =
     if (total <= 0) 0 else math.ceil(total.toDouble / effectiveColumns).toInt
 
@@ -143,18 +142,17 @@ final class GridGeometry(
   }
 }
 
-/** Gemessene Hoehen, eine Spalte -- das Modell von VirtualListView.
+/** Measured heights, one column -- the VirtualListView model.
   *
-  * Traegt die gemessenen Hoehen und deren Praefixsummen. Was noch nicht gemessen wurde, gilt mit
-  * der Schaetzung; `prefixDirtyFrom` merkt sich, ab wo die Summen neu gebildet werden muessen,
-  * damit eine einzelne Messung nicht die ganze Liste neu berechnet.
+  * Holds measured heights and their prefix sums. What is not yet measured uses the estimate;
+  * `prefixDirtyFrom` records where sums must be rebuilt so one measurement does not recalculate the
+  * entire list.
   *
-  * Ueber den gemessenen Bereich hinaus wird mit der Schaetzung extrapoliert -- `renderableCount`
-  * darf groesser sein als die Zahl gemessener Zeilen, etwa durch die Tail-Padding-Reserve beim
-  * Nachladen.
+  * Beyond the measured range, values are extrapolated using the estimate -- `renderableCount` may
+  * exceed the number of measured rows, for example due to tail-padding reserve while loading more.
   *
-  * Der Ueberhang ist in Pixeln angegeben, nicht in Zeilen: bei variablen Hoehen ist eine Zeilenzahl
-  * keine sinnvolle Groesse.
+  * Overscan is expressed in pixels rather than rows: with variable heights, a row count is not a
+  * meaningful measure.
   */
 final class MeasuredRowGeometry(
     estimateHeight: () => Double,
@@ -182,8 +180,8 @@ final class MeasuredRowGeometry(
   def heightFor(index: Int): Double =
     heights.lift(index).getOrElse(estimate)
 
-  /** Traegt eine gemessene Hoehe ein und liefert die Differenz zur bisherigen, oder None, wenn sie
-    * sich nicht nennenswert geaendert hat.
+  /** Records a measured height and returns the difference from the previous value, or None when it
+    * has not changed meaningfully.
     */
   def updateHeight(index: Int, newHeight: Double): Option[Double] =
     if (index < 0) None
@@ -216,7 +214,7 @@ final class MeasuredRowGeometry(
     prefixDirtyFrom = Int.MaxValue
   }
 
-  /** Abstand vom ersten Element bis zur oberen Kante von `index`, ohne Header. */
+  /** Distance from the first item to the top edge of `index`, without the header. */
   def offsetFor(index: Int): Double = {
     val loaded = heights.length
     if (index <= loaded) prefix.lift(index).getOrElse(prefix.last)
@@ -252,10 +250,10 @@ final class MeasuredRowGeometry(
     measuredHeight + math.max(0, total - measured) * estimate
   }
 
-  /** Obergrenze fuer die Zahl gleichzeitig gemounteter Zeilen.
+  /** Upper bound for the number of rows mounted simultaneously.
     *
-    * Ohne sie wuerde eine Liste, deren Zeilen alle deutlich niedriger als die Schaetzung ausfallen,
-    * beliebig viele Zeilen in den sichtbaren Bereich ziehen.
+    * Without it, a list whose rows are all much lower than the estimate could pull arbitrarily many
+    * rows into the visible range.
     */
   private def maxSlotsForViewport(viewportHeight: Double): Int = {
     val minimum = math.max(12.0, math.min(estimate, math.max(estimate / 2.0, 1.0)))

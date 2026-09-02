@@ -37,10 +37,10 @@ trait Cursor {
     VirtualRange(start, end, before(end))
   }
 
-  /** Wie [[claimRange]], uebernimmt den Bereich aber ungeprueft, wenn der Cursor hydriert.
+  /** Like [[claimRange]], but adopts the range without validation when the cursor hydrates.
     *
-    * Nur [[HydratingCursor]] unterscheidet die beiden Faelle; ueberall sonst gibt es nichts zu
-    * uebernehmen, weil noch nichts da ist.
+    * Only [[HydratingCursor]] distinguishes the two cases; elsewhere there is nothing to adopt
+    * because nothing exists yet.
     */
   def adoptRange(label: String): VirtualRange =
     claimRange(label)

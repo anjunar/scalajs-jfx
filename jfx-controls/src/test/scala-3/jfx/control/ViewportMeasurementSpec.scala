@@ -13,16 +13,14 @@ import jfx.core.state.ListProperty
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-/** Die gemessene Viewport-Groesse muss in beiden Achsen ankommen.
+/** The measured viewport size must be applied on both axes.
   *
-  * Regression zu P3-1: die gemeinsame Basis uebernahm zunaechst nur die Hoehe, weil ihre Fassung
-  * von updateViewportSize aus VirtualListView stammte -- dem einzigen der drei Controls, das
-  * einspaltig ist und die Breite nicht braucht. TableView und DataGrid blieben dadurch bei ihrem
-  * Startwert von 800 stehen: das Grid zeigte eine Spalte zu wenig, die Tabelle verteilte ihre
-  * Spaltenbreiten auf eine zu schmale Flaeche und liess rechts eine Luecke.
+  * Regression for P3-1: the shared base initially adopted only height because its updateViewportSize
+  * came from VirtualListView -- the only one of the three controls that is single-column and does
+  * not need width. TableView and DataGrid therefore stayed at their initial value of 800: the grid
+  * showed one column too few and the table distributed column widths over too narrow a surface.
   *
-  * Der Test greift an applyViewportSize an und nicht an updateViewportSize, damit er ohne DOM
-  * auskommt.
+  * The test targets applyViewportSize rather than updateViewportSize so it needs no DOM.
   */
 class ViewportMeasurementSpec extends AnyFlatSpec with Matchers {
 
@@ -94,8 +92,8 @@ class ViewportMeasurementSpec extends AnyFlatSpec with Matchers {
 
     control.applyViewportSize(1600.0, 600.0)
 
-    // Die Spalte fuellt die gemessene Breite. Vorher blieb die Verteilung bei
-    // den voreingestellten 800 stehen, und rechts blieb eine Luecke.
+    // The column fills the measured width. Previously distribution stayed at the default 800,
+    // leaving a gap on the right.
     control.renderedWidthsProperty.get.sum should be > before
     control.renderedWidthsProperty.get.sum shouldBe 1600.0 +- 1.0
   }
@@ -122,12 +120,10 @@ class ViewportMeasurementSpec extends AnyFlatSpec with Matchers {
   }
 
   "A viewport measurement" should "notify the follow-ups after applying the size" in {
-    // Regression: measureViewport hat in P3-1 zeitweise nur die Groesse
-    // uebernommen. Der zweite Schritt -- der Haken, ueber den
-    // CrawlableCollection die Scroll-Position wiederherstellt und die Hydration
-    // freigibt -- ging beim Zusammenlegen verloren. Folge im Browser: nach dem
-    // Neuladen sprang die Liste nach oben, und weil hydrating true blieb, lud
-    // sie beim Scrollen nichts mehr nach.
+    // Regression: measureViewport temporarily applied only the size in P3-1. The second step -- the
+    // hook through which CrawlableCollection restores scroll position and releases hydration -- was
+    // lost during consolidation. In the browser, the list jumped to the top after reload and, with
+    // hydrating still true, stopped loading more while scrolling.
     val probe = new MeasurementProbe
 
     probe.measureViewport(1600.0, 600.0)
@@ -164,8 +160,7 @@ class ViewportMeasurementSpec extends AnyFlatSpec with Matchers {
   }
 }
 
-/** Minimale VirtualizedCollection, die nur beobachtet, ob die Messung ihre Nachlaeufer
-  * benachrichtigt.
+/** Minimal VirtualizedCollection that observes only whether a measurement notifies its follow-ups.
   */
 private final class MeasurementProbe extends VirtualizedCollection[String](ListProperty[String]()) {
 
@@ -195,13 +190,12 @@ private final class MeasurementProbe extends VirtualizedCollection[String](ListP
   override def compose(cursor: Cursor): Unit = ()
 }
 
-/** TableView haengt zwei eigene Nachlaeufer an die geerbten Zaehler: bumpRemoteState zieht
-  * bumpHeaderState nach, refreshItemState zieht refreshSelectedItem nach.
+/** TableView adds two follow-ups to inherited counters: bumpRemoteState triggers bumpHeaderState,
+  * and refreshItemState triggers refreshSelectedItem.
   *
-  * Beide gingen bei der Zusammenlegung in P3-1 verloren, weil die Basis die Fassungen von DataGrid
-  * und VirtualListView uebernahm -- nur TableView hat einen Kopfbereich mit Sortieranzeigen und
-  * eine Auswahl. Gefunden bei der nachtraeglichen Durchsicht aller uebernommenen Methoden gegen die
-  * Originale.
+  * Both were lost in the P3-1 consolidation because the base adopted versions from DataGrid and
+  * VirtualListView -- only TableView has a header with sorting indicators and selection. Found by a
+  * subsequent comparison of all adopted methods with the originals.
   */
 class TableViewFollowUpSpec extends AnyFlatSpec with Matchers {
 
@@ -231,8 +225,8 @@ class TableViewFollowUpSpec extends AnyFlatSpec with Matchers {
     control.select(1)
     control.selectedItemProperty.get shouldBe "b"
 
-    // Die Daten wechseln unter der Auswahl weg. Ohne refreshSelectedItem im
-    // Nachlauf von refreshItemState bliebe selectedItemProperty auf "b" stehen.
+    // The data changes beneath the selection. Without refreshSelectedItem following refreshItemState,
+    // selectedItemProperty would remain "b".
     data.setAll(Seq("x", "y", "z"))
 
     control.selectedItemProperty.get shouldBe "y"

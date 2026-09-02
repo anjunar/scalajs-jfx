@@ -11,16 +11,15 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object Runtime {
 
-  /** Haengt `component` unter `parent` ein.
+  /** Mounts `component` below `parent`.
     *
-    * `childIndex` gibt die Position in der Kinderliste an. Ohne Angabe wird angehaengt -- das ist
-    * der Normalfall, weil die meisten Komponenten in Reihenfolge komponiert werden. Container, die
-    * an beliebiger Stelle einfuegen (Foreach), geben die Position mit.
+    * `childIndex` specifies the position in the children list. Without it, the component is
+    * appended -- the normal case because most components compose in order. Containers that insert
+    * at arbitrary positions (Foreach) provide it.
     *
-    * Vor P4-3 gab es die Angabe nicht: Runtime haengte immer an, und Foreach baute die Kinderliste
-    * danach aus seiner eigenen Buchfuehrung neu auf. Zwei Quellen der Wahrheit fuer dieselbe Liste
-    * -- und alles, was auf anderem Weg in einen Foreach gemountet wurde, verschwand beim naechsten
-    * Abgleich stillschweigend.
+    * Before P4-3 there was no such parameter: Runtime always appended, and Foreach then rebuilt the
+    * children list from its own bookkeeping. That created two sources of truth for the same list,
+    * and anything mounted into a Foreach by another path vanished at the next reconciliation.
     */
   def mount[C <: AbstractComponent](
       component: C,

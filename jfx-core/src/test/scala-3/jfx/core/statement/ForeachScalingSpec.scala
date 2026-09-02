@@ -11,22 +11,21 @@ import org.scalatest.matchers.should.Matchers
 
 import scala.scalajs.js
 
-/** Skalierungsverhalten von [[Foreach]].
+/** Scaling behavior of [[Foreach]].
   *
-  * Grundlage für CHANGE.md P4-2. Schritt 1 der Aufgabe verlangt ausdrücklich, erst zu messen -- und
-  * das war gut so: die Vermutung dort (`domOffset`, `domNodeCount`, `physicalHosts`) traf nicht zu.
-  * Die beiden erstgenannten rief niemand auf, und der Aufbau hängt gar nicht an ihnen. Gemessen lag
-  * die quadratische Zeit an der linearen Suche nach der Einfügemarke in
-  * `SsrHostElement.insertBefore`.
+  * Basis for CHANGE.md P4-2. Its first step explicitly required measuring first -- rightly so:
+  * the suspected causes (`domOffset`, `domNodeCount`, `physicalHosts`) were wrong. Nobody called
+  * the first two, and construction did not depend on them. Measurement located the quadratic time
+  * in the linear search for the insertion marker in `SsrHostElement.insertBefore`.
   *
-  * Die Messung prüft nicht eine absolute Zeit, sondern die Form der Kurve: das Vierfache an
-  * Elementen darf nicht das Sechzehnfache an Zeit kosten. Absolute Schwellen wären auf fremder
-  * Hardware wertlos.
+  * The measurement does not test an absolute time, but the curve's shape: four times as many
+  * elements must not cost sixteen times as much time. Absolute thresholds are meaningless on
+  * different hardware.
   */
 class ForeachScalingSpec extends AnyFlatSpec with Matchers {
 
   "Foreach" should "build a large list in roughly linear time" in {
-    // Einmal aufwärmen, damit die JIT-Kosten nicht in der ersten Messung landen.
+    // Warm up once so JIT cost does not affect the first measurement.
     buildMillis(500)
 
     val small = buildMillis(1250)

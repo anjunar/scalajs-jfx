@@ -11,10 +11,10 @@ import org.scalatest.matchers.should.Matchers
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-/** Gegenstueck zu CrawlTestRoot in jfx-controls.
+/** Counterpart to CrawlTestRoot in jfx-controls.
   *
-  * Seit P1-4 haengt jfx-controls nicht mehr an jfx-router. Die Controls testen gegen CrawlScope;
-  * dass der Router einen brauchbaren CrawlScope bereitstellt, gehoert auf diese Seite der Naht.
+  * Since P1-4, jfx-controls no longer depends on jfx-router. Controls test against CrawlScope;
+  * verifying that the router provides a useful CrawlScope belongs on this side of the seam.
   */
 class RouterCrawlScopeSpec extends AnyFlatSpec with Matchers {
 
@@ -55,7 +55,7 @@ class RouterCrawlScopeSpec extends AnyFlatSpec with Matchers {
   }
 }
 
-/** Rendert den vom Router bereitgestellten CrawlScope-Pfad als Text. */
+/** Renders the CrawlScope path provided by the router as text. */
 private final class CrawlScopeProbe extends AbstractComponent {
   override val tagName: String = "span"
 

@@ -72,8 +72,8 @@ final class SsrCursor private (
         element.insertBefore(node, beforeNode)
 
       case None =>
-        // Wurzelebene: dieselbe Abkuerzung wie in SsrHostElement, sonst waere ein
-        // direkt an der Wurzel gemountetes Foreach genauso quadratisch.
+        // Root level: the same shortcut as in SsrHostElement; otherwise a Foreach mounted directly
+        // at the root would be equally quadratic.
         beforeNode match {
           case Some(existing) =>
             SsrNode.indexIn(rootNodes, existing) match {

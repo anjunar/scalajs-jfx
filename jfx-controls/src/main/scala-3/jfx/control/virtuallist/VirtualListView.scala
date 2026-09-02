@@ -39,9 +39,8 @@ final class VirtualListView[T] private (
   private val visibleSlotsProperty = ListProperty[VirtualListView.VisibleSlot[T]]()
   private val headerHeightProperty = Property(0.0)
 
-  /** Gemessene Hoehen, eine Spalte. Alles, was VirtualListView von TableView und DataGrid
-    * unterscheidet, steckt hier -- der Rest kommt aus VirtualizedCollection und
-    * CrawlableCollection.
+  /** Measured heights, one column. Everything distinguishing VirtualListView from TableView and
+    * DataGrid lives here -- the rest comes from VirtualizedCollection and CrawlableCollection.
     */
   override protected val geometry: MeasuredRowGeometry =
     new MeasuredRowGeometry(
@@ -286,9 +285,8 @@ final class VirtualListView[T] private (
       case remote => remote.totalCountProperty.get
     }
 
-  /** Weiter gefasst als der Standard der Basis: solange noch geladen wird oder die Gesamtzahl
-    * unbekannt ist, reserviert die Liste Platz am Ende, damit das Scrollen nicht am vorlaeufigen
-    * Ende haengenbleibt.
+  /** Broader than the base default: while loading continues or the total count is unknown, the list
+    * reserves space at the end so scrolling does not stop at a provisional end.
     */
   override protected def canStillGrow: Boolean =
     Option(currentRemoteItems).exists { remote =>

@@ -6,28 +6,26 @@ import jfx.core.remote.{RemoteListDataSource, RemoteSort}
 import jfx.core.state.{Disposable, Property}
 import org.scalajs.dom
 
-/** Crawlbarkeit einer virtualisierten Collection.
+/** Crawlability of a virtualized collection.
   *
-  * Ein Crawler sieht kein Scrollen. Damit trotzdem mehr als der erste Ausschnitt indexierbar ist,
-  * rendert das Control beim Server-Rendering einen festen Ausschnitt und dazu einen Link auf den
-  * naechsten -- der Ausschnitt kommt aus einem Cookie pro Control-ID, der Link aus dem
-  * [[CrawlScope]] (P1-4).
+  * A crawler cannot scroll. To make more than the first slice indexable, the control renders a
+  * fixed slice during server rendering with a link to the next one -- the slice comes from a cookie
+  * per control ID, and the link from [[CrawlScope]] (P1-4).
   *
-  * Vor P3-1 lag dieser Block dreimal parallel in TableView, DataGrid und VirtualListView, in drei
-  * nicht mehr deckungsgleichen Fassungen.
+  * Before P3-1, this block existed three times in TableView, DataGrid, and VirtualListView in three
+  * no-longer-equivalent versions.
   *
-  * '''Cookie und nicht Query-Parameter''' -- entschieden in P3-2. Der Zustand bleibt im Cookie. Er
-  * beschreibt, wo ein Besucher in einer Liste stand, nicht was die Seite zeigt; in die URL gehoerte
-  * er nur, wenn er teilbar sein soll, und das ist er ausdruecklich nicht. Wer den Vorschlag aus
-  * CHANGE.md wieder aufgreifen will (`?table.offset=…`), muss diese Entscheidung kippen, nicht
-  * bloss die Umsetzung nachholen.
+  * '''Cookie rather than query parameters''' -- decided in P3-2. The state remains in the cookie.
+  * It describes where a visitor was in a list, not what the page displays; it belongs in the URL only
+  * if it should be shareable, which it explicitly should not. Anyone reviving the CHANGE.md proposal
+  * (`?table.offset=…`) must reverse this decision rather than merely restore its implementation.
   */
 trait CrawlableCollection[T] { self: VirtualizedCollection[T] =>
 
-  /** Name des Controls fuer die Fehlermeldung, wenn die Crawl-ID fehlt. */
+  /** Control name for the error message when the crawl ID is missing. */
   protected def crawlControlName: String
 
-  /** Wie viele Elemente ein Crawl-Ausschnitt standardmaessig umfasst. */
+  /** Number of elements a crawl slice contains by default. */
   protected def crawlDefaultLimit: Int
 
   val crawlableProperty: Property[Boolean]      = Property(false)
@@ -38,7 +36,7 @@ trait CrawlableCollection[T] { self: VirtualizedCollection[T] =>
 
   protected var resolvedCrawlId: Option[String] = None
 
-  /** Beim Server-Rendering angesprungener Index; -1, wenn keiner. */
+  /** Index targeted during server rendering; -1 when none. */
   protected var initialScrollIndex: Int = -1
 
   protected def crawlParams: (Int, Int) = crawlState.offset -> crawlState.limit
@@ -89,8 +87,8 @@ trait CrawlableCollection[T] { self: VirtualizedCollection[T] =>
   protected def persistCrawlState(state: CrawlCookieState.State): Unit =
     resolvedCrawlId.foreach(id => CrawlCookieState.write(id, state, browserRendering))
 
-  /** Der Sortier-Zustand aus dem Cookie wird erst im naechsten Frame angewandt. Direkt waehrend der
-    * Komposition wuerde das Neuladen die gerade aufgebaute Sichtliste unter den Fuessen wegziehen.
+  /** Applies cookie sorting state only in the next frame. During composition, reloading would pull
+    * away the visible list currently being built.
     */
   protected def scheduleSortingRestore(
       remote: RemoteListDataSource[T],
@@ -117,18 +115,18 @@ trait CrawlableCollection[T] { self: VirtualizedCollection[T] =>
     crawlableProperty.get && offset + limit < renderableCount
   }
 
-  /** Ziel des Crawl-Links: der aktuelle Pfad aus dem CrawlScope.
+  /** Crawl-link target: the current path from CrawlScope.
     *
-    * Frueher stand hier Router.current(...) -- dafuer hing die gesamte Control-Bibliothek am
-    * Router. Siehe CHANGE.md P1-4.
+    * This previously used Router.current(...), making the entire controls library depend on the
+    * router. See CHANGE.md P1-4.
     */
   protected def nextCrawlHref: String =
     CrawlScope.path(using this)
 
-  /** Springt die aus dem Cookie wiederhergestellte Position an und gibt die Hydration frei.
+  /** Moves to the position restored from the cookie and releases hydration.
     *
-    * Die Freigabe von hydrating ist nicht nebensaechlich: solange sie aussteht, rendert das Control
-    * weiter den Crawl-Ausschnitt und laedt nichts nach.
+    * Releasing hydrating is essential: while it remains pending, the control keeps rendering the
+    * crawl slice and loads nothing more.
     */
   override protected def onViewportMeasured(): Unit =
     if (initialScrollIndex > 0) {

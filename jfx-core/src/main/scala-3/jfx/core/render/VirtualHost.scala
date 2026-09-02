@@ -5,7 +5,7 @@ final class VirtualHost(
     val start: Option[CommentNode] = None,
     val end: Option[CommentNode] = None,
     val cursor: Option[Cursor] = None,
-    /** Uebernommene Knoten zwischen den Ankern; siehe [[VirtualRange]]. */
+    /** Adopted nodes between the anchors; see [[VirtualRange]]. */
     val adopted: Seq[HostNode] = Nil
 ) extends HostNode {
   def renderHtml(): String = ""
