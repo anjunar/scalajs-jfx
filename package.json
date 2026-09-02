@@ -15,12 +15,12 @@
     "@anjunar/scalajs-jfx2": "file:./npm/scalajs-jfx2",
     "@anjunar/scalajs-lexical": "^1.0.9",
     "@anjunar/ui": "^1.0.1",
-    "express": "latest"
+    "express": "^5.2.1"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "latest",
-    "cross-env": "latest",
-    "tailwindcss": "latest",
-    "vite": "latest"
+    "@tailwindcss/vite": "^4.3.1",
+    "cross-env": "^10.1.0",
+    "tailwindcss": "^4.3.1",
+    "vite": "^8.0.16"
   }
 }

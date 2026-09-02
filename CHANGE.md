@@ -98,7 +98,7 @@ es genau einen SSR-Server.
 
 ---
 
-### [ ] P0-4 · Abhängigkeitsversionen pinnen
+### [x] P0-4 · Abhängigkeitsversionen pinnen
 
 **Problem.** `package.json` verwendet `"latest"` für `express`, `vite`,
 `tailwindcss`, `@tailwindcss/vite`, `cross-env`. Jeder frische `npm install`
