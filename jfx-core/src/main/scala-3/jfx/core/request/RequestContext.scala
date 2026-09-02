@@ -45,7 +45,7 @@ object RequestContext {
 
   def require(using component: AbstractComponent): RequestContext =
     current.getOrElse {
-      throw new IllegalStateException("Kein RequestContext im aktuellen Komponentenbaum gefunden.")
+      throw new IllegalStateException("No RequestContext found in the current component tree.")
     }
 
 }

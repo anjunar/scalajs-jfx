@@ -30,7 +30,7 @@ trait Cursor {
   def claimText(initial: String): TextNode
 
   def claimComment(text: String): CommentNode =
-    throw new UnsupportedOperationException("Dieser Cursor unterstützt keine Kommentar-Anker.")
+    throw new UnsupportedOperationException("This cursor does not support comment anchors.")
 
   def claimRange(label: String): VirtualRange = {
     val start = claimComment(s"jfx:$label:start")
@@ -42,7 +42,7 @@ trait Cursor {
 
   def before(node: HostNode): Cursor =
     throw new UnsupportedOperationException(
-      "Dieser Cursor unterstützt kein Einfügen vor einer bestehenden Node."
+      "This cursor does not support inserting before an existing node."
     )
 }
 

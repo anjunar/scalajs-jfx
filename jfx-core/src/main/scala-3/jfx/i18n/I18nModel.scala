@@ -188,7 +188,7 @@ object I18nRuntime {
 
   def require(using component: AbstractComponent): I18nRuntime =
     current.getOrElse {
-      throw new IllegalStateException("Kein I18nRuntime im aktuellen Komponentenbaum gefunden.")
+      throw new IllegalStateException("No I18nRuntime found in the current component tree.")
     }
 
 }

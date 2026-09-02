@@ -109,9 +109,9 @@ class Router(
 
             case None =>
               throw new IllegalStateException(
-                "Hydration kann die initiale Route nicht asynchron auflösen. " +
-                  "Die SSR-Route ist bereits im DOM, deshalb muss die Hydration denselben Komponentenbaum synchron bereitstellen. " +
-                  "Später brauchen wir dafür einen SSR-Data-Cache."
+                "Hydration cannot resolve the initial route asynchronously. " +
+                  "The SSR route is already in the DOM, so hydration must provide the same component tree synchronously. " +
+                  "We will need an SSR data cache for this later."
               )
           }
         } catch {
@@ -307,7 +307,7 @@ object Router {
 
   def requireCurrent(using component: AbstractComponent): Router =
     current.getOrElse {
-      throw new IllegalStateException("Kein Router im aktuellen Komponentenbaum gefunden.")
+      throw new IllegalStateException("No Router found in the current component tree.")
     }
 
   def appPathFor(url: String, config: RouterConfig = RouterConfig()): String =

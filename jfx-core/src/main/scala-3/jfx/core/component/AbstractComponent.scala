@@ -28,8 +28,8 @@ abstract class AbstractComponent extends ClassDsl with EventDsl {
     case h: HostElement => h
     case _ =>
       throw new IllegalStateException(
-        s"Component '${getClass.getSimpleName}' (tagName='$tagName') hat kein HostElement. " +
-          "Virtuelle Komponenten müssen über den Parent zugreifen."
+        s"Component '${getClass.getSimpleName}' (tagName='$tagName') has no HostElement. " +
+          "Virtual components must access it through the parent."
       )
   }
 

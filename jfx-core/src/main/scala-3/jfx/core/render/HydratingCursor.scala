@@ -51,14 +51,14 @@ final class HydratingCursor private (
 
       case element: dom.Element =>
         throw hydrationFault(
-          "Element-Tag stimmt nicht.",
+          "Element tag does not match.",
           expected = s"<$tag>",
           found = Some(element)
         )
 
       case other =>
         throw hydrationFault(
-          "DOM-Node-Typ stimmt nicht.",
+          "DOM node type does not match.",
           expected = s"<$tag>",
           found = Some(other)
         )
@@ -80,7 +80,7 @@ final class HydratingCursor private (
     }
 
     throw hydrationFault(
-      "Im <head> wurde kein passendes Element gefunden.",
+      "No matching element was found in <head>.",
       expected = s"<$tag>",
       found = nextNode
     )
@@ -92,7 +92,7 @@ final class HydratingCursor private (
       case text: dom.Text => new DomTextNode(text)
       case other =>
         throw hydrationFault(
-          "DOM-Node-Typ stimmt nicht.",
+          "DOM node type does not match.",
           expected = "TextNode",
           found = Some(other)
         )
@@ -105,7 +105,7 @@ final class HydratingCursor private (
       case comment: dom.Comment => new DomCommentNode(comment)
       case other =>
         throw hydrationFault(
-          "DOM-Node-Typ stimmt nicht.",
+          "DOM node type does not match.",
           expected = "CommentNode",
           found = Some(other)
         )
@@ -162,8 +162,8 @@ final class HydratingCursor private (
     nextNode match {
       case Some(node) if stopBefore.contains(node) =>
         throw hydrationFault(
-          "Das Ende der aktuellen virtuellen Range wurde erreicht.",
-          expected = "weitere DOM-Node vor dem Range-End-Anker",
+          "The end of the current virtual range has been reached.",
+          expected = "another DOM node before the range end anchor",
           found = Some(node)
         )
 
@@ -173,8 +173,8 @@ final class HydratingCursor private (
 
       case None =>
         throw hydrationFault(
-          "Es gibt keine weitere DOM-Node.",
-          expected = "weitere DOM-Node",
+          "There is no further DOM node.",
+          expected = "another DOM node",
           found = None
         )
     }
@@ -187,14 +187,14 @@ final class HydratingCursor private (
 
       case comment: dom.Comment =>
         throw hydrationFault(
-          "Kommentar-Anker stimmt nicht.",
+          "Comment anchor does not match.",
           expected = s"<!--$expected-->",
           found = Some(comment)
         )
 
       case other =>
         throw hydrationFault(
-          "DOM-Node-Typ stimmt nicht.",
+          "DOM node type does not match.",
           expected = s"<!--$expected-->",
           found = Some(other)
         )
@@ -224,7 +224,7 @@ final class HydratingCursor private (
     }
 
     throw hydrationFault(
-      "End-Anker wurde nicht gefunden.",
+      "End anchor was not found.",
       expected = s"<!--$expected-->",
       found = Option(start.nextSibling)
     )
@@ -237,21 +237,21 @@ final class HydratingCursor private (
   ): IllegalStateException =
     new IllegalStateException(
       s"""Hydration fault: $reason
-         |Erwartet: $expected
-         |Gefunden: ${found.map(describeNode).getOrElse("<keine weitere DOM-Node>")}
+         |Expected: $expected
+         |Found: ${found.map(describeNode).getOrElse("<no further DOM node>")}
          |Parent: ${describePath(parent)}
-         |Umgebung:
+         |Context:
          |${describeContext(found)}
          |
-         |Hinweis: SSR-HTML und Client-Komponentenbaum unterscheiden sich an dieser Position.""".stripMargin
+         |Note: the SSR HTML and the client component tree differ at this position.""".stripMargin
     )
 
   private[render] def assertFullyClaimed(): Unit =
     if (mode == HydrationMode.Strict) {
       firstUnclaimedNode.foreach { node =>
         throw hydrationFault(
-          "Serverseitig gerenderte Nodes wurden nicht vom Client-Komponentenbaum beansprucht.",
-          expected = "Ende des aktuellen Hydration-Bereichs",
+          "Server-rendered nodes were not claimed by the client component tree.",
+          expected = "end of the current hydration range",
           found = Some(node)
         )
       }
@@ -279,7 +279,7 @@ final class HydratingCursor private (
       else children.length
 
     if (children.length == 0)
-      "  <keine Child-Nodes>"
+      "  <no child nodes>"
     else {
       val lines = new StringBuilder
       var index = start
@@ -292,7 +292,7 @@ final class HydratingCursor private (
         index += 1
       }
 
-      if (lines.isEmpty) "  <keine Child-Nodes>" else lines.toString()
+      if (lines.isEmpty) "  <no child nodes>" else lines.toString()
     }
   }
 
@@ -379,7 +379,7 @@ object HydratingCursor {
     def register(cursor: HydratingCursor): Unit =
       if (completed) {
         throw new IllegalStateException(
-          "Nach Abschluss der Hydration wurde ein weiterer HydratingCursor erzeugt."
+          "Another HydratingCursor was created after hydration completed."
         )
       } else {
         cursors += cursor

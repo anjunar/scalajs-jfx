@@ -9,6 +9,6 @@ private[jfx] object DomNodes {
       case text: DomTextNode       => text.node
       case comment: DomCommentNode => comment.node
       case other =>
-        throw new IllegalArgumentException(s"Keine Browser-DOM-Node: ${other.getClass.getName}")
+        throw new IllegalArgumentException(s"Not a browser DOM node: ${other.getClass.getName}")
     }
 }
