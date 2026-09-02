@@ -197,3 +197,50 @@ private final class MeasurementProbe extends VirtualizedCollection[String] {
 
   override def compose(cursor: Cursor): Unit = ()
 }
+
+/**
+ * TableView haengt zwei eigene Nachlaeufer an die geerbten Zaehler:
+ * bumpRemoteState zieht bumpHeaderState nach, refreshItemState zieht
+ * refreshSelectedItem nach.
+ *
+ * Beide gingen bei der Zusammenlegung in P3-1 verloren, weil die Basis die
+ * Fassungen von DataGrid und VirtualListView uebernahm -- nur TableView hat
+ * einen Kopfbereich mit Sortieranzeigen und eine Auswahl. Gefunden bei der
+ * nachtraeglichen Durchsicht aller uebernommenen Methoden gegen die Originale.
+ */
+class TableViewFollowUpSpec extends AnyFlatSpec with Matchers {
+
+  import jfx.control.table.TableColumn.*
+  import jfx.control.table.TableView.*
+
+  "TableView" should "keep the selected item in sync when the data changes" in {
+    val data = ListProperty(scala.scalajs.js.Array("a", "b", "c"))
+
+    var table: TableView[String] | Null = null
+    Runtime.mount(
+      new AbstractComponent {
+        override val tagName: String = "main"
+        override def compose(cursor: Cursor): Unit =
+          DslLayer.render(this, cursor) {
+            table = tableView[String] {
+              items = data
+              column[String, String]("Name") {
+                cell { item => text(item) {} }
+              }
+            }
+          }
+      },
+      new SsrCursor()
+    )
+
+    val control = table.asInstanceOf[TableView[String]]
+    control.select(1)
+    control.selectedItemProperty.get shouldBe "b"
+
+    // Die Daten wechseln unter der Auswahl weg. Ohne refreshSelectedItem im
+    // Nachlauf von refreshItemState bliebe selectedItemProperty auf "b" stehen.
+    data.setAll(Seq("x", "y", "z"))
+
+    control.selectedItemProperty.get shouldBe "y"
+  }
+}

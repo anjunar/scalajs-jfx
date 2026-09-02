@@ -407,6 +407,23 @@ final class TableView[S] private (
 
 
 
+  /**
+   * TableView haengt zwei eigene Nachlaeufer an die geerbten Zaehler.
+   *
+   * Beide gingen beim Zusammenlegen in P3-1 zunaechst verloren, weil die Basis
+   * die Fassungen der anderen Controls uebernahm -- nur TableView hat einen
+   * Kopfbereich mit Sortieranzeigen und eine Auswahl.
+   */
+  override protected def bumpRemoteState(): Unit = {
+    super.bumpRemoteState()
+    bumpHeaderState()
+  }
+
+  override protected def refreshItemState(): Unit = {
+    super.refreshItemState()
+    refreshSelectedItem()
+  }
+
   private def refreshSelectedItem(): Unit = {
     val index = selectedIndexProperty.get
     selectedItemProperty.set(
