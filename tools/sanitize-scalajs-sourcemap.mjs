@@ -1,3 +1,9 @@
+// Fuellt `sourcesContent` fuer die Sourcemap-Eintraege, deren Pfad hier nicht
+// existiert: Abhaengigkeiten ohne `-scalajs-mapSourceURI` liefern die absoluten
+// Pfade ihrer Buildmaschine aus. Der Quelltext kommt aus dem passenden
+// `-sources.jar` im Coursier-Cache. Ursache und Abschaltbedingung stehen bei
+// `ScalaJsViteSupport.sanitizeScalaJsSourceMap`.
+
 import {
   existsSync,
   readFileSync,

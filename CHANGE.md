@@ -714,7 +714,7 @@ Fehler, nicht zu einem stillen No-Op.
 
 ---
 
-### [ ] P5-5 · Build-Workarounds abbauen
+### [x] P5-5 · Build-Workarounds abbauen
 
 **Problem.** Drei Stellen, die nach umschifften Ursachen aussehen — was
 `AGENTS.md` ausdrücklich ausschließt:
@@ -739,6 +739,19 @@ Fehler, nicht zu einem stillen No-Op.
    eigentliche Befund.
 3. Sourcemap-Basis pro Link-Task korrekt setzen, statt global.
 4. Prüfen, ob der Sanitizer nach korrekter Basis noch gebraucht wird.
+
+**Ergebnis.** Punkt 1 und 3 waren mit der sbt-2-Migration bereits erledigt und
+in `build.sbt` begründet: `limitAll(1)` ist ersatzlos raus, die Sourcemap-Basis
+steht jetzt je Link-Task. Punkt 2 zerfällt in drei Teile. `clearLegacyShadowSources`
+war eine einmalige Aufräumhilfe für den ersten Entwurf des Sanitizers (der schrieb
+`.sourcemap-sources/` und bog `sources[]` dorthin um) — das Verzeichnis liegt in
+`target/` und wird nirgends mehr erzeugt, also entfernt. `viteFastLinkJS` war seit
+der sbt-2-Migration nur noch ein Key ohne Definition und ohne Aufrufer — entfernt.
+Der Sanitizer selbst bleibt: `scala-java-locales`, `sbt-locales` und
+`portable-scala-reflect` publizieren ihre Sourcemaps ohne `-scalajs-mapSourceURI`
+und liefern damit die absoluten Pfade ihrer Buildmaschine aus. Zwölf Dateien
+betrifft das aktuell; ohne den Sanitizer zeigt der Browser dort keinen Quelltext.
+Ursache und Abschaltbedingung stehen jetzt an `sanitizeScalaJsSourceMap`.
 
 **Fertig wenn.** Jeder verbleibende Workaround hat einen Kommentar mit Ursache
 und Bedingung, unter der er entfallen kann.

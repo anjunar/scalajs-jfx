@@ -20,8 +20,8 @@ import ScalaJsViteSupport.*
 //
 // 3. Tasks sind in sbt 2 standardmaessig gecached. Ein Task-Ergebnistyp ohne
 //    `sjsonnew.JsonFormat` laesst den Build beim Laden scheitern. `Attributed[Report]`
-//    von Scala.js hat keinen — deshalb stehen `viteFastLinkJS` und `viteFullLinkJS`
-//    in `Def.uncached { ... }`. Das ist hier ohnehin richtig: beide Tasks haben
+//    von Scala.js hat keinen — deshalb steht `viteFullLinkJS` in
+//    `Def.uncached { ... }`. Das ist hier ohnehin richtig: der Task hat
 //    Seiteneffekte auf dem Dateisystem (Sourcemap-Sanitizing).
 //
 // 4. Slash-Syntax ist Pflicht, 0.13-Syntax ist entfernt. War hier schon so.
@@ -256,10 +256,6 @@ lazy val app = Project(id = "scalajs-jfx-demo", base = file("application"))
     // schreibt ausserdem am Dateisystem. Ohne die Huelle scheitert sbt 2 beim
     // Laden des Builds.
     viteFullLinkJS := Def.uncached {
-      clearLegacyShadowSources(
-        (Compile / fullLinkJS / scalaJSLinkerOutputDirectory).value,
-        streams.value.log
-      )
       val linked = (Compile / fullLinkJS).value
       sanitizeScalaJsSourceMap(
         (LocalRootProject / baseDirectory).value,
