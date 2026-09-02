@@ -32,6 +32,7 @@ object AppTranslations {
     de(i18n"Forms", "Formulare"),
     de(i18n"Control registration and context", "Control-Registrierung und Kontext"),
     de(i18n"Upload, crop and thumbnail binding", "Upload, Zuschnitt und Thumbnail-Bindung"),
+    de(i18n"Lexical JSON and composable plugins", "Lexical-JSON und komponierbare Plugins"),
     de(i18n"Tabs", "Tabs"),
     de(i18n"Panel lifecycle and keyboard selection", "Panel-Lebenszyklus und Tastaturauswahl"),
     de(i18n"Carousel", "Karussell"),

@@ -120,9 +120,9 @@ JFX2-Funktionsumfang ab.
 
 ### 3. Editor
 
-- [ ] `Editor` als Forms-Control entwerfen und portieren
-- [ ] Plugin-Vertrag und `DefaultDialogService` portieren
-- [ ] Heading-, List-, Link-, Image-, Table-, Code- und Horizontal-Rule-Plugins
+- [x] `Editor` als Forms-Control entwerfen und portieren
+- [x] Plugin-Vertrag und `DefaultDialogService` portieren
+- [x] Heading-, List-, Link-, Image-, Table-, Code- und Horizontal-Rule-Plugins
       nacheinander portieren
 
 Der Editor beginnt erst, wenn sein Forms-Control-Vertrag stabil ist.
@@ -144,7 +144,7 @@ Der Editor beginnt erst, wenn sein Forms-Control-Vertrag stabil ist.
 | `jfx-i18n` | nach `jfx-core` integriert |
 | `jfx-forms` | vollstaendig portiert: typisierte Modellbindung, Editierbarkeit, Annotation-Validatoren, rekursive Fehlerzuordnung, `SubForm`, `ArrayForm`, `InputContainer`, `ComboBox` und `ImageCropper` mit Viewport-Crop-Dialog |
 | `jfx-controls` | Controls-Portierung abgeschlossen: Tabellenbasis, `DataGrid`, `VirtualListView`, `Tabs` und `Carousel` tragen lokale und entfernte Listen, variable beziehungsweise feste virtuelle Bereiche, Range-Prefetch, Crawl-State sowie kontextuelle Header-, Placeholder-, Tab-Panel- und Slide-Slots; `Link` ist in `Anchor` und `RouterLink` aufgeteilt, `Image` als natives Core-Layout portiert |
-| `jfx-editor` | noch offen |
+| `jfx-editor` | portiert: Forms-Control fuer Lexical-EditorState-JSON, semantische SSR-/Hydration-Vorschau, Ribbon-/Menu-/Floating-Toolbar, DialogService-Kontext und vollstaendiger Plugin-Satz |
 | `jfx-json` | portiert; neuer reflektionsbasierter Mapper mit getrennten Komponenten fuer Typmodell, Metadaten, Serialisierung und Deserialisierung |
 | `jfx-webAuthn` | portiert und auf WebAuthn Level 3 erweitert: native JSON-Konvertierung mit Fallback, typisierte Browser-Dictionaries, Future-/Promise-Workflows, Abbruch und Mediation, Capability-Abfragen sowie Credential-Signaling |
 | `jfx-ssr` | noch offen; der kleine HTTP-Response-Vertrag liegt bis dahin lokal im Anwendungseinstieg |
@@ -427,6 +427,44 @@ komponentenlokalen Crawl-State. Tests decken lokale SSR-Virtualisierung,
 Remote-Placeholder, Header-Komposition, variable Messhoehen, Cookie-Restore,
 Listenmutation, verpflichtende IDs und Entsorgung ab. Die Demo ist unter
 `/virtual-list` erreichbar.
+
+### Editor
+
+Der `Editor` liegt weiterhin im Forms-Namensraum und implementiert
+`Control[js.Any | Null]`. Sein Wert ist das von Lexical serialisierte
+`EditorState` als JavaScript-JSON-Objekt; weder HTML noch ein JSON-String bilden
+die oeffentliche Formularbindung. Stringwerte werden nur als Importformat fuer
+bestehende persistierte Zustaende akzeptiert. Externe Wertwechsel werden in den
+laufenden Editor uebernommen, waehrend Lexical-Aktualisierungen dieselbe
+`Property` aktualisieren und den Dirty-Zustand setzen.
+
+Die strukturelle Konfiguration und alle Plugins werden zu Beginn von
+`compose(cursor)` ausgewertet. SSR und Hydration erhalten denselben geschlossenen
+Baum aus Toolbar-Host, semantischer Readonly-Vorschau, Editierflaeche und
+Placeholder. Die Vorschau bildet Headings, Textformate, Listen, Links, Bilder,
+Tabellen, Code und Trennlinien direkt aus dem EditorState ab. Erst auf einem
+Browser-Cursor bindet Lexical seine Editierflaeche und Toolbar an die dafuer
+reservierten Hosts; die JFX-Komponente erzeugt, verschiebt oder ersetzt dabei
+keine eigenen DOM-Kinder ausserhalb der Runtime. DOM-Inhalte, die der
+`lexical.DialogService`-Vertrag explizit als `HTMLElement` liefert, bleiben die
+bewusste Fremd-UI-Grenze des Lexical-Adapters.
+
+`EditorPlugin` trennt Toolbar-Elemente, Lexical-Module, Node-Typen und eine
+lebenszyklusgebundene `install`-Registrierung. `BasePlugin`, `HeadingPlugin`,
+`ListPlugin`, `LinkPlugin`, `ImagePlugin`, `TablePlugin`, `CodePlugin` und
+`HorizontalRulePlugin` werden ueber die kontextuelle DSL im Editorbaum
+installiert. Doppelte Plugin-Namen werden nicht erneut registriert. Ein lokaler
+`dialogService` hat Vorrang vor `Editor.DialogServiceContext`; ohne beide steht
+der schliessbare `DefaultDialogService` bereit. Dieser bildet die Lexical-Bridge
+auf eine `Viewport.WindowConf` ab; nur der vom Lexical-Vertrag gelieferte
+`HTMLElement` wird in einen lebenszyklusgebundenen JFX3-Host eingesetzt.
+Update-, Fokus-, Plugin- und Floating-Toolbar-Registrierungen sowie ein
+geoeffneter Default-Dialog werden beim Unmount entsorgt.
+
+Tests decken den unveraenderten JavaScript-JSON-Wert, die semantische SSR-
+Vorschau aller Knotengruppen, Readonly und Placeholder, die vollstaendige
+Plugin-Komposition sowie Formularregistrierung und -entsorgung ab. Die Demo ist
+unter `/editor` erreichbar.
 
 ### WebAuthn
 

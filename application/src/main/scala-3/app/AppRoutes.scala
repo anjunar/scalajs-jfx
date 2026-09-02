@@ -70,6 +70,11 @@ object AppRoutes {
           ImageCropperPage.render()
         })
       },
+      Route.view("/editor") { _ =>
+        Future.successful(Route.component {
+          EditorPage.render()
+        })
+      },
       Route.view("/tabs") { _ =>
         Future.successful(Route.component {
           TabsPage.render()

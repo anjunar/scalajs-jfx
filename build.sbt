@@ -4,7 +4,7 @@ import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import sbt.url
 import ScalaJsViteSupport._
 
-ThisBuild / version := "1.0.0-SNAPSHOT"
+ThisBuild / version := "3.0.0-SNAPSHOT"
 ThisBuild / organization := "com.anjunar"
 ThisBuild / organizationName := "Anjunar"
 ThisBuild / organizationHomepage := Some(url("https://github.com/anjunar"))

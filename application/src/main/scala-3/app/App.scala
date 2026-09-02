@@ -61,6 +61,7 @@ class App(
       NavEntry(i18n"Runtime", i18n"State", i18n"Reactive properties in plain sight", "/state"),
       NavEntry(i18n"Composition", i18n"Forms", i18n"Control registration and context", "/forms"),
       NavEntry(i18n"Composition", i18n"Image cropper", i18n"Upload, crop and thumbnail binding", "/image-cropper"),
+      NavEntry(i18n"Composition", i18n"Editor", i18n"Lexical JSON and composable plugins", "/editor"),
       NavEntry(i18n"Composition", i18n"Tabs", i18n"Panel lifecycle and keyboard selection", "/tabs"),
       NavEntry(i18n"Composition", i18n"Carousel", i18n"Looping slides and lifecycle-bound autoplay", "/carousel"),
       NavEntry(i18n"Composition", i18n"ComboBox", i18n"Typed selection and stable identity", "/combo-box"),
