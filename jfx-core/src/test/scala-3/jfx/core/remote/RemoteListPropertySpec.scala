@@ -230,6 +230,44 @@ class RemoteListPropertySpec extends AnyFlatSpec with Matchers {
     remote.isRangeLoaded(100, 110) shouldBe false
   }
 
+  "queryProperty" should "stay the base query across a range load" in {
+    val remote = pagedMembers(total = 1000, pageSize = 10)
+
+    remote.reload(PageQuery(0, 10))
+    val baseQuery = remote.query
+
+    remote.ensureRangeLoaded(100, 110)
+
+    remote.query shouldBe baseQuery
+  }
+
+  it should "make reload after a range load reload the same list" in {
+    val withRangeLoad = pagedMembers(total = 1000, pageSize = 10)
+    withRangeLoad.reload(PageQuery(0, 10))
+    withRangeLoad.ensureRangeLoaded(100, 110)
+    withRangeLoad.reload()
+
+    val plain = pagedMembers(total = 1000, pageSize = 10)
+    plain.reload(PageQuery(0, 10))
+    plain.reload()
+
+    withRangeLoad.get.toSeq shouldBe plain.get.toSeq
+  }
+
+  it should "keep the paging cursor untouched by a range load" in {
+    val remote = pagedMembers(total = 1000, pageSize = 10)
+
+    remote.reload(PageQuery(0, 10))
+    val cursorAfterReload = remote.nextQueryProperty.get
+
+    remote.ensureRangeLoaded(500, 510)
+    remote.nextQueryProperty.get shouldBe cursorAfterReload
+
+    // loadMore blaettert weiter hinter der ersten Seite, nicht hinter dem Bereich.
+    remote.loadMore()
+    remote.get.toSeq.take(20) shouldBe (0 until 20).map(index => s"Member $index")
+  }
+
   private def collectRejections(result: Future[?]): Promise[Seq[Throwable]] = {
     val collected = Promise[Seq[Throwable]]()
     result.onComplete {

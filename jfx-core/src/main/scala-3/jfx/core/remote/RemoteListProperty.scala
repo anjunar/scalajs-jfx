@@ -34,7 +34,7 @@ final class RemoteListProperty[V, Query](
   // danach zurueck, wird sie verworfen statt neuere Daten zu ueberschreiben.
   private var loadGeneration = 0
 
-  private final case class LoadKey(query: Query, replaceExisting: Boolean)
+  private final case class LoadKey(query: Query, replaceExisting: Boolean, sequential: Boolean)
 
   val queryProperty: Property[Query]                             = Property(initialQuery)
   val sortingProperty: Property[Vector[RemoteSort]] = Property(Vector.empty)
@@ -94,7 +94,12 @@ final class RemoteListProperty[V, Query](
   def loadMore(): Future[js.Array[V]] =
     nextQueryProperty.get match {
       case Some(nextQuery) =>
-        loadQuery(nextQuery, replaceExisting = false, expectedOffset = Some(length))
+        loadQuery(
+          nextQuery,
+          replaceExisting = false,
+          expectedOffset = Some(length),
+          sequential = true
+        )
       case None => Future.successful(get)
     }
 
@@ -113,9 +118,13 @@ final class RemoteListProperty[V, Query](
           val normalizedFrom  = math.max(0, fromIndex)
           val normalizedCount = math.max(1, toExclusive - normalizedFrom)
           loadQuery(
+            // Eine Bereichs-Abfrage ist abgeleitet, nicht der neue Zustand der
+            // Liste: sie darf weder queryProperty noch den Paging-Cursor
+            // ueberschreiben. Siehe CHANGE.md P2-6.
             updateRange(queryProperty.get, normalizedFrom, normalizedCount),
             replaceExisting = false,
-            expectedOffset = Some(normalizedFrom)
+            expectedOffset = Some(normalizedFrom),
+            sequential = false
           )
         case None =>
           Future.failed(
@@ -175,7 +184,8 @@ final class RemoteListProperty[V, Query](
     loadQuery(
       query,
       replaceExisting = !append,
-      expectedOffset = if (append) Some(length) else Some(0)
+      expectedOffset = if (append) Some(length) else Some(0),
+      sequential = true
     )
 
   /**
@@ -193,7 +203,8 @@ final class RemoteListProperty[V, Query](
   private def loadQuery(
       query: Query,
       replaceExisting: Boolean,
-      expectedOffset: Option[Int]
+      expectedOffset: Option[Int],
+      sequential: Boolean
   ): Future[js.Array[V]] = {
     if (replaceExisting) {
       // Ein echtes Neuladen macht alles ungueltig, was vorher losgeschickt wurde.
@@ -201,7 +212,7 @@ final class RemoteListProperty[V, Query](
       pendingLoads.clear()
     }
 
-    val key = LoadKey(query, replaceExisting)
+    val key = LoadKey(query, replaceExisting, sequential)
 
     pendingLoads.get(key) match {
       case Some(inFlight) => inFlight
@@ -209,7 +220,10 @@ final class RemoteListProperty[V, Query](
         val startedGeneration = loadGeneration
         val completion        = Promise[js.Array[V]]()
 
-        queryProperty.set(query)
+        // queryProperty ist die Basis-Abfrage der Liste -- Filter und Sortierung,
+        // auf denen reload() aufsetzt. Nur ein Neuladen definiert sie neu.
+        // Bereichs- und Folgeseiten-Abfragen sind daraus abgeleitet.
+        if (replaceExisting) queryProperty.set(query)
         errorProperty.set(None)
 
         // Der Eintrag muss vor dem Start stehen: mit einem synchron
@@ -226,7 +240,7 @@ final class RemoteListProperty[V, Query](
 
           result match {
             case Success(page) =>
-              if (isCurrent) applyPage(page, replaceExisting, expectedOffset)
+              if (isCurrent) applyPage(page, replaceExisting, expectedOffset, sequential)
               completion.success(get)
             case Failure(error) =>
               if (isCurrent) errorProperty.set(Some(error))
@@ -247,7 +261,8 @@ final class RemoteListProperty[V, Query](
   private def applyPage(
       page: RemotePage[V, Query],
       replaceExisting: Boolean,
-      expectedOffset: Option[Int]
+      expectedOffset: Option[Int],
+      sequential: Boolean
   ): Unit = {
     val pageOffset =
       page.offset
@@ -285,9 +300,16 @@ final class RemoteListProperty[V, Query](
       }
     finally applyingRemotePage = false
 
-    nextQueryProperty.set(page.nextQuery)
+    // totalCount beschreibt die ganze Liste und gilt unabhaengig davon, wie
+    // geladen wurde. nextQuery und hasMore sind dagegen der Cursor des
+    // sequenziellen Blaetterns -- eine Bereichsabfrage darf ihn nicht
+    // verstellen, sonst blaettert loadMore() danach vom Bereich aus weiter.
     totalCountProperty.set(page.totalCount)
-    hasMoreProperty.set(page.hasMore.getOrElse(page.nextQuery.nonEmpty))
+
+    if (sequential) {
+      nextQueryProperty.set(page.nextQuery)
+      hasMoreProperty.set(page.hasMore.getOrElse(page.nextQuery.nonEmpty))
+    }
   }
 
   private def absoluteIndexForLoadedPosition(position: Int): Int =

@@ -375,7 +375,7 @@ Sortier- und Query-Semantik sitzt damit im Fundament neben `Property` und
 
 ---
 
-### [ ] P2-6 · `queryProperty` wird von Bereichs-Ladevorgängen überschrieben
+### [x] P2-6 · `queryProperty` wird von Bereichs-Ladevorgängen überschrieben
 
 **Gefunden bei P2-4.** `loadQuery` setzt `queryProperty` auf die Abfrage, die es
 gerade lädt — auch bei `ensureRangeLoaded`. Nach einem Bereichs-Ladevorgang
