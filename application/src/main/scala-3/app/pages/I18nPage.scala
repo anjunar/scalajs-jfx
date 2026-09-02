@@ -3,7 +3,7 @@ package app.pages
 import app.components.Showcase
 import jfx.core.component.AbstractComponent
 import jfx.core.render.Cursor
-import jfx.i18n.{I18nRuntime, i18n}
+import jfx.core.i18n.{I18nRuntime, i18n}
 
 object I18nPage {
   def render()(using AbstractComponent, Cursor): Unit = {

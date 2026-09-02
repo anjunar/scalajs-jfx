@@ -1,4 +1,4 @@
-package jfx.i18n
+package jfx.core.i18n
 
 import jfx.core.component.{AbstractComponent, AbstractCustomComponent}
 import jfx.core.state.Property

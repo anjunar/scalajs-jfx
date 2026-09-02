@@ -1,7 +1,7 @@
 package app.i18n
 
 import app.i18n.TranslationSupport.de
-import jfx.i18n.{CatalogEntry, i18n}
+import jfx.core.i18n.{CatalogEntry, i18n}
 
 object StatePageTranslations {
   private val value = 0

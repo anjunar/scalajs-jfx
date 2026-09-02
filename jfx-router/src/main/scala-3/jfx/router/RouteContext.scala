@@ -9,5 +9,5 @@ final case class RouteContext(
     queryParams: Map[String, String],
     state: RouterState,
     routeMatch: RouteMatch,
-    locale: Option[jfx.i18n.I18nLocale]
+    locale: Option[jfx.core.i18n.I18nLocale]
 )

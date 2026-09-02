@@ -11,7 +11,7 @@ import jfx.core.render.Cursor
 import jfx.core.state.Property
 import jfx.editor.Editor.*
 import jfx.editor.plugins.*
-import jfx.i18n.i18n
+import jfx.core.i18n.i18n
 
 import scala.scalajs.js
 

@@ -19,7 +19,7 @@ import jfx.core.layout.TextComponent.text
 import jfx.core.layout.VBox.vbox
 import jfx.core.render.Cursor
 import jfx.core.request.RequestContext
-import jfx.i18n.{I18nRuntime, RuntimeMessage, i18n}
+import jfx.core.i18n.{I18nRuntime, RuntimeMessage, i18n}
 import jfx.viewport.Viewport.viewport
 import jfx.router.Router
 import jfx.router.Router.router

@@ -6,7 +6,7 @@ final case class RouterState(
     matches: List[RouteMatch],
     queryParams: Map[String, String],
     search: String,
-    locale: Option[jfx.i18n.I18nLocale]
+    locale: Option[jfx.core.i18n.I18nLocale]
 ) {
   def url: String =
     s"$browserPath$search"

@@ -2,7 +2,7 @@ package app
 
 import app.i18n.*
 import jfx.core.state.ReadOnlyProperty
-import jfx.i18n.*
+import jfx.core.i18n.*
 
 object AppI18n {
   val German: I18nLocale  = I18nLocale("de")

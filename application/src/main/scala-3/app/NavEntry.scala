@@ -1,6 +1,6 @@
 package app
 
-import jfx.i18n.{I18nLocale, RuntimeMessage}
+import jfx.core.i18n.{I18nLocale, RuntimeMessage}
 
 final case class NavEntry(
     zoneMessage: RuntimeMessage,

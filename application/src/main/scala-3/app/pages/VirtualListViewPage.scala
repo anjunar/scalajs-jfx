@@ -10,7 +10,7 @@ import jfx.core.layout.TextComponent.text
 import jfx.core.layout.VBox.vbox
 import jfx.core.render.Cursor
 import jfx.core.state.ListProperty
-import jfx.i18n.i18n
+import jfx.core.i18n.i18n
 
 object VirtualListViewPage {
 

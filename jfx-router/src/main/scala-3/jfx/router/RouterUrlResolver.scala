@@ -1,6 +1,6 @@
 package jfx.router
 
-import jfx.i18n.{I18nLocale, I18nRuntime}
+import jfx.core.i18n.{I18nLocale, I18nRuntime}
 
 private[router] final case class ResolvedRouterUrl(
     path: String,

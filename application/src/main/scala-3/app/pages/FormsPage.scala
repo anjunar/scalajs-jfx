@@ -15,7 +15,7 @@ import jfx.forms.Form.form
 import jfx.forms.Input.input
 import jfx.forms.InputContainer.inputContainer
 import jfx.forms.validators.{EmailConstraint, NotBlank}
-import jfx.i18n.{I18nRuntime, i18n}
+import jfx.core.i18n.{I18nRuntime, i18n}
 
 import scala.annotation.meta.field
 import jfx.forms.Input.inputType

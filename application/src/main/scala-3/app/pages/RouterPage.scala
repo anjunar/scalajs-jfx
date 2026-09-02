@@ -6,7 +6,7 @@ import jfx.core.dsl.ClassDsl.classes
 import jfx.core.dsl.EventDsl.onClick
 import jfx.core.layout.Button.button
 import jfx.core.render.Cursor
-import jfx.i18n.i18n
+import jfx.core.i18n.i18n
 import jfx.router.Router
 
 object RouterPage {

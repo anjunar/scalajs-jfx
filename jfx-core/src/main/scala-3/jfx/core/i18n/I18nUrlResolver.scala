@@ -1,4 +1,4 @@
-package jfx.i18n
+package jfx.core.i18n
 
 private[i18n] object I18nUrlResolver {
 

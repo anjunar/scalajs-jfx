@@ -9,7 +9,7 @@ import jfx.core.layout.TextComponent.text
 import jfx.core.render.Cursor
 import jfx.core.state.{Property, ReadOnlyProperty}
 import jfx.core.statement.DynamicComponentRenderer.dynamic
-import jfx.i18n.{I18nLocale, I18nRuntime}
+import jfx.core.i18n.{I18nLocale, I18nRuntime}
 import org.scalajs.dom
 
 import scala.concurrent.{ExecutionContext, Future}

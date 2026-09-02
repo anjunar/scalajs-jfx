@@ -11,7 +11,7 @@ import jfx.core.layout.TextComponent.text
 import jfx.core.layout.VBox.vbox
 import jfx.core.render.Cursor
 import jfx.core.state.{ListProperty, Property, RemoteListProperty}
-import jfx.i18n.i18n
+import jfx.core.i18n.i18n
 
 import scala.scalajs.js
 

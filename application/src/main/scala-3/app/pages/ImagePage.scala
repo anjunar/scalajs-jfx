@@ -13,7 +13,7 @@ import jfx.core.layout.TextComponent.text
 import jfx.core.layout.VBox.vbox
 import jfx.core.render.Cursor
 import jfx.core.state.Property
-import jfx.i18n.i18n
+import jfx.core.i18n.i18n
 
 object ImagePage {
   def render()(using AbstractComponent, Cursor): Unit = {

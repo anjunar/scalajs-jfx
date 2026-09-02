@@ -13,7 +13,7 @@ import jfx.core.layout.VBox.vbox
 import jfx.core.render.Cursor
 import jfx.core.state.Property
 import jfx.core.text.TextValue
-import jfx.i18n.i18n
+import jfx.core.i18n.i18n
 
 object TabsPage {
   def render()(using AbstractComponent, Cursor): Unit =

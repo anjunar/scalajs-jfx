@@ -12,7 +12,7 @@ import jfx.core.render.Cursor
 import jfx.core.state.Property
 import jfx.forms.ComboBox
 import jfx.forms.ComboBox.*
-import jfx.i18n.i18n
+import jfx.core.i18n.i18n
 
 object ComboBoxPage {
   final case class Member(id: Int, name: String, role: String, avatarColor: String)

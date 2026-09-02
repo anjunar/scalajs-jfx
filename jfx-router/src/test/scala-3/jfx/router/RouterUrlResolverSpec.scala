@@ -1,7 +1,7 @@
 package jfx.router
 
 import jfx.core.state.Property
-import jfx.i18n.{I18nLocale, I18nResolver, I18nRuntime, MessageCatalog}
+import jfx.core.i18n.{I18nLocale, I18nResolver, I18nRuntime, MessageCatalog}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 

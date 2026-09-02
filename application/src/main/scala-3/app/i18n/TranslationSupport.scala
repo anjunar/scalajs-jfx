@@ -1,6 +1,6 @@
 package app.i18n
 
-import jfx.i18n.{CatalogEntry, I18n, I18nLocale, MessageCatalog, RuntimeMessage}
+import jfx.core.i18n.{CatalogEntry, I18n, I18nLocale, MessageCatalog, RuntimeMessage}
 
 private[app] object TranslationSupport {
   private val German = I18nLocale("de")

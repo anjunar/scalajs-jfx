@@ -13,7 +13,7 @@ import jfx.core.render.Cursor
 import jfx.core.state.Property
 import jfx.forms.Media
 import jfx.forms.ImageCropper.*
-import jfx.i18n.i18n
+import jfx.core.i18n.i18n
 
 object ImageCropperPage {
   def render()(using AbstractComponent, Cursor): Unit = {

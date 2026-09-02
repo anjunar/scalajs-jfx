@@ -1,4 +1,4 @@
-package jfx.i18n
+package jfx.core.i18n
 
 import jfx.core.component.AbstractComponent
 import jfx.core.di.Context

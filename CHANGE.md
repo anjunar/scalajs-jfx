@@ -217,7 +217,7 @@ Tabelle darf nicht wissen, dass es Routing gibt.
 
 ---
 
-### [ ] P1-5 · `jfx.i18n` unter die Modulwurzel ziehen
+### [x] P1-5 · `jfx.i18n` unter die Modulwurzel ziehen
 
 **Gefunden bei P1-3.** Die dort festgelegte Regel — Paketwurzel = Modulname —
 gilt auch für `jfx.i18n`: das Paket liegt in `jfx-core`, aber aus dem Import

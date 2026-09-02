@@ -9,7 +9,7 @@ import jfx.core.layout.HBox.hbox
 import jfx.core.layout.TextComponent.text
 import jfx.core.layout.VBox.vbox
 import jfx.core.render.Cursor
-import jfx.i18n.i18n
+import jfx.core.i18n.i18n
 
 object LayoutPage {
   def render()(using AbstractComponent, Cursor): Unit = {

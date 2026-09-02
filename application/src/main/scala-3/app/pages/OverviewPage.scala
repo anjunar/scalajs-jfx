@@ -10,7 +10,7 @@ import jfx.core.layout.Div.div
 import jfx.core.layout.TextComponent.text
 import jfx.core.layout.VBox.vbox
 import jfx.core.render.Cursor
-import jfx.i18n.{I18nRuntime, RuntimeMessage, i18n}
+import jfx.core.i18n.{I18nRuntime, RuntimeMessage, i18n}
 
 object OverviewPage {
   def render()(using AbstractComponent, Cursor): Unit = {
@@ -27,12 +27,12 @@ object OverviewPage {
             div {
               classes = Seq("i18n-demo__toolbar")
               div { classes = Seq("i18n-demo__locale"); text(runtime.locale.map(locale => s"Locale: ${locale.code}")) {} }
-              button(i18n"Switch locale") { classes = Seq("calm-action", "calm-action--secondary"); onClick { _ => runtime.setLocale(if (runtime.locale.get.code == "de") jfx.i18n.I18nLocale.En else jfx.i18n.I18nLocale("de")) } }
+              button(i18n"Switch locale") { classes = Seq("calm-action", "calm-action--secondary"); onClick { _ => runtime.setLocale(if (runtime.locale.get.code == "de") jfx.core.i18n.I18nLocale.En else jfx.core.i18n.I18nLocale("de")) } }
             }
             div {
               classes = Seq("i18n-demo__grid")
               i18nSample("""i18n"Delete document"""", i18n"Delete document")
-              i18nSample("""i18n"User $user invited you to $group"""", i18n"User ${jfx.i18n.I18n.named("user", "Mira")} invited you to ${jfx.i18n.I18n.named("group", "Core Team")}")
+              i18nSample("""i18n"User $user invited you to $group"""", i18n"User ${jfx.core.i18n.I18n.named("user", "Mira")} invited you to ${jfx.core.i18n.I18n.named("group", "Core Team")}")
               i18nSample("""i18n"Missing translations fall back to English"""", i18n"Missing translations fall back to English")
             }
           }
