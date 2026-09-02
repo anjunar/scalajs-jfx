@@ -145,7 +145,7 @@ Abhängigkeitsrichtung überhaupt noch abbildet.
 
 ---
 
-### [ ] P1-2 · Domänentypen aus `jfx-core` entfernen
+### [x] P1-2 · Domänentypen aus `jfx-core` entfernen
 
 **Problem.** `jfx.domain.Media` und `jfx.domain.Thumbnail` liegen in `jfx-core`.
 Ein generisches UI-Framework kennt keine Medien-Domäne. Das bindet jeden

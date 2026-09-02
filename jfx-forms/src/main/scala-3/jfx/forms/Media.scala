@@ -1,4 +1,4 @@
-package jfx.domain
+package jfx.forms
 
 import jfx.core.state.Property
 
@@ -14,7 +14,7 @@ final class Media(
     var data: Property[String] = Property("")
 )
 
-private[domain] object MediaId {
+private[forms] object MediaId {
   def randomUuid(): UUID = {
     val bytes  = new Uint8Array(16)
     val crypto = js.Dynamic.global.selectDynamic("crypto")

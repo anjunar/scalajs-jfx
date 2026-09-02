@@ -11,7 +11,7 @@ import jfx.core.layout.TextComponent.text
 import jfx.core.layout.VBox.vbox
 import jfx.core.render.Cursor
 import jfx.core.state.Property
-import jfx.domain.Media
+import jfx.forms.Media
 import jfx.forms.ImageCropper.*
 import jfx.i18n.i18n
 

@@ -1,4 +1,4 @@
-package jfx.domain
+package jfx.forms
 
 import jfx.core.state.Property
 

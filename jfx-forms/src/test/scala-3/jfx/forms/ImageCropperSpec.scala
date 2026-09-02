@@ -4,7 +4,6 @@ import jfx.core.component.{AbstractComponent, Runtime}
 import jfx.core.dsl.DslLayer.render
 import jfx.core.render.{Cursor, SsrCursor}
 import jfx.core.state.Property
-import jfx.domain.{Media, Thumbnail}
 import jfx.forms.ImageCropper.*
 import jfx.layout.Viewport
 import jfx.layout.Viewport.viewport

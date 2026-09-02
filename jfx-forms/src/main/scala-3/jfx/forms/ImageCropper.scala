@@ -14,7 +14,6 @@ import jfx.core.layout.TextComponent.text
 import jfx.core.render.{Cursor, DomHostElement}
 import jfx.core.state.{CompositeDisposable, Disposable, ListProperty, Property, ReadOnlyProperty}
 import jfx.core.text.TextValue
-import jfx.domain.{Media, Thumbnail}
 import jfx.forms.Form.FormContext
 import jfx.layout.Viewport
 import org.scalajs.dom
