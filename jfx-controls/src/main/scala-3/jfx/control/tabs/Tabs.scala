@@ -31,11 +31,6 @@ final class Tabs(
   private val contentComponentProperty: Property[AbstractComponent] =
     Property(new EmptyTabsContent)
 
-  // Property aliases preserve the state-facing JFX2 API while the DSL remains primary.
-  val $tabsProperty: ListProperty[TabSpec]      = tabsProperty
-  val $selectedIndexProperty: Property[Int]     = selectedIndexProperty
-  val $renderModeProperty: Property[RenderMode] = renderModeProperty
-
   def addTab(tab: TabSpec): Unit =
     tabsProperty += tab
 
@@ -59,20 +54,19 @@ final class Tabs(
 
       div {
         classes = Seq("jfx-tabs__header")
-        summon[AbstractComponent].setAttribute("role", "tablist")
+        setAttribute("role", "tablist")
 
         foreachIndexed(tabsProperty) { (tab, index) =>
           val active = selectedIndexProperty.map(_ == index)
 
-          button(tab.titleProperty) {
-            val trigger = summon[AbstractComponent]
+          button(tab.titleProperty) { trigger ?=>
             classes = Seq("jfx-tabs__trigger")
             classIf("jfx-tabs__trigger--active", active)
             buttonType("button")
-            trigger.setAttribute("role", "tab")
+            setAttribute("role", "tab")
             trigger.addDisposable(active.observe { selected =>
-              trigger.setAttribute("aria-selected", selected.toString)
-              trigger.setAttribute("tabindex", if (selected) "0" else "-1")
+              setAttribute("aria-selected", selected.toString)
+              setAttribute("tabindex", if (selected) "0" else "-1")
             })
             onClick(_ => setSelectedIndex(index))
           }

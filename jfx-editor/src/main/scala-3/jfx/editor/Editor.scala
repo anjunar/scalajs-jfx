@@ -21,6 +21,7 @@ import org.scalajs.dom
 import org.scalajs.dom.{HTMLDivElement, HTMLElement}
 
 import scala.collection.mutable
+import scala.compiletime.uninitialized
 import scala.scalajs.js
 import scala.util.control.NonFatal
 
@@ -45,14 +46,14 @@ final class Editor private[editor] (
 
   private var toolbarModeValue: EditorToolbarMode           = EditorToolbarMode.Ribbon
   private var dialogServiceValue: Option[DialogService]     = None
-  private var toolbarHost: Div                              = null
-  private var previewHost: Div                              = null
-  private var surfaceHost: Div                              = null
-  private var lexicalEditor: LexicalEditor | Null           = null
-  private var resolvedDialogService: DialogService | Null   = null
-  private var updateUnregister: js.Function0[Unit] | Null   = null
-  private var floatingUnregister: js.Function0[Unit] | Null = null
-  private var lastValueJson: String | Null                  = null
+  private var toolbarHost: Div                              = uninitialized
+  private var previewHost: Div                              = uninitialized
+  private var surfaceHost: Div                              = uninitialized
+  private var lexicalEditor: LexicalEditor | Null           = uninitialized
+  private var resolvedDialogService: DialogService | Null   = uninitialized
+  private var updateUnregister: js.Function0[Unit] | Null   = uninitialized
+  private var floatingUnregister: js.Function0[Unit] | Null = uninitialized
+  private var lastValueJson: String | Null                  = uninitialized
   private var toolbarRendered                               = false
 
   override def compose(cursor: Cursor): Unit = {
@@ -72,7 +73,7 @@ final class Editor private[editor] (
 
           toolbarHost = div {
             classes = Seq("jfx-editor__toolbar")
-            summon[AbstractComponent].setAttribute("aria-label", "Editor toolbar")
+            setAttribute("aria-label", "Editor toolbar")
             style {
               display = toolbarDisplay(editableProperty.get)
             }
@@ -83,20 +84,17 @@ final class Editor private[editor] (
 
             previewHost = div {
               classes = Seq("jfx-editor__preview", "jfx-editor-readonly")
-              summon[AbstractComponent].setAttribute("aria-hidden", "false")
+              setAttribute("aria-hidden", "false")
               dynamic(valueProperty.map[AbstractComponent](value => new EditorPreview(value)))
             }
 
             surfaceHost = div {
-              classes =
-                Seq("jfx-editor__surface", "lexical-editor-container", "lexical-editor-input")
-              summon[AbstractComponent].setAttribute("role", "textbox")
-              summon[AbstractComponent].setAttribute("aria-multiline", "true")
-              summon[AbstractComponent]
-                .setAttribute("contenteditable", editableProperty.get.toString)
-              summon[AbstractComponent]
-                .setAttribute("aria-readonly", (!editableProperty.get).toString)
-              summon[AbstractComponent].setAttribute("spellcheck", "true")
+              classes = Seq("jfx-editor__surface", "lexical-editor-container", "lexical-editor-input")
+              setAttribute("role", "textbox")
+              setAttribute("aria-multiline", "true")
+              setAttribute("contenteditable", editableProperty.get.toString)
+              setAttribute("aria-readonly", (!editableProperty.get).toString)
+              setAttribute("spellcheck", "true")
               style {
                 display = "none"
                 opacity = "0"
@@ -172,7 +170,7 @@ final class Editor private[editor] (
   private def toolbarDisplay(editable: Boolean): String =
     if (
       editable && plugins.exists(
-        _.$toolbarElements.nonEmpty
+        _.toolbarElements.nonEmpty
       ) && toolbarModeValue != EditorToolbarMode.Floating
     )
       ""
@@ -387,7 +385,7 @@ final class Editor private[editor] (
     )
 
   private def collectToolbarElements(): Seq[ToolbarElement] =
-    plugins.iterator.flatMap(_.$toolbarElements).toSeq
+    plugins.iterator.flatMap(_.toolbarElements).toSeq
 
   private def collectModules(): Seq[EditorModule] =
     (

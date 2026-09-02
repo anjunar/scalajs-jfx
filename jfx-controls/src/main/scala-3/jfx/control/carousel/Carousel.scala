@@ -1,6 +1,7 @@
 package jfx.control.carousel
 
 import jfx.control.carousel.Carousel.Renderer
+import jfx.control.carousel.CarouselSlide.carouselSlide
 import jfx.core.component.AbstractComponent
 import jfx.core.dsl.ClassDsl.{addClass, classIf, classes}
 import jfx.core.dsl.DslLayer
@@ -31,12 +32,6 @@ final class Carousel[T] private[carousel] (
   val wrapAroundProperty: Property[Boolean]       = Property(true)
   val ssrShowAllStatesProperty: Property[Boolean] = Property(true)
 
-  // Property aliases preserve the state-facing JFX2 API.
-  val $activeIndexProperty: Property[Int]          = activeIndexProperty
-  val $autoAdvanceMsProperty: Property[Int]        = autoAdvanceMsProperty
-  val $wrapAroundProperty: Property[Boolean]       = wrapAroundProperty
-  val $ssrShowAllStatesProperty: Property[Boolean] = ssrShowAllStatesProperty
-
   private val itemStateRevisionProperty = Property(0)
   private val contentRevisionProperty   = Property(0)
   private val navigationRevisionProperty = Property(0)
@@ -49,8 +44,6 @@ final class Carousel[T] private[carousel] (
   private var browserRendering           = false
   private var compositionReady           = false
 
-  def $itemsProperty: Property[ListProperty[T]] = itemsRefProperty
-  def $items: ListProperty[T]                    = getItems
   def itemsProperty: Property[ListProperty[T]]  = itemsRefProperty
   def getItems: ListProperty[T]                  = itemsRefProperty.get
   def items: ListProperty[T]                     = getItems
@@ -130,16 +123,14 @@ final class Carousel[T] private[carousel] (
 
           when(ssrShowAllStatesProperty) {
             foreachIndexed(renderedItemsProperty) { (item, index) =>
-              DslLayer.child(
-                new CarouselSlide(
+                carouselSlide(
                   this,
                   item,
                   index,
                   slideCount,
                   slideRenderer,
                   observeActiveIndex = true
-                )
-              ) {}
+                ) {}
             }
           }
 

@@ -5,7 +5,7 @@ import lexical.{HorizontalRuleModule, ToolbarElement}
 
 final class HorizontalRulePlugin extends EditorPlugin {
   override val name: String                          = "horizontal-rule"
-  override val $toolbarElements: Seq[ToolbarElement] = Seq(new HorizontalRuleModule())
+  override val toolbarElements: Seq[ToolbarElement] = Seq(new HorizontalRuleModule())
 }
 
 object HorizontalRulePlugin {

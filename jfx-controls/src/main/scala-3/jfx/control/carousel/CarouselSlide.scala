@@ -38,3 +38,17 @@ private final class CarouselSlide[T](
       renderer(item, index)(using this)(using cursor)
     }
 }
+
+object CarouselSlide {
+  def carouselSlide[T](
+      carousel: Carousel[T],
+      item: T,
+      index: Int,
+      count: Int,
+      renderer: Renderer[T],
+      observeActiveIndex: Boolean
+  )(body: CarouselSlide[?] ?=> Cursor ?=> Unit = {})(using AbstractComponent, Cursor): CarouselSlide[T] =
+    DslLayer.child(new CarouselSlide[T](carousel, item, index, count, renderer, observeActiveIndex)) {
+      body
+    }
+}

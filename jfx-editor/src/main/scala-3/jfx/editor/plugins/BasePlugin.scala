@@ -13,7 +13,7 @@ import lexical.{
 final class BasePlugin extends EditorPlugin {
   override val name: String = "base"
 
-  override val $toolbarElements: Seq[ToolbarElement] =
+  override val toolbarElements: Seq[ToolbarElement] =
     Seq(
       new UndoModule(),
       new RedoModule(),

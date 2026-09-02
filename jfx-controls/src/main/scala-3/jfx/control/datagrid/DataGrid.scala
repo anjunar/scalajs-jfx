@@ -45,18 +45,6 @@ final class DataGrid[T] private (
   val crawlableProperty: Property[Boolean]      = Property(false)
   val crawlIdProperty: Property[Option[String]] = Property(None)
 
-  // Kept as aliases for the JFX2 property-facing API used by downstream code.
-  val $itemWidthProperty: Property[Double]       = itemWidthProperty
-  val $itemHeightProperty: Property[Double]      = itemHeightProperty
-  val $gapProperty: Property[Double]             = gapProperty
-  val $overscanRowsProperty: Property[Int]       = overscanRowsProperty
-  val $prefetchItemsProperty: Property[Int]      = prefetchItemsProperty
-  val $scrollTopProperty: Property[Double]       = scrollTopProperty
-  val $viewportWidthProperty: Property[Double]   = viewportWidthProperty
-  val $viewportHeightProperty: Property[Double]  = viewportHeightProperty
-  val $crawlableProperty: Property[Boolean]      = crawlableProperty
-  val $crawlIdProperty: Property[Option[String]] = crawlIdProperty
-
   private val visibleCellsProperty        = ListProperty[DataGrid.VisibleCell[T]]()
   private val itemStateRevisionProperty   = Property(0)
   private val remoteStateRevisionProperty = Property(0)
@@ -175,9 +163,8 @@ final class DataGrid[T] private (
           }
         }
 
-        div {
+        div { contentComponent ?=>
           classes = Seq("jfx-data-grid-content")
-          val contentComponent = summon[AbstractComponent]
           style {
             width = itemStateRevisionProperty.map(_ => px(contentWidth))
             minWidth = "100%"
@@ -190,9 +177,8 @@ final class DataGrid[T] private (
             )
           )
 
-          headerComponent = div {
+          headerComponent = div { currentHeader ?=>
             classes = Seq("jfx-data-grid-header-slot")
-            val currentHeader = summon[AbstractComponent]
             style {
               width = "100%"
               boxSizing = "border-box"

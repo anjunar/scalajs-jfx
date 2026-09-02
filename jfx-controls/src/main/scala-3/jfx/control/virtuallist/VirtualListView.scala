@@ -40,15 +40,6 @@ final class VirtualListView[T] private (
   val crawlableProperty: Property[Boolean]            = Property(false)
   val crawlIdProperty: Property[Option[String]]       = Property(None)
 
-  // Property aliases preserve the state-facing JFX2 API.
-  val $estimateHeightProperty: Property[Double]        = estimateHeightProperty
-  val $overscanPxProperty: Property[Double]             = overscanPxProperty
-  val $prefetchItemsProperty: Property[Int]             = prefetchItemsProperty
-  val $scrollTopProperty: Property[Double]              = scrollTopProperty
-  val $viewportHeightProperty: Property[Double]         = viewportHeightProperty
-  val $crawlableProperty: Property[Boolean]             = crawlableProperty
-  val $crawlIdProperty: Property[Option[String]]        = crawlIdProperty
-
   private val visibleSlotsProperty        = ListProperty[VirtualListView.VisibleSlot[T]]()
   private val itemStateRevisionProperty   = Property(0)
   private val remoteStateRevisionProperty = Property(0)
@@ -193,9 +184,7 @@ final class VirtualListView[T] private (
             }
 
             foreach(visibleSlotsProperty) { slot =>
-              DslLayer.child(
-                new VirtualListCell(slot, getRenderer, handleMeasuredHeight)
-              ) {}
+              VirtualListCell.virtualListCell[T](slot, getRenderer, handleMeasuredHeight) {}
             }
           }
 

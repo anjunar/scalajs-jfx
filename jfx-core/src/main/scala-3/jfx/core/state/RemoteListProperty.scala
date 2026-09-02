@@ -197,10 +197,6 @@ final class RemoteListProperty[V, Query](
       replaceExisting: Boolean,
       expectedOffset: Option[Int]
   ): Unit = {
-    if (replaceExisting) {
-      loadedItemsByIndex.clear()
-    }
-
     val pageOffset =
       page.offset
         .orElse(expectedOffset)
@@ -209,13 +205,37 @@ final class RemoteListProperty[V, Query](
           else loadedItemsByIndex.size
         }
 
-    page.items.zipWithIndex.foreach { case (item, relativeIndex) =>
-      loadedItemsByIndex.update(pageOffset + relativeIndex, item)
-    }
-
-    val orderedLoadedItems = loadedItemsByIndex.toSeq.sortBy(_._1).map(_._2)
     applyingRemotePage = true
-    try setAll(orderedLoadedItems)
+    try
+      if (replaceExisting) {
+        // Echtes Neuladen: die Liste ist danach eine andere. Reset ist hier die
+        // richtige Aussage, und Foreach muss tatsaechlich alles neu aufbauen.
+        loadedItemsByIndex.clear()
+        page.items.zipWithIndex.foreach { case (item, relativeIndex) =>
+          loadedItemsByIndex.update(pageOffset + relativeIndex, item)
+        }
+        setAll(loadedItemsByIndex.toSeq.sortBy(_._1).map(_._2))
+      } else {
+        // Nachladen: nur der Bereich, den die Seite abdeckt, aendert sich.
+        //
+        // loadedItemsByIndex traegt absolute Indizes mit Luecken, die
+        // ListProperty darunter eine dichte Liste. Die dichte Position eines
+        // absoluten Index ist die Anzahl geladener Indizes davor. Weil der
+        // Seitenbereich in absoluten Indizes zusammenhaengend ist, liegen die
+        // Positionen der darin bereits geladenen Eintraege ebenfalls
+        // zusammenhaengend -- ab insertPosition.
+        val pageEnd        = pageOffset + page.items.length
+        val insertPosition = loadedItemsByIndex.keysIterator.count(_ < pageOffset)
+        val replacedCount =
+          loadedItemsByIndex.keysIterator.count(key => key >= pageOffset && key < pageEnd)
+
+        page.items.zipWithIndex.foreach { case (item, relativeIndex) =>
+          loadedItemsByIndex.update(pageOffset + relativeIndex, item)
+        }
+
+        if (replacedCount == 0) insertAll(insertPosition, page.items)
+        else patchInPlace(insertPosition, page.items, replacedCount)
+      }
     finally applyingRemotePage = false
 
     nextQueryProperty.set(page.nextQuery)

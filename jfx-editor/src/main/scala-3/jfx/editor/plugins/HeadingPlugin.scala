@@ -7,7 +7,7 @@ import scala.scalajs.js
 
 final class HeadingPlugin extends EditorPlugin {
   override val name: String                          = "heading"
-  override val $toolbarElements: Seq[ToolbarElement] = Seq(new HeadingDropdown())
+  override val toolbarElements: Seq[ToolbarElement] = Seq(new HeadingDropdown())
   override val nodes: Seq[js.Any]                    = Seq(LexicalRichText.HeadingNode)
 }
 

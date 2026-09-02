@@ -2,6 +2,7 @@ package app.pages
 
 import app.components.Showcase
 import jfx.core.component.AbstractComponent
+import jfx.core.component.AbstractComponent.*
 import jfx.core.dsl.ClassDsl.classes
 import jfx.core.dsl.StyleDsl.*
 import jfx.core.layout.Div.div
@@ -52,7 +53,7 @@ object EditorPage {
             codePlugin()
             horizontalRulePlugin()
 
-            summon[jfx.editor.Editor].addDisposable(valueProperty.observe(state.set))
+            addDisposable(valueProperty.observe(state.set))
           }
 
           div {

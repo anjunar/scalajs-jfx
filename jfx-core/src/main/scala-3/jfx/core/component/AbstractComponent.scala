@@ -171,3 +171,8 @@ abstract class AbstractComponent
     Option.when(js.typeOf(js.Dynamic.global.selectDynamic("window")) != "undefined")(dom.window)
 
 }
+
+object AbstractComponent {
+  def addDisposable(d: Disposable)(using component: AbstractComponent): Unit =
+    component.addDisposable(d)
+}

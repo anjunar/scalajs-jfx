@@ -7,7 +7,7 @@ import scala.scalajs.js
 trait EditorPlugin {
   def name: String
 
-  def $toolbarElements: Seq[ToolbarElement] = Seq.empty
+  def toolbarElements: Seq[ToolbarElement] = Seq.empty
 
   def modules: Seq[EditorModule] = Seq.empty
 

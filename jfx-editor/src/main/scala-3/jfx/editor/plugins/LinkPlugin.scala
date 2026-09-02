@@ -38,7 +38,7 @@ final class LinkPlugin extends EditorPlugin {
 
   private val linkDialogModule = new LinkDialogModule()
 
-  override val $toolbarElements: Seq[ToolbarElement] = Seq(linkDialogModule)
+  override val toolbarElements: Seq[ToolbarElement] = Seq(linkDialogModule)
   override val modules: Seq[lexical.EditorModule]    = Seq(linkDialogModule)
   override val nodes: Seq[js.Any]                    = Seq(LexicalLink.LinkNode)
 

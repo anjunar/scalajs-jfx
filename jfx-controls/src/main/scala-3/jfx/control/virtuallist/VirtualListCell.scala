@@ -36,7 +36,7 @@ private final class VirtualListCell[T](
   override def afterCompose(cursor: Cursor): Unit =
     if (cursor.isBrowser) {
       domElement.foreach { element =>
-        var active = true
+        var active  = true
         val measure = () => {
           if (active) {
             val height = element.offsetHeight.toDouble
@@ -44,7 +44,7 @@ private final class VirtualListCell[T](
           }
         }
 
-        val frame = dom.window.requestAnimationFrame(_ => measure())
+        val frame    = dom.window.requestAnimationFrame(_ => measure())
         val observer = new dom.ResizeObserver((_, _) => measure())
         observer.observe(element)
         addDisposable(Disposable {
@@ -63,5 +63,18 @@ private final class VirtualListCell[T](
           case _                         => None
         }
       case _ => None
+    }
+}
+
+object VirtualListCell {
+  def virtualListCell[T](
+      slot: VisibleSlot[T],
+      renderer: Renderer[T],
+      onMeasured: (Int, Double) => Unit
+  )(
+      body: VirtualListCell[?] ?=> Cursor ?=> Unit = {}
+  )(using AbstractComponent, Cursor): VirtualListCell[T] =
+    DslLayer.child(new VirtualListCell[T](slot, renderer, onMeasured)) {
+      body
     }
 }
