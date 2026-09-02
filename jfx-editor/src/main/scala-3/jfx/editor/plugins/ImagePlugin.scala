@@ -1,6 +1,17 @@
 package jfx.editor.plugins
 
+import jfx.core.component.AbstractComponent.addDisposable
+import jfx.core.dsl.AttributeDsl.{setAttribute as setDslAttribute}
+import jfx.core.dsl.ClassDsl.classes
+import jfx.core.dsl.DslLayer.render
+import jfx.core.dsl.EventDsl.{on, onClick}
+import jfx.core.dsl.PropertyDsl.{setProperty as setDslProperty}
+import jfx.core.dsl.StyleDsl.*
+import jfx.core.layout.TextComponent.text
+import jfx.core.render.{Cursor, DomHostElement}
+import jfx.core.state.Disposable
 import jfx.editor.Editor
+import jfx.editor.plugins.DialogElement.element
 import lexical.{
   COMMAND_PRIORITY,
   EditorUpdateOptions,
@@ -16,11 +27,9 @@ import org.scalajs.dom.{
   Event,
   FileReader,
   HTMLElement,
-  HTMLButtonElement,
   HTMLImageElement,
   HTMLInputElement,
-  MouseEvent,
-  document
+  MouseEvent
 }
 
 import scala.scalajs.js
@@ -116,116 +125,160 @@ final class ImagePlugin extends EditorPlugin {
       )
 
   private def buildDialogContent(current: Option[ImageDialogState]): HTMLElement = {
-    val content = document.createElement("div").asInstanceOf[HTMLElement]
-    content.className = "image-plugin-dialog"
+    DialogContent.mount(createDialogContent(current))
+  }
 
-    val fileInput = document.createElement("input").asInstanceOf[HTMLInputElement]
-    fileInput.`type` = "file"
-    fileInput.accept = "image/*"
-    fileInput.className = "image-plugin-dialog__file-input"
+  private[plugins] def createDialogContent(current: Option[ImageDialogState]): DialogContent =
+    new ImageDialogContent(current)
 
-    val previewShell = document.createElement("button").asInstanceOf[HTMLButtonElement]
-    previewShell.`type` = "button"
-    previewShell.className = "image-plugin-dialog__preview-shell"
-    previewShell.setAttribute(
-      "aria-label",
-      current.fold(selectImageLabel)(_ => replaceImageLabel)
-    )
-    previewShell.style.width = "100%"
-    previewShell.style.cursor = "pointer"
-    previewShell.style.font = "inherit"
-    previewShell.style.color = "inherit"
-    previewShell.style.border = "1px dashed var(--aj-control-border-hover)"
-    previewShell.style.borderRadius = "var(--aj-overlay-radius)"
-    previewShell.style.setProperty("appearance", "none")
+  private final class ImageDialogContent(current: Option[ImageDialogState]) extends DialogContent {
+    private var fileInput: DialogElement          = null
+    private var previewShell: DialogElement       = null
+    private var preview: DialogElement            = null
+    private var previewPlaceholder: DialogElement = null
+    private var reader: FileReader | Null         = null
 
-    val preview = document.createElement("img").asInstanceOf[HTMLImageElement]
-    preview.id = "image-preview"
-    preview.className = "image-plugin-dialog__preview-image"
-    preview.style.maxHeight = s"${math.max(1, previewMaxHeightPx)}px"
+    override def compose(cursor: Cursor): Unit =
+      render(this, cursor) {
+        classes = Seq("image-plugin-dialog")
 
-    val previewPlaceholder = document.createElement("div").asInstanceOf[HTMLElement]
-    previewPlaceholder.className = "image-plugin-dialog__preview-placeholder"
-    previewPlaceholder.style.setProperty("flex-direction", "column")
-    previewPlaceholder.style.setProperty("gap", "10px")
+        fileInput = element("input") {
+          setDslAttribute("type", "file")
+          setDslAttribute("accept", "image/*")
+          classes = Seq("image-plugin-dialog__file-input")
+          on("change") { _ => selectedFile.foreach(readFile) }
+        }
 
-    val previewIcon = document.createElement("span").asInstanceOf[HTMLElement]
-    previewIcon.className = "material-icons"
-    previewIcon.setAttribute("aria-hidden", "true")
-    previewIcon.textContent = "add_photo_alternate"
+        previewShell = element("button") {
+          val shell = summon[DialogElement]
+          setDslAttribute("type", "button")
+          setDslAttribute("aria-label", current.fold(selectImageLabel)(_ => replaceImageLabel))
+          classes = Seq("image-plugin-dialog__preview-shell")
+          style {
+            width = "100%"
+            color = "inherit"
+            border = "1px dashed var(--aj-control-border-hover)"
+            borderRadius = "var(--aj-overlay-radius)"
+          }
+          shell.setStyle("cursor", "pointer")
+          shell.setStyle("font", "inherit")
+          shell.setStyle("appearance", "none")
+          onClick { _ => inputElement.foreach(_.click()) }
 
-    val previewLabel = document.createElement("span").asInstanceOf[HTMLElement]
-    previewLabel.textContent = selectImageLabel
-    previewPlaceholder.appendChild(previewIcon)
-    previewPlaceholder.appendChild(previewLabel)
+          preview = element("img") {
+            setDslAttribute("id", "image-preview")
+            classes = Seq("image-plugin-dialog__preview-image")
+            style {
+              maxHeight = s"${math.max(1, previewMaxHeightPx)}px"
+            }
+            on("error") { _ => showPreviewError() }
+          }
 
-    def showPreview(src: String): Unit = {
+          previewPlaceholder = element("div") {
+            classes = Seq("image-plugin-dialog__preview-placeholder")
+            style {
+              flexDirection = "column"
+              gap = "10px"
+            }
+
+            element("span") {
+              classes = Seq("material-icons")
+              setDslAttribute("aria-hidden", "true")
+              text("add_photo_alternate") {}
+            }
+
+            element("span") {
+              text(selectImageLabel) {}
+            }
+          }
+        }
+
+        showPreview(current.fold("")(_.src))
+
+        element("label") {
+          setDslAttribute("for", "image-alt-input")
+          text("Alt text") {}
+        }
+        element("input") {
+          setDslAttribute("id", "image-alt-input")
+          setDslAttribute("placeholder", "Description")
+          setDslProperty("value", current.flatMap(state => Option(state.altText)).getOrElse(""))
+        }
+
+        element("label") {
+          setDslAttribute("for", "image-width-input")
+          text("Width (px)") {}
+        }
+        element("input") {
+          setDslAttribute("type", "number")
+          setDslAttribute("id", "image-width-input")
+          setDslAttribute("min", "1")
+          setDslProperty("value", math.max(1, current.fold(defaultWidthPx)(_.maxWidth)).toString)
+        }
+
+        addDisposable(Disposable(cancelReader()))
+      }
+
+    private def selectedFile =
+      inputElement.flatMap(input => Option(input.files)).flatMap(files => Option(files.item(0)))
+
+    private def inputElement: Option[HTMLInputElement] =
+      domElement(fileInput).collect { case input: HTMLInputElement => input }
+
+    private def readFile(file: org.scalajs.dom.File): Unit = {
+      cancelReader()
+      Option(activeReader).foreach { currentReader =>
+        currentReader.onload = null
+        if (currentReader.readyState == FileReader.LOADING) currentReader.abort()
+      }
+      val nextReader = new FileReader()
+      reader = nextReader
+      activeReader = nextReader
+      nextReader.onload = (_: Event) => {
+        showPreview(Option(nextReader.result).fold("")(_.toString))
+        if (reader eq nextReader) reader = null
+        if (activeReader eq nextReader) activeReader = null
+      }
+      nextReader.readAsDataURL(file)
+    }
+
+    private def cancelReader(): Unit =
+      Option(reader).foreach { currentReader =>
+        currentReader.onload = null
+        if (currentReader.readyState == FileReader.LOADING) currentReader.abort()
+        if (activeReader eq currentReader) activeReader = null
+        reader = null
+      }
+
+    private def showPreview(src: String): Unit = {
       val normalized = Option(src).map(_.trim).getOrElse("")
       if (normalized.nonEmpty) {
-        preview.src = normalized
-        preview.style.display = "block"
-        previewPlaceholder.style.display = "none"
+        preview.setAttribute("src", normalized)
+        preview.setStyle("display", "block")
+        previewPlaceholder.setStyle("display", "none")
         previewShell.setAttribute("aria-label", replaceImageLabel)
-      } else {
-        preview.removeAttribute("src")
-        preview.style.display = "none"
-        previewPlaceholder.style.display = "flex"
-        previewShell.setAttribute("aria-label", selectImageLabel)
-      }
+      } else showPlaceholder()
     }
 
-    preview.addEventListener(
-      "error",
-      (_: Event) => {
-        preview.style.display = "none"
-        previewPlaceholder.style.display = "flex"
-      }
-    )
-    previewShell.onclick = (_: MouseEvent) => fileInput.click()
-    fileInput.onchange = (_: Event) => {
-      Option(fileInput.files).flatMap(files => Option(files.item(0))).foreach { file =>
-        Option(activeReader).foreach { reader =>
-          reader.onload = null
-          if (reader.readyState == FileReader.LOADING) reader.abort()
-        }
-        val reader = new FileReader()
-        activeReader = reader
-        reader.onload = (_: Event) => {
-          showPreview(Option(reader.result).fold("")(_.toString))
-          if (activeReader eq reader) activeReader = null
-        }
-        reader.readAsDataURL(file)
-      }
+    private def showPreviewError(): Unit = {
+      preview.setStyle("display", "none")
+      previewPlaceholder.setStyle("display", "flex")
     }
 
-    previewShell.appendChild(preview)
-    previewShell.appendChild(previewPlaceholder)
-    showPreview(current.fold("")(_.src))
+    private def showPlaceholder(): Unit = {
+      preview.removeAttribute("src")
+      preview.setStyle("display", "none")
+      previewPlaceholder.setStyle("display", "flex")
+      previewShell.setAttribute("aria-label", selectImageLabel)
+    }
 
-    val altLabel = document.createElement("label").asInstanceOf[HTMLElement]
-    altLabel.textContent = "Alt text"
-    altLabel.setAttribute("for", "image-alt-input")
-    val altInput = document.createElement("input").asInstanceOf[HTMLInputElement]
-    altInput.id = "image-alt-input"
-    altInput.placeholder = "Description"
-    altInput.value = current.flatMap(state => Option(state.altText)).getOrElse("")
-
-    val widthLabel = document.createElement("label").asInstanceOf[HTMLElement]
-    widthLabel.textContent = "Width (px)"
-    widthLabel.setAttribute("for", "image-width-input")
-    val widthInput = document.createElement("input").asInstanceOf[HTMLInputElement]
-    widthInput.`type` = "number"
-    widthInput.id = "image-width-input"
-    widthInput.min = "1"
-    widthInput.value = math.max(1, current.fold(defaultWidthPx)(_.maxWidth)).toString
-
-    content.appendChild(previewShell)
-    content.appendChild(fileInput)
-    content.appendChild(altLabel)
-    content.appendChild(altInput)
-    content.appendChild(widthLabel)
-    content.appendChild(widthInput)
-    content
+    private def domElement(component: DialogElement): Option[org.scalajs.dom.Element] =
+      Option(component).filter(_.isBound).flatMap { current =>
+        current.host match {
+          case domHost: DomHostElement => Some(domHost.node)
+          case _                       => None
+        }
+      }
   }
 
   private def insertImage(editor: LexicalEditor, content: HTMLElement): Unit = {
@@ -284,7 +337,7 @@ final class ImagePlugin extends EditorPlugin {
   }
 }
 
-private final case class ImageDialogState(
+private[plugins] final case class ImageDialogState(
     key: String,
     src: String,
     altText: String,

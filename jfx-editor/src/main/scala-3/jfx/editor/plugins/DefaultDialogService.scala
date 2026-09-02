@@ -121,6 +121,7 @@ private final class DialogBody(
           domHost.node.appendChild(content)
           addDisposable(Disposable {
             if (content.parentNode == domHost.node) domHost.node.removeChild(content)
+            DialogContent.dispose(content)
           })
           Option(content.querySelector("input, button, select, textarea"))
             .collect { case element: HTMLElement => element }

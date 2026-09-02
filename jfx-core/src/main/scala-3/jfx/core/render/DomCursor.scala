@@ -63,6 +63,15 @@ object DomCursor {
   def root(parent: dom.Element, asyncContext: AsyncRenderContext): DomCursor =
     new DomCursor(parent, None, Some(asyncContext))
 
+  /** A browser cursor whose nodes start out in a detached document fragment.
+    *
+    * This is useful for component-based integration points that have to hand an already-created
+    * DOM element to third-party code. The component still gets mounted through the regular DSL and
+    * runtime, without briefly attaching it to the live document.
+    */
+  def detached(): DomCursor =
+    new DomCursor(dom.document.createDocumentFragment(), None, None)
+
   def before(parent: dom.Node, beforeNode: dom.Node): DomCursor =
     new DomCursor(parent, Some(beforeNode), None)
 

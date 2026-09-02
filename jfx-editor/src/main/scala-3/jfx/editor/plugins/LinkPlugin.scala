@@ -1,6 +1,14 @@
 package jfx.editor.plugins
 
+import jfx.core.dsl.AttributeDsl.{setAttribute as setDslAttribute}
+import jfx.core.dsl.ClassDsl.classes
+import jfx.core.dsl.DslLayer.render
+import jfx.core.dsl.PropertyDsl.{setProperty as setDslProperty}
+import jfx.core.layout.Div.div
+import jfx.core.layout.TextComponent.text
+import jfx.core.render.Cursor
 import jfx.editor.Editor
+import jfx.editor.plugins.DialogElement.element
 import lexical.{
   BaseSelection,
   Lexical,
@@ -13,7 +21,7 @@ import lexical.{
   getDialogService,
   getSelectionWrapper
 }
-import org.scalajs.dom.{HTMLElement, HTMLInputElement, document}
+import org.scalajs.dom.{HTMLElement, HTMLInputElement}
 
 import scala.scalajs.js
 
@@ -84,28 +92,8 @@ final class LinkPlugin extends EditorPlugin {
 }
 
 object LinkPlugin {
-  def defaultBuildDialogContent(context: LinkDialogContext): HTMLElement = {
-    val content = document.createElement("div").asInstanceOf[HTMLElement]
-    content.className = "link-plugin-dialog"
-
-    val intro = document.createElement("div").asInstanceOf[HTMLElement]
-    intro.textContent = "Use this dialog to edit or insert a link."
-
-    val label = document.createElement("label").asInstanceOf[HTMLElement]
-    label.textContent = context.urlLabel
-    label.setAttribute("for", "link-url-input")
-
-    val input = document.createElement("input").asInstanceOf[HTMLInputElement]
-    input.`type` = "url"
-    input.id = "link-url-input"
-    input.placeholder = context.urlPlaceholder
-    input.value = context.currentUrl
-
-    content.appendChild(intro)
-    content.appendChild(label)
-    content.appendChild(input)
-    content
-  }
+  def defaultBuildDialogContent(context: LinkDialogContext): HTMLElement =
+    DialogContent.mount(new LinkDialogContent(context))
 
   def defaultConfirmDialog(context: LinkDialogContext, content: HTMLElement): Unit = {
     val input = content.querySelector("#link-url-input").asInstanceOf[HTMLInputElement | Null]
@@ -129,4 +117,27 @@ object LinkPlugin {
     editor.registerPlugin(plugin)
     plugin
   }
+}
+
+private[plugins] final class LinkDialogContent(context: LinkDialogContext) extends DialogContent {
+  override def compose(cursor: Cursor): Unit =
+    render(this, cursor) {
+      classes = Seq("link-plugin-dialog")
+
+      div {
+        text("Use this dialog to edit or insert a link.") {}
+      }
+
+      element("label") {
+        setDslAttribute("for", "link-url-input")
+        text(context.urlLabel) {}
+      }
+
+      element("input") {
+        setDslAttribute("type", "url")
+        setDslAttribute("id", "link-url-input")
+        setDslAttribute("placeholder", context.urlPlaceholder)
+        setDslProperty("value", context.currentUrl)
+      }
+    }
 }
