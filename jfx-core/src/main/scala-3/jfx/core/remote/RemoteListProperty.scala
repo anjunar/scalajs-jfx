@@ -183,6 +183,7 @@ final class RemoteListProperty[V, Query](
   }
 
   def clear(): Unit = {
+    invalidatePendingLoads()
     loadedItems.clear()
     loadedRanges.clear()
     totalCountProperty.set(Some(0))
@@ -222,8 +223,7 @@ final class RemoteListProperty[V, Query](
         if (replaceExisting) {
           // Ein echtes Neuladen macht alles ungueltig, was vorher losgeschickt wurde.
           // Ein identisches, bereits laufendes Neuladen wurde oben schon dedupliziert.
-          loadGeneration += 1
-          pendingLoads.clear()
+          invalidatePendingLoads()
         }
 
         val startedGeneration = loadGeneration
@@ -274,6 +274,12 @@ final class RemoteListProperty[V, Query](
     */
   private def refreshLoadingState(): Unit =
     loadingProperty.set(pendingLoads.nonEmpty)
+
+  private def invalidatePendingLoads(): Unit = {
+    loadGeneration += 1
+    pendingLoads.clear()
+    refreshLoadingState()
+  }
 
   private def applyPage(
       page: RemotePage[V, Query],

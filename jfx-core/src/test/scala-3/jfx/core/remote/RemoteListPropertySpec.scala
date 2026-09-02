@@ -328,6 +328,29 @@ class RemoteListPropertySpec extends AnyFlatSpec with Matchers {
     remote.isRangeLoaded(100, 110) shouldBe false
   }
 
+  it should "not let a range load started before clear restore deleted state" in {
+    val controllable = new ControllableLoader(total = 1000)
+    val remote       = remoteWith(controllable)
+
+    val rangeLoad = remote.ensureRangeLoaded(100, 110)
+    remote.loadingProperty.get shouldBe true
+
+    remote.clear()
+
+    remote.loadedLength shouldBe 0
+    remote.totalLength shouldBe 0
+    remote.isRangeLoaded(100, 110) shouldBe false
+    remote.loadingProperty.get shouldBe false
+
+    controllable.completeAll()
+
+    rangeLoad.value.map(_.get.toSeq) shouldBe Some(Seq.empty)
+    remote.loadedLength shouldBe 0
+    remote.totalLength shouldBe 0
+    remote.isRangeLoaded(100, 110) shouldBe false
+    remote.loadingProperty.get shouldBe false
+  }
+
   "queryProperty" should "stay the base query across a range load" in {
     val remote = pagedMembers(total = 1000, pageSize = 10)
 
