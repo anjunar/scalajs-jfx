@@ -3,11 +3,13 @@ package jfx.control
 import jfx.control.datagrid.DataGrid
 import jfx.control.table.TableView
 import jfx.control.virtuallist.VirtualListView
+import jfx.control.virtualized.{FixedRowGeometry, ItemGeometry, VirtualizedCollection}
 import jfx.core.component.{AbstractComponent, Runtime}
 import jfx.core.dsl.DslLayer
 import jfx.core.layout.Div.div
 import jfx.core.layout.TextComponent.text
 import jfx.core.render.{Cursor, SsrCursor}
+import jfx.core.state.ListProperty
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -121,6 +123,31 @@ class ViewportMeasurementSpec extends AnyFlatSpec with Matchers {
     control.viewportHeightProperty.get shouldBe 600.0
   }
 
+  "A viewport measurement" should "notify the follow-ups after applying the size" in {
+    // Regression: measureViewport hat in P3-1 zeitweise nur die Groesse
+    // uebernommen. Der zweite Schritt -- der Haken, ueber den
+    // CrawlableCollection die Scroll-Position wiederherstellt und die Hydration
+    // freigibt -- ging beim Zusammenlegen verloren. Folge im Browser: nach dem
+    // Neuladen sprang die Liste nach oben, und weil hydrating true blieb, lud
+    // sie beim Scrollen nichts mehr nach.
+    val probe = new MeasurementProbe
+
+    probe.measureViewport(1600.0, 600.0)
+
+    probe.notifications shouldBe 1
+    probe.viewportWidthSeen shouldBe 1600.0
+    probe.viewportHeightProperty.get shouldBe 600.0
+  }
+
+  it should "release hydration so lazy loading can start" in {
+    val probe = new MeasurementProbe
+    probe.startHydrating()
+
+    probe.hydratingNow shouldBe true
+    probe.measureViewport(1600.0, 600.0)
+    probe.hydratingNow shouldBe false
+  }
+
   private def renderer[C]: (C | Null, Int) => AbstractComponent ?=> Cursor ?=> Unit =
     (item, index) => div { text(if (item == null) s"Loading $index" else String.valueOf(item)) {} }
 
@@ -137,4 +164,36 @@ class ViewportMeasurementSpec extends AnyFlatSpec with Matchers {
     )
     ()
   }
+}
+
+/**
+ * Minimale VirtualizedCollection, die nur beobachtet, ob die Messung ihre
+ * Nachlaeufer benachrichtigt.
+ */
+private final class MeasurementProbe extends VirtualizedCollection[String] {
+
+  override val tagName: String = "div"
+
+  var notifications: Int         = 0
+  var viewportWidthSeen: Double  = 0.0
+
+  override protected val geometry: ItemGeometry =
+    new FixedRowGeometry(rowHeight = () => 20.0, headerHeightValue = () => 0.0, overscanRows = 0)
+
+  override protected def renderableCount: Int = getItems.length
+  override protected def recomputeVisible(): Unit = ()
+  override protected def handleLocalItemsChange(change: ListProperty.Change[String]): Unit = ()
+
+  override protected def onViewportWidthMeasured(width: Double): Unit =
+    viewportWidthSeen = width
+
+  override protected def onViewportMeasured(): Unit = {
+    notifications += 1
+    if (hydrating) hydrating = false
+  }
+
+  def startHydrating(): Unit = hydrating = true
+  def hydratingNow: Boolean  = hydrating
+
+  override def compose(cursor: Cursor): Unit = ()
 }

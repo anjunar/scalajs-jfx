@@ -126,11 +126,18 @@ trait CrawlableCollection[T] { self: VirtualizedCollection[T] =>
   protected def nextCrawlHref: String =
     CrawlScope.path(using this)
 
-  protected def applyInitialScrollPosition(viewport: dom.html.Element): Unit =
+  /**
+   * Springt die aus dem Cookie wiederhergestellte Position an und gibt die
+   * Hydration frei.
+   *
+   * Die Freigabe von hydrating ist nicht nebensaechlich: solange sie aussteht,
+   * rendert das Control weiter den Crawl-Ausschnitt und laedt nichts nach.
+   */
+  override protected def onViewportMeasured(): Unit =
     if (initialScrollIndex > 0) {
       val nextScrollTop = topForIndex(initialScrollIndex)
       hydrating = false
-      viewport.scrollTop = nextScrollTop
+      domElement(viewportComponent).foreach(_.scrollTop = nextScrollTop)
       scrollTopProperty.set(nextScrollTop)
       initialScrollIndex = -1
       recomputeVisible()

@@ -235,10 +235,33 @@ abstract class VirtualizedCollection[T] extends AbstractComponent {
       viewportMeasureScheduled = true
       dom.window.requestAnimationFrame { _ =>
         viewportMeasureScheduled = false
-        domElement(viewportComponent).foreach(updateViewportSize)
+        domElement(viewportComponent).foreach { viewport =>
+          measureViewport(viewport.clientWidth.toDouble, viewport.clientHeight.toDouble)
+        }
       }
       ()
     }
+
+  /**
+   * Der Rumpf einer Viewport-Messung: Groesse uebernehmen, dann die Nachlaeufer
+   * benachrichtigen.
+   *
+   * Vom requestAnimationFrame getrennt, damit die Verkettung ohne DOM pruefbar
+   * ist. Genau hier sass ein Fehler: beim Zusammenlegen in P3-1 ist der zweite
+   * Schritt verloren gegangen, wodurch die gespeicherte Scroll-Position nie
+   * wiederhergestellt wurde und hydrating dauerhaft true blieb -- was wiederum
+   * das Nachladen blockierte.
+   */
+  private[control] def measureViewport(width: Double, height: Double): Unit = {
+    applyViewportSize(width, height)
+    onViewportMeasured()
+  }
+
+  /**
+   * Haken nach einer Viewport-Messung. CrawlableCollection stellt darueber die
+   * gespeicherte Scroll-Position wieder her und gibt die Hydration frei.
+   */
+  protected def onViewportMeasured(): Unit = ()
 
   /**
    * Haengt die Item-Beobachter an und sorgt dafuer, dass sie beim Entsorgen der
