@@ -2,6 +2,7 @@ package app.pages
 
 import app.components.Showcase
 import jfx.core.component.AbstractComponent
+import jfx.core.component.AbstractComponent.addDisposable
 import jfx.core.dsl.ClassDsl.classes
 import jfx.core.dsl.StyleDsl.*
 import jfx.core.layout.Div.div
@@ -45,9 +46,7 @@ object ImageCropperPage {
             thumbnailMaxWidth = 160
             thumbnailMaxHeight = 160
             windowTitle = i18n"Crop profile image"
-            summon[jfx.forms.ImageCropper].addDisposable(
-              valueProperty.observe(croppedMedia.set)
-            )
+            addDisposable(valueProperty.observe(croppedMedia.set))
           }
 
           vbox {

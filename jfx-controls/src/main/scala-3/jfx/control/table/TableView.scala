@@ -268,7 +268,7 @@ final class TableView[S] private (
                 minWidth = totalColumnWidthProperty.map(value => s"${value}px")
                 boxSizing = "border-box"
               }
-              contentHeaderBody.foreach(_(using summon[AbstractComponent])(using summon[Cursor]))
+              contentHeaderBody.foreach { body => body }
             }
 
             div {
@@ -339,7 +339,7 @@ final class TableView[S] private (
             classes = Seq("jfx-table-placeholder")
             style { display = "flex" }
             placeholderBody match {
-              case Some(body) => body(using summon[AbstractComponent])(using summon[Cursor])
+              case Some(body) => body
               case None       =>
                 div {
                   classes = Seq("jfx-table-default-placeholder")

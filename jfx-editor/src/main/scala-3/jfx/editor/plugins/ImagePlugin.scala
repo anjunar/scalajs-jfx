@@ -138,8 +138,8 @@ final class ImagePlugin extends EditorPlugin {
     private var previewPlaceholder: DialogElement = null
     private var reader: FileReader | Null         = null
 
-    override def compose(cursor: Cursor): Unit =
-      render(this, cursor) {
+    override def compose(contentCursor: Cursor): Unit =
+      render(this, contentCursor) {
         classes = Seq("image-plugin-dialog")
 
         fileInput = element("input") {
@@ -150,7 +150,6 @@ final class ImagePlugin extends EditorPlugin {
         }
 
         previewShell = element("button") {
-          val shell = summon[DialogElement]
           setDslAttribute("type", "button")
           setDslAttribute("aria-label", current.fold(selectImageLabel)(_ => replaceImageLabel))
           classes = Seq("image-plugin-dialog__preview-shell")
@@ -159,10 +158,10 @@ final class ImagePlugin extends EditorPlugin {
             color = "inherit"
             border = "1px dashed var(--aj-control-border-hover)"
             borderRadius = "var(--aj-overlay-radius)"
+            cursor = "pointer"
+            font = "inherit"
+            appearance = "none"
           }
-          shell.setStyle("cursor", "pointer")
-          shell.setStyle("font", "inherit")
-          shell.setStyle("appearance", "none")
           onClick { _ => inputElement.foreach(_.click()) }
 
           preview = element("img") {

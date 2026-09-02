@@ -1,6 +1,7 @@
 package jfx.forms
 
 import jfx.core.component.AbstractComponent
+import jfx.core.dsl.ClassDsl.{addClass as addDslClass}
 import jfx.core.dsl.DslLayer
 import jfx.core.dsl.DslLayer.render
 import jfx.core.layout.Div
@@ -30,25 +31,25 @@ final class InputContainer(body: => (AbstractComponent ?=> Cursor ?=> Unit))
       addClass("jfx-input-container")
 
       val labelHost = div {
-        summon[Div].addClass("jfx-input-container__label")
+        addDslClass("jfx-input-container__label")
         div {
-          summon[Div].addClass("placeholder")
-          summon[Div].addClass("jfx-input-container__placeholder")
+          addDslClass("placeholder")
+          addDslClass("jfx-input-container__placeholder")
           text(labelProperty) {}
         }
       }
 
       val controlHost = div {
-        summon[Div].addClass("jfx-input-container__control")
+        addDslClass("jfx-input-container__control")
         body
       }
 
       val divider = div {
-        summon[Div].addClass("jfx-input-container__divider")
+        addDslClass("jfx-input-container__divider")
       }
 
       val errorsHost = div {
-        summon[Div].addClass("jfx-input-container__errors")
+        addDslClass("jfx-input-container__errors")
       }
 
       collectControls(controlHost).headOption.foreach { control =>

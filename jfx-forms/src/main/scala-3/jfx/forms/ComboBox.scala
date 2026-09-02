@@ -95,7 +95,7 @@ final class ComboBox[T] private (
         valueRendererProperty.get match {
           case Some(renderer) =>
             foreach(selectionProperty) { item =>
-              renderer(item)(using summon[AbstractComponent])(using summon[Cursor])
+              renderer(item)
             }
           case None =>
             div {
@@ -151,9 +151,7 @@ final class ComboBox[T] private (
 
                     itemRendererProperty.get match {
                       case Some(renderer) =>
-                        renderer(item, selected)(using summon[AbstractComponent])(using
-                          summon[Cursor]
-                        )
+                        renderer(item, selected)
                       case None =>
                         div {
                           classes = Seq("jfx-combo-box__item-text")
@@ -168,7 +166,7 @@ final class ComboBox[T] private (
             footerRendererProperty.get.foreach { renderer =>
               div {
                 classes = Seq("jfx-combo-box__footer")
-                renderer(using summon[AbstractComponent])(using summon[Cursor])
+                renderer
               }
             }
           }

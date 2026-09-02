@@ -72,7 +72,7 @@ class I18nSpec extends AnyFlatSpec with Matchers {
     given AbstractComponent = root
 
     I18nRuntime.provide(I18nRuntime(locale, I18nResolver(catalog)))
-    val text = summon[TextValue[RuntimeMessage]].asReadOnlyProperty(message)
+    val text = TextValue.asReadOnlyProperty(message)
 
     text.get shouldBe "Delete document"
     locale.set(I18nLocale("de"))

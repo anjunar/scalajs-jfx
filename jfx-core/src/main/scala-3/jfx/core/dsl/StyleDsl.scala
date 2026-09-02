@@ -178,6 +178,12 @@ object StyleDsl {
   def cursor(using s: StyleProxy): String            = ""
   def cursor_=(v: String)(using s: StyleProxy): Unit = s.host.setStyle("cursor", v)
 
+  def font(using s: StyleProxy): String            = ""
+  def font_=(v: String)(using s: StyleProxy): Unit = s.host.setStyle("font", v)
+
+  def appearance(using s: StyleProxy): String            = ""
+  def appearance_=(v: String)(using s: StyleProxy): Unit = s.host.setStyle("appearance", v)
+
   def pointerEvents(using s: StyleProxy): String            = ""
   def pointerEvents_=(v: String)(using s: StyleProxy): Unit = s.host.setStyle("pointer-events", v)
 

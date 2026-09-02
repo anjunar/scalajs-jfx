@@ -157,7 +157,7 @@ object Viewport {
     val mounted = Runtime.mount(new Viewport(), cursor, Some(parent))
 
     renderInto(mounted.contentHost) {
-      body(using mounted.contentHost)(using mounted)(using summon[Cursor])
+      body(using mounted.contentHost)(using mounted)
     }
 
     mounted

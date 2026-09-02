@@ -3,6 +3,7 @@ package jfx.control.tabs
 import jfx.control.tabs.Tabs
 import jfx.control.tabs.Tabs.{RenderMode, TabSpec}
 import jfx.core.component.{AbstractComponent, AbstractCustomComponent}
+import jfx.core.dsl.AttributeDsl.{setAttribute as setDslAttribute}
 import jfx.core.dsl.ClassDsl.{addClass, classIf, classes}
 import jfx.core.dsl.DslLayer
 import jfx.core.dsl.EventDsl.{on, onClick}
@@ -54,7 +55,7 @@ final class Tabs(
 
       div {
         classes = Seq("jfx-tabs__header")
-        setAttribute("role", "tablist")
+        setDslAttribute("role", "tablist")
 
         foreachIndexed(tabsProperty) { (tab, index) =>
           val active = selectedIndexProperty.map(_ == index)
@@ -63,10 +64,10 @@ final class Tabs(
             classes = Seq("jfx-tabs__trigger")
             classIf("jfx-tabs__trigger--active", active)
             buttonType("button")
-            setAttribute("role", "tab")
+            setDslAttribute("role", "tab")
             trigger.addDisposable(active.observe { selected =>
-              setAttribute("aria-selected", selected.toString)
-              setAttribute("tabindex", if (selected) "0" else "-1")
+              setDslAttribute("aria-selected", selected.toString)
+              setDslAttribute("tabindex", if (selected) "0" else "-1")
             })
             onClick(_ => setSelectedIndex(index))
           }

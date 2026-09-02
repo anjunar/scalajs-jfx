@@ -1,8 +1,9 @@
 package jfx.editor.plugins
 
-import jfx.core.component.{AbstractComponent, Runtime}
+import jfx.core.component.AbstractComponent
 import jfx.core.dsl.ClassDsl.classes
 import jfx.core.dsl.DslLayer.render
+import jfx.core.dsl.DslLayer
 import jfx.core.dsl.EventDsl.{onClick, onWindowKeyDown}
 import jfx.core.dsl.StyleDsl.*
 import jfx.core.layout.Button.{button, buttonType}
@@ -28,7 +29,7 @@ final class DefaultDialogService extends DialogService, AutoCloseable {
     var conf: Viewport.WindowConf = null
     conf = new Viewport.WindowConf(
       body = {
-        Runtime.mount(
+        DslLayer.child(
           new DialogBody(
             content,
             onCancel = () => closeWindow(conf),
@@ -36,10 +37,8 @@ final class DefaultDialogService extends DialogService, AutoCloseable {
               onConfirm(content)
               closeWindow(conf)
             }
-          ),
-          summon[Cursor],
-          Some(summon[AbstractComponent])
-        )
+          )
+        ) {}
       },
       widthPx = 720,
       heightPx = 560,

@@ -192,7 +192,7 @@ final class DataGrid[T] private (
                 )
               )
             )
-            headerBody.foreach(_(using summon[AbstractComponent])(using summon[Cursor]))
+            headerBody.foreach { body => body }
           }
 
           div {
@@ -233,7 +233,7 @@ final class DataGrid[T] private (
             when(remoteStateRevisionProperty.map(_ => remoteLoading)) {
               loadingPlaceholderBody match {
                 case Some(body) =>
-                  body(using summon[AbstractComponent])(using summon[Cursor])
+                  body
                 case None =>
                   div {
                     classes = Seq("jfx-data-grid-default-placeholder")
@@ -252,7 +252,7 @@ final class DataGrid[T] private (
             when(remoteStateRevisionProperty.map(_ => !remoteLoading && remoteError.isEmpty)) {
               emptyPlaceholderBody match {
                 case Some(body) =>
-                  body(using summon[AbstractComponent])(using summon[Cursor])
+                  body
                 case None =>
                   div {
                     classes = Seq("jfx-data-grid-default-placeholder")
@@ -775,9 +775,7 @@ object DataGrid {
           case Some(item) => item
           case None       => null
         }
-        renderer.foreach(
-          _(value, cell.index)(using summon[AbstractComponent])(using summon[Cursor])
-        )
+        renderer.foreach { renderCell => renderCell(value, cell.index) }
       }
   }
 }

@@ -31,7 +31,7 @@ object TextComponent {
     new BoundTextComponent(text)
 
   def bind[T](text: T)(using TextValue[T], AbstractComponent): TextComponent =
-    new BoundTextComponent(summon[TextValue[T]].asReadOnlyProperty(text))
+    new BoundTextComponent(TextValue.asReadOnlyProperty(text))
 
   def text[T](
       label: T

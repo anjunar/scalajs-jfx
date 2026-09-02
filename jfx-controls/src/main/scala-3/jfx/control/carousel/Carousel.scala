@@ -3,11 +3,13 @@ package jfx.control.carousel
 import jfx.control.carousel.Carousel.Renderer
 import jfx.control.carousel.CarouselSlide.carouselSlide
 import jfx.core.component.AbstractComponent
+import jfx.core.component.AbstractComponent.{addDisposable as addDslDisposable}
+import jfx.core.dsl.AttributeDsl.{removeAttribute as removeDslAttribute, setAttribute as setDslAttribute}
 import jfx.core.dsl.ClassDsl.{addClass, classIf, classes}
 import jfx.core.dsl.DslLayer
 import jfx.core.dsl.EventDsl.{on, onClick}
 import jfx.core.dsl.StyleDsl.*
-import jfx.core.layout.Button.{button, buttonType}
+import jfx.core.layout.Button.*
 import jfx.core.layout.Condition.when
 import jfx.core.layout.Div.div
 import jfx.core.layout.TextComponent.text
@@ -145,11 +147,10 @@ final class Carousel[T] private[carousel] (
           classes = Seq("jfx-carousel__controls")
 
           button("Previous") {
-            val previousButton = summon[AbstractComponent]
             classes = Seq("jfx-carousel__nav")
             buttonType("button")
-            previousButton.setAttribute("aria-label", "Previous slide")
-            bindDisabled(previousButton, atStartProperty)
+            setDslAttribute("aria-label", "Previous slide")
+            disabled = atStartProperty
             onClick(_ => previous())
           }
 
@@ -167,14 +168,13 @@ final class Carousel[T] private[carousel] (
               val active = activeIndexProperty.map(_ == index)
 
               button((index + 1).toString) {
-                val indicator = summon[AbstractComponent]
                 classes = Seq("jfx-carousel__indicator")
                 classIf("is-active", active)
                 buttonType("button")
-                indicator.setAttribute("aria-label", s"Go to slide ${index + 1}")
-                indicator.addDisposable(active.observe { selected =>
-                  if (selected) indicator.setAttribute("aria-current", "true")
-                  else indicator.removeAttribute("aria-current")
+                setDslAttribute("aria-label", s"Go to slide ${index + 1}")
+                addDslDisposable(active.observe { selected =>
+                  if (selected) setDslAttribute("aria-current", "true")
+                  else removeDslAttribute("aria-current")
                 })
                 onClick(_ => goTo(index))
               }
@@ -182,11 +182,10 @@ final class Carousel[T] private[carousel] (
           }
 
           button("Next") {
-            val nextButton = summon[AbstractComponent]
             classes = Seq("jfx-carousel__nav")
             buttonType("button")
-            nextButton.setAttribute("aria-label", "Next slide")
-            bindDisabled(nextButton, atEndProperty)
+            setDslAttribute("aria-label", "Next slide")
+            disabled = atEndProperty
             onClick(_ => next())
           }
         }
@@ -275,20 +274,6 @@ final class Carousel[T] private[carousel] (
       autoAdvance = intervalScheduler.schedule(intervalMs)(() => next())
     }
   }
-
-  private def bindDisabled(
-      component: AbstractComponent,
-      disabled: ReadOnlyProperty[Boolean]
-  ): Unit =
-    component.addDisposable(disabled.observe { value =>
-      if (value) {
-        component.setAttribute("disabled", "")
-        component.setAttribute("aria-disabled", "true")
-      } else {
-        component.removeAttribute("disabled")
-        component.setAttribute("aria-disabled", "false")
-      }
-    })
 
   private def atStartProperty: ReadOnlyProperty[Boolean] =
     navigationRevisionProperty.map(_ =>

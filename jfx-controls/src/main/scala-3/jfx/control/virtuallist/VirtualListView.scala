@@ -169,7 +169,7 @@ final class VirtualListView[T] private (
               width = "100%"
               boxSizing = "border-box"
             }
-            headerBody.foreach(_(using summon[AbstractComponent])(using summon[Cursor]))
+            headerBody.foreach { body => body }
           }
 
           div {

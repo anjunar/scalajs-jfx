@@ -8,6 +8,12 @@ trait TextValue[-T] {
 }
 
 object TextValue {
+  def asReadOnlyProperty[T](value: T)(using
+      textValue: TextValue[T],
+      component: AbstractComponent
+  ): ReadOnlyProperty[String] =
+    textValue.asReadOnlyProperty(value)
+
   given stringTextValue: TextValue[String] with
     override def asReadOnlyProperty(value: String)(using AbstractComponent): ReadOnlyProperty[String] =
       Property(Option(value).getOrElse(""))

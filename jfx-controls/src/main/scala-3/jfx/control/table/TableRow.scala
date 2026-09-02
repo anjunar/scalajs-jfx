@@ -75,7 +75,7 @@ class TableRow[S] private[control] (
             itemProperty.get match {
               case item: S @unchecked =>
                 typedColumn.cellRenderer.get.foreach { renderer =>
-                  renderer(item)(using summon[AbstractComponent])(using summon[Cursor])
+                  renderer(item)
                 }
               case null => ()
             }

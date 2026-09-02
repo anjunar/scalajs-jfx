@@ -110,7 +110,7 @@ class FormSpec extends AnyFlatSpec with Matchers {
     val root = mount {
       container = inputContainer(label) {
         nameInput = input("name", standalone = true) {
-          summon[Input].validators += NotBlankValidator("Required")
+          Input.validators += NotBlankValidator("Required")
         }
       }
     }

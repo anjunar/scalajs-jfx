@@ -2,6 +2,7 @@ package jfx.editor
 
 import jfx.core.component.AbstractComponent
 import jfx.core.di.Context
+import jfx.core.dsl.AttributeDsl.{setAttribute as setDslAttribute}
 import jfx.core.dsl.ClassDsl.{addClass, classes}
 import jfx.core.dsl.DslLayer
 import jfx.core.dsl.DslLayer.render
@@ -517,7 +518,7 @@ private final class PreviewNode(node: js.Any) extends AbstractComponent {
           }
         case "link" =>
           element("a") {
-            summon[AbstractComponent].setAttribute(
+            setDslAttribute(
               "href",
               previewString(node, "url").orElse(extraString(node, "url")).getOrElse("")
             )
@@ -536,18 +537,18 @@ private final class PreviewNode(node: js.Any) extends AbstractComponent {
           }
         case "image" =>
           element("img") {
-            summon[AbstractComponent].setAttribute(
+            setDslAttribute(
               "src",
               previewString(node, "src").orElse(extraString(node, "src")).getOrElse("")
             )
-            summon[AbstractComponent].setAttribute(
+            setDslAttribute(
               "alt",
               previewString(node, "altText").orElse(extraString(node, "altText")).getOrElse("")
             )
             previewInt(node, "width")
               .orElse(extraInt(node, "width"))
               .foreach(width =>
-                summon[AbstractComponent].setAttribute("width", width.toString)
+                setDslAttribute("width", width.toString)
               )
             style {
               maxWidth = "100%"

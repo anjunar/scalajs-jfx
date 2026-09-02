@@ -2,6 +2,7 @@ package app.pages
 
 import app.components.Showcase.*
 import jfx.core.component.AbstractComponent
+import jfx.core.component.AbstractComponent.addDisposable
 import jfx.core.dsl.ClassDsl.{classIf, classes}
 import jfx.core.dsl.StyleDsl.*
 import jfx.core.layout.Div.div
@@ -63,7 +64,6 @@ object ComboBoxPage {
             }
 
             comboBox[Member]("team-selector", standalone = true) {
-              val control = summon[ComboBox[Member]]
               classes = Seq("form-page__combo-control")
               placeholder = i18n"Choose a team member..."
               items = members
@@ -72,7 +72,7 @@ object ComboBoxPage {
               converter = _.name
               identityBy = _.id
 
-              control.addDisposable(control.selectionProperty.observe { selected =>
+              addDisposable(selection.observe { selected =>
                 status.set(
                   selected.headOption
                     .map(member => s"Selected: ${member.name} — ${member.role}")
