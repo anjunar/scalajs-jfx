@@ -142,7 +142,7 @@ final class DataGrid[T] private (
 
     DslLayer.render(this, cursor) {
       addClass("jfx-data-grid")
-      resolvedCrawlId.foreach(host.setAttribute("id", _))
+      resolvedCrawlId.foreach(setAttribute("id", _))
       classIf("jfx-data-grid-loading", remoteStateRevisionProperty.map(_ => remoteLoading))
       classIf("jfx-data-grid-error", remoteStateRevisionProperty.map(_ => remoteError.nonEmpty))
 
@@ -185,7 +185,7 @@ final class DataGrid[T] private (
           }
           contentComponent.addDisposable(
             gapProperty.observe(value =>
-              contentComponent.host.setStyle("padding", px(math.max(0.0, value)))
+              contentComponent.setStyle("padding", px(math.max(0.0, value)))
             )
           )
 
@@ -199,7 +199,7 @@ final class DataGrid[T] private (
             }
             currentHeader.addDisposable(
               gapProperty.observe(value =>
-                currentHeader.host.setStyle(
+                currentHeader.setStyle(
                   "margin-bottom",
                   px(if (headerBody.nonEmpty) math.max(0.0, value) else 0.0)
                 )
@@ -497,8 +497,8 @@ final class DataGrid[T] private (
   private def refreshConfiguredCrawlState(): Unit = {
     initializeCrawlState()
     resolvedCrawlId match {
-      case Some(id) => host.setAttribute("id", id)
-      case None     => host.removeAttribute("id")
+      case Some(id) => setAttribute("id", id)
+      case None     => removeAttribute("id")
     }
     if (browserRendering) initializeBrowserCrawlState()
     refreshItemState()

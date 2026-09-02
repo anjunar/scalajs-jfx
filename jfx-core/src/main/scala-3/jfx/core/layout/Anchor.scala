@@ -9,22 +9,22 @@ final class Anchor extends AbstractComponent {
   val tagName = "a"
 
   def href: String =
-    host.attribute("href").getOrElse("#")
+    attribute("href").getOrElse("#")
 
   def href_=(value: String): Unit =
-    host.setAttribute("href", Option(value).getOrElse("#"))
+    setAttribute("href", Option(value).getOrElse("#"))
 
   def target: String =
-    host.attribute("target").getOrElse("")
+    attribute("target").getOrElse("")
 
   def target_=(value: String): Unit =
-    host.setAttribute("target", value)
+    setAttribute("target", value)
 
   def rel: String =
-    host.attribute("rel").getOrElse("")
+    attribute("rel").getOrElse("")
 
   def rel_=(value: String): Unit =
-    host.setAttribute("rel", value)
+    setAttribute("rel", value)
 }
 
 object Anchor {

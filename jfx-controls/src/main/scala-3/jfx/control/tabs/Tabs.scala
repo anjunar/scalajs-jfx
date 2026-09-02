@@ -59,7 +59,7 @@ final class Tabs(
 
       div {
         classes = Seq("jfx-tabs__header")
-        summon[AbstractComponent].host.setAttribute("role", "tablist")
+        summon[AbstractComponent].setAttribute("role", "tablist")
 
         foreachIndexed(tabsProperty) { (tab, index) =>
           val active = selectedIndexProperty.map(_ == index)
@@ -69,10 +69,10 @@ final class Tabs(
             classes = Seq("jfx-tabs__trigger")
             classIf("jfx-tabs__trigger--active", active)
             buttonType("button")
-            trigger.host.setAttribute("role", "tab")
+            trigger.setAttribute("role", "tab")
             trigger.addDisposable(active.observe { selected =>
-              trigger.host.setAttribute("aria-selected", selected.toString)
-              trigger.host.setAttribute("tabindex", if (selected) "0" else "-1")
+              trigger.setAttribute("aria-selected", selected.toString)
+              trigger.setAttribute("tabindex", if (selected) "0" else "-1")
             })
             onClick(_ => setSelectedIndex(index))
           }

@@ -1,6 +1,6 @@
 package jfx.core.component
 
-import jfx.core.dsl.{ClassDsl, EventDsl}
+import jfx.core.dsl.{AttributeDsl, ClassDsl, EventDsl, PropertyDsl, StyleDsl}
 import jfx.core.render.{CommentNode, Cursor, HostElement, HostNode, UiEvent, VirtualHost}
 import jfx.core.state.{CompositeDisposable, Disposable, ReadOnlyProperty}
 import org.scalajs.dom
@@ -9,7 +9,12 @@ import scala.scalajs.js
 
 import scala.collection.mutable
 
-abstract class AbstractComponent extends ClassDsl with EventDsl {
+abstract class AbstractComponent
+    extends ClassDsl
+    with EventDsl
+    with AttributeDsl
+    with PropertyDsl
+    with StyleDsl {
 
   val tagName: String
 
@@ -137,6 +142,30 @@ abstract class AbstractComponent extends ClassDsl with EventDsl {
       window.addEventListener("keydown", listener)
       addDisposable(Disposable(window.removeEventListener("keydown", listener)))
     }
+
+  def onDisposable(eventName: String)(handler: UiEvent => Unit): Disposable =
+    host.on(eventName)(handler)
+
+  def setAttribute(name: String, value: String): Unit =
+    host.setAttribute(name, value)
+
+  def removeAttribute(name: String): Unit =
+    host.removeAttribute(name)
+
+  def attribute(name: String): Option[String] =
+    host.attribute(name)
+
+  def setProperty(name: String, value: Any): Unit =
+    host.setProperty(name, value)
+
+  def property[T](name: String): Option[T] =
+    host.property[T](name)
+
+  def setStyle(name: String, value: String): Unit =
+    host.setStyle(name, value)
+
+  def removeStyle(name: String): Unit =
+    host.removeStyle(name)
 
   private def browserWindow: Option[dom.Window] =
     Option.when(js.typeOf(js.Dynamic.global.selectDynamic("window")) != "undefined")(dom.window)

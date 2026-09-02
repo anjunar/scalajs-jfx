@@ -71,14 +71,14 @@ final class ComboBox[T] private (
       addClass("jfx-combo-box")
       classIf("jfx-combo-box-open", openProperty)
       classIf("jfx-combo-box-readonly", editableProperty.map(!_))
-      host.setAttribute("name", name)
-      host.setAttribute("tabindex", "0")
-      host.setAttribute("role", "combobox")
+      setAttribute("name", name)
+      setAttribute("tabindex", "0")
+      setAttribute("role", "combobox")
       addDisposable(
-        openProperty.observe(value => host.setAttribute("aria-expanded", value.toString))
+        openProperty.observe(value => setAttribute("aria-expanded", value.toString))
       )
       addDisposable(editableProperty.observe { editable =>
-        host.setAttribute("aria-disabled", (!editable).toString)
+        setAttribute("aria-disabled", (!editable).toString)
       })
 
       onClick(_ => toggle())

@@ -73,12 +73,12 @@ final class ImageCropper private (
     render(this, cursor) {
       addClass("image-cropper-field")
       addClass("image-cropper")
-      host.setAttribute("name", name)
-      host.setAttribute("tabindex", "0")
-      host.setAttribute("role", "group")
+      setAttribute("name", name)
+      setAttribute("tabindex", "0")
+      setAttribute("role", "group")
 
       addDisposable(editableProperty.observe { editable =>
-        host.setAttribute("aria-disabled", (!editable).toString)
+        setAttribute("aria-disabled", (!editable).toString)
         Option(fileInput).foreach(_.setDisabled(!editable))
       })
 
@@ -583,10 +583,10 @@ private final class ImageCropperFileInput extends AbstractComponent {
 
   override def compose(cursor: Cursor): Unit =
     render(this, cursor) {
-      host.setAttribute("type", "file")
-      host.setAttribute("accept", "image/*")
-      host.setAttribute("aria-hidden", "true")
-      host.setAttribute("tabindex", "-1")
+      setAttribute("type", "file")
+      setAttribute("accept", "image/*")
+      setAttribute("aria-hidden", "true")
+      setAttribute("tabindex", "-1")
       style {
         display = "none"
       }
@@ -595,7 +595,7 @@ private final class ImageCropperFileInput extends AbstractComponent {
   def click(): Unit                     = element.foreach(_.click())
   def files: Option[dom.FileList]       = element.flatMap(input => Option(input.files))
   def value_=(next: String): Unit       = element.foreach(_.value = next)
-  def setDisabled(value: Boolean): Unit = host.setProperty("disabled", value)
+  def setDisabled(value: Boolean): Unit = setProperty("disabled", value)
 
   private def element: Option[HTMLInputElement] =
     if (!isBound) None
@@ -626,8 +626,8 @@ private final class ImageCropperCanvas extends AbstractComponent {
   override def compose(cursor: Cursor): Unit =
     render(this, cursor) {
       addClass("canvas")
-      host.setAttribute("width", "1")
-      host.setAttribute("height", "1")
+      setAttribute("width", "1")
+      setAttribute("height", "1")
     }
 
   def element: Option[HTMLCanvasElement] =
@@ -850,7 +850,7 @@ private final class ImageCropperDialog(
     }
 
   private def wireCanvasDragging(): Unit = {
-    addDisposable(canvasComponent.host.on("pointerdown") { event =>
+    addDisposable(canvasComponent.onDisposable("pointerdown") { event =>
       event.raw match {
         case pointer: PointerEvent if loadedImage != null && pointer.button == 0 =>
           event.preventDefault()
@@ -868,7 +868,7 @@ private final class ImageCropperDialog(
       }
     })
 
-    addDisposable(canvasComponent.host.on("lostpointercapture") { event =>
+    addDisposable(canvasComponent.onDisposable("lostpointercapture") { event =>
       event.raw match {
         case pointer: PointerEvent if activePointerId == pointer.pointerId => finishPointer(pointer)
         case _                                                             => ()

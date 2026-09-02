@@ -38,12 +38,12 @@ class TableRow[S] private[control] (
       if (placeholder) {
         addClass("jfx-table-row-empty")
         addClass("jfx-table-row-placeholder")
-        host.setAttribute("aria-selected", "false")
+        setAttribute("aria-selected", "false")
       } else {
         val table = requireTableView()
         val selected = table.selectedIndexProperty.map(_ == indexProperty.get)
         classIf("jfx-table-row-selected", selected)
-        addDisposable(selected.observe(value => host.setAttribute("aria-selected", value.toString)))
+        addDisposable(selected.observe(value => setAttribute("aria-selected", value.toString)))
 
         onClick(_ => table.select(indexProperty.get))
         onDoubleClick { _ =>

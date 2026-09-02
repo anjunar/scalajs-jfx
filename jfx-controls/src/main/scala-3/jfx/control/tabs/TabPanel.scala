@@ -18,18 +18,18 @@ private final class TabPanel(
   override def compose(cursor: Cursor): Unit =
     DslLayer.render(this, cursor) {
       addClass("jfx-tabs__panel")
-      host.setAttribute("role", "tabpanel")
+      setAttribute("role", "tabpanel")
 
       if (keepMounted) {
         val active = tabs.selectedIndexProperty.map(_ == index)
         classIf("jfx-tabs__panel--active", active)
         addDisposable(active.observe { selected =>
-          host.setAttribute("aria-hidden", (!selected).toString)
-          host.setStyle("display", if (selected) "" else "none")
+          setAttribute("aria-hidden", (!selected).toString)
+          setStyle("display", if (selected) "" else "none")
         })
       } else {
         addClass("jfx-tabs__panel--active")
-        host.setAttribute("aria-hidden", "false")
+        setAttribute("aria-hidden", "false")
       }
 
       tab.render(using tabs)(using this)(using cursor)

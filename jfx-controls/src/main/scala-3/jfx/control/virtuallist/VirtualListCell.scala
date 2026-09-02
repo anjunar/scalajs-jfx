@@ -20,7 +20,7 @@ private final class VirtualListCell[T](
     DslLayer.render(this, cursor) {
       addClass("jfx-virtual-list-cell")
       if (slot.item.isEmpty) addClass("jfx-virtual-list-cell-loading")
-      host.setAttribute("data-item-index", slot.index.toString)
+      setAttribute("data-item-index", slot.index.toString)
       style {
         position = "absolute"
         left = "0"

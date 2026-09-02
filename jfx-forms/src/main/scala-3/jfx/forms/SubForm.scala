@@ -37,10 +37,10 @@ class SubForm[M](
       parentController.register(this)
       addDisposable(() => parentController.unregister(this))
 
-      host.setProperty("disabled", !editableProperty.get)
+      setProperty("disabled", !editableProperty.get)
       bindEditableState()
       addDisposable(editableProperty.observe { editable =>
-        host.setProperty("disabled", !editable)
+        setProperty("disabled", !editable)
       })
 
       FormContext.provide(this)

@@ -22,7 +22,7 @@ class Input(val name: String, val standalone: Boolean = false)
 
   override def compose(cursor: Cursor): Unit = {
     render(this, cursor) {
-      host.setAttribute("name", name)
+      setAttribute("name", name)
 
       on("input") { event =>
         val value = event.raw match {
@@ -38,7 +38,7 @@ class Input(val name: String, val standalone: Boolean = false)
           dirtyProperty.set(true)
           valueProperty.set(Option(value).getOrElse(""))
         } else {
-          host.setProperty("value", valueProperty.get)
+          setProperty("value", valueProperty.get)
         }
       }
 
@@ -49,12 +49,12 @@ class Input(val name: String, val standalone: Boolean = false)
       }
 
       addDisposable(valueProperty.observe { value =>
-        host.setProperty("value", Option(value).getOrElse(""))
+        setProperty("value", Option(value).getOrElse(""))
         validate()
       })
       addDisposable(editableProperty.observe { editable =>
-        host.setProperty("readOnly", !editable)
-        if (!editable) host.setProperty("value", valueProperty.get)
+        setProperty("readOnly", !editable)
+        if (!editable) setProperty("value", valueProperty.get)
       })
       addDisposable(validators.observe(_ => validate()))
       addDisposable(dirtyProperty.observe(_ => validate()))
@@ -70,10 +70,10 @@ class Input(val name: String, val standalone: Boolean = false)
   }
 
   override protected def setPlaceholder(value: String): Unit =
-    host.setAttribute("placeholder", Option(value).getOrElse(""))
+    setAttribute("placeholder", Option(value).getOrElse(""))
 
   private def nativeValue: String =
-    host.property[js.Any]("value")
+    property[js.Any]("value")
       .filter(value => value != null && !js.isUndefined(value))
       .map(_.toString)
       .getOrElse("")
@@ -93,10 +93,10 @@ object Input {
     }
 
   def inputType(using input: Input): String =
-    input.host.attribute("type").getOrElse("text")
+    input.attribute("type").getOrElse("text")
 
   def inputType_=(value: String)(using input: Input): Unit =
-    input.host.setAttribute("type", Option(value).filter(_.nonEmpty).getOrElse("text"))
+    input.setAttribute("type", Option(value).filter(_.nonEmpty).getOrElse("text"))
 
   def stringValueProperty(using input: Input): Property[String] = input.valueProperty
 

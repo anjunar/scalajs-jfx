@@ -59,9 +59,9 @@ final class Editor private[forms] (
 
     render(this, cursor) {
       addClass("jfx-editor-host")
-      host.setAttribute("name", name)
-      host.setAttribute("role", "group")
-      host.setAttribute("data-jfx-editor-loading", cursor.isBrowser.toString)
+      setAttribute("name", name)
+      setAttribute("role", "group")
+      setAttribute("data-jfx-editor-loading", cursor.isBrowser.toString)
 
       div {
         classes = Seq("jfx-editor")
@@ -71,7 +71,7 @@ final class Editor private[forms] (
 
           toolbarHost = div {
             classes = Seq("jfx-editor__toolbar")
-            summon[AbstractComponent].host.setAttribute("aria-label", "Editor toolbar")
+            summon[AbstractComponent].setAttribute("aria-label", "Editor toolbar")
             style {
               display = toolbarDisplay(editableProperty.get)
             }
@@ -82,20 +82,20 @@ final class Editor private[forms] (
 
             previewHost = div {
               classes = Seq("jfx-editor__preview", "jfx-editor-readonly")
-              summon[AbstractComponent].host.setAttribute("aria-hidden", "false")
+              summon[AbstractComponent].setAttribute("aria-hidden", "false")
               dynamic(valueProperty.map[AbstractComponent](value => new EditorPreview(value)))
             }
 
             surfaceHost = div {
               classes =
                 Seq("jfx-editor__surface", "lexical-editor-container", "lexical-editor-input")
-              summon[AbstractComponent].host.setAttribute("role", "textbox")
-              summon[AbstractComponent].host.setAttribute("aria-multiline", "true")
-              summon[AbstractComponent].host
+              summon[AbstractComponent].setAttribute("role", "textbox")
+              summon[AbstractComponent].setAttribute("aria-multiline", "true")
+              summon[AbstractComponent]
                 .setAttribute("contenteditable", editableProperty.get.toString)
-              summon[AbstractComponent].host
+              summon[AbstractComponent]
                 .setAttribute("aria-readonly", (!editableProperty.get).toString)
-              summon[AbstractComponent].host.setAttribute("spellcheck", "true")
+              summon[AbstractComponent].setAttribute("spellcheck", "true")
               style {
                 display = "none"
                 opacity = "0"
@@ -150,8 +150,8 @@ final class Editor private[forms] (
     addDisposable(validators.observe(_ => validate()))
     addDisposable(dirtyProperty.observe(_ => validate()))
     addDisposable(editableProperty.observe { editable =>
-      host.setAttribute("aria-disabled", (!editable).toString)
-      Option(toolbarHost).foreach(_.host.setStyle("display", toolbarDisplay(editable)))
+      setAttribute("aria-disabled", (!editable).toString)
+      Option(toolbarHost).foreach(_.setStyle("display", toolbarDisplay(editable)))
       updateEditable(editable)
     })
     addDisposable(Disposable(destroyEditor()))
@@ -217,19 +217,19 @@ final class Editor private[forms] (
         register(plugin.install(editor))
       }
 
-      addDisposable(surfaceHost.host.on("focusin")(_ => focusedProperty.set(true)))
-      addDisposable(surfaceHost.host.on("focusout") { _ =>
+      addDisposable(surfaceHost.onDisposable("focusin")(_ => focusedProperty.set(true)))
+      addDisposable(surfaceHost.onDisposable("focusout") { _ =>
         focusedProperty.set(false)
         validate()
       })
 
       renderToolbar(editor)
       syncEditableSurface(editableProperty.get)
-      surfaceHost.host.setStyle("display", "")
-      surfaceHost.host.setStyle("opacity", "1")
-      previewHost.host.setStyle("display", "none")
-      previewHost.host.setAttribute("aria-hidden", "true")
-      host.setAttribute("data-jfx-editor-loading", "false")
+      surfaceHost.setStyle("display", "")
+      surfaceHost.setStyle("opacity", "1")
+      previewHost.setStyle("display", "none")
+      previewHost.setAttribute("aria-hidden", "true")
+      setAttribute("data-jfx-editor-loading", "false")
     }
 
   private def register(unregister: js.Function0[Unit] | Null): Unit =
@@ -298,8 +298,8 @@ final class Editor private[forms] (
 
   private def syncEditableSurface(editable: Boolean): Unit =
     Option(surfaceHost).foreach { surface =>
-      surface.host.setAttribute("contenteditable", editable.toString)
-      surface.host.setAttribute("aria-readonly", (!editable).toString)
+      surface.setAttribute("contenteditable", editable.toString)
+      surface.setAttribute("aria-readonly", (!editable).toString)
       if (editable) surface.removeClass("lexical-read-only")
       else surface.addClass("lexical-read-only")
     }
@@ -518,7 +518,7 @@ private final class PreviewNode(node: js.Any) extends AbstractComponent {
           }
         case "link" =>
           element("a") {
-            summon[AbstractComponent].host.setAttribute(
+            summon[AbstractComponent].setAttribute(
               "href",
               previewString(node, "url").orElse(extraString(node, "url")).getOrElse("")
             )
@@ -537,18 +537,18 @@ private final class PreviewNode(node: js.Any) extends AbstractComponent {
           }
         case "image" =>
           element("img") {
-            summon[AbstractComponent].host.setAttribute(
+            summon[AbstractComponent].setAttribute(
               "src",
               previewString(node, "src").orElse(extraString(node, "src")).getOrElse("")
             )
-            summon[AbstractComponent].host.setAttribute(
+            summon[AbstractComponent].setAttribute(
               "alt",
               previewString(node, "altText").orElse(extraString(node, "altText")).getOrElse("")
             )
             previewInt(node, "width")
               .orElse(extraInt(node, "width"))
               .foreach(width =>
-                summon[AbstractComponent].host.setAttribute("width", width.toString)
+                summon[AbstractComponent].setAttribute("width", width.toString)
               )
             style {
               maxWidth = "100%"

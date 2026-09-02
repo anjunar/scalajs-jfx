@@ -136,7 +136,7 @@ final class TableView[S] private (
 
     DslLayer.render(this, cursor) {
       addClass("jfx-table-view")
-      resolvedCrawlId.foreach(host.setAttribute("id", _))
+      resolvedCrawlId.foreach(setAttribute("id", _))
       classIf("jfx-table-view-loading", remoteStateRevisionProperty.map(_ => remoteLoading))
       classIf("jfx-table-view-error", remoteStateRevisionProperty.map(_ => remoteError.nonEmpty))
 
@@ -148,16 +148,16 @@ final class TableView[S] private (
       }
 
       addDisposable(prefWidthProperty.observe {
-        case Some(value) => host.setStyle("width", s"${value}px")
+        case Some(value) => setStyle("width", s"${value}px")
         case None        => ()
       })
 
       addDisposable(fixedHeightProperty.observe {
         case Some(value) =>
           val cssHeight = s"${math.max(0.0, value)}px"
-          host.setStyle("height", cssHeight)
-          host.setStyle("min-height", cssHeight)
-          host.setStyle("max-height", cssHeight)
+          setStyle("height", cssHeight)
+          setStyle("min-height", cssHeight)
+          setStyle("max-height", cssHeight)
         case None => ()
       })
 
@@ -584,8 +584,8 @@ final class TableView[S] private (
   private def refreshConfiguredCrawlState(): Unit = {
     initializeCrawlState()
     resolvedCrawlId match {
-      case Some(id) => host.setAttribute("id", id)
-      case None     => host.removeAttribute("id")
+      case Some(id) => setAttribute("id", id)
+      case None     => removeAttribute("id")
     }
     if (browserRendering) initializeBrowserCrawlState()
     refreshItemState()

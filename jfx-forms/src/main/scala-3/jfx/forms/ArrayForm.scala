@@ -106,9 +106,9 @@ class ArrayForm[V](val name: String, val standalone: Boolean = false)
         addDisposable(() => parent.unregister(this))
       }
 
-      host.setProperty("disabled", !editableProperty.get)
+      setProperty("disabled", !editableProperty.get)
       addDisposable(editableProperty.observe { editable =>
-        host.setProperty("disabled", !editable)
+        setProperty("disabled", !editable)
         itemControls.foreach(_.editableProperty.set(editable))
       })
 

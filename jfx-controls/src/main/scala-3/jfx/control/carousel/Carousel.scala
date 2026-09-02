@@ -116,9 +116,9 @@ final class Carousel[T] private[carousel] (
       )
       classIf("jfx-carousel--empty", itemStateRevisionProperty.map(_ => slideCount == 0))
       classIf("jfx-carousel--single", itemStateRevisionProperty.map(_ => slideCount <= 1))
-      host.setAttribute("role", "region")
-      host.setAttribute("aria-roledescription", "carousel")
-      host.setAttribute("tabindex", "0")
+      setAttribute("role", "region")
+      setAttribute("aria-roledescription", "carousel")
+      setAttribute("tabindex", "0")
       on("keydown")(handleKeyDown)
 
       div {
@@ -157,20 +157,20 @@ final class Carousel[T] private[carousel] (
             val previousButton = summon[AbstractComponent]
             classes = Seq("jfx-carousel__nav")
             buttonType("button")
-            previousButton.host.setAttribute("aria-label", "Previous slide")
+            previousButton.setAttribute("aria-label", "Previous slide")
             bindDisabled(previousButton, atStartProperty)
             onClick(_ => previous())
           }
 
           div {
             classes = Seq("jfx-carousel__status")
-            host.setAttribute("aria-live", "polite")
+            setAttribute("aria-live", "polite")
             text(statusTextProperty) {}
           }
 
           div {
             classes = Seq("jfx-carousel__indicators")
-            host.setAttribute("aria-label", "Choose slide")
+            setAttribute("aria-label", "Choose slide")
 
             foreachIndexed(indicatorItemsProperty) { (_, index) =>
               val active = activeIndexProperty.map(_ == index)
@@ -180,10 +180,10 @@ final class Carousel[T] private[carousel] (
                 classes = Seq("jfx-carousel__indicator")
                 classIf("is-active", active)
                 buttonType("button")
-                indicator.host.setAttribute("aria-label", s"Go to slide ${index + 1}")
+                indicator.setAttribute("aria-label", s"Go to slide ${index + 1}")
                 indicator.addDisposable(active.observe { selected =>
-                  if (selected) indicator.host.setAttribute("aria-current", "true")
-                  else indicator.host.removeAttribute("aria-current")
+                  if (selected) indicator.setAttribute("aria-current", "true")
+                  else indicator.removeAttribute("aria-current")
                 })
                 onClick(_ => goTo(index))
               }
@@ -194,7 +194,7 @@ final class Carousel[T] private[carousel] (
             val nextButton = summon[AbstractComponent]
             classes = Seq("jfx-carousel__nav")
             buttonType("button")
-            nextButton.host.setAttribute("aria-label", "Next slide")
+            nextButton.setAttribute("aria-label", "Next slide")
             bindDisabled(nextButton, atEndProperty)
             onClick(_ => next())
           }
@@ -291,11 +291,11 @@ final class Carousel[T] private[carousel] (
   ): Unit =
     component.addDisposable(disabled.observe { value =>
       if (value) {
-        component.host.setAttribute("disabled", "")
-        component.host.setAttribute("aria-disabled", "true")
+        component.setAttribute("disabled", "")
+        component.setAttribute("aria-disabled", "true")
       } else {
-        component.host.removeAttribute("disabled")
-        component.host.setAttribute("aria-disabled", "false")
+        component.removeAttribute("disabled")
+        component.setAttribute("aria-disabled", "false")
       }
     })
 

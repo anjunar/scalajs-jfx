@@ -4,6 +4,14 @@ import jfx.core.component.AbstractComponent
 import jfx.core.render.HostElement
 import jfx.core.state.ReadOnlyProperty
 
+trait StyleDsl {
+
+  def setStyle(name: String, value: String): Unit
+
+  def removeStyle(name: String): Unit
+
+}
+
 object StyleDsl {
   def style(init: StyleProxy ?=> Unit)(using c: AbstractComponent): Unit = {
     val proxy = new StyleProxy(c.host)

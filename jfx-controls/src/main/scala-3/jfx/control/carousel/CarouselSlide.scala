@@ -19,20 +19,20 @@ private final class CarouselSlide[T](
   override def compose(cursor: Cursor): Unit =
     DslLayer.render(this, cursor) {
       addClass("jfx-carousel__slide")
-      host.setAttribute("role", "group")
-      host.setAttribute("aria-roledescription", "slide")
-      host.setAttribute("aria-label", s"${index + 1} of $count")
-      host.setAttribute("data-slide-index", index.toString)
+      setAttribute("role", "group")
+      setAttribute("aria-roledescription", "slide")
+      setAttribute("aria-label", s"${index + 1} of $count")
+      setAttribute("data-slide-index", index.toString)
 
       if (observeActiveIndex) {
         val active = carousel.activeIndexProperty.map(_ == index)
         classIf("is-active", active)
         addDisposable(active.observe { selected =>
-          host.setAttribute("aria-hidden", (!selected).toString)
+          setAttribute("aria-hidden", (!selected).toString)
         })
       } else {
         addClass("is-active")
-        host.setAttribute("aria-hidden", "false")
+        setAttribute("aria-hidden", "false")
       }
 
       renderer(item, index)(using this)(using cursor)

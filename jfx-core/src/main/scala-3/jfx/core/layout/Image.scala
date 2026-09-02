@@ -10,7 +10,7 @@ final class Image extends AbstractComponent {
   val tagName = "img"
 
   def src: String =
-    host.attribute("src").getOrElse("")
+    attribute("src").getOrElse("")
 
   def src_=(value: String): Unit =
     setSource(value)
@@ -19,17 +19,17 @@ final class Image extends AbstractComponent {
     addDisposable(value.observe(setSource))
 
   def alt: String =
-    host.attribute("alt").getOrElse("")
+    attribute("alt").getOrElse("")
 
   def alt_=[T](value: T)(using textValue: TextValue[T]): Unit = {
-    val property = textValue.asReadOnlyProperty(value)(using this)
-    addDisposable(property.observe(next => host.setAttribute("alt", Option(next).getOrElse(""))))
+    val altProperty = textValue.asReadOnlyProperty(value)(using this)
+    addDisposable(altProperty.observe(next => setAttribute("alt", Option(next).getOrElse(""))))
   }
 
   private def setSource(value: String): Unit =
     Option(value).filter(_.trim.nonEmpty) match {
-      case Some(source) => host.setAttribute("src", source)
-      case None         => host.removeAttribute("src")
+      case Some(source) => setAttribute("src", source)
+      case None         => removeAttribute("src")
     }
 }
 

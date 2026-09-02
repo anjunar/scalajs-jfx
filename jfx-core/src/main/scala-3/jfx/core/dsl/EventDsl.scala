@@ -1,6 +1,7 @@
 package jfx.core.dsl
 
 import jfx.core.render.UiEvent
+import jfx.core.state.Disposable
 import org.scalajs.dom
 
 trait EventDsl {
@@ -12,6 +13,12 @@ trait EventDsl {
   def onDoubleClickHandler(handler: UiEvent => Unit): Unit
 
   def onWindowKeyDownHandler(handler: dom.KeyboardEvent => Unit): Unit
+
+  /** Like [[onHandler]], but hands the [[Disposable]] back to the caller instead of tying its
+    * lifecycle to this component. Use this when a listener on this component's host must be
+    * disposed together with a *different* component (e.g. the component that created it).
+    */
+  def onDisposable(eventName: String)(handler: UiEvent => Unit): Disposable
 
 }
 

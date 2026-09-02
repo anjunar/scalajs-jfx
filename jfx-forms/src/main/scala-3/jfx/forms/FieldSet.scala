@@ -70,9 +70,9 @@ class FieldSet(val name: String) extends AbstractComponent, Control[Unit], FormC
       ctrl.register(this)
       addDisposable(() => ctrl.unregister(this))
       contextPrefix = s"${ctrl.prefix}.$name"
-      host.setProperty("disabled", !editableProperty.get)
+      setProperty("disabled", !editableProperty.get)
       addDisposable(editableProperty.observe { editable =>
-        host.setProperty("disabled", !editable)
+        setProperty("disabled", !editable)
         fields.values.foreach(_.editableProperty.set(editable))
       })
       FormContext.provide(this)

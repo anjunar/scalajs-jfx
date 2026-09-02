@@ -13,7 +13,7 @@ class Button extends AbstractComponent {
   private val labelProperty = Property("")
 
   def buttonType(value: String): Unit =
-    host.setAttribute("type", value)
+    setAttribute("type", value)
 
   def label(value: String): Unit =
     labelProperty.set(Option(value).getOrElse(""))

@@ -131,7 +131,7 @@ final class VirtualListView[T] private (
 
     DslLayer.render(this, cursor) {
       addClass("jfx-virtual-list")
-      resolvedCrawlId.foreach(host.setAttribute("id", _))
+      resolvedCrawlId.foreach(setAttribute("id", _))
       classIf("jfx-virtual-list-loading", remoteStateRevisionProperty.map(_ => remoteLoading))
       classIf("jfx-virtual-list-error", remoteStateRevisionProperty.map(_ => remoteError.nonEmpty))
       style {
@@ -552,8 +552,8 @@ final class VirtualListView[T] private (
   private def refreshConfiguredCrawlState(): Unit = {
     initializeCrawlState()
     resolvedCrawlId match {
-      case Some(id) => host.setAttribute("id", id)
-      case None     => host.removeAttribute("id")
+      case Some(id) => setAttribute("id", id)
+      case None     => removeAttribute("id")
     }
     if (browserRendering) initializeBrowserCrawlState()
     refreshItemState()
