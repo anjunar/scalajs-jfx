@@ -207,7 +207,28 @@ abstract class VirtualizedCollection[T] extends AbstractComponent {
   protected def onScrollLeftChanged(scrollLeft: Double): Unit = ()
 
   protected def updateViewportSize(element: dom.html.Element): Unit =
-    if (element.clientHeight > 0) viewportHeightProperty.set(element.clientHeight.toDouble)
+    applyViewportSize(element.clientWidth.toDouble, element.clientHeight.toDouble)
+
+  /**
+   * Uebernimmt eine gemessene Viewport-Groesse.
+   *
+   * Getrennt von [[updateViewportSize]], damit die Uebernahme ohne DOM testbar
+   * ist. Der Fehler, den das absichert, sass genau hier: die Basis uebernahm
+   * zunaechst nur die Hoehe, weil sie aus VirtualListView stammte. TableView und
+   * DataGrid brauchen aber auch die Breite -- ohne sie blieben beide bei ihrem
+   * Startwert von 800 stehen, das Grid zeigte eine Spalte zu wenig und die
+   * Tabelle verteilte ihre Spaltenbreiten auf eine zu schmale Flaeche.
+   */
+  private[control] def applyViewportSize(width: Double, height: Double): Unit = {
+    if (width > 0) onViewportWidthMeasured(width)
+    if (height > 0) viewportHeightProperty.set(height)
+  }
+
+  /**
+   * Haken fuer Controls mit horizontaler Ausdehnung. VirtualListView ist
+   * einspaltig und braucht die Breite nicht.
+   */
+  protected def onViewportWidthMeasured(width: Double): Unit = ()
 
   protected def scheduleViewportMeasure(): Unit =
     if (!viewportMeasureScheduled && browserRendering) {

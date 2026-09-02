@@ -58,6 +58,10 @@ final class DataGrid[T] private (
       overscanRows = () => overscanRowsProperty.get
     )
 
+  /** Die Spaltenzahl haengt an der gemessenen Breite. */
+  override protected def onViewportWidthMeasured(width: Double): Unit =
+    viewportWidthProperty.set(width)
+
   override protected def crawlControlName: String = "DataGrid"
   override protected def crawlDefaultLimit: Int   = DataGrid.defaultLimit
 

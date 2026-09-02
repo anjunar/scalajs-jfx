@@ -89,6 +89,10 @@ final class TableView[S] private (
   override protected def onScrollLeftChanged(scrollLeft: Double): Unit =
     scrollLeftProperty.set(scrollLeft)
 
+  /** Die Spaltenbreiten werden auf die gemessene Breite verteilt. */
+  override protected def onViewportWidthMeasured(width: Double): Unit =
+    viewportWidthProperty.set(width)
+
   val renderedWidthsProperty: ReadOnlyProperty[Vector[Double]] =
     viewportWidthProperty.flatMap { viewportWidth =>
       columnStateRevisionProperty.map { _ =>
