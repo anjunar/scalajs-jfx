@@ -1,6 +1,5 @@
 package jfx.core.state
 
-import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.*
@@ -16,9 +15,11 @@ final class RemoteListProperty[V, Query](
 ) extends ListProperty[V](underlying) {
 
   private given ExecutionContext = executionContext
-  private val loadedItemsByIndex = mutable.Map[Int, V](underlying.iterator.zipWithIndex.map {
-    case (value, index) => index -> value
-  }.toSeq*)
+  // Geladene Ausschnitte als zusammenhaengende Bereiche statt als Map von
+  // absolutem Index auf Wert. Siehe LoadedRanges -- die Map trug keine Ordnung,
+  // also musste jede ordnungsabhaengige Operation erst sortieren.
+  private val loadedRanges = new LoadedRanges[V]
+  if (underlying.length > 0) loadedRanges.put(0, underlying.toSeq)
   private var applyingRemotePage = false
 
   val queryProperty: Property[Query]                             = Property(initialQuery)
@@ -45,15 +46,15 @@ final class RemoteListProperty[V, Query](
   override def totalLength: Int = totalCountProperty.get.getOrElse(length)
 
   def isIndexLoaded(index: Int): Boolean =
-    loadedItemsByIndex.contains(index)
+    loadedRanges.isLoaded(index)
 
   def getLoadedItem(index: Int): Option[V] =
-    loadedItemsByIndex.get(index)
+    loadedRanges.get(index)
 
   def isRangeLoaded(fromIndex: Int, toExclusive: Int): Boolean = {
     val normalizedFrom = math.max(0, fromIndex)
     val normalizedTo   = math.max(normalizedFrom, toExclusive)
-    (normalizedFrom until normalizedTo).forall(isIndexLoaded)
+    loadedRanges.isRangeLoaded(normalizedFrom, normalizedTo)
   }
 
   def applySorting(sorting: Seq[ListProperty.RemoteSort]): Future[js.Array[V]] =
@@ -120,7 +121,7 @@ final class RemoteListProperty[V, Query](
 
     super.addOne(elem)
     if (!applyingRemotePage) {
-      loadedItemsByIndex.update(absoluteIndex, elem)
+      loadedRanges.update(absoluteIndex, elem)
       totalCountProperty.set(Some(previousTotalLength + 1))
     }
     this
@@ -130,7 +131,7 @@ final class RemoteListProperty[V, Query](
     val absoluteIndex = absoluteIndexForLoadedPosition(idx)
     super.update(idx, elem)
     if (!applyingRemotePage) {
-      loadedItemsByIndex.update(absoluteIndex, elem)
+      loadedRanges.update(absoluteIndex, elem)
     }
   }
 
@@ -140,8 +141,7 @@ final class RemoteListProperty[V, Query](
     val removed             = super.remove(idx)
 
     if (!applyingRemotePage) {
-      loadedItemsByIndex.remove(absoluteIndex)
-      shiftLoadedIndicesAfterRemoval(absoluteIndex)
+      loadedRanges.removeAt(absoluteIndex)
       totalCountProperty.set(Some(math.max(0, previousTotalLength - 1)))
     }
 
@@ -151,7 +151,7 @@ final class RemoteListProperty[V, Query](
   override def clear(): Unit = {
     super.clear()
     if (!applyingRemotePage) {
-      loadedItemsByIndex.clear()
+      loadedRanges.clear()
       totalCountProperty.set(Some(0))
       nextQueryProperty.set(None)
       hasMoreProperty.set(false)
@@ -202,7 +202,7 @@ final class RemoteListProperty[V, Query](
         .orElse(expectedOffset)
         .getOrElse {
           if (replaceExisting) 0
-          else loadedItemsByIndex.size
+          else loadedRanges.size
         }
 
     applyingRemotePage = true
@@ -210,28 +210,23 @@ final class RemoteListProperty[V, Query](
       if (replaceExisting) {
         // Echtes Neuladen: die Liste ist danach eine andere. Reset ist hier die
         // richtige Aussage, und Foreach muss tatsaechlich alles neu aufbauen.
-        loadedItemsByIndex.clear()
-        page.items.zipWithIndex.foreach { case (item, relativeIndex) =>
-          loadedItemsByIndex.update(pageOffset + relativeIndex, item)
-        }
-        setAll(loadedItemsByIndex.toSeq.sortBy(_._1).map(_._2))
+        loadedRanges.clear()
+        loadedRanges.put(pageOffset, page.items)
+        setAll(loadedRanges.denseItems)
       } else {
         // Nachladen: nur der Bereich, den die Seite abdeckt, aendert sich.
         //
-        // loadedItemsByIndex traegt absolute Indizes mit Luecken, die
-        // ListProperty darunter eine dichte Liste. Die dichte Position eines
-        // absoluten Index ist die Anzahl geladener Indizes davor. Weil der
-        // Seitenbereich in absoluten Indizes zusammenhaengend ist, liegen die
-        // Positionen der darin bereits geladenen Eintraege ebenfalls
-        // zusammenhaengend -- ab insertPosition.
+        // loadedRanges traegt absolute Indizes mit Luecken, die ListProperty
+        // darunter eine dichte Liste. Die dichte Position eines absoluten Index
+        // ist die Anzahl geladener Indizes davor. Weil der Seitenbereich in
+        // absoluten Indizes zusammenhaengend ist, liegen die Positionen der darin
+        // bereits geladenen Eintraege ebenfalls zusammenhaengend -- ab
+        // insertPosition.
         val pageEnd        = pageOffset + page.items.length
-        val insertPosition = loadedItemsByIndex.keysIterator.count(_ < pageOffset)
-        val replacedCount =
-          loadedItemsByIndex.keysIterator.count(key => key >= pageOffset && key < pageEnd)
+        val insertPosition = loadedRanges.countBefore(pageOffset)
+        val replacedCount  = loadedRanges.countIn(pageOffset, pageEnd)
 
-        page.items.zipWithIndex.foreach { case (item, relativeIndex) =>
-          loadedItemsByIndex.update(pageOffset + relativeIndex, item)
-        }
+        loadedRanges.put(pageOffset, page.items)
 
         if (replacedCount == 0) insertAll(insertPosition, page.items)
         else patchInPlace(insertPosition, page.items, replacedCount)
@@ -243,26 +238,10 @@ final class RemoteListProperty[V, Query](
     hasMoreProperty.set(page.hasMore.getOrElse(page.nextQuery.nonEmpty))
   }
 
-  private def absoluteIndexForLoadedPosition(position: Int): Int = {
-    val sortedEntries = loadedItemsByIndex.toSeq.sortBy(_._1)
-    if (position < 0 || position >= sortedEntries.length) {
-      throw IndexOutOfBoundsException(s"$position")
-    }
-    sortedEntries(position)._1
-  }
+  private def absoluteIndexForLoadedPosition(position: Int): Int =
+    loadedRanges.absoluteAt(position)
 
   private def nextSequentialAbsoluteIndex: Int =
-    if (loadedItemsByIndex.isEmpty) 0
-    else loadedItemsByIndex.keys.max + 1
+    loadedRanges.nextSequentialAbsolute
 
-  private def shiftLoadedIndicesAfterRemoval(removedIndex: Int): Unit = {
-    val updatedEntries =
-      loadedItemsByIndex.toSeq.map { case (index, value) =>
-        if (index > removedIndex) (index - 1) -> value
-        else index                            -> value
-      }
-
-    loadedItemsByIndex.clear()
-    loadedItemsByIndex.addAll(updatedEntries)
-  }
 }

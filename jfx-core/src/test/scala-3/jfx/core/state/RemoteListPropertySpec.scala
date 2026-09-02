@@ -118,6 +118,42 @@ class RemoteListPropertySpec extends AnyFlatSpec with Matchers {
       ((0 until 10) ++ (50 until 60) ++ (100 until 110)).map(index => s"Member $index")
   }
 
+  it should "survive 10 000 entries with 100 single updates in reasonable time" in {
+    // Abnahme aus P2-3. Vorher sortierte absoluteIndexForLoadedPosition bei jedem
+    // update und remove die komplette Index-Map -- O(n log n) pro Einzeloperation.
+    val remote = pagedMembers(total = 10000, pageSize = 10000)
+    remote.reload()
+    remote.length shouldBe 10000
+
+    val startedAt = System.nanoTime()
+    (0 until 100).foreach { step =>
+      remote.update(step * 97, s"updated $step")
+    }
+    val elapsedMillis = (System.nanoTime() - startedAt) / 1000000.0
+
+    (0 until 100).foreach { step =>
+      remote.get(step * 97) shouldBe s"updated $step"
+    }
+
+    info(f"100 Einzel-Updates auf 10 000 Eintraegen: $elapsedMillis%.1f ms")
+    elapsedMillis should be < 250.0
+  }
+
+  it should "remove single entries from a large list without rebuilding the index" in {
+    val remote = pagedMembers(total = 10000, pageSize = 10000)
+    remote.reload()
+
+    val startedAt = System.nanoTime()
+    (0 until 100).foreach(_ => remote.remove(0))
+    val elapsedMillis = (System.nanoTime() - startedAt) / 1000000.0
+
+    remote.length shouldBe 9900
+    remote.get(0) shouldBe "Member 100"
+
+    info(f"100 Einzel-Removes auf 10 000 Eintraegen: $elapsedMillis%.1f ms")
+    elapsedMillis should be < 250.0
+  }
+
   private def recordChanges(
       remote: RemoteListProperty[String, PageQuery]
   ): mutable.ArrayBuffer[ListProperty.Change[String]] = {

@@ -295,7 +295,7 @@ gemountete Zeile unmountet wird.
 
 ---
 
-### [ ] P2-3 · `RemoteListProperty`: Index-Verwaltung ohne Sortieren pro Mutation
+### [x] P2-3 · `RemoteListProperty`: Index-Verwaltung ohne Sortieren pro Mutation
 
 **Problem.**
 
