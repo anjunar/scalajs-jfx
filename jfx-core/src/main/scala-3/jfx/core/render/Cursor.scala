@@ -38,6 +38,16 @@ trait Cursor {
     VirtualRange(start, end, before(end))
   }
 
+  /**
+   * Wie [[claimRange]], uebernimmt den Bereich aber ungeprueft, wenn der Cursor
+   * hydriert.
+   *
+   * Nur [[HydratingCursor]] unterscheidet die beiden Faelle; ueberall sonst gibt
+   * es nichts zu uebernehmen, weil noch nichts da ist.
+   */
+  def adoptRange(label: String): VirtualRange =
+    claimRange(label)
+
   def sub(host: HostElement): Cursor
 
   def before(node: HostNode): Cursor =

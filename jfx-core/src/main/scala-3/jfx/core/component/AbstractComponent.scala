@@ -58,7 +58,23 @@ abstract class AbstractComponent
 
   def physicalHosts: Seq[HostNode] =
     if (!isVirtual && _host != null) Seq(_host)
-    else virtualStart.toSeq ++ _children.flatMap(_.physicalHosts).toSeq ++ virtualEnd.toSeq
+    else
+      virtualStart.toSeq ++ adoptedNodes ++
+        _children.flatMap(_.physicalHosts).toSeq ++ virtualEnd.toSeq
+
+  /**
+   * Uebernimmt diese Komponente beim Hydrieren den server-gerenderten Inhalt
+   * ungeprueft, statt ihn nachzubauen?
+   *
+   * Nur fuer Komponenten gedacht, die ihren Inhalt erst spaeter kennen -- etwa
+   * eine Route, deren Loader noch laeuft. Siehe CHANGE.md P4-1.
+   */
+  private[jfx] def adoptsHydratedContent: Boolean = false
+
+  private def adoptedNodes: Seq[HostNode] = _host match {
+    case host: VirtualHost => host.adopted
+    case _                 => Nil
+  }
 
   private def virtualStart: Option[CommentNode] = _host match {
     case host: VirtualHost => host.start

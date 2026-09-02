@@ -112,7 +112,19 @@ final class HydratingCursor private (
     }
   }
 
-  override def claimRange(label: String): VirtualRange = {
+  override def claimRange(label: String): VirtualRange =
+    rangeFor(label, adopt = false)
+
+  /**
+   * Uebernimmt den Bereich, ohne seinen Inhalt zu pruefen.
+   *
+   * Die Knoten dazwischen gehen an die Komponente, damit sie beim Austausch
+   * mit ihr verschwinden. Siehe [[HydrationMode.Adopt]].
+   */
+  override def adoptRange(label: String): VirtualRange =
+    rangeFor(label, adopt = true)
+
+  private def rangeFor(label: String, adopt: Boolean): VirtualRange = {
     val startNode = takeComment(s"jfx:$label:start")
     val endNode   = findEnd(startNode, s"jfx:$label:end")
 
@@ -126,12 +138,24 @@ final class HydratingCursor private (
         parent = parent,
         nextNode = Option(startNode.nextSibling).filter(_ != endNode),
         stopBefore = Some(endNode),
-        mode = HydrationMode.Strict,
+        mode = if (adopt) HydrationMode.Adopt else HydrationMode.Strict,
         currentAsyncContext = currentAsyncContext,
         session = session
       )
 
-    VirtualRange(start, end, inner)
+    val adoptedNodes =
+      if (!adopt) Nil
+      else {
+        val buffer  = scala.collection.mutable.ArrayBuffer.empty[HostNode]
+        var current = startNode.nextSibling
+        while (current != null && current != endNode) {
+          buffer += DomNodes.wrap(current)
+          current = current.nextSibling
+        }
+        buffer.toSeq
+      }
+
+    VirtualRange(start, end, inner, adoptedNodes)
   }
 
   def sub(host: HostElement): Cursor = {
@@ -247,6 +271,8 @@ final class HydratingCursor private (
     )
 
   private[render] def assertFullyClaimed(): Unit =
+    // Adopt: der Bereich wurde bewusst ungeprueft uebernommen, dort ist
+    // "nicht beansprucht" der Normalfall und kein Fehler.
     if (mode == HydrationMode.Strict) {
       firstUnclaimedNode.foreach { node =>
         throw hydrationFault(

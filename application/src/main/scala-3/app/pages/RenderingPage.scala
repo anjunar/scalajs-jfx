@@ -13,7 +13,7 @@ object RenderingPage {
     ) {
       Showcase.insightGrid(
         ("SSR", "The initial URL is injected explicitly", "The demo no longer relies on an implicit request header path inside the router call site."),
-        ("Hydration", "Initial route must already exist", "The router still guards against asynchronous hydration drift on first load."),
+        ("Hydration", "Routes may load asynchronously", "This page loads with a real delay. Hydration adopts the server-rendered tree and swaps it once the loader delivers."),
         ("Shell", "Toolbar and navigation stay stable", "The visual frame does not reflow unexpectedly while the routed content swaps.")
       )
 

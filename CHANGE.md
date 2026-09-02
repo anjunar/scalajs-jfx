@@ -503,7 +503,7 @@ begrenzt.
 
 **Abhängig von:** P2-1
 
-### [ ] P4-1 · SSR-Data-Cache und Hydration
+### [x] P4-1 · Hydration haelt asynchrone Route-Loader aus
 
 **Problem.** `Router.prepareInitialHydrationRoute` wirft, sobald ein
 Route-Loader nicht synchron fertig ist. Der Kommentar im Code sagt es selbst:

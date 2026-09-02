@@ -3,10 +3,27 @@ package app
 import app.pages.*
 import jfx.router.Route
 
+import jfx.core.component.AbstractComponent
+
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{Future, Promise}
+import scala.scalajs.js.timers.setTimeout
 
 object AppRoutes {
+
+  /**
+   * Ein Loader, der erst nach `millis` liefert.
+   *
+   * Steht hier, damit mindestens eine Demo-Route den asynchronen Pfad wirklich
+   * durchlaeuft. Alle anderen Routen haben ihre Daten sofort zur Hand und
+   * liefern ein bereits erfuelltes Future -- an denen wuerde nie auffallen, wenn
+   * die Hydration einen laufenden Loader nicht aushielte.
+   */
+  private def delayed(millis: Int)(component: => AbstractComponent): Future[AbstractComponent] = {
+    val promise = Promise[AbstractComponent]()
+    setTimeout(millis.toDouble)(promise.success(component))
+    promise.future
+  }
 
   def routes: Seq[Route] =
     Seq(
@@ -50,10 +67,16 @@ object AppRoutes {
           I18nPage.render()
         })
       },
+      // Bewusst mit echter Verzoegerung: das ist die Route, an der sich zeigt,
+      // dass Hydration einen noch laufenden Loader aushaelt. Bis P4-1 warf der
+      // Router hier -- die uebrigen Routen verdecken das, weil ihr Future schon
+      // erfuellt ist. Siehe CHANGE.md P4-1.
       Route.view("/rendering") { _ =>
-        Future.successful(Route.component {
-          RenderingPage.render()
-        })
+        delayed(120) {
+          Route.component {
+            RenderingPage.render()
+          }
+        }
       },
       Route.view("/state") { _ =>
         Future.successful(Route.component {

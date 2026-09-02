@@ -105,20 +105,44 @@ class Router(
           val loaded = routeMatch.route.load(context)
 
           loaded.value match {
-            case Some(scala.util.Success(component)) =>
+            case Some(Success(component)) =>
               if (token == renderToken) {
                 componentProperty.set(new RoutedComponent(component))
               }
 
-            case Some(scala.util.Failure(error)) =>
+            case Some(Failure(error)) =>
               if (token == renderToken) throw error
 
             case None =>
-              throw new IllegalStateException(
-                "Hydration cannot resolve the initial route asynchronously. " +
-                  "The SSR route is already in the DOM, so hydration must provide the same component tree synchronously. " +
-                  "We will need an SSR data cache for this later."
-              )
+              // Der Loader laeuft noch. Frueher warf der Router hier -- damit war
+              // SSR nur fuer Routen benutzbar, deren Loader synchron fertig ist.
+              //
+              // Stattdessen uebernimmt der Router den server-gerenderten Baum
+              // ungeprueft (RoutedComponent ohne Kind adoptiert ihn) und laesst
+              // ihn stehen. Der Besucher sieht durchgehend Inhalt. Sobald der
+              // Loader liefert, tritt der echte Baum an seine Stelle und die
+              // uebernommenen Knoten verschwinden mit dem Platzhalter.
+              //
+              // Der Preis ist ein zweiter Ladevorgang: der Server hat die Daten
+              // schon geholt, der Client holt sie erneut. Bewusst so gewaehlt --
+              // die Alternative waere ein SSR-Datencache samt Serialisierung und
+              // Schluesselwahl. Siehe CHANGE.md P4-1.
+              componentProperty.set(RoutedComponent.adoptingServerRender)
+
+              val handed =
+                loaded.transform { result =>
+                  if (token == renderToken) {
+                    result match {
+                      case Success(component) =>
+                        componentProperty.set(new RoutedComponent(component))
+                      case Failure(error) =>
+                        componentProperty.set(Router.errorComponent(error))
+                    }
+                  }
+                  Success(())
+                }
+
+              asyncCursorContext.foreach(_.add(handed))
           }
         } catch {
           case error: Throwable =>
@@ -278,13 +302,28 @@ class Router(
       }
     }
 
+  /**
+   * Der Rahmen um die gerenderte Route.
+   *
+   * Ohne Kind ist es der Platzhalter fuer die Hydration: er uebernimmt den
+   * server-gerenderten Bereich ungeprueft, statt ihn nachzubauen. Der Klassenname
+   * bestimmt das Anker-Label, deshalb muessen beide Faelle dieselbe Klasse sein
+   * -- sonst passt der Anker nicht auf das, was der Server geschrieben hat.
+   */
   private final class RoutedComponent(
-      child: AbstractComponent
+      child: AbstractComponent | Null
   ) extends AbstractCustomComponent {
 
-    override def compose(cursor: Cursor): Unit = {
-      Runtime.mount(child, cursor, Some(this))
-    }
+    override private[jfx] def adoptsHydratedContent: Boolean = child == null
+
+    override def compose(cursor: Cursor): Unit =
+      Option(child).foreach(Runtime.mount(_, cursor, Some(this)))
+  }
+
+  private object RoutedComponent {
+
+    /** Platzhalter, der den server-gerenderten Baum uebernimmt und stehen laesst. */
+    def adoptingServerRender: RoutedComponent = new RoutedComponent(null)
   }
 }
 

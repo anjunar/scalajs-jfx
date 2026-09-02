@@ -30,12 +30,15 @@ object Runtime {
     try {
       component._host = if (component.isVirtual) {
         if (cursor.supportsAnchors) {
-          val range = cursor.claimRange(component.getClass.getSimpleName)
+          val range =
+            if (component.adoptsHydratedContent) cursor.adoptRange(component.getClass.getSimpleName)
+            else cursor.claimRange(component.getClass.getSimpleName)
           new VirtualHost(
             component._mountParentHost,
             Some(range.start),
             Some(range.end),
-            Some(range.cursor)
+            Some(range.cursor),
+            range.adopted
           )
         } else {
           new VirtualHost(component._mountParentHost)
