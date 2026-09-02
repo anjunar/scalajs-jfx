@@ -17,8 +17,12 @@ import org.scalajs.dom
  * Vor P3-1 lag dieser Block dreimal parallel in TableView, DataGrid und
  * VirtualListView, in drei nicht mehr deckungsgleichen Fassungen.
  *
- * Die Cookie-Frage selbst -- warum Cookie und nicht Query-Parameter -- ist ein
- * eigener Befund und steht als P3-2 in CHANGE.md.
+ * '''Cookie und nicht Query-Parameter''' -- entschieden in P3-2. Der Zustand
+ * bleibt im Cookie. Er beschreibt, wo ein Besucher in einer Liste stand, nicht
+ * was die Seite zeigt; in die URL gehoerte er nur, wenn er teilbar sein soll,
+ * und das ist er ausdruecklich nicht. Wer den Vorschlag aus CHANGE.md wieder
+ * aufgreifen will (`?table.offset=…`), muss diese Entscheidung kippen, nicht
+ * bloss die Umsetzung nachholen.
  */
 trait CrawlableCollection[T] { self: VirtualizedCollection[T] =>
 

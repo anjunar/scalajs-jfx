@@ -455,7 +455,7 @@ Richtwert: jeweils unter 300 Zeilen. Kein `crawl*`, `viewportMeasure*`,
 
 ---
 
-### [ ] P3-2 · Crawl-Cookie-State überdenken
+### [x] P3-2 · Crawl-Cookie-State überdenken
 
 **Abhängig von:** P3-1
 
@@ -469,14 +469,33 @@ langlebiger Seiteneffekt für etwas, das eigentlich in die URL gehört
 die drei Controls, `jfx-router`
 
 **Schritte.**
-1. Prüfen, warum es ein Cookie ist und nicht ein Query-Parameter.
-2. Falls kein zwingender Grund: auf Query-Parameter umstellen
-   (`?table.offset=…&table.sort=…`), Cookie nur als Fallback für Zustände, die
-   nicht in die URL gehören.
+1. ~~Prüfen, warum es ein Cookie ist und nicht ein Query-Parameter.~~
+2. ~~Falls kein zwingender Grund: auf Query-Parameter umstellen.~~
 3. Cookie-Laufzeit von einem Jahr hinterfragen.
 
-**Fertig wenn.** Ein gecrawlter Zustand ist über die URL reproduzierbar, ohne
-Cookie.
+**Entscheidung.** Der Zustand bleibt im Cookie. Er beschreibt, wo ein Besucher
+in einer Liste stand — nicht, was die Seite zeigt. In die URL gehörte er nur,
+wenn er teilbar sein soll, und das ist er ausdrücklich nicht. Damit entfallen
+Schritt 1 und 2, und die ursprüngliche „Fertig wenn"-Bedingung („über die URL
+reproduzierbar, ohne Cookie") ist gegenstandslos.
+
+Festgehalten im Scaladoc von `CrawlableCollection`, damit der Vorschlag nicht
+als offene Aufgabe wieder auftaucht.
+
+**Umgesetzt (Schritt 3).** Laufzeit von einem Jahr auf sieben Tage. Der Wert ist
+eine Bequemlichkeit („Seite neu geladen, ich will weiterlesen"), keine
+Einstellung. Das Kostenargument: der Cookie liegt unter `Path=/` und wird pro
+Control-ID einzeln angelegt — jede crawlbare Liste, die ein Besucher je
+gescrollt hat, hängt danach an *jeder* Anfrage an diese Herkunft, Assets
+eingeschlossen. Bei einem Jahr sammelt sich das dauerhaft an.
+
+`Path=/` bleibt: die SSR-Seite liest den Zustand aus dem `cookie`-Header, und
+das Control kennt seine Route nicht, kann den Pfad also nicht einschränken.
+
+**Fertig wenn.** ~~Ein gecrawlter Zustand ist über die URL reproduzierbar, ohne
+Cookie.~~ Ersetzt durch: Die Entscheidung für den Cookie ist am Code
+dokumentiert, und die Laufzeit ist auf ein für den Zweck angemessenes Maß
+begrenzt.
 
 ---
 
