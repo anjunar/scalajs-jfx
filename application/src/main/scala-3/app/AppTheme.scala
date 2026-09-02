@@ -49,7 +49,7 @@ object AppTheme {
   private def persist(value: Mode): Unit =
     if (hasBrowserWindow) {
       try {
-        dom.window.localStorage.setItem("scalajs-jfx.theme", value.value)
+        dom.window.localStorage.setItem(SiteConfig.themeStorageKey, value.value)
       } catch {
         case NonFatal(_) => ()
       }

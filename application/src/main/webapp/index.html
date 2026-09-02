@@ -1,62 +1,54 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <base href="/scalajs-jfx2/" />
+    <!-- Alle %SITE_*%-Platzhalter kommen aus site.config.json (tools/vite-site-config-plugin.mjs). -->
+    <base href="%SITE_BASE_HREF%" />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>scalajs-jfx2 | Scala.js UI Library</title>
-    <meta
-      name="description"
-      content="scalajs-jfx2 is a Scala.js UI library for declarative components, SSR, hydration, typed controls, runtime metadata, and source-first I18n."
-    />
+    <title>%SITE_TITLE%</title>
+    <meta name="description" content="%SITE_DESCRIPTION%" />
     <meta
       name="keywords"
       content="Scala.js, Scala UI framework, reactive UI, JavaFX DSL, typed forms, client-side routing, lifecycle management"
     />
-    <meta name="author" content="Patrick Bittner" />
+    <meta name="author" content="%SITE_AUTHOR%" />
     <meta name="robots" content="index, follow" />
     <meta name="theme-color" content="#eee9e1" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="canonical" href="https://anjunar.github.io/scalajs-jfx2/" />
+    <link rel="canonical" href="%SITE_URL%" />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="scalajs-jfx2" />
-    <meta property="og:title" content="scalajs-jfx2 | Scala.js UI Library" />
-    <meta
-      property="og:description"
-      content="Declarative Scala.js UI with SSR, hydration, typed controls, runtime metadata, and source-first I18n."
-    />
-    <meta property="og:url" content="https://anjunar.github.io/scalajs-jfx2/" />
-    <meta property="og:image" content="https://anjunar.github.io/scalajs-jfx2/og-image.svg" />
+    <meta property="og:site_name" content="%SITE_NAME%" />
+    <meta property="og:title" content="%SITE_TITLE%" />
+    <meta property="og:description" content="%SITE_SHORT_DESCRIPTION%" />
+    <meta property="og:url" content="%SITE_URL%" />
+    <meta property="og:image" content="%SITE_URL%og-image.svg" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="scalajs-jfx2 | Scala.js UI Library" />
-    <meta
-      name="twitter:description"
-      content="Declarative Scala.js UI with SSR, hydration, typed controls, runtime metadata, and source-first I18n."
-    />
-    <meta name="twitter:image" content="https://anjunar.github.io/scalajs-jfx2/og-image.svg" />
+    <meta name="twitter:title" content="%SITE_TITLE%" />
+    <meta name="twitter:description" content="%SITE_SHORT_DESCRIPTION%" />
+    <meta name="twitter:image" content="%SITE_URL%og-image.svg" />
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "SoftwareSourceCode",
-        "name": "scalajs-jfx2",
-        "description": "Scala.js UI library with declarative components, SSR, hydration, typed controls, runtime metadata, and source-first I18n.",
+        "name": "%SITE_NAME%",
+        "description": "%SITE_SHORT_DESCRIPTION%",
         "programmingLanguage": "Scala",
         "runtimePlatform": "Scala.js",
         "license": "https://opensource.org/licenses/MIT",
-        "codeRepository": "https://github.com/anjunar/scalajs-jfx2",
-        "url": "https://anjunar.github.io/scalajs-jfx2/",
+        "codeRepository": "%SITE_CODE_REPOSITORY%",
+        "url": "%SITE_URL%",
         "author": {
           "@type": "Person",
-          "name": "Patrick Bittner",
-          "url": "https://github.com/anjunar"
+          "name": "%SITE_AUTHOR%",
+          "url": "%SITE_AUTHOR_URL%"
         }
       }
     </script>
     <script>
       (() => {
         try {
-          const key = 'scalajs-jfx2.theme'
+          const key = '%SITE_THEME_STORAGE_KEY%'
           const stored = localStorage.getItem(key)
           const preferred = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
           const theme = stored === 'dark' || stored === 'light' ? stored : preferred

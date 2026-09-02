@@ -3,6 +3,8 @@ import tailwindcss from "@tailwindcss/vite"
 import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
+import { siteConfigPlugin } from "./tools/vite-site-config-plugin.mjs"
+
 const projectRoot = dirname(fileURLToPath(import.meta.url))
 const webappRoot = resolve(projectRoot, "application", "src", "main", "webapp")
 const scalaJsOutputRoot = resolve(projectRoot, "application", "target", "vite")
@@ -22,6 +24,7 @@ export default defineConfig(({ command, isSsrBuild }) => ({
         }
     },
     plugins: [
+        siteConfigPlugin(),
         tailwindcss()
     ],
     build: {

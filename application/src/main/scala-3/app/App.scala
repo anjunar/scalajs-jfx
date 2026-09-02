@@ -39,7 +39,7 @@ class App(
 
   private val routerConfig =
     RouterConfig(
-      basePath = "/scalajs-jfx2"
+      basePath = SiteConfig.basePath
     )
 
   private val initialLocation =

@@ -59,7 +59,7 @@ Testprojekt, das nur `scalajs-jfx-forms` aus dem lokalen Repo zieht.
 
 ---
 
-### [ ] P0-2 · `basePath = "/scalajs-jfx2"` klären
+### [x] P0-2 · `basePath = "/scalajs-jfx2"` klären
 
 **Problem.** Das Repo heißt `scalajs-jfx`, `homepage` zeigt auf
 `github.com/anjunar/scalajs-jfx` — aber `App` konfiguriert
