@@ -1,4 +1,6 @@
-package jfx.core.state
+package jfx.core.remote
+
+import jfx.core.state.{ListProperty, Property}
 
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -7,11 +9,11 @@ import scala.scalajs.js.JSConverters.*
 import scala.util.{Failure, Success}
 
 final class RemoteListProperty[V, Query](
-    val loader: ListProperty.RemoteLoader[V, Query],
+    val loader: RemoteLoader[V, Query],
     initialQuery: Query,
     underlying: js.Array[V] = js.Array[V](),
     executionContext: ExecutionContext = ExecutionContext.global,
-    sortUpdater: Option[(Query, Seq[ListProperty.RemoteSort]) => Query] = None,
+    sortUpdater: Option[(Query, Seq[RemoteSort]) => Query] = None,
     rangeQueryUpdater: Option[(Query, Int, Int) => Query] = None
 ) extends ListProperty[V](underlying) {
 
@@ -35,14 +37,13 @@ final class RemoteListProperty[V, Query](
   private final case class LoadKey(query: Query, replaceExisting: Boolean)
 
   val queryProperty: Property[Query]                             = Property(initialQuery)
-  val sortingProperty: Property[Vector[ListProperty.RemoteSort]] = Property(Vector.empty)
+  val sortingProperty: Property[Vector[RemoteSort]] = Property(Vector.empty)
   val loadingProperty: Property[Boolean]                         = Property(false)
   val errorProperty: Property[Option[Throwable]]                 = Property(None)
   val hasMoreProperty: Property[Boolean]                         = Property(false)
   val totalCountProperty: Property[Option[Int]]                  = Property(None)
   val nextQueryProperty: Property[Option[Query]]                 = Property(None)
 
-  override def remotePropertyOrNull: RemoteListProperty[V, Query] = this
 
   def query: Query = queryProperty.get
 
@@ -53,7 +54,7 @@ final class RemoteListProperty[V, Query](
 
   def supportsRangeLoading: Boolean = rangeQueryUpdater.nonEmpty
 
-  def getSorting: Vector[ListProperty.RemoteSort] = sortingProperty.get
+  def getSorting: Vector[RemoteSort] = sortingProperty.get
 
   override def totalLength: Int = totalCountProperty.get.getOrElse(length)
 
@@ -69,7 +70,7 @@ final class RemoteListProperty[V, Query](
     loadedRanges.isRangeLoaded(normalizedFrom, normalizedTo)
   }
 
-  def applySorting(sorting: Seq[ListProperty.RemoteSort]): Future[js.Array[V]] =
+  def applySorting(sorting: Seq[RemoteSort]): Future[js.Array[V]] =
     sortUpdater match {
       case Some(updateSorting) =>
         val normalizedSorting = sorting.toVector
@@ -244,7 +245,7 @@ final class RemoteListProperty[V, Query](
     loadingProperty.set(pendingLoads.nonEmpty)
 
   private def applyPage(
-      page: ListProperty.RemotePage[V, Query],
+      page: RemotePage[V, Query],
       replaceExisting: Boolean,
       expectedOffset: Option[Int]
   ): Unit = {
@@ -295,4 +296,28 @@ final class RemoteListProperty[V, Query](
   private def nextSequentialAbsoluteIndex: Int =
     loadedRanges.nextSequentialAbsolute
 
+}
+
+object RemoteListProperty {
+
+  /**
+   * Ersetzt das fruehere ListProperty.remote(...). Die Factory gehoert zum
+   * Remote-Typ, nicht zum allgemeinen ListProperty -- siehe CHANGE.md P2-5.
+   */
+  def apply[V, Query](
+      loader: RemoteLoader[V, Query],
+      initialQuery: Query,
+      underlying: js.Array[V] = js.Array[V](),
+      executionContext: ExecutionContext = ExecutionContext.global,
+      sortUpdater: Option[(Query, Seq[RemoteSort]) => Query] = None,
+      rangeQueryUpdater: Option[(Query, Int, Int) => Query] = None
+  ): RemoteListProperty[V, Query] =
+    new RemoteListProperty[V, Query](
+      loader,
+      initialQuery,
+      underlying,
+      executionContext,
+      sortUpdater,
+      rangeQueryUpdater
+    )
 }

@@ -3,6 +3,7 @@ package jfx.control.datagrid
 import jfx.control.CrawlCookieState
 import jfx.control.datagrid.DataGrid
 import jfx.core.component.AbstractComponent
+import jfx.core.remote.{RemoteListProperty, RemoteSort}
 import jfx.core.dsl.ClassDsl.{addClass, classIf, classes}
 import jfx.core.dsl.DslLayer
 import jfx.core.dsl.EventDsl.{on, onClick}
@@ -431,7 +432,17 @@ final class DataGrid[T] private (
     }
 
   private def currentRemoteItems: RemoteListProperty[T, ?] | Null =
-    items.remotePropertyOrNull
+    items match {
+      // Frueher fragte das ListProperty selbst ueber remotePropertyOrNull -- eine
+      // Rueckwaerts-Abhaengigkeit vom Allgemeinen aufs Spezielle. Der Typtest
+      // gehoert hierher, wo das Remote-Verhalten gebraucht wird.
+      //
+      // Der Cast ist sicher: items ist ListProperty[T], und eine
+      // RemoteListProperty, die zugleich ListProperty[T] ist, hat notwendig T
+      // als Elementtyp. Nur sehen kann der Compiler das wegen Type Erasure nicht.
+      case remote: RemoteListProperty[?, ?] => remote.asInstanceOf[RemoteListProperty[T, ?]]
+      case _                                => null
+    }
 
   private def totalItemCount: Int = math.max(0, items.totalLength)
 
@@ -487,7 +498,7 @@ final class DataGrid[T] private (
     resolvedCrawlId.foreach { _ =>
       val initialCookieSorting = crawlState.sorting
       val currentSorting       = Option(currentRemoteItems)
-        .fold(Vector.empty[ListProperty.RemoteSort])(_.getSorting)
+        .fold(Vector.empty[RemoteSort])(_.getSorting)
       crawlState = crawlState.withSorting(initialCookieSorting.getOrElse(currentSorting))
       persistCrawlState(crawlState)
 
@@ -500,7 +511,7 @@ final class DataGrid[T] private (
 
   private def scheduleSortingRestore(
       remote: RemoteListProperty[T, ?],
-      sorting: Vector[ListProperty.RemoteSort]
+      sorting: Vector[RemoteSort]
   ): Unit = {
     var active = true
     val handle = dom.window.requestAnimationFrame { _ =>

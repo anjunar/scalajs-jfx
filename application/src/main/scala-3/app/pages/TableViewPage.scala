@@ -6,6 +6,7 @@ import app.components.Showcase.*
 import jfx.control.table.TableColumn.*
 import jfx.control.table.TableView.*
 import jfx.core.component.AbstractComponent
+import jfx.core.remote.{RemoteListProperty, RemoteLoader, RemotePage, RemoteSort}
 import jfx.core.dsl.ClassDsl.classes
 import jfx.core.dsl.StyleDsl.*
 import jfx.core.layout.Div.div
@@ -13,7 +14,7 @@ import jfx.core.layout.HBox.hbox
 import jfx.core.layout.TextComponent.text
 import jfx.core.layout.VBox.vbox
 import jfx.core.render.Cursor
-import jfx.core.state.{ListProperty, Property, RemoteListProperty}
+import jfx.core.state.{ListProperty, Property}
 import jfx.core.i18n.i18n
 
 import scala.scalajs.js
@@ -23,7 +24,7 @@ object TableViewPage {
   final case class BookQuery(
       offset: Int,
       limit: Int,
-      sorting: Vector[ListProperty.RemoteSort] = Vector.empty
+      sorting: Vector[RemoteSort] = Vector.empty
   )
 
   private val bookCatalog = Vector(
@@ -51,14 +52,14 @@ object TableViewPage {
     val normalizedPageSize = math.max(1, pageSize)
     val initialQuery = BookQuery(offset = 0, limit = normalizedPageSize)
 
-    val remote = ListProperty.remote[Book, BookQuery](
-      loader = ListProperty.RemoteLoader { query =>
+    val remote = RemoteListProperty[Book, BookQuery](
+      loader = RemoteLoader { query =>
         val sorted = sortBooks(allBooks, query.sorting)
         val page = sorted.slice(query.offset, query.offset + query.limit)
         val nextOffset = query.offset + page.length
 
         Future.successful(
-          ListProperty.RemotePage[Book, BookQuery](
+          RemotePage[Book, BookQuery](
             items = page,
             offset = Some(query.offset),
             nextQuery = Option.when(nextOffset < sorted.length)(
@@ -91,7 +92,7 @@ object TableViewPage {
 
   private def sortBooks(
       books: Vector[Book],
-      sorting: Vector[ListProperty.RemoteSort]
+      sorting: Vector[RemoteSort]
   ): Vector[Book] =
     sorting.headOption match {
       case Some(sort) =>
@@ -247,13 +248,13 @@ object TableViewPage {
         apiSection(i18n"In-memory RemoteListProperty", i18n"The loader slices and sorts one generated Vector.") {
           codeBlock(
             "scala",
-            """|val books = ListProperty.remote[Book, BookQuery](
-               |  loader = ListProperty.RemoteLoader { query =>
+            """|val books = RemoteListProperty[Book, BookQuery](
+               |  loader = RemoteLoader { query =>
                |    val sorted = sortBooks(generatedBooks, query.sorting)
                |    val page = sorted.slice(query.offset, query.offset + query.limit)
                |
                |    Future.successful(
-               |      ListProperty.RemotePage(
+               |      RemotePage(
                |        items = page,
                |        offset = Some(query.offset),
                |        totalCount = Some(sorted.length)

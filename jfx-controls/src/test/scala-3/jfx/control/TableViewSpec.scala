@@ -4,6 +4,7 @@ import jfx.control.table.TableColumn.*
 import jfx.control.table.TableView
 import jfx.control.table.TableView.*
 import jfx.core.component.{AbstractComponent, Runtime}
+import jfx.core.remote.{RemoteListProperty, RemoteLoader, RemotePage, RemoteSort}
 import jfx.core.dsl.ClassDsl.addClass
 import jfx.core.dsl.DslLayer
 import jfx.core.layout.Div.div
@@ -144,7 +145,7 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
 
   it should "reflect remote sorting state in the header" in {
     val remote = remoteMembers(pageSize = 5)
-    remote.sortingProperty.set(Vector(ListProperty.RemoteSort("name", ascending = false)))
+    remote.sortingProperty.set(Vector(RemoteSort("name", ascending = false)))
 
     val html = Runtime.renderToString { cursor =>
       Runtime.mount(new SingleTableRoot(remote), cursor)
@@ -158,13 +159,13 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
   private final case class PageQuery(
       index: Int,
       limit: Int,
-      sorting: Vector[ListProperty.RemoteSort] = Vector.empty
+      sorting: Vector[RemoteSort] = Vector.empty
   )
 
   private def remoteMembers(pageSize: Int) = {
     val members = (0 until 20).map(index => s"Member $index")
-    ListProperty.remote[String, PageQuery](
-      loader = ListProperty.RemoteLoader { query =>
+    RemoteListProperty[String, PageQuery](
+      loader = RemoteLoader { query =>
         val sorted = query.sorting.headOption match {
           case Some(sort) if sort.field == "name" && !sort.ascending => members.reverse
           case _                                                     => members
@@ -172,7 +173,7 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
         val page = sorted.slice(query.index, query.index + query.limit)
         val next = query.index + page.length
         Future.successful(
-          ListProperty.RemotePage[String, PageQuery](
+          RemotePage[String, PageQuery](
             items = page,
             offset = Some(query.index),
             nextQuery = Option.when(next < sorted.length)(query.copy(index = next)),

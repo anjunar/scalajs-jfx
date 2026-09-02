@@ -5,6 +5,7 @@ import scala.concurrent.Future
 import app.components.Showcase.*
 import jfx.control.datagrid.DataGrid.*
 import jfx.core.component.AbstractComponent
+import jfx.core.remote.{RemoteListProperty, RemoteLoader, RemotePage}
 import jfx.core.dsl.ClassDsl.{classIf, classes}
 import jfx.core.dsl.EventDsl.onClick
 import jfx.core.dsl.StyleDsl.*
@@ -12,7 +13,7 @@ import jfx.core.layout.Div.div
 import jfx.core.layout.TextComponent.text
 import jfx.core.layout.VBox.vbox
 import jfx.core.render.Cursor
-import jfx.core.state.{ListProperty, Property, RemoteListProperty}
+import jfx.core.state.{ListProperty, Property}
 import jfx.core.i18n.i18n
 
 import scala.scalajs.js
@@ -74,12 +75,12 @@ object DataGridPage {
     val normalizedPageSize = math.max(1, pageSize)
     val initialQuery       = TileQuery(0, normalizedPageSize)
 
-    val remote = ListProperty.remote[Tile, TileQuery](
-      loader = ListProperty.RemoteLoader { query =>
+    val remote = RemoteListProperty[Tile, TileQuery](
+      loader = RemoteLoader { query =>
         val page       = allTiles.slice(query.offset, query.offset + query.limit)
         val nextOffset = query.offset + page.length
         Future.successful(
-          ListProperty.RemotePage[Tile, TileQuery](
+          RemotePage[Tile, TileQuery](
             items = page,
             offset = Some(query.offset),
             nextQuery = Option.when(nextOffset < allTiles.length)(

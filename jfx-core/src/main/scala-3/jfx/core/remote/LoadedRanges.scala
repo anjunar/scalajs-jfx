@@ -1,4 +1,4 @@
-package jfx.core.state
+package jfx.core.remote
 
 import scala.collection.mutable
 
@@ -26,7 +26,7 @@ import scala.collection.mutable
  * "Absolut" meint den Index in der vollstaendigen Remote-Liste, "dicht" den Index
  * in der ListProperty darunter, die nur die geladenen Eintraege haelt.
  */
-private[state] final class LoadedRanges[V] {
+private[remote] final class LoadedRanges[V] {
 
   private final class Range(var start: Int, val items: mutable.ArrayBuffer[V]) {
     def length: Int                      = items.length

@@ -3,6 +3,7 @@ package jfx.control
 import jfx.control.datagrid.DataGrid
 import jfx.control.datagrid.DataGrid.*
 import jfx.core.component.{AbstractComponent, Runtime}
+import jfx.core.remote.{RemoteListProperty, RemoteLoader, RemotePage}
 import jfx.core.dsl.ClassDsl.addClass
 import jfx.core.dsl.DslLayer
 import jfx.core.layout.Div.div
@@ -155,12 +156,12 @@ class DataGridSpec extends AnyFlatSpec with Matchers {
 
   private def remoteMembers(pageSize: Int) = {
     val members = (0 until 20).map(index => s"Member $index")
-    ListProperty.remote[String, PageQuery](
-      loader = ListProperty.RemoteLoader { query =>
+    RemoteListProperty[String, PageQuery](
+      loader = RemoteLoader { query =>
         val page = members.slice(query.index, query.index + query.limit)
         val next = query.index + page.length
         Future.successful(
-          ListProperty.RemotePage[String, PageQuery](
+          RemotePage[String, PageQuery](
             items = page,
             offset = Some(query.index),
             nextQuery = Option.when(next < members.length)(PageQuery(next, pageSize)),

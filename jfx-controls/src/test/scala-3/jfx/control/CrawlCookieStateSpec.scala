@@ -5,6 +5,7 @@ import jfx.control.datagrid.DataGrid.*
 import jfx.control.table.{TableColumn, TableView}
 import jfx.control.table.TableView.*
 import jfx.core.component.{AbstractComponent, Runtime}
+import jfx.core.remote.RemoteSort
 import jfx.core.dsl.DslLayer
 import jfx.core.layout.Div.div
 import jfx.core.layout.TextComponent.text
@@ -37,7 +38,7 @@ class CrawlCookieStateSpec extends AnyFlatSpec with Matchers {
     root.membersState.offset shouldBe 5
     root.membersState.limit shouldBe 4
     root.membersState.sorting shouldBe Some(
-      Vector(ListProperty.RemoteSort("name", ascending = false))
+      Vector(RemoteSort("name", ascending = false))
     )
     root.cardsState.offset shouldBe 12
     root.cardsState.limit shouldBe 6

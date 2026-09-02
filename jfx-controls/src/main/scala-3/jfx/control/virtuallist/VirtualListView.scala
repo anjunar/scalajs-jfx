@@ -2,6 +2,7 @@ package jfx.control.virtuallist
 
 import jfx.control.CrawlCookieState
 import jfx.core.component.AbstractComponent
+import jfx.core.remote.{RemoteListProperty, RemoteSort}
 import jfx.core.dsl.ClassDsl.{addClass, classIf, classes}
 import jfx.core.dsl.DslLayer
 import jfx.core.dsl.EventDsl.{on, onClick}
@@ -412,7 +413,17 @@ final class VirtualListView[T] private (
     }
 
   private def currentRemoteItems: RemoteListProperty[T, ?] | Null =
-    getItems.remotePropertyOrNull
+    getItems match {
+      // Frueher fragte das ListProperty selbst ueber remotePropertyOrNull -- eine
+      // Rueckwaerts-Abhaengigkeit vom Allgemeinen aufs Spezielle. Der Typtest
+      // gehoert hierher, wo das Remote-Verhalten gebraucht wird.
+      //
+      // Der Cast ist sicher: getItems ist ListProperty[T], und eine
+      // RemoteListProperty, die zugleich ListProperty[T] ist, hat notwendig T
+      // als Elementtyp. Nur sehen kann der Compiler das wegen Type Erasure nicht.
+      case remote: RemoteListProperty[?, ?] => remote.asInstanceOf[RemoteListProperty[T, ?]]
+      case _                                => null
+    }
 
   private def itemAt(index: Int): Option[T] =
     currentRemoteItems match {
@@ -547,7 +558,7 @@ final class VirtualListView[T] private (
     resolvedCrawlId.foreach { _ =>
       val initialSorting = crawlState.sorting
       val currentSorting = Option(currentRemoteItems)
-        .fold(Vector.empty[ListProperty.RemoteSort])(_.getSorting)
+        .fold(Vector.empty[RemoteSort])(_.getSorting)
       crawlState = crawlState.withSorting(initialSorting.getOrElse(currentSorting))
       persistCrawlState(crawlState)
 
@@ -560,7 +571,7 @@ final class VirtualListView[T] private (
 
   private def scheduleSortingRestore(
       remote: RemoteListProperty[T, ?],
-      sorting: Vector[ListProperty.RemoteSort]
+      sorting: Vector[RemoteSort]
   ): Unit = {
     var active = true
     val frame = dom.window.requestAnimationFrame { _ =>

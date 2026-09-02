@@ -353,7 +353,7 @@ neueren Daten.
 
 ---
 
-### [ ] P2-5 · Remote-Paging aus dem Kern-State-Layer herauslösen
+### [x] P2-5 · Remote-Paging aus dem Kern-State-Layer herauslösen
 
 **Abhängig von:** P2-2, P2-3, P2-4
 

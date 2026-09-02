@@ -3,6 +3,7 @@ package jfx.control.table
 import jfx.control.CrawlCookieState
 import jfx.control.table.TableRow.{placeholderRow, rowItem, tableRow}
 import jfx.core.component.AbstractComponent
+import jfx.core.remote.{RemoteListProperty, RemoteSort}
 import jfx.core.dsl.ClassDsl.{addClass, classIf, classes}
 import jfx.core.dsl.DslLayer
 import jfx.core.dsl.EventDsl.{on, onClick}
@@ -18,8 +19,7 @@ import jfx.core.state.{
   Disposable,
   ListProperty,
   Property,
-  ReadOnlyProperty,
-  RemoteListProperty
+  ReadOnlyProperty
 }
 import jfx.core.statement.Foreach.{foreach, foreachIndexed}
 import jfx.core.context.CrawlScope
@@ -493,7 +493,17 @@ final class TableView[S] private (
   }
 
   private def currentRemoteItems: RemoteListProperty[S, ?] | Null =
-    $items.remotePropertyOrNull
+    $items match {
+      // Frueher fragte das ListProperty selbst ueber remotePropertyOrNull -- eine
+      // Rueckwaerts-Abhaengigkeit vom Allgemeinen aufs Spezielle. Der Typtest
+      // gehoert hierher, wo das Remote-Verhalten gebraucht wird.
+      //
+      // Der Cast ist sicher: $items ist ListProperty[S], und eine
+      // RemoteListProperty, die zugleich ListProperty[S] ist, hat notwendig S
+      // als Elementtyp. Nur sehen kann der Compiler das wegen Type Erasure nicht.
+      case remote: RemoteListProperty[?, ?] => remote.asInstanceOf[RemoteListProperty[S, ?]]
+      case _                                => null
+    }
 
   private def totalItemCount: Int = math.max(0, $items.totalLength)
 
@@ -538,13 +548,13 @@ final class TableView[S] private (
   private def nextCrawlHref: String =
     CrawlScope.path(using this)
 
-  private def currentRemoteSorting: Vector[ListProperty.RemoteSort] =
-    Option(currentRemoteItems).fold(Vector.empty[ListProperty.RemoteSort])(_.getSorting)
+  private def currentRemoteSorting: Vector[RemoteSort] =
+    Option(currentRemoteItems).fold(Vector.empty[RemoteSort])(_.getSorting)
 
   private def sortKeyOf(column: TableColumn[S, Any]): Option[String] =
     column.sortKeyProperty.get.map(_.trim).filter(_.nonEmpty)
 
-  private def currentSortFor(column: TableColumn[S, Any]): Option[ListProperty.RemoteSort] =
+  private def currentSortFor(column: TableColumn[S, Any]): Option[RemoteSort] =
     sortKeyOf(column).flatMap(key => currentRemoteSorting.find(_.field == key))
 
   private def isRemoteSortable(column: TableColumn[S, Any]): Boolean =
@@ -557,9 +567,9 @@ final class TableView[S] private (
       case (Some(remote), Some(sortKey)) if remote.supportsSorting =>
         val next = currentSortFor(column) match {
           case Some(sort) if sort.ascending =>
-            Vector(ListProperty.RemoteSort(sort.field, ascending = false))
+            Vector(RemoteSort(sort.field, ascending = false))
           case Some(_) => Vector.empty
-          case None    => Vector(ListProperty.RemoteSort(sortKey, ascending = true))
+          case None    => Vector(RemoteSort(sortKey, ascending = true))
         }
         crawlState = crawlState.copy(offset = 0).withSorting(next)
         persistCrawlState(crawlState)
@@ -609,7 +619,7 @@ final class TableView[S] private (
 
   private def scheduleSortingRestore(
       remote: RemoteListProperty[S, ?],
-      sorting: Vector[ListProperty.RemoteSort]
+      sorting: Vector[RemoteSort]
   ): Unit = {
     var active = true
     val handle = dom.window.requestAnimationFrame { _ =>

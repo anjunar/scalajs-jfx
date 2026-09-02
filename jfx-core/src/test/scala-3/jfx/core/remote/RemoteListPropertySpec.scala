@@ -1,9 +1,10 @@
-package jfx.core.state
+package jfx.core.remote
 
 import jfx.core.component.{AbstractComponent, Runtime}
 import jfx.core.dsl.DslLayer
 import jfx.core.layout.TextComponent.text
 import jfx.core.render.{Cursor, SsrCursor}
+import jfx.core.state.ListProperty
 import jfx.core.statement.Foreach
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -239,7 +240,7 @@ class RemoteListPropertySpec extends AnyFlatSpec with Matchers {
   }
 
   private def remoteWith(loader: ControllableLoader): RemoteListProperty[String, PageQuery] =
-    ListProperty.remote[String, PageQuery](
+    RemoteListProperty[String, PageQuery](
       loader = loader,
       initialQuery = PageQuery(0, 10),
       executionContext = ExecutionContext.parasitic,
@@ -249,18 +250,18 @@ class RemoteListPropertySpec extends AnyFlatSpec with Matchers {
   /** Loader, der Antworten erst auf Zuruf liefert -- so lassen sich mehrere
     * gleichzeitig laufende Anfragen ueberhaupt beobachten. */
   private final class ControllableLoader(total: Int)
-      extends ListProperty.RemoteLoader[String, PageQuery] {
+      extends RemoteLoader[String, PageQuery] {
 
     private val pending =
-      mutable.ArrayBuffer.empty[(PageQuery, Promise[ListProperty.RemotePage[String, PageQuery]])]
+      mutable.ArrayBuffer.empty[(PageQuery, Promise[RemotePage[String, PageQuery]])]
 
     var requestCount: Int = 0
 
     override def load(
         query: PageQuery
-    ): Future[ListProperty.RemotePage[String, PageQuery]] = {
+    ): Future[RemotePage[String, PageQuery]] = {
       requestCount += 1
-      val promise = Promise[ListProperty.RemotePage[String, PageQuery]]()
+      val promise = Promise[RemotePage[String, PageQuery]]()
       pending += (query -> promise)
       promise.future
     }
@@ -276,7 +277,7 @@ class RemoteListPropertySpec extends AnyFlatSpec with Matchers {
       val from             = math.max(0, query.index)
       val to               = math.min(total, from + query.limit)
       promise.success(
-        ListProperty.RemotePage[String, PageQuery](
+        RemotePage[String, PageQuery](
           items = (from until to).map(index => s"Member $index"),
           offset = Some(from),
           nextQuery = Option.when(to < total)(PageQuery(to, query.limit)),
@@ -301,13 +302,13 @@ class RemoteListPropertySpec extends AnyFlatSpec with Matchers {
   private final case class PageQuery(index: Int, limit: Int)
 
   private def pagedMembers(total: Int, pageSize: Int): RemoteListProperty[String, PageQuery] =
-    ListProperty.remote[String, PageQuery](
-      loader = ListProperty.RemoteLoader { query =>
+    RemoteListProperty[String, PageQuery](
+      loader = RemoteLoader { query =>
         val from = math.max(0, query.index)
         val to   = math.min(total, from + query.limit)
         val next = to
         Future.successful(
-          ListProperty.RemotePage[String, PageQuery](
+          RemotePage[String, PageQuery](
             items = (from until to).map(index => s"Member $index"),
             offset = Some(from),
             nextQuery = Option.when(next < total)(PageQuery(next, pageSize)),

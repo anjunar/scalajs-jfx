@@ -1,6 +1,7 @@
 package jfx.control
 
 import jfx.core.component.AbstractComponent
+import jfx.core.remote.RemoteSort
 import jfx.core.request.RequestContext
 import jfx.core.state.ListProperty
 import org.scalajs.dom
@@ -12,12 +13,12 @@ private[control] object CrawlCookieState {
   final case class State(
       offset: Int,
       limit: Int,
-      sorting: Option[Vector[ListProperty.RemoteSort]]
+      sorting: Option[Vector[RemoteSort]]
   ) {
     def normalized: State =
       copy(offset = math.max(0, offset), limit = math.max(1, limit))
 
-    def withSorting(value: Seq[ListProperty.RemoteSort]): State =
+    def withSorting(value: Seq[RemoteSort]): State =
       copy(sorting = Some(value.toVector))
   }
 
@@ -110,7 +111,7 @@ private[control] object CrawlCookieState {
       case _: Throwable => None
     }
 
-  private def decodeSorting(value: String): Option[Vector[ListProperty.RemoteSort]] =
+  private def decodeSorting(value: String): Option[Vector[RemoteSort]] =
     if (value.isEmpty) Some(Vector.empty)
     else {
       val parsed = value
@@ -121,8 +122,8 @@ private[control] object CrawlCookieState {
             case separator if separator > 0 =>
               val field = decode(entry.take(separator))
               entry.drop(separator + 1) match {
-                case "asc"  => Some(ListProperty.RemoteSort(field, ascending = true))
-                case "desc" => Some(ListProperty.RemoteSort(field, ascending = false))
+                case "asc"  => Some(RemoteSort(field, ascending = true))
+                case "desc" => Some(RemoteSort(field, ascending = false))
                 case _      => None
               }
             case _ => None
