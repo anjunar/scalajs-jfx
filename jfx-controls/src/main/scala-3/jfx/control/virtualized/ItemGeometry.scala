@@ -92,37 +92,43 @@ final class FixedRowGeometry(
 /**
  * Feste Zellengroesse in einem Raster mit N Spalten -- das Modell von DataGrid.
  *
- * Der Ueberhang ist in Zeilen angegeben und wird auf ganze Zeilen gerundet: es
- * werden immer vollstaendige Rasterzeilen sichtbar gemacht.
+ * Der Ueberhang ist in Zeilen angegeben: es werden immer vollstaendige
+ * Rasterzeilen sichtbar gemacht.
+ *
+ * itemHeight und gap stehen einzeln und nicht als fertiger rowStep, weil die
+ * Gesamthoehe die Luecken zwischen den Zeilen zaehlt und nicht hinter der
+ * letzten: `rows * itemHeight + (rows - 1) * gap`. Mit rowStep waere eine Luecke
+ * zu viel drin.
  */
 final class GridGeometry(
     columnCount: () => Int,
-    rowStep: () => Double,
+    itemHeight: () => Double,
+    gap: () => Double,
     contentTopOffset: () => Double,
     overscanRows: () => Int
 ) extends ItemGeometry {
 
   private def effectiveColumns: Int    = math.max(1, columnCount())
-  private def effectiveRowStep: Double = math.max(1.0, rowStep())
+  private def effectiveRowStep: Double = math.max(1.0, itemHeight() + gap())
 
   /** Anzahl Rasterzeilen fuer `total` Elemente. */
-  private def rowCountFor(total: Int): Int = {
-    val columns = effectiveColumns
-    if (total <= 0) 0 else (total + columns - 1) / columns
-  }
+  private def rowCountFor(total: Int): Int =
+    if (total <= 0) 0 else math.ceil(total.toDouble / effectiveColumns).toInt
 
   override def headerOffset: Double = contentTopOffset()
 
   override def topForIndex(index: Int): Double =
-    headerOffset + (math.max(0, index) / effectiveColumns) * effectiveRowStep
+    headerOffset + math.max(0, index) / effectiveColumns * effectiveRowStep
 
   override def indexForOffset(offset: Double): Int = {
     val row = math.max(0, math.floor(math.max(0.0, offset) / effectiveRowStep).toInt)
     row * effectiveColumns
   }
 
-  override def contentHeight(total: Int): Double =
-    rowCountFor(total) * effectiveRowStep
+  override def contentHeight(total: Int): Double = {
+    val rows = rowCountFor(total)
+    if (rows <= 0) 0.0 else rows * itemHeight() + math.max(0, rows - 1) * gap()
+  }
 
   override def visibleRange(
       total: Int,

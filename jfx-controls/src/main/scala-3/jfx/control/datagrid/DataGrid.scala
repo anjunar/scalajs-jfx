@@ -1,6 +1,6 @@
 package jfx.control.datagrid
 
-import jfx.control.CrawlCookieState
+import jfx.control.virtualized.{CrawlableCollection, GridGeometry, VirtualizedCollection}
 import jfx.control.datagrid.DataGrid
 import jfx.core.component.AbstractComponent
 import jfx.core.remote.{RemoteListProperty, RemoteSort}
@@ -27,55 +27,50 @@ import scala.scalajs.js.JSConverters.*
 
 final class DataGrid[T] private (
     configure: DataGrid[T] ?=> Cursor ?=> Unit
-) extends AbstractComponent {
+) extends VirtualizedCollection[T],
+      CrawlableCollection[T] {
 
   private given ExecutionContext = ExecutionContext.global
 
   override val tagName: String = "div"
 
-  private val itemsRefProperty: Property[ListProperty[T]] = Property(ListProperty[T]())
+  val itemWidthProperty: Property[Double]     = Property(320.0)
+  val itemHeightProperty: Property[Double]    = Property(220.0)
+  val gapProperty: Property[Double]           = Property(16.0)
+  val overscanRowsProperty: Property[Int]     = Property(2)
+  val viewportWidthProperty: Property[Double] = Property(800.0)
 
-  val itemWidthProperty: Property[Double]       = Property(320.0)
-  val itemHeightProperty: Property[Double]      = Property(220.0)
-  val gapProperty: Property[Double]             = Property(16.0)
-  val overscanRowsProperty: Property[Int]       = Property(2)
-  val prefetchItemsProperty: Property[Int]      = Property(40)
-  val scrollTopProperty: Property[Double]       = Property(0.0)
-  val viewportWidthProperty: Property[Double]   = Property(800.0)
-  val viewportHeightProperty: Property[Double]  = Property(400.0)
-  val crawlableProperty: Property[Boolean]      = Property(false)
-  val crawlIdProperty: Property[Option[String]] = Property(None)
+  prefetchItemsProperty.set(40)
 
-  private val visibleCellsProperty        = ListProperty[DataGrid.VisibleCell[T]]()
-  private val itemStateRevisionProperty   = Property(0)
-  private val remoteStateRevisionProperty = Property(0)
-  private val headerHeightProperty        = Property(0.0)
+  private val visibleCellsProperty = ListProperty[DataGrid.VisibleCell[T]]()
+  private val headerHeightProperty = Property(0.0)
+
+  /**
+   * Feste Zellengroesse in einem Raster mit N Spalten. Das ist alles, was
+   * DataGrid von TableView und VirtualListView unterscheidet.
+   */
+  override protected val geometry: GridGeometry =
+    new GridGeometry(
+      columnCount = () => columnCount,
+      itemHeight = () => itemHeight,
+      gap = () => gap,
+      contentTopOffset = () => contentTopOffset,
+      overscanRows = () => overscanRowsProperty.get
+    )
+
+  override protected def crawlControlName: String = "DataGrid"
+  override protected def crawlDefaultLimit: Int   = DataGrid.defaultLimit
 
   private var lastVisibleCells                               = Vector.empty[DataGrid.VisibleCell[T]]
   private var cellRendererBody: Option[DataGrid.Renderer[T]] = None
   private var headerBody: Option[AbstractComponent ?=> Cursor ?=> Unit]             = None
   private var loadingPlaceholderBody: Option[AbstractComponent ?=> Cursor ?=> Unit] = None
   private var emptyPlaceholderBody: Option[AbstractComponent ?=> Cursor ?=> Unit]   = None
-  private var itemsObserver: Disposable       = Disposable.empty
-  private var remoteItemsObserver: Disposable = Disposable.empty
-  private var viewportComponent: Div | Null   = null
-  private var headerComponent: Div | Null     = null
-  private var viewportMeasureScheduled        = false
-  private var browserRendering                = false
-  private var hydrating                       = false
-  private var initialScrollIndex              = -1
-  private var crawlState = CrawlCookieState.State(0, DataGrid.defaultLimit, None)
-  private var resolvedCrawlId: Option[String] = None
+  private var headerComponent: Div | Null                                          = null
 
-  def itemsProperty: Property[ListProperty[T]] = itemsRefProperty
-  def getItems: ListProperty[T]                = itemsRefProperty.get
   def items: ListProperty[T]                   = getItems
   def items_=(value: ListProperty[T]): Unit    = setItems(value)
 
-  def setItems(value: ListProperty[T]): Unit = {
-    val normalized = Option(value).getOrElse(ListProperty[T]())
-    if (!itemsRefProperty.get.eq(normalized)) itemsRefProperty.setAlways(normalized)
-  }
 
   def setRenderer(renderer: DataGrid.Renderer[T]): Unit = {
     cellRendererBody = Option(renderer)
@@ -102,7 +97,7 @@ final class DataGrid[T] private (
   def refresh(): Unit = refreshItemState()
 
   def scrollTo(index: Int): Unit = {
-    val total = totalItemCount
+    val total = renderableCount
     if (total > 0) {
       val clamped       = math.max(0, math.min(total - 1, index))
       val nextScrollTop = topForIndex(clamped)
@@ -225,7 +220,7 @@ final class DataGrid[T] private (
           }
         }
 
-        when(itemStateRevisionProperty.map(_ => totalItemCount == 0)) {
+        when(itemStateRevisionProperty.map(_ => renderableCount == 0)) {
           div {
             classes = Seq("jfx-data-grid-placeholder")
             style { display = "flex" }
@@ -270,89 +265,33 @@ final class DataGrid[T] private (
     if (browserRendering) {
       initializeBrowserCrawlState()
       scheduleViewportMeasure()
-      observeHeaderHeight()
-
-      domElement(viewportComponent).foreach { element =>
-        val observer = new dom.ResizeObserver((_, _) => scheduleViewportMeasure())
-        observer.observe(element)
-        addDisposable(Disposable(observer.disconnect()))
-      }
-
-      val listener: dom.Event => Unit = _ => scheduleViewportMeasure()
-      dom.window.addEventListener("resize", listener)
-      addDisposable(Disposable(dom.window.removeEventListener("resize", listener)))
+      observeHeaderHeight(headerComponent, headerHeightProperty)
+      observeViewportSize()
     }
 
   private def installObservers(): Unit = {
     addDisposable(itemsRefProperty.observeWithoutInitial(_ => rewireItemsObserver()))
     addDisposable(scrollTopProperty.observeWithoutInitial { _ =>
-      recomputeVisibleCells()
+      recomputeVisible()
       persistVisibleScrollOffset()
     })
     addDisposable(viewportWidthProperty.observeWithoutInitial(_ => refreshItemState()))
-    addDisposable(viewportHeightProperty.observeWithoutInitial(_ => recomputeVisibleCells()))
+    addDisposable(viewportHeightProperty.observeWithoutInitial(_ => recomputeVisible()))
     addDisposable(itemWidthProperty.observeWithoutInitial(_ => refreshItemState()))
     addDisposable(itemHeightProperty.observeWithoutInitial(_ => refreshItemState()))
     addDisposable(gapProperty.observeWithoutInitial(_ => refreshItemState()))
-    addDisposable(overscanRowsProperty.observeWithoutInitial(_ => recomputeVisibleCells()))
-    addDisposable(prefetchItemsProperty.observeWithoutInitial(_ => recomputeVisibleCells()))
+    addDisposable(overscanRowsProperty.observeWithoutInitial(_ => recomputeVisible()))
+    addDisposable(prefetchItemsProperty.observeWithoutInitial(_ => recomputeVisible()))
     addDisposable(crawlableProperty.observeWithoutInitial(_ => refreshConfiguredCrawlState()))
     addDisposable(crawlIdProperty.observeWithoutInitial(_ => refreshConfiguredCrawlState()))
     addDisposable(headerHeightProperty.observeWithoutInitial(_ => refreshItemState()))
-    addDisposable(Disposable {
-      itemsObserver.dispose()
-      remoteItemsObserver.dispose()
-    })
-    rewireItemsObserver()
+    installItemObservers()
   }
 
-  private def rewireItemsObserver(): Unit = {
-    itemsObserver.dispose()
-    remoteItemsObserver.dispose()
-    bumpRemoteState()
 
-    itemsObserver = items.observeChanges(_ => refreshItemState())
-    currentRemoteItems match {
-      case null   => remoteItemsObserver = Disposable.empty
-      case remote =>
-        val composite = new CompositeDisposable()
-        composite.add(remote.loadingProperty.observe { _ =>
-          bumpRemoteState()
-          refreshItemState()
-        })
-        composite.add(remote.errorProperty.observe { _ =>
-          bumpRemoteState()
-          refreshItemState()
-        })
-        composite.add(remote.totalCountProperty.observe(_ => refreshItemState()))
-        composite.add(remote.hasMoreProperty.observe(_ => refreshItemState()))
-        composite.add(remote.nextQueryProperty.observe(_ => refreshItemState()))
-        composite.add(remote.queryProperty.observeWithoutInitial(_ => refreshItemState()))
-        composite.add(remote.sortingProperty.observeWithoutInitial { sorting =>
-          refreshItemState()
-          if (browserRendering && resolvedCrawlId.nonEmpty) {
-            crawlState = crawlState.withSorting(sorting)
-            persistCrawlState(crawlState)
-          }
-        })
-        remoteItemsObserver = composite
 
-        if (
-          browserRendering && remote.length == 0 &&
-          !remote.loadingProperty.get && remote.errorProperty.get.isEmpty
-        ) discardResult(remote.reload())
-    }
-
-    refreshItemState()
-  }
-
-  private def refreshItemState(): Unit = {
-    bumpItemState()
-    recomputeVisibleCells()
-  }
-
-  private def recomputeVisibleCells(): Unit = {
-    val total = totalItemCount
+  override protected def recomputeVisible(): Unit = {
+    val total = renderableCount
     if (total <= 0) publishVisibleCells(Seq.empty)
     else {
       val (start, end) = visibleRange(total)
@@ -369,25 +308,6 @@ final class DataGrid[T] private (
     }
   }
 
-  private def visibleRange(total: Int): (Int, Int) =
-    if ((!browserRendering || hydrating) && crawlableProperty.get) {
-      val (offset, limit) = crawlParams
-      val start           = math.min(offset, total)
-      (start, math.min(total, start + limit))
-    } else {
-      val columns            = columnCount
-      val rows               = rowCountFor(total, columns)
-      val effectiveScrollTop = math.max(0.0, scrollTopProperty.get - contentTopOffset)
-      val firstVisibleRow = math.min(
-        math.max(0, rows - 1),
-        math.floor(effectiveScrollTop / rowStep).toInt
-      )
-      val visibleRows = math.ceil(math.max(1.0, viewportHeightProperty.get) / rowStep).toInt + 1
-      val overscan    = math.max(0, overscanRowsProperty.get)
-      val startRow    = math.max(0, firstVisibleRow - overscan)
-      val endRow      = math.min(rows, firstVisibleRow + visibleRows + overscan)
-      (math.min(total, startRow * columns), math.min(total, endRow * columns))
-    }
 
   private def cellFor(index: Int): DataGrid.VisibleCell[T] = {
     val columns = columnCount
@@ -403,60 +323,11 @@ final class DataGrid[T] private (
     )
   }
 
-  private def requestLazyLoadIfNecessary(start: Int, end: Int): Unit =
-    currentRemoteItems match {
-      case null                                                                      => ()
-      case remote if remote.loadingProperty.get || remote.errorProperty.get.nonEmpty => ()
-      case remote if remote.supportsRangeLoading                                     =>
-        val prefetch    = math.max(1, prefetchItemsProperty.get)
-        val total       = totalItemCount
-        val requestFrom = math.max(0, start - prefetch)
-        val requestTo   = math.min(total, end + prefetch)
-        val pageSize    = math.max(prefetch, math.max(1, end - start))
-        val pageFrom    = requestFrom / pageSize * pageSize
-        val pageTo      = math.min(
-          total,
-          math.max(pageFrom + 1, ((requestTo + pageSize - 1) / pageSize) * pageSize)
-        )
-        // Deduplizierung liegt in RemoteListProperty: gleichlautende Anfragen
-        // teilen sich dort ein Future. Das Control muss darueber nicht Buch
-        // fuehren.
-        if (pageTo > pageFrom && !remote.isRangeLoaded(pageFrom, pageTo)) {
-          discardResult(remote.ensureRangeLoaded(pageFrom, pageTo))
-        }
-      case remote if remote.hasMoreProperty.get || remote.nextQueryProperty.get.nonEmpty =>
-        val threshold = math.max(1, prefetchItemsProperty.get / 2)
-        if (remote.length == 0) discardResult(remote.reload())
-        else if (end >= math.max(0, remote.length - threshold)) discardResult(remote.loadMore())
-      case _ => ()
-    }
 
-  private def currentRemoteItems: RemoteListProperty[T, ?] | Null =
-    items match {
-      // Frueher fragte das ListProperty selbst ueber remotePropertyOrNull -- eine
-      // Rueckwaerts-Abhaengigkeit vom Allgemeinen aufs Spezielle. Der Typtest
-      // gehoert hierher, wo das Remote-Verhalten gebraucht wird.
-      //
-      // Der Cast ist sicher: items ist ListProperty[T], und eine
-      // RemoteListProperty, die zugleich ListProperty[T] ist, hat notwendig T
-      // als Elementtyp. Nur sehen kann der Compiler das wegen Type Erasure nicht.
-      case remote: RemoteListProperty[?, ?] => remote.asInstanceOf[RemoteListProperty[T, ?]]
-      case _                                => null
-    }
 
-  private def totalItemCount: Int = math.max(0, items.totalLength)
 
-  private def itemAt(index: Int): Option[T] =
-    currentRemoteItems match {
-      case null   => Option.when(index >= 0 && index < items.length)(items(index))
-      case remote => remote.getLoadedItem(index)
-    }
 
-  private def remoteLoading: Boolean =
-    Option(currentRemoteItems).exists(_.loadingProperty.get)
 
-  private def remoteError: Option[Throwable] =
-    Option(currentRemoteItems).flatMap(_.errorProperty.get)
 
   private def placeholderTextProperty: ReadOnlyProperty[String] =
     remoteStateRevisionProperty.map { _ =>
@@ -466,91 +337,14 @@ final class DataGrid[T] private (
         .getOrElse(if (remoteError.nonEmpty) "Could not load grid data" else "No content in grid")
     }
 
-  private def crawlParams: (Int, Int) = {
-    (crawlState.offset, crawlState.limit)
-  }
 
-  private def initializeCrawlState(): Unit =
-    if (crawlableProperty.get) {
-      val id = CrawlCookieState.requireId(crawlIdProperty.get, "DataGrid")
-      resolvedCrawlId = Some(id)
-      crawlState = CrawlCookieState.resolve(
-        id,
-        DataGrid.defaultLimit,
-        browserRendering
-      )(using this)
-    } else {
-      resolvedCrawlId = None
-      crawlState = CrawlCookieState.State(0, DataGrid.defaultLimit, None)
-    }
 
-  private def refreshConfiguredCrawlState(): Unit = {
-    initializeCrawlState()
-    resolvedCrawlId match {
-      case Some(id) => setAttribute("id", id)
-      case None     => removeAttribute("id")
-    }
-    if (browserRendering) initializeBrowserCrawlState()
-    refreshItemState()
-  }
 
-  private def initializeBrowserCrawlState(): Unit =
-    resolvedCrawlId.foreach { _ =>
-      val initialCookieSorting = crawlState.sorting
-      val currentSorting       = Option(currentRemoteItems)
-        .fold(Vector.empty[RemoteSort])(_.getSorting)
-      crawlState = crawlState.withSorting(initialCookieSorting.getOrElse(currentSorting))
-      persistCrawlState(crawlState)
 
-      for {
-        sorting <- initialCookieSorting
-        remote  <- Option(currentRemoteItems)
-        if remote.supportsSorting && sorting != currentSorting
-      } scheduleSortingRestore(remote, sorting)
-    }
 
-  private def scheduleSortingRestore(
-      remote: RemoteListProperty[T, ?],
-      sorting: Vector[RemoteSort]
-  ): Unit = {
-    var active = true
-    val handle = dom.window.requestAnimationFrame { _ =>
-      if (active) discardResult(remote.applySorting(sorting))
-    }
-    addDisposable(Disposable {
-      active = false
-      dom.window.cancelAnimationFrame(handle)
-    })
-  }
 
-  private def persistCrawlState(state: CrawlCookieState.State): Unit =
-    resolvedCrawlId.foreach(id => CrawlCookieState.write(id, state, browserRendering))
 
-  private def persistVisibleScrollOffset(): Unit =
-    if (browserRendering && !hydrating && resolvedCrawlId.nonEmpty) {
-      val total  = totalItemCount
-      val offset =
-        if (total <= 0) 0
-        else {
-          val row = math
-            .floor(math.max(0.0, scrollTopProperty.get - contentTopOffset) / rowStep)
-            .toInt
-          math.min(total - 1, row * columnCount)
-        }
 
-      if (offset != crawlState.offset) {
-        crawlState = crawlState.copy(offset = offset)
-        persistCrawlState(crawlState)
-      }
-    }
-
-  private def hasMoreCrawlPage: Boolean = {
-    val (offset, limit) = crawlParams
-    crawlableProperty.get && offset + limit < totalItemCount
-  }
-
-  private def nextCrawlHref: String =
-    CrawlScope.path(using this)
 
   private def columnCount: Int = columnsFor(viewportWidthProperty.get)
 
@@ -559,11 +353,7 @@ final class DataGrid[T] private (
     math.max(1, math.floor(available / preferredColumnStep).toInt)
   }
 
-  private def rowCountFor(total: Int, columns: Int): Int =
-    if (total <= 0) 0 else math.ceil(total.toDouble / math.max(1, columns)).toInt
 
-  private def topForIndex(index: Int): Double =
-    contentTopOffset + math.max(0, index) / math.max(1, columnCount) * rowStep
 
   private def contentWidth: Double = {
     val columns = columnCount
@@ -575,10 +365,17 @@ final class DataGrid[T] private (
     columns * renderedItemWidth + math.max(0, columns - 1) * gap
   }
 
-  private def contentHeight: Double = {
-    val rows = rowCountFor(totalItemCount, columnCount)
-    if (rows <= 0) 0.0 else rows * itemHeight + math.max(0, rows - 1) * gap
-  }
+  private def contentHeight: Double =
+    geometry.contentHeight(renderableCount)
+
+  override protected def renderableCount: Int = math.max(0, items.totalLength)
+
+  /**
+   * DataGrid rechnet bei jeder Aenderung neu -- die Rasterposition jeder Zelle
+   * kann sich verschieben, sobald sich die Anzahl aendert.
+   */
+  override protected def handleLocalItemsChange(change: ListProperty.Change[T]): Unit =
+    refreshItemState()
 
   private def renderedItemWidth: Double = {
     val columns   = math.max(1, columnCount)
@@ -597,80 +394,13 @@ final class DataGrid[T] private (
   private def contentTopOffset: Double    =
     outerGap + headerHeight + (if (headerHeight > 0.5) gap else 0.0)
 
-  private def bumpItemState(): Unit =
-    itemStateRevisionProperty.setAlways(itemStateRevisionProperty.get + 1)
 
-  private def bumpRemoteState(): Unit =
-    remoteStateRevisionProperty.setAlways(remoteStateRevisionProperty.get + 1)
 
-  /**
-   * Ein Lade-Future, dessen Ergebnis das Control nicht braucht. Der recover
-   * verhindert eine unbehandelte Fehlermeldung -- der Fehler selbst steht in
-   * RemoteListProperty.errorProperty und wird von dort gerendert.
-   */
-  private def discardResult(result: Future[?]): Unit = {
-    result.recover { case _ => () }
-    ()
-  }
 
-  private def scheduleViewportMeasure(): Unit =
-    if (!viewportMeasureScheduled && browserRendering) {
-      viewportMeasureScheduled = true
-      dom.window.requestAnimationFrame { _ =>
-        viewportMeasureScheduled = false
-        domElement(viewportComponent).foreach { viewport =>
-          updateViewportSize(viewport)
-          applyInitialScrollPosition(viewport)
-        }
-      }
-    }
 
-  private def observeHeaderHeight(): Unit =
-    domElement(headerComponent).foreach { header =>
-      val measure = () => {
-        val value = math.max(0.0, header.offsetHeight.toDouble)
-        if (math.abs(headerHeightProperty.get - value) > 0.5) headerHeightProperty.set(value)
-      }
-      dom.window.requestAnimationFrame(_ => measure())
-      val observer = new dom.ResizeObserver((_, _) => measure())
-      observer.observe(header)
-      addDisposable(Disposable(observer.disconnect()))
-    }
 
-  private def updateScrollState(element: dom.html.Element): Unit = {
-    scrollTopProperty.set(element.scrollTop)
-    updateViewportSize(element)
-  }
 
-  private def updateViewportSize(element: dom.html.Element): Unit = {
-    if (element.clientWidth > 0) viewportWidthProperty.set(element.clientWidth.toDouble)
-    if (element.clientHeight > 0) viewportHeightProperty.set(element.clientHeight.toDouble)
-  }
 
-  private def applyInitialScrollPosition(viewport: dom.html.Element): Unit =
-    if (initialScrollIndex > 0) {
-      val nextScrollTop = topForIndex(initialScrollIndex)
-      hydrating = false
-      viewport.scrollTop = nextScrollTop
-      scrollTopProperty.set(nextScrollTop)
-      initialScrollIndex = -1
-      recomputeVisibleCells()
-    } else if (hydrating) {
-      hydrating = false
-      recomputeVisibleCells()
-    }
-
-  private def domElement(component: AbstractComponent | Null): Option[dom.html.Element] =
-    Option(component).flatMap { current =>
-      current.host match {
-        case domHost: DomHostElement =>
-          domHost.node match {
-            case element: dom.html.Element => Some(element)
-            case _                         => None
-          }
-        case _ => None
-      }
-    }
 
   private def px(value: Double): String = s"${value}px"
 }
