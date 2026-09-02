@@ -11,7 +11,6 @@ import jfx.core.layout.TextComponent.text
 import jfx.core.render.{Cursor, SsrCursor}
 import jfx.core.request.{RequestContext, RequestHeaders}
 import jfx.core.state.ListProperty
-import jfx.router.{Route, Router}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -24,10 +23,15 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
   "TableView SSR" should "render the crawlable cookie range without URL paging state" in {
     val members = (0 until 20).map(index => s"Member $index")
 
-    val router = new Router(
-      Seq(
-        Route.view("/") { _ =>
-          Future.successful(Route.component {
+    val html = Runtime.renderToString { cursor =>
+      Runtime.mount(
+        new CrawlTestRoot(
+          crawlPath = "/",
+          cookieHeader = Some(
+            s"jfx-crawl-members-table=${js.URIUtils.encodeURIComponent("5:5:")}"
+          )
+        ) {
+          override protected def content(using AbstractComponent, Cursor): Unit =
             tableView[String] {
               crawlable = true
               crawlId = "members-table"
@@ -37,23 +41,9 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
                 cell { item => text(item) {} }
               }
             }
-          })
-        }
-      ),
-      "/?offset=12&limit=2"
-    )
-    RequestContext.provide(
-      RequestContext(
-        RequestHeaders(
-          Map(
-            "cookie" -> Vector(s"jfx-crawl-members-table=${js.URIUtils.encodeURIComponent("5:5:")}")
-          )
-        )
+        },
+        cursor
       )
-    )(using router)
-
-    val html = Runtime.renderToString { cursor =>
-      Runtime.mount(router, cursor)
     }
 
     html should not include "Member 4"
@@ -125,10 +115,15 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
     remote.totalCountProperty.set(Some(20))
     remote.hasMoreProperty.set(true)
 
-    val router = new Router(
-      Seq(
-        Route.view("/") { _ =>
-          Future.successful(Route.component {
+    val html = Runtime.renderToString { cursor =>
+      Runtime.mount(
+        new CrawlTestRoot(
+          crawlPath = "/",
+          cookieHeader = Some(
+            s"jfx-crawl-remote-members-table=${js.URIUtils.encodeURIComponent("5:5:")}"
+          )
+        ) {
+          override protected def content(using AbstractComponent, Cursor): Unit =
             tableView[String] {
               crawlable = true
               crawlId = "remote-members-table"
@@ -137,25 +132,9 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
                 cell { item => text(item) {} }
               }
             }
-          })
-        }
-      ),
-      "/"
-    )
-    RequestContext.provide(
-      RequestContext(
-        RequestHeaders(
-          Map(
-            "cookie" -> Vector(
-              s"jfx-crawl-remote-members-table=${js.URIUtils.encodeURIComponent("5:5:")}"
-            )
-          )
-        )
+        },
+        cursor
       )
-    )(using router)
-
-    val html = Runtime.renderToString { cursor =>
-      Runtime.mount(router, cursor)
     }
 
     html should include("jfx-table-cell-loading-placeholder")

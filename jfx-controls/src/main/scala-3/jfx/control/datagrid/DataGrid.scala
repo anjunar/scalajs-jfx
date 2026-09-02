@@ -15,7 +15,7 @@ import jfx.core.layout.TextComponent.text
 import jfx.core.render.{Cursor, DomHostElement}
 import jfx.core.state.*
 import jfx.core.statement.Foreach.foreach
-import jfx.router.Router
+import jfx.core.context.CrawlScope
 import org.scalajs.dom
 
 import scala.collection.mutable
@@ -560,11 +560,7 @@ final class DataGrid[T] private (
   }
 
   private def nextCrawlHref: String =
-    Router
-      .current(using this)
-      .map(_.state.get.path)
-      .filter(_.nonEmpty)
-      .getOrElse("")
+    CrawlScope.path(using this)
 
   private def columnCount: Int = columnsFor(viewportWidthProperty.get)
 

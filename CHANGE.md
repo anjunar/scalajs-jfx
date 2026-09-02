@@ -184,7 +184,7 @@ Ergebnis dokumentieren (siehe **P5-7**), damit die Regel für neue Module gilt.
 
 ---
 
-### [ ] P1-4 · Controls vom Router entkoppeln
+### [x] P1-4 · Controls vom Router entkoppeln
 
 **Problem.** `TableView`, `DataGrid` und `VirtualListView` importieren alle
 `jfx.router.Router` — für jeweils genau eine Zeile:

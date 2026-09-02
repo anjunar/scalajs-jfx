@@ -186,7 +186,10 @@ lazy val jfxJson = Project(id = "scalajs-jfx-json", base = file("jfx-json"))
 
 lazy val jfxControls = Project(id = "scalajs-jfx-controls", base = file("jfx-controls"))
   .enablePlugins(ScalaJSPlugin)
-  .dependsOn(jfxCore, jfxRouter, jfxViewport % "test->compile")
+  // Kein jfxRouter: eine generische Tabelle darf nicht wissen, dass es Routing
+  // gibt. Den aktuellen Pfad liefert jfx.core.context.CrawlScope, den der Router
+  // in seiner compose bereitstellt. Siehe CHANGE.md P1-4.
+  .dependsOn(jfxCore, jfxViewport % "test->compile")
   .settings(
     name := "scalajs-jfx-controls",
     moduleName := "scalajs-jfx-controls"

@@ -1,5 +1,6 @@
 package jfx.router
 
+import jfx.core.context.CrawlScope
 import jfx.core.component.{AbstractComponent, AbstractCustomComponent, Runtime}
 import jfx.core.di.Context
 import jfx.core.dsl.DslLayer
@@ -39,6 +40,11 @@ class Router(
 
   override def compose(cursor: Cursor): Unit = {
     Router.RouterContext.provide(this)(using this)
+
+    // Die virtualisierenden Controls brauchen fuer ihren Crawl-Link nur den
+    // aktuellen Pfad, nicht den Router. Die Abhaengigkeit zeigt deshalb in diese
+    // Richtung: der Router kennt den CrawlScope, jfx-controls kennt kein Routing.
+    CrawlScope.provide(CrawlScope(() => stateProperty.get.path))(using this)
 
     initializeStateIfNeeded()
 

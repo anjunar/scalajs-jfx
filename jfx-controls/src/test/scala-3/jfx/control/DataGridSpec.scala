@@ -10,7 +10,6 @@ import jfx.core.layout.TextComponent.text
 import jfx.core.render.{Cursor, SsrCursor}
 import jfx.core.request.{RequestContext, RequestHeaders}
 import jfx.core.state.ListProperty
-import jfx.router.{Route, Router}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -57,10 +56,15 @@ class DataGridSpec extends AnyFlatSpec with Matchers {
 
   it should "render crawlable windows from its component cookie" in {
     val members = (0 until 20).map(index => s"Member $index")
-    val router  = new Router(
-      Seq(
-        Route.view("/") { _ =>
-          Future.successful(Route.component {
+    val html = Runtime.renderToString { cursor =>
+      Runtime.mount(
+        new CrawlTestRoot(
+          crawlPath = "/",
+          cookieHeader = Some(
+            s"jfx-crawl-members-grid=${js.URIUtils.encodeURIComponent("5:4:")}"
+          )
+        ) {
+          override protected def content(using AbstractComponent, Cursor): Unit =
             dataGrid[String] {
               items = members
               itemWidthPx = 400
@@ -71,23 +75,9 @@ class DataGridSpec extends AnyFlatSpec with Matchers {
               crawlId = "members-grid"
               cellRenderer = cellBody
             }
-          })
-        }
-      ),
-      "/?offset=12&limit=2"
-    )
-    RequestContext.provide(
-      RequestContext(
-        RequestHeaders(
-          Map(
-            "cookie" -> Vector(s"jfx-crawl-members-grid=${js.URIUtils.encodeURIComponent("5:4:")}")
-          )
-        )
+        },
+        cursor
       )
-    )(using router)
-
-    val html = Runtime.renderToString { cursor =>
-      Runtime.mount(router, cursor)
     }
 
     html should not include "4:Member 4"

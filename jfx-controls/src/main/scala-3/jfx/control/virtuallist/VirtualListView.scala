@@ -13,7 +13,7 @@ import jfx.core.layout.Div.div
 import jfx.core.render.{Cursor, DomHostElement}
 import jfx.core.state.*
 import jfx.core.statement.Foreach.foreach
-import jfx.router.Router
+import jfx.core.context.CrawlScope
 import org.scalajs.dom
 
 import scala.collection.mutable
@@ -609,7 +609,7 @@ final class VirtualListView[T] private (
   }
 
   private def nextCrawlHref: String =
-    Router.current(using this).map(_.state.get.path).filter(_.nonEmpty).getOrElse("")
+    CrawlScope.path(using this)
 
   private def maxSlotsForViewport(viewportHeight: Double): Int = {
     val minimum = math.max(12.0, math.min(estimateHeight, math.max(estimateHeight / 2.0, 1.0)))

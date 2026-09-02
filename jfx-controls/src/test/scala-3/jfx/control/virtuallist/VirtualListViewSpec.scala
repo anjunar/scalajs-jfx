@@ -1,5 +1,7 @@
 package jfx.control.virtuallist
 
+import jfx.control.CrawlTestRoot
+
 import jfx.control.virtuallist.VirtualListView.*
 import jfx.core.component.{AbstractComponent, Runtime}
 import jfx.core.dsl.ClassDsl.addClass
@@ -9,7 +11,6 @@ import jfx.core.layout.TextComponent.text
 import jfx.core.render.{Cursor, SsrCursor}
 import jfx.core.request.{RequestContext, RequestHeaders}
 import jfx.core.state.ListProperty
-import jfx.router.{Route, Router}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -62,10 +63,15 @@ class VirtualListViewSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "render its component-local crawl window from a cookie" in {
-    val router = new Router(
-      Seq(
-        Route.view("/") { _ =>
-          Future.successful(Route.component {
+    val html = Runtime.renderToString { cursor =>
+      Runtime.mount(
+        new CrawlTestRoot(
+          crawlPath = "/",
+          cookieHeader = Some(
+            s"jfx-crawl-members-list=${js.URIUtils.encodeURIComponent("5:4:")}"
+          )
+        ) {
+          override protected def content(using AbstractComponent, Cursor): Unit =
             virtualList[String] {
               items = (0 until 20).map(index => s"Member $index")
               estimateHeightPx = 40
@@ -74,24 +80,10 @@ class VirtualListViewSpec extends AnyFlatSpec with Matchers {
               crawlId = "members-list"
               cellRenderer = rowRenderer
             }
-          })
-        }
-      ),
-      "/"
-    )
-    RequestContext.provide(
-      RequestContext(
-        RequestHeaders(
-          Map(
-            "cookie" -> Vector(
-              s"jfx-crawl-members-list=${js.URIUtils.encodeURIComponent("5:4:")}"
-            )
-          )
-        )
+        },
+        cursor
       )
-    )(using router)
-
-    val html = Runtime.renderToString { cursor => Runtime.mount(router, cursor) }
+    }
 
     html should not include "4:Member 4"
     html should include("5:Member 5")

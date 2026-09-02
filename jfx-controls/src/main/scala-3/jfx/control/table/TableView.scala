@@ -22,7 +22,7 @@ import jfx.core.state.{
   RemoteListProperty
 }
 import jfx.core.statement.Foreach.{foreach, foreachIndexed}
-import jfx.router.Router
+import jfx.core.context.CrawlScope
 import org.scalajs.dom
 
 import scala.concurrent.ExecutionContext
@@ -530,11 +530,7 @@ final class TableView[S] private (
   }
 
   private def nextCrawlHref: String =
-    Router
-      .current(using this)
-      .map(_.state.get.path)
-      .filter(_.nonEmpty)
-      .getOrElse("")
+    CrawlScope.path(using this)
 
   private def currentRemoteSorting: Vector[ListProperty.RemoteSort] =
     Option(currentRemoteItems).fold(Vector.empty[ListProperty.RemoteSort])(_.getSorting)
