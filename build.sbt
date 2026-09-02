@@ -1,26 +1,45 @@
 import org.scalajs.linker.interface.{ESVersion, ModuleKind}
 import org.scalajs.sbtplugin.ScalaJSPlugin
-import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import sbt.url
-import ScalaJsViteSupport._
+import ScalaJsViteSupport.*
 
-ThisBuild / version := "3.0.0-SNAPSHOT"
-ThisBuild / organization := "com.anjunar"
-ThisBuild / organizationName := "Anjunar"
-ThisBuild / organizationHomepage := Some(url("https://github.com/anjunar"))
+// ---------------------------------------------------------------------------
+// sbt 2.x
+//
+// Migrationsentscheidungen, die man beim Lesen kennen muss:
+//
+// 1. `%%%` gibt es nicht mehr. sbt 2 kennt ein `platform`-Setting, damit traegt
+//    `%%` den Plattform-Suffix (`_sjs1_3`) selbst. `sbt-platform-deps` ist damit
+//    ueberfluessig und der zugehoerige Import entfaellt.
+//
+// 2. Keine `ThisBuild /`-Praefixe mehr. In sbt 2 sind blanke Settings in
+//    build.sbt "common settings", die in *alle* Subprojekte injiziert werden.
+//    Das ersetzt die frueheren ThisBuild-Settings mit besserer Delegation.
+//    Achtung beim Ergaenzen: ein blankes Setting gilt jetzt ueberall, nicht nur
+//    fuer das Root-Projekt. Root-spezifisches gehoert an `LocalRootProject /`.
+//
+// 3. Tasks sind in sbt 2 standardmaessig gecached. Ein Task-Ergebnistyp ohne
+//    `sjsonnew.JsonFormat` laesst den Build beim Laden scheitern. `Attributed[Report]`
+//    von Scala.js hat keinen — deshalb stehen `viteFastLinkJS` und `viteFullLinkJS`
+//    in `Def.uncached { ... }`. Das ist hier ohnehin richtig: beide Tasks haben
+//    Seiteneffekte auf dem Dateisystem (Sourcemap-Sanitizing).
+//
+// 4. Slash-Syntax ist Pflicht, 0.13-Syntax ist entfernt. War hier schon so.
+// ---------------------------------------------------------------------------
 
-ThisBuild / usePipelining := false
-ThisBuild / exportJars := false
-Global / concurrentRestrictions += Tags.limitAll(1)
+version := "3.0.0-SNAPSHOT"
+organization := "com.anjunar"
+organizationName := "Anjunar"
+organizationHomepage := Some(url("https://github.com/anjunar"))
 
-ThisBuild / scalaVersion := "3.3.8"
+scalaVersion := "3.3.8"
 
-ThisBuild / homepage := Some(url("https://github.com/anjunar/scalajs-jfx"))
-ThisBuild / description := "Reactive UI framework for Scala.js with lifecycle control, typed forms, routing, tables, and a composable DSL."
+homepage := Some(url("https://github.com/anjunar/scalajs-jfx"))
+description := "Reactive UI framework for Scala.js with lifecycle control, typed forms, routing, tables, and a composable DSL."
 
-ThisBuild / licenses := Seq("MIT" -> url("https://opensource.org/licenses/MIT"))
+licenses := Seq("MIT" -> url("https://opensource.org/licenses/MIT"))
 
-ThisBuild / scmInfo := Some(
+scmInfo := Some(
   ScmInfo(
     url("https://github.com/anjunar/scalajs-jfx"),
     "scm:git:https://github.com/anjunar/scalajs-jfx.git",
@@ -28,7 +47,7 @@ ThisBuild / scmInfo := Some(
   )
 )
 
-ThisBuild / developers := List(
+developers := List(
   Developer(
     id = "anjunar",
     name = "Patrick Bittner",
@@ -37,12 +56,12 @@ ThisBuild / developers := List(
   )
 )
 
-ThisBuild / versionScheme := Some("early-semver")
+versionScheme := Some("early-semver")
 
-ThisBuild / pomIncludeRepository := { _ => false }
-ThisBuild / publishMavenStyle := true
+pomIncludeRepository := { _ => false }
+publishMavenStyle := true
 
-ThisBuild / publishTo := {
+publishTo := {
   val centralSnapshots = "https://central.sonatype.com/repository/maven-snapshots/"
   if (version.value.endsWith("-SNAPSHOT"))
     Some("central-snapshots" at centralSnapshots)
@@ -50,24 +69,72 @@ ThisBuild / publishTo := {
     localStaging.value
 }
 
+// --- Bewusst entfernte sbt-1-Settings ---------------------------------------
+//
+// `usePipelining := false`
+//   Grund fuer das Abschalten ist nicht ueberliefert. Erst ohne betreiben; falls
+//   Pipelining hier tatsaechlich bricht, ist *das* der eigentliche Befund und
+//   gehoert untersucht statt umschifft (AGENTS.md: keine Workarounds).
+//
+// `Global / concurrentRestrictions += Tags.limitAll(1)`
+//   Serialisierte den kompletten Build ueber neun Module. Siehe CHANGE.md P5-5.
+//   Wenn der Build ohne diese Zeile bricht, bitte den echten Fehler notieren.
+// ----------------------------------------------------------------------------
+
+// Wieder auf den sbt-1-Wert gesetzt -- Ursache, nicht Geschmack:
+//
+// sbt 2 setzt `exportJars := true` per Default, ein Modul liegt fuer die
+// abhaengigen Module also als JAR auf dem Classpath. Der sbt-Server haelt diese
+// JARs offen (Zinc/Classloader). Unter Windows laesst sich eine offene Datei
+// nicht per Rename ersetzen, und `packageBin` schreibt genau so: erst .tmp,
+// dann `Files.move`. Ergebnis war reproduzierbar
+//
+//   java.nio.file.AccessDeniedException:
+//     ...\scalajs-jfx-core_sjs1_3-3.0.0-SNAPSHOT.jar.151b4332.tmp
+//       -> ...\scalajs-jfx-core_sjs1_3-3.0.0-SNAPSHOT.jar
+//
+// bei *jedem* Lauf nach dem ersten im selben Server -- auch ohne Quelltext-
+// aenderung, weil packageBin jedes Mal laeuft. Nur ein Serverneustart half.
+// Mit Klassenverzeichnissen statt JARs entfaellt das Problem; drei
+// aufeinanderfolgende `sbtn test` im selben Server laufen gruen.
+//
+// Entfaellt, sobald packageBin unter Windows ohne Rename auf eine offene Datei
+// auskommt oder der Server die Classpath-JARs wieder freigibt.
+exportJars := false
+
 lazy val commonJsSettings = Seq(
-  scalaJSLinkerConfig := {
-    scalaJSLinkerConfig.value
-      .withModuleKind(ModuleKind.ESModule)
-      .withESFeatures(_.withESVersion(ESVersion.ES2021))
-      .withSourceMap(true)
-      .withRelativizeSourceMapBase(
-        Some((Compile / fastLinkJS / scalaJSLinkerOutputDirectory).value.toURI)
-      )
-  }
+  scalaJSLinkerConfig := scalaJSLinkerConfig.value
+    .withModuleKind(ModuleKind.ESModule)
+    .withESFeatures(_.withESVersion(ESVersion.ES2021))
+    .withSourceMap(true),
+  // Die Sourcemap-Basis muss pro Link-Task auf dessen eigenes Ausgabeverzeichnis
+  // zeigen. Vorher stand nur ein gemeinsamer Wert da, der auch fuer fullLinkJS
+  // aufs fastopt-Verzeichnis zeigte. Siehe CHANGE.md P5-5, Punkt 3.
+  Compile / fastLinkJS / scalaJSLinkerConfig := scalaJSLinkerConfig.value
+    .withRelativizeSourceMapBase(
+      Some((Compile / fastLinkJS / scalaJSLinkerOutputDirectory).value.toURI)
+    ),
+  Compile / fullLinkJS / scalaJSLinkerConfig := scalaJSLinkerConfig.value
+    .withRelativizeSourceMapBase(
+      Some((Compile / fullLinkJS / scalaJSLinkerOutputDirectory).value.toURI)
+    )
 )
 
 lazy val commonLibrarySettings = Seq(
+  // Der Doc-Jar bleibt leer. Maven Central verlangt nur, dass das Artefakt
+  // existiert, nicht dass Inhalt drin ist. Frueher lag hier ein Mapping, das die
+  // README hineinkopierte — in sbt 2 ist `mappings` auf
+  // `Seq[(xsbti.HashedVirtualFileRef, String)]` umgestellt, ein `java.io.File`
+  // passt dort nicht mehr hinein. Falls die README wieder rein soll, geht das
+  // ueber den FileConverter:
+  //
+  //   Compile / packageDoc / mappings += {
+  //     val readme = (LocalRootProject / baseDirectory).value / "README.md"
+  //     fileConverter.value.toVirtualFile(readme.toPath) -> "README.md"
+  //   }
   Compile / doc / sources := Seq.empty,
-  Compile / packageDoc / mappings +=
-    ((LocalRootProject / baseDirectory).value / "README.md") -> "README.md",
-  libraryDependencies += "org.scala-js" %%% "scalajs-dom" % "2.8.1",
-  libraryDependencies += "org.scalatest" %%% "scalatest" % "3.2.19" % Test
+  libraryDependencies += "org.scala-js" %% "scalajs-dom" % "2.8.1",
+  libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.19" % Test
 )
 
 // Publish-Regel: Ein publiziertes Modul darf nur auf publizierte Module und externe
@@ -81,7 +148,7 @@ lazy val jfxCore = Project(id = "scalajs-jfx-core", base = file("jfx-core"))
   .settings(
     name := "scalajs-jfx-core",
     moduleName := "scalajs-jfx-core",
-    libraryDependencies += "com.anjunar" %%% "scala-reflect" % "1.1.3"
+    libraryDependencies += "com.anjunar" %% "scala-reflect" % "1.1.3"
   )
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
@@ -112,7 +179,7 @@ lazy val jfxJson = Project(id = "scalajs-jfx-json", base = file("jfx-json"))
   .settings(
     name := "scalajs-jfx-json",
     moduleName := "scalajs-jfx-json",
-    libraryDependencies += "com.anjunar" %%% "scala-reflect" % "1.1.3"
+    libraryDependencies += "com.anjunar" %% "scala-reflect" % "1.1.3"
   )
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
@@ -133,7 +200,7 @@ lazy val jfxForms = Project(id = "scalajs-jfx-forms", base = file("jfx-forms"))
   .settings(
     name := "scalajs-jfx-forms",
     moduleName := "scalajs-jfx-forms",
-    libraryDependencies += "io.github.cquiroz" %%% "scala-java-time" % "2.6.0"
+    libraryDependencies += "io.github.cquiroz" %% "scala-java-time" % "2.6.0"
   )
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
@@ -144,7 +211,7 @@ lazy val jfxEditor = Project(id = "scalajs-jfx-editor", base = file("jfx-editor"
   .settings(
     name := "scalajs-jfx-editor",
     moduleName := "scalajs-jfx-editor",
-    libraryDependencies += "com.anjunar" %%% "scalajs-lexical" % "1.3.0",
+    libraryDependencies += "com.anjunar" %% "scalajs-lexical" % "1.3.0",
     publish / skip := true
   )
   .settings(commonLibrarySettings)
@@ -173,20 +240,19 @@ lazy val app = Project(id = "scalajs-jfx-demo", base = file("application"))
   )
   .settings(
     scalaJSUseMainModuleInitializer := false,
-    viteFastLinkJS := {
-      clearLegacyShadowSources(
-        (Compile / fastLinkJS / scalaJSLinkerOutputDirectory).value,
-        streams.value.log
+    // site.config.json ist die einzige Quelle fuer Deploy-Pfad und Site-Metadaten.
+    // Sie speist index.html (Vite-Plugin), sitemap.xml/robots.txt (tools/) und
+    // ueber diesen Generator den Scala-Code.
+    Compile / sourceGenerators += Def.task {
+      SiteConfigGenerator(
+        (LocalRootProject / baseDirectory).value / "site.config.json",
+        (Compile / sourceManaged).value
       )
-      val linked = (Compile / fastLinkJS).value
-      sanitizeScalaJsSourceMap(
-        (LocalRootProject / baseDirectory).value,
-        (Compile / fastLinkJS / scalaJSLinkerOutputDirectory).value,
-        streams.value.log
-      )
-      linked
-    },
-    viteFullLinkJS := {
+    }.taskValue,
+    // Def.uncached: `Attributed[Report]` hat keinen JsonFormat, und der Task
+    // schreibt ausserdem am Dateisystem. Ohne die Huelle scheitert sbt 2 beim
+    // Laden des Builds.
+    viteFullLinkJS := Def.uncached {
       clearLegacyShadowSources(
         (Compile / fullLinkJS / scalaJSLinkerOutputDirectory).value,
         streams.value.log
@@ -199,6 +265,9 @@ lazy val app = Project(id = "scalajs-jfx-demo", base = file("application"))
       )
       linked
     },
+    // sbt 2 vereinheitlicht `target/` auf ein Verzeichnis in der Build-Wurzel.
+    // Diese beiden expliziten Ueberschreibungen halten die Linker-Ausgabe dort,
+    // wo vite.config.js sie erwartet — jetzt umso wichtiger.
     Compile / fastLinkJS / scalaJSLinkerOutputDirectory :=
       baseDirectory.value / "target" / "vite" / "fastopt",
     Compile / fullLinkJS / scalaJSLinkerOutputDirectory :=
