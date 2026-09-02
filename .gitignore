@@ -1,3 +1,4 @@
+config.toml
 .bloop
 .metals
 node_modules
