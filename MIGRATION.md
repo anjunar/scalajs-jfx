@@ -130,7 +130,7 @@ Der Editor beginnt erst, wenn sein Forms-Control-Vertrag stabil ist.
 ### 4. Unabhaengige Module
 
 - [x] `jfx-json`: `JsonId`, `JsonIgnore`, `JsonProperty`, `JsonType`, `JsonMapper`
-- [ ] `jfx-webAuthn`: Base64URL, Facades und WebAuthn-Workflow
+- [x] `jfx-webAuthn`: Base64URL, Facades und WebAuthn-Workflow
 - [ ] `jfx-ssr`: Node-Facades und Dev-/Prod-Renderer gegen die neue Cursor-SSR
       abgleichen
 
@@ -146,8 +146,8 @@ Der Editor beginnt erst, wenn sein Forms-Control-Vertrag stabil ist.
 | `jfx-controls` | Controls-Portierung abgeschlossen: Tabellenbasis, `DataGrid`, `VirtualListView`, `Tabs` und `Carousel` tragen lokale und entfernte Listen, variable beziehungsweise feste virtuelle Bereiche, Range-Prefetch, Crawl-State sowie kontextuelle Header-, Placeholder-, Tab-Panel- und Slide-Slots; `Link` ist in `Anchor` und `RouterLink` aufgeteilt, `Image` als natives Core-Layout portiert |
 | `jfx-editor` | noch offen |
 | `jfx-json` | portiert; neuer reflektionsbasierter Mapper mit getrennten Komponenten fuer Typmodell, Metadaten, Serialisierung und Deserialisierung |
-| `jfx-webAuthn` | noch offen |
-| `jfx-ssr` | HTTP-Response-Vertrag vorhanden; Node-Facades und wiederverwendbare Renderer noch offen |
+| `jfx-webAuthn` | portiert und auf WebAuthn Level 3 erweitert: native JSON-Konvertierung mit Fallback, typisierte Browser-Dictionaries, Future-/Promise-Workflows, Abbruch und Mediation, Capability-Abfragen sowie Credential-Signaling |
+| `jfx-ssr` | noch offen; der kleine HTTP-Response-Vertrag liegt bis dahin lokal im Anwendungseinstieg |
 
 ## Runtime-Entscheidungen
 
@@ -427,3 +427,35 @@ komponentenlokalen Crawl-State. Tests decken lokale SSR-Virtualisierung,
 Remote-Placeholder, Header-Komposition, variable Messhoehen, Cookie-Restore,
 Listenmutation, verpflichtende IDs und Entsorgung ab. Die Demo ist unter
 `/virtual-list` erreichbar.
+
+### WebAuthn
+
+`jfx-webAuthn` bleibt unter `jfx.webauthn` quellkompatibel zu den wesentlichen
+JFX2-Einstiegen: `WebAuthn.register`/`authenticate`, ihre Promise-Varianten,
+die Browser-Dictionaries, `Base64Url` und die typisierten Rueckgabe-Payloads.
+Das Modul verwendet keine JFX-Runtime und ist deshalb bewusst nicht mehr von
+`jfx-core` abhaengig.
+
+Server-JSON wird auf aktuellen Browsern durch die nativen Level-3-Methoden
+`parseCreationOptionsFromJSON` und `parseRequestOptionsFromJSON` konvertiert.
+Damit werden auch binaere Felder registrierter Extensions korrekt behandelt.
+Fuer aeltere Browser existiert ein strikt validierender Fallback fuer die
+Level-2-Felder. Er verwirft fehlende Pflichtfelder, falsche JSON-Typen und
+ungueltige Base64URL-Werte frueh, statt JavaScript-Werte stillschweigend in
+Strings oder Zahlen umzuwandeln.
+
+Credential-Payloads verwenden bevorzugt `PublicKeyCredential.toJSON()`. Der
+Fallback serialisiert Registration und Authentication vollstaendig und wandelt
+auch verschachtelte `ArrayBuffer` aus Extension-Ergebnissen in Base64URL um.
+Damit sind `toJsObject` und `toJson` unmittelbar als Backend-Payload geeignet.
+Ceremonies unterstuetzen `AbortSignal` und Mediation; zusaetzlich stehen
+Conditional-Mediation-, Platform-Authenticator- und allgemeine
+Client-Capability-Abfragen sowie die drei Level-3-Credential-Signalmethoden zur
+Verfuegung. Feature-Erkennung ist auch in Node/SSR ohne Browser-Globals sicher.
+
+Tests decken Base64URL-Roundtrips und Fehler, vollstaendige Creation-/Request-
+Optionen, strikte Eingabevalidierung, beide Credential-Payloads, native
+`toJSON`-Bindung, binaere Extension-Ausgaben, optionale Dictionary-Felder,
+Mediation und SSR-sichere Feature-Erkennung ab. Da WebAuthn eine sichere Origin
+und reale Benutzerinteraktion verlangt, gibt es keine kuenstliche Demo-
+Ceremony; die Modul-README dokumentiert die Integration in eine Anwendung.

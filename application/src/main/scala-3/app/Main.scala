@@ -4,7 +4,6 @@ import jfx.core.async.AsyncRenderContext
 import jfx.core.component.{AbstractComponent, Runtime}
 import jfx.core.render.{Cursor, HydratingCursor}
 import jfx.core.request.{RequestContext, RequestHeaders, RequestHeadersJson}
-import jfx.ssr.SsrResponse
 import org.scalajs.dom
 import org.scalajs.dom.document
 
@@ -63,8 +62,21 @@ object Main {
         Runtime.mount(app, cursor)
       }
       .map { html =>
-        SsrResponse(html, status = app.ssrStatus).toJsObject
+        ssrResponse(html, status = app.ssrStatus)
       }
       .toJSPromise
+  }
+
+  private def ssrResponse(
+      html: String,
+      status: Int,
+      headers: Map[String, String] = Map.empty
+  ): js.Object = {
+    require(status >= 100 && status <= 599, s"Invalid HTTP status: $status")
+    js.Dynamic.literal(
+      html = html,
+      status = status,
+      headers = js.Dictionary(headers.toSeq*)
+    )
   }
 }

@@ -147,11 +147,9 @@ lazy val jfxEditor = Project(id = "scalajs-jfx-editor", base = file("jfx-editor"
 
 lazy val jfxWebAuthn = Project(id = "scalajs-jfx-webauthn", base = file("jfx-webAuthn"))
   .enablePlugins(ScalaJSPlugin)
-  .dependsOn(jfxCore)
   .settings(
     name := "scalajs-jfx-webauthn",
-    moduleName := "scalajs-jfx-webauthn",
-    publish / skip := true
+    moduleName := "scalajs-jfx-webauthn"
   )
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
@@ -214,7 +212,6 @@ lazy val root = Project(id = "scalajs-jfx-root", base = file("."))
     jfxForms,
     jfxEditor,
     jfxWebAuthn,
-    jfxSsr,
     app
   )
   .settings(
