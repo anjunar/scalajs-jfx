@@ -543,7 +543,7 @@ ohne Hydration-Fault übernommen. Der `IllegalStateException`-Zweig mit dem
 
 ---
 
-### [ ] P4-2 · Quadratisches Layout-Bookkeeping
+### [x] P4-2 · Quadratisches Layout-Bookkeeping
 
 **Problem.** `AbstractComponent.domOffset`, `domNodeCount` und `physicalHosts`
 laufen rekursiv über Geschwister und Teilbaum. `Foreach.insertionCursorAt` ruft

@@ -1,6 +1,6 @@
 package jfx.core.render
 
-final class SsrTextNode(private var value: String) extends TextNode {
+final class SsrTextNode(private var value: String) extends TextNode, SsrNode {
   def setText(next: String): Unit = value = next
   def getText: String             = value
   def renderHtml(): String        = escapeText(value)

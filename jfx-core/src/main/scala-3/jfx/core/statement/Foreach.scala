@@ -124,7 +124,7 @@ class Foreach[V](
     mountPoint.cursorBefore(mounted.lift(index).flatMap(firstHost))
 
   private def firstHost(component: AbstractComponent): Option[HostNode] =
-    component.physicalHosts.headOption
+    component.firstPhysicalHost
 
 }
 

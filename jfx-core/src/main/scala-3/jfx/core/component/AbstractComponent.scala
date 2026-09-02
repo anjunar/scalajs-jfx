@@ -44,18 +44,6 @@ abstract class AbstractComponent
   def isText: Boolean                   = tagName == "#text"
   def isBound: Boolean                  = _host != null
 
-  def domNodeCount: Int =
-    if (!isVirtual) 1
-    else virtualAnchorCount + _children.map(_.domNodeCount).sum
-
-  def domOffset: Int = _parent match {
-    case None => 0
-    case Some(p) =>
-      val siblingsBefore = p._children.takeWhile(_ ne this)
-      val local          = siblingsBefore.map(_.domNodeCount).sum
-      if (p.isVirtual) p.domOffset + local else local
-  }
-
   def physicalHosts: Seq[HostNode] =
     if (!isVirtual && _host != null) Seq(_host)
     else
@@ -75,6 +63,21 @@ abstract class AbstractComponent
     case host: VirtualHost => host.adopted
     case _                 => Nil
   }
+
+  /**
+   * Der erste DOM-Knoten dieser Komponente, ohne die uebrigen zu sammeln.
+   *
+   * [[physicalHosts]] baut den kompletten Teilbaum auf. Wer nur den Anfang
+   * braucht -- etwa Foreach fuer die Einfuegeposition -- bezahlt das sonst mit,
+   * und zwar pro Einfuegung. Siehe CHANGE.md P4-2.
+   */
+  def firstPhysicalHost: Option[HostNode] =
+    if (!isVirtual && _host != null) Some(_host)
+    else
+      virtualStart
+        .orElse(adoptedNodes.headOption)
+        .orElse(_children.iterator.flatMap(_.firstPhysicalHost).nextOption())
+        .orElse(virtualEnd)
 
   private def virtualStart: Option[CommentNode] = _host match {
     case host: VirtualHost => host.start

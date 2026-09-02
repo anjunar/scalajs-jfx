@@ -2,7 +2,7 @@ package jfx.core.render
 
 import scala.collection.mutable
 
-final class SsrHostElement(val tagName: String) extends HostElement {
+final class SsrHostElement(val tagName: String) extends HostElement, SsrNode {
   private val attrs    = mutable.LinkedHashMap.empty[String, String]
   private val styles   = mutable.LinkedHashMap.empty[String, String]
   private val children = mutable.ArrayBuffer.empty[HostNode]
@@ -32,25 +32,35 @@ final class SsrHostElement(val tagName: String) extends HostElement {
     if (names.isEmpty) attrs.remove("class")
     else attrs("class") = names.mkString(" ")
 
-  def insertChild(index: Int, child: HostNode): Unit = {
-    val safeIndex = index.max(0).min(children.length)
-    if (safeIndex == children.length) children += child
-    else children.insert(safeIndex, child)
-  }
+  // Einfuegen laeuft ueber SsrNode: dort steht, warum die Position einer
+  // Einfuegemarke nicht mehr linear gesucht wird. Siehe CHANGE.md P4-2.
+  def insertChild(index: Int, child: HostNode): Unit =
+    SsrNode.insertInto(children, index, child)
 
   def insertBefore(child: HostNode, before: Option[HostNode]): Unit =
     before match {
       case Some(node) =>
-        val idx = children.indexOf(node)
-        if (idx >= 0) insertChild(idx, child)
-        else children += child
+        SsrNode.indexIn(children, node) match {
+          case index if index >= 0 =>
+            SsrNode.insertInto(children, index, child)
+            // Die Marke ist um genau eine Position nach hinten gerueckt.
+            SsrNode.setHint(node, index + 1)
+          case _ =>
+            SsrNode.appendTo(children, child)
+        }
+
       case None =>
-        children += child
+        SsrNode.appendTo(children, child)
     }
 
-  def removeChild(child: HostNode): Unit = children -= child
-  def clearChildren(): Unit              = children.clear()
-  def childCount: Int                    = children.length
+  def removeChild(child: HostNode): Unit = {
+    children -= child
+    SsrNode.setHint(child, -1)
+  }
+
+  def clearChildren(): Unit = children.clear()
+
+  def childCount: Int = children.length
 
   def renderHtml(): String = {
     val styleStr =

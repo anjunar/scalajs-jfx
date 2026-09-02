@@ -72,14 +72,17 @@ final class SsrCursor private (
         element.insertBefore(node, beforeNode)
 
       case None =>
+        // Wurzelebene: dieselbe Abkuerzung wie in SsrHostElement, sonst waere ein
+        // direkt an der Wurzel gemountetes Foreach genauso quadratisch.
         beforeNode match {
           case Some(existing) =>
-            val idx = rootNodes.indexOf(existing)
-            if (idx >= 0) rootNodes.insert(idx, node)
-            else rootNodes += node
+            SsrNode.indexIn(rootNodes, existing) match {
+              case index if index >= 0 => SsrNode.insertInto(rootNodes, index, node)
+              case _                   => SsrNode.appendTo(rootNodes, node)
+            }
 
           case None =>
-            rootNodes += node
+            SsrNode.appendTo(rootNodes, node)
         }
     }
 }
