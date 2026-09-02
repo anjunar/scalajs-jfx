@@ -48,14 +48,14 @@ object TableViewPage {
       rowCount: Int = 1000,
       pageSize: Int = 50
   ): RemoteListProperty[Book, BookQuery] = {
-    val allBooks = generatedBooks(rowCount)
+    val allBooks           = generatedBooks(rowCount)
     val normalizedPageSize = math.max(1, pageSize)
-    val initialQuery = BookQuery(offset = 0, limit = normalizedPageSize)
+    val initialQuery       = BookQuery(offset = 0, limit = normalizedPageSize)
 
     val remote = RemoteListProperty[Book, BookQuery](
       loader = RemoteLoader { query =>
-        val sorted = sortBooks(allBooks, query.sorting)
-        val page = sorted.slice(query.offset, query.offset + query.limit)
+        val sorted     = sortBooks(allBooks, query.sorting)
+        val page       = sorted.slice(query.offset, query.offset + query.limit)
         val nextOffset = query.offset + page.length
 
         Future.successful(
@@ -75,9 +75,8 @@ object TableViewPage {
       sortUpdater = Some((query, sorting) =>
         query.copy(offset = 0, limit = normalizedPageSize, sorting = sorting.toVector)
       ),
-      rangeQueryUpdater = Some((query, offset, limit) =>
-        query.copy(offset = offset, limit = math.max(1, limit))
-      )
+      rangeQueryUpdater =
+        Some((query, offset, limit) => query.copy(offset = offset, limit = math.max(1, limit)))
     )
 
     remote.totalCountProperty.set(Some(allBooks.length))
@@ -107,10 +106,12 @@ object TableViewPage {
     }
 
   def render()(using AbstractComponent, Cursor): Unit = {
-    val books = createRemoteBooks()
-    val status = Property("Double-click a row to inspect it.")
+    val books        = createRemoteBooks()
+    val status       = Property("Double-click a row to inspect it.")
     val loadedStatus = books.totalCountProperty.flatMap { totalCount =>
-      books.map(loaded => s"${loaded.length} of ${totalCount.getOrElse(loaded.length)} rows loaded")
+      books.loadedLengthProperty.map(loaded =>
+        s"$loaded of ${totalCount.getOrElse(loaded)} rows loaded"
+      )
     }
 
     showcasePage(i18n"TableView", i18n"Reactive rows with a stable SSR and hydration structure.") {
@@ -148,10 +149,9 @@ object TableViewPage {
                 minHeight = "0"
               }
 
-              tableView[Book] {
+              tableView[Book](books) {
                 style { height = "100%" }
                 rowHeight = 44.0
-                items = books
                 crawlable = true
                 crawlId = "table"
 
@@ -189,7 +189,9 @@ object TableViewPage {
                       borderBottom = "1px solid var(--aj-line)"
                       color = "var(--aj-ink-soft)"
                     }
-                    text(i18n"This content header scrolls with the rows while the column header stays fixed.") {}
+                    text(
+                      i18n"This content header scrolls with the rows while the column header stays fixed."
+                    ) {}
                   }
                 }
 
@@ -207,12 +209,27 @@ object TableViewPage {
         }
 
         insightGrid(
-          (i18n"Memory", i18n"The source stays local", i18n"A deterministic catalog generates 1,000 rows without a server or network request."),
-          (i18n"SSR", i18n"Initial structure is deterministic", i18n"Configuration runs before dynamic row and column mount points are created."),
-          (i18n"Remote", i18n"Large sources remain lazy", i18n"RemoteListProperty exposes range loading, placeholders, and sortable query state.")
+          (
+            i18n"Memory",
+            i18n"The source stays local",
+            i18n"A deterministic catalog generates 1,000 rows without a server or network request."
+          ),
+          (
+            i18n"SSR",
+            i18n"Initial structure is deterministic",
+            i18n"Configuration runs before dynamic row and column mount points are created."
+          ),
+          (
+            i18n"Remote",
+            i18n"Large sources remain lazy",
+            i18n"RemoteListProperty exposes range loading, placeholders, and sortable query state."
+          )
         )
 
-        apiSection(i18n"Table DSL", i18n"Columns keep their renderer next to the data they display.") {
+        apiSection(
+          i18n"Table DSL",
+          i18n"Columns keep their renderer next to the data they display."
+        ) {
           codeBlock(
             "scala",
             """|div {
@@ -221,10 +238,9 @@ object TableViewPage {
                |    minHeight = "0"
                |  }
                |
-               |  tableView[Book] {
+               |  tableView[Book](books) {
                |    style { height = "100%" }
                |    rowHeight = 44.0
-               |    items = books
                |
                |    column[Book, String]("Title") {
                |      prefWidth = 300.0
@@ -245,7 +261,10 @@ object TableViewPage {
           )
         }
 
-        apiSection(i18n"In-memory RemoteListProperty", i18n"The loader slices and sorts one generated Vector.") {
+        apiSection(
+          i18n"In-memory RemoteListProperty",
+          i18n"The loader slices and sorts one generated Vector."
+        ) {
           codeBlock(
             "scala",
             """|val books = RemoteListProperty[Book, BookQuery](

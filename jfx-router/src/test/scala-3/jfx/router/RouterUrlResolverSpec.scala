@@ -33,7 +33,12 @@ class RouterUrlResolverSpec extends AnyFlatSpec with Matchers {
 
   it should "preserve the current locale for locale-neutral navigations" in {
     val resolved =
-      RouterUrlResolver.resolve("/about", config, Some(i18n), preferredLocale = Some(I18nLocale("de")))
+      RouterUrlResolver.resolve(
+        "/about",
+        config,
+        Some(i18n),
+        preferredLocale = Some(I18nLocale("de"))
+      )
 
     resolved.path shouldBe "/about"
     resolved.browserPath shouldBe "/scalajs-jfx/de/about"

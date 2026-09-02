@@ -106,18 +106,18 @@ class ImageCropperSpec extends AnyFlatSpec with Matchers {
   }
 
   "ImageCropper window integration" should "mount the crop dialog through Viewport" in {
-    Viewport.windows.clear()
     val media = new Media(
       name = Property("avatar.png"),
       contentType = Property("image/png"),
       data = Property("encoded")
     )
-    val cursor                = new SsrCursor()
-    var cropper: ImageCropper = null
-    val root                  = Runtime.mount(
+    val cursor                    = new SsrCursor()
+    var cropper: ImageCropper     = null
+    var mountedViewport: Viewport = null
+    val root                      = Runtime.mount(
       new CropperRoot {
         override protected def content(using AbstractComponent, Cursor): Unit =
-          viewport {
+          mountedViewport = viewport {
             cropper = imageCropper("avatar", standalone = true) {
               ImageCropper.value = media
             }
@@ -131,10 +131,10 @@ class ImageCropperSpec extends AnyFlatSpec with Matchers {
       val html = cursor.collectHtml()
       html should include("class=\"image-cropper image-cropper-dialog\"")
       html should include("<canvas")
-      Viewport.windows.length shouldBe 1
+      mountedViewport.windows.length shouldBe 1
     } finally {
       Runtime.unmount(root)
-      Viewport.windows.clear()
+      mountedViewport.windows shouldBe empty
     }
   }
 

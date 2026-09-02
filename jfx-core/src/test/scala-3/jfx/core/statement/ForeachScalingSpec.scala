@@ -11,20 +11,18 @@ import org.scalatest.matchers.should.Matchers
 
 import scala.scalajs.js
 
-/**
- * Skalierungsverhalten von [[Foreach]].
- *
- * Grundlage für CHANGE.md P4-2. Schritt 1 der Aufgabe verlangt ausdrücklich, erst
- * zu messen -- und das war gut so: die Vermutung dort (`domOffset`,
- * `domNodeCount`, `physicalHosts`) traf nicht zu. Die beiden erstgenannten rief
- * niemand auf, und der Aufbau hängt gar nicht an ihnen. Gemessen lag die
- * quadratische Zeit an der linearen Suche nach der Einfügemarke in
- * `SsrHostElement.insertBefore`.
- *
- * Die Messung prüft nicht eine absolute Zeit, sondern die Form der Kurve: das
- * Vierfache an Elementen darf nicht das Sechzehnfache an Zeit kosten. Absolute
- * Schwellen wären auf fremder Hardware wertlos.
- */
+/** Skalierungsverhalten von [[Foreach]].
+  *
+  * Grundlage für CHANGE.md P4-2. Schritt 1 der Aufgabe verlangt ausdrücklich, erst zu messen -- und
+  * das war gut so: die Vermutung dort (`domOffset`, `domNodeCount`, `physicalHosts`) traf nicht zu.
+  * Die beiden erstgenannten rief niemand auf, und der Aufbau hängt gar nicht an ihnen. Gemessen lag
+  * die quadratische Zeit an der linearen Suche nach der Einfügemarke in
+  * `SsrHostElement.insertBefore`.
+  *
+  * Die Messung prüft nicht eine absolute Zeit, sondern die Form der Kurve: das Vierfache an
+  * Elementen darf nicht das Sechzehnfache an Zeit kosten. Absolute Schwellen wären auf fremder
+  * Hardware wertlos.
+  */
 class ForeachScalingSpec extends AnyFlatSpec with Matchers {
 
   "Foreach" should "build a large list in roughly linear time" in {

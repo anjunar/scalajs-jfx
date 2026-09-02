@@ -31,7 +31,9 @@ class RuntimeLifecycleSpec extends AnyFlatSpec with Matchers {
     val cursor = new SsrCursor()
 
     Runtime.mount(new ListRoot(items), cursor)
-    cursor.collectHtml() should include("<ul><!--jfx:Foreach:start--><!--jfx:ForeachItem:start--><li>a</li><!--jfx:ForeachItem:end--><!--jfx:ForeachItem:start--><li>c</li><!--jfx:ForeachItem:end--><!--jfx:Foreach:end--></ul>")
+    cursor.collectHtml() should include(
+      "<ul><!--jfx:Foreach:start--><!--jfx:ForeachItem:start--><li>a</li><!--jfx:ForeachItem:end--><!--jfx:ForeachItem:start--><li>c</li><!--jfx:ForeachItem:end--><!--jfx:Foreach:end--></ul>"
+    )
 
     items.insert(1, "b")
     htmlText(cursor.collectHtml()) shouldBe "abc"
@@ -44,10 +46,10 @@ class RuntimeLifecycleSpec extends AnyFlatSpec with Matchers {
   }
 
   "Runtime.mount" should "roll back the host and component relation when composition fails" in {
-    val cursor = new SsrCursor()
-    val root   = Runtime.mount(new EmptyRoot(), cursor)
+    val cursor      = new SsrCursor()
+    val root        = Runtime.mount(new EmptyRoot(), cursor)
     val childCursor = cursor.sub(root.host)
-    var disposed = false
+    var disposed    = false
 
     val error = intercept[IllegalStateException] {
       Runtime.mount(new BrokenComponent(() => disposed = true), childCursor, Some(root))
@@ -133,8 +135,7 @@ class RuntimeLifecycleSpec extends AnyFlatSpec with Matchers {
       }
   }
 
-  private final class Label(override val tagName: String, value: String)
-      extends AbstractComponent {
+  private final class Label(override val tagName: String, value: String) extends AbstractComponent {
     override def compose(cursor: Cursor): Unit =
       Runtime.mount(new TextComponent(value), cursor, Some(this))
   }
@@ -184,11 +185,11 @@ class RuntimeLifecycleSpec extends AnyFlatSpec with Matchers {
   private final class CountingCursor(delegate: Cursor) extends Cursor {
     var subCalls = 0
 
-    override def supportsAnchors: Boolean = delegate.supportsAnchors
-    override def isHydrating: Boolean     = true
+    override def supportsAnchors: Boolean        = delegate.supportsAnchors
+    override def isHydrating: Boolean            = true
     override def parentHost: Option[HostElement] = delegate.parentHost
 
-    override def claimElement(tag: String): HostElement = delegate.claimElement(tag)
+    override def claimElement(tag: String): HostElement  = delegate.claimElement(tag)
     override def claimText(initial: String): TextNode    = delegate.claimText(initial)
     override def claimComment(text: String): CommentNode = delegate.claimComment(text)
 

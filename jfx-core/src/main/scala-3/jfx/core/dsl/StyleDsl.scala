@@ -101,7 +101,7 @@ object StyleDsl {
   def background(using s: StyleProxy): String            = ""
   def background_=(v: String)(using s: StyleProxy): Unit = s.host.setStyle("background", v)
 
-  def backgroundColor(using s: StyleProxy): String = ""
+  def backgroundColor(using s: StyleProxy): String            = ""
   def backgroundColor_=(v: String)(using s: StyleProxy): Unit =
     s.host.setStyle("background-color", v)
 

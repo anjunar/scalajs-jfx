@@ -7,16 +7,16 @@ import jfx.core.state.{Property, ReadOnlyProperty}
 class TableColumn[S, T](initialText: String = "") extends AbstractCustomComponent {
   import TableColumn.CellRenderer
 
-  val textProperty: Property[String] = Property(initialText)
-  val prefWidthProperty: Property[Double] = Property(160.0)
+  val textProperty: Property[String]                  = Property(initialText)
+  val prefWidthProperty: Property[Double]             = Property(160.0)
   val cellRenderer: Property[Option[CellRenderer[S]]] = Property(None)
-  val sortableProperty: Property[Boolean] = Property(false)
-  val sortKeyProperty: Property[Option[String]] = Property(None)
+  val sortableProperty: Property[Boolean]             = Property(false)
+  val sortKeyProperty: Property[Option[String]]       = Property(None)
 
-  def text: String = textProperty.get
+  def text: String                = textProperty.get
   def text_=(value: String): Unit = textProperty.set(value)
 
-  def prefWidth: Double = prefWidthProperty.get
+  def prefWidth: Double                = prefWidthProperty.get
   def prefWidth_=(value: Double): Unit = prefWidthProperty.set(value)
 
   def setCellRenderer(renderer: CellRenderer[S]): Unit =

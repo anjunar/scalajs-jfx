@@ -29,9 +29,9 @@ class ImageSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "update reactive source and alternative text without changing its structure" in {
-    val source      = Property("/assets/first.png")
-    val alternative = Property("First image")
-    val cursor      = new SsrCursor()
+    val source          = Property("/assets/first.png")
+    val alternative     = Property("First image")
+    val cursor          = new SsrCursor()
     var rendered: Image = null
 
     val root = Runtime.mount(

@@ -15,7 +15,7 @@ class Foreach[V](
 ) extends AbstractCustomComponent {
   import ListProperty.*
 
-  private val mounted               = mutable.ArrayBuffer.empty[ForeachItem[V]]
+  private val mounted                       = mutable.ArrayBuffer.empty[ForeachItem[V]]
   private var mountPoint: DynamicMountPoint = _
 
   override def compose(cursor: Cursor): Unit = {

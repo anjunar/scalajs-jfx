@@ -2,11 +2,10 @@ package jfx.core.component
 
 import jfx.core.render.{Cursor, HostNode, VirtualHost}
 
-/**
- * Owns the transition from the initial composition cursor to ordinary insertion.
- * During hydration the initial cursor claims SSR nodes. Every later mutation must
- * insert before the virtual end anchor instead of trying to hydrate those nodes again.
- */
+/** Owns the transition from the initial composition cursor to ordinary insertion. During hydration
+  * the initial cursor claims SSR nodes. Every later mutation must insert before the virtual end
+  * anchor instead of trying to hydrate those nodes again.
+  */
 private[jfx] final class DynamicMountPoint(
     owner: AbstractComponent,
     initialCursor: Cursor

@@ -3,11 +3,9 @@ package jfx.core.remote
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-/**
- * Das Verhalten bei Luecken war vorher implizit -- es ergab sich daraus, dass eine
- * Map keine Ordnung hat und jede Operation neu sortierte. Hier ist es
- * festgeschrieben.
- */
+/** Das Verhalten bei Luecken war vorher implizit -- es ergab sich daraus, dass eine Map keine
+  * Ordnung hat und jede Operation neu sortierte. Hier ist es festgeschrieben.
+  */
 class LoadedRangesSpec extends AnyFlatSpec with Matchers {
 
   "LoadedRanges" should "start empty" in {

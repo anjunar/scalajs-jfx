@@ -4,7 +4,10 @@ import jfx.control.carousel.Carousel.Renderer
 import jfx.control.carousel.CarouselSlide.carouselSlide
 import jfx.core.component.AbstractComponent
 import jfx.core.component.AbstractComponent.{addDisposable as addDslDisposable}
-import jfx.core.dsl.AttributeDsl.{removeAttribute as removeDslAttribute, setAttribute as setDslAttribute}
+import jfx.core.dsl.AttributeDsl.{
+  removeAttribute as removeDslAttribute,
+  setAttribute as setDslAttribute
+}
 import jfx.core.dsl.ClassDsl.{addClass, classIf, classes}
 import jfx.core.dsl.DslLayer
 import jfx.core.dsl.EventDsl.{on, onClick}
@@ -34,9 +37,9 @@ final class Carousel[T] private[carousel] (
   val wrapAroundProperty: Property[Boolean]       = Property(true)
   val ssrShowAllStatesProperty: Property[Boolean] = Property(true)
 
-  private val itemStateRevisionProperty = Property(0)
-  private val contentRevisionProperty   = Property(0)
-  private val navigationRevisionProperty = Property(0)
+  private val itemStateRevisionProperty                        = Property(0)
+  private val contentRevisionProperty                          = Property(0)
+  private val navigationRevisionProperty                       = Property(0)
   private val activeSlideProperty: Property[AbstractComponent] =
     Property(new EmptyCarouselContent)
 
@@ -46,10 +49,10 @@ final class Carousel[T] private[carousel] (
   private var browserRendering           = false
   private var compositionReady           = false
 
-  def itemsProperty: Property[ListProperty[T]]  = itemsRefProperty
-  def getItems: ListProperty[T]                  = itemsRefProperty.get
-  def items: ListProperty[T]                     = getItems
-  def items_=(value: ListProperty[T]): Unit      = setItems(value)
+  def itemsProperty: Property[ListProperty[T]] = itemsRefProperty
+  def getItems: ListProperty[T]                = itemsRefProperty.get
+  def items: ListProperty[T]                   = getItems
+  def items_=(value: ListProperty[T]): Unit    = setItems(value)
 
   def setItems(value: ListProperty[T] | Null): Unit = {
     val normalized = Option(value).getOrElse(ListProperty[T]())
@@ -94,7 +97,7 @@ final class Carousel[T] private[carousel] (
       itemStateRevisionProperty.map(_ => getItems.toSeq)
     val multipleItemsProperty =
       itemStateRevisionProperty.map(_ => slideCount > 1)
-    val statusTextProperty = navigationRevisionProperty.map(_ => statusText)
+    val statusTextProperty     = navigationRevisionProperty.map(_ => statusText)
     val trackTransformProperty =
       activeIndexProperty.flatMap { index =>
         ssrShowAllStatesProperty.map { showAll =>
@@ -125,14 +128,14 @@ final class Carousel[T] private[carousel] (
 
           when(ssrShowAllStatesProperty) {
             foreachIndexed(renderedItemsProperty) { (item, index) =>
-                carouselSlide(
-                  this,
-                  item,
-                  index,
-                  slideCount,
-                  slideRenderer,
-                  observeActiveIndex = true
-                ) {}
+              carouselSlide(
+                this,
+                item,
+                index,
+                slideCount,
+                slideRenderer,
+                observeActiveIndex = true
+              ) {}
             }
           }
 
@@ -239,8 +242,7 @@ final class Carousel[T] private[carousel] (
     if (index == normalized) {
       rebuildActiveSlide()
       bumpNavigationRevision()
-    }
-    else activeIndexProperty.set(normalized)
+    } else activeIndexProperty.set(normalized)
   }
 
   private def normalizeActiveIndex(): Unit = {
@@ -276,9 +278,7 @@ final class Carousel[T] private[carousel] (
   }
 
   private def atStartProperty: ReadOnlyProperty[Boolean] =
-    navigationRevisionProperty.map(_ =>
-      !wrapAroundProperty.get && normalizedActiveIndex == 0
-    )
+    navigationRevisionProperty.map(_ => !wrapAroundProperty.get && normalizedActiveIndex == 0)
 
   private def atEndProperty: ReadOnlyProperty[Boolean] =
     navigationRevisionProperty.map(_ =>
@@ -291,7 +291,7 @@ final class Carousel[T] private[carousel] (
     else math.max(0, math.min(slideCount - 1, index))
 
   private def normalizedActiveIndex: Int = normalizeIndex(activeIndexProperty.get)
-  private[carousel] def slideCount: Int   = getItems.length
+  private[carousel] def slideCount: Int  = getItems.length
 
   private def statusText: String =
     if (slideCount <= 0) "0 / 0"
@@ -371,7 +371,9 @@ object Carousel {
     carousel.autoAdvanceMsProperty.set(math.max(0, value))
 
   def autoAdvanceMs_=(value: ReadOnlyProperty[Int])(using carousel: Carousel[?]): Unit =
-    carousel.addDisposable(value.observe(next => carousel.autoAdvanceMsProperty.set(math.max(0, next))))
+    carousel.addDisposable(
+      value.observe(next => carousel.autoAdvanceMsProperty.set(math.max(0, next)))
+    )
 
   def wrapAround(using carousel: Carousel[?]): Boolean = carousel.wrapAroundProperty.get
 
@@ -395,7 +397,7 @@ object Carousel {
   def slideRenderer_=[T](value: Renderer[T])(using carousel: Carousel[T]): Unit =
     carousel.setRenderer(value)
 
-  def next(using carousel: Carousel[?]): Unit = carousel.next()
-  def previous(using carousel: Carousel[?]): Unit = carousel.previous()
+  def next(using carousel: Carousel[?]): Unit             = carousel.next()
+  def previous(using carousel: Carousel[?]): Unit         = carousel.previous()
   def goTo(index: Int)(using carousel: Carousel[?]): Unit = carousel.goTo(index)
 }

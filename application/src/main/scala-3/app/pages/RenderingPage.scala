@@ -12,9 +12,21 @@ object RenderingPage {
       i18n"The app shell is server-rendered, hydrated on the client and still keeps route loading honest."
     ) {
       Showcase.insightGrid(
-        ("SSR", "The initial URL is injected explicitly", "The demo no longer relies on an implicit request header path inside the router call site."),
-        ("Hydration", "Routes may load asynchronously", "This page loads with a real delay. Hydration adopts the server-rendered tree and swaps it once the loader delivers."),
-        ("Shell", "Toolbar and navigation stay stable", "The visual frame does not reflow unexpectedly while the routed content swaps.")
+        (
+          "SSR",
+          "The initial URL is injected explicitly",
+          "The demo no longer relies on an implicit request header path inside the router call site."
+        ),
+        (
+          "Hydration",
+          "Routes may load asynchronously",
+          "This page loads with a real delay. Hydration adopts the server-rendered tree and swaps it once the loader delivers."
+        ),
+        (
+          "Shell",
+          "Toolbar and navigation stay stable",
+          "The visual frame does not reflow unexpectedly while the routed content swaps."
+        )
       )
 
       Showcase.apiSection(

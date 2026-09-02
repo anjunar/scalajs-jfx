@@ -3,7 +3,7 @@ package jfx.control.datagrid
 import jfx.control.virtualized.{CrawlableCollection, GridGeometry, VirtualizedCollection}
 import jfx.control.datagrid.DataGrid
 import jfx.core.component.AbstractComponent
-import jfx.core.remote.{RemoteListProperty, RemoteSort}
+import jfx.core.remote.RemoteSort
 import jfx.core.dsl.ClassDsl.{addClass, classIf, classes}
 import jfx.core.dsl.DslLayer
 import jfx.core.dsl.EventDsl.{on, onClick}
@@ -26,8 +26,9 @@ import scala.scalajs.js
 import scala.scalajs.js.JSConverters.*
 
 final class DataGrid[T] private (
+    source: ListDataSource[T],
     configure: DataGrid[T] ?=> Cursor ?=> Unit
-) extends VirtualizedCollection[T],
+) extends VirtualizedCollection[T](source),
       CrawlableCollection[T] {
 
   private given ExecutionContext = ExecutionContext.global
@@ -45,10 +46,9 @@ final class DataGrid[T] private (
   private val visibleCellsProperty = ListProperty[DataGrid.VisibleCell[T]]()
   private val headerHeightProperty = Property(0.0)
 
-  /**
-   * Feste Zellengroesse in einem Raster mit N Spalten. Das ist alles, was
-   * DataGrid von TableView und VirtualListView unterscheidet.
-   */
+  /** Feste Zellengroesse in einem Raster mit N Spalten. Das ist alles, was DataGrid von TableView
+    * und VirtualListView unterscheidet.
+    */
   override protected val geometry: GridGeometry =
     new GridGeometry(
       columnCount = () => columnCount,
@@ -70,11 +70,9 @@ final class DataGrid[T] private (
   private var headerBody: Option[AbstractComponent ?=> Cursor ?=> Unit]             = None
   private var loadingPlaceholderBody: Option[AbstractComponent ?=> Cursor ?=> Unit] = None
   private var emptyPlaceholderBody: Option[AbstractComponent ?=> Cursor ?=> Unit]   = None
-  private var headerComponent: Div | Null                                          = null
+  private var headerComponent: Div | Null                                           = null
 
-  def items: ListProperty[T]                   = getItems
-  def items_=(value: ListProperty[T]): Unit    = setItems(value)
-
+  def items: ListDataSource[T] = dataSource
 
   def setRenderer(renderer: DataGrid.Renderer[T]): Unit = {
     cellRendererBody = Option(renderer)
@@ -274,7 +272,6 @@ final class DataGrid[T] private (
     }
 
   private def installObservers(): Unit = {
-    addDisposable(itemsRefProperty.observeWithoutInitial(_ => rewireItemsObserver()))
     addDisposable(scrollTopProperty.observeWithoutInitial { _ =>
       recomputeVisible()
       persistVisibleScrollOffset()
@@ -291,8 +288,6 @@ final class DataGrid[T] private (
     addDisposable(headerHeightProperty.observeWithoutInitial(_ => refreshItemState()))
     installItemObservers()
   }
-
-
 
   override protected def recomputeVisible(): Unit = {
     val total = renderableCount
@@ -312,7 +307,6 @@ final class DataGrid[T] private (
     }
   }
 
-
   private def cellFor(index: Int): DataGrid.VisibleCell[T] = {
     val columns = columnCount
     val row     = index / columns
@@ -327,12 +321,6 @@ final class DataGrid[T] private (
     )
   }
 
-
-
-
-
-
-
   private def placeholderTextProperty: ReadOnlyProperty[String] =
     remoteStateRevisionProperty.map { _ =>
       remoteError
@@ -341,23 +329,12 @@ final class DataGrid[T] private (
         .getOrElse(if (remoteError.nonEmpty) "Could not load grid data" else "No content in grid")
     }
 
-
-
-
-
-
-
-
-
-
   private def columnCount: Int = columnsFor(viewportWidthProperty.get)
 
   private def columnsFor(width: Double): Int = {
     val available = math.max(1.0, math.max(1.0, width) - gap)
     math.max(1, math.floor(available / preferredColumnStep).toInt)
   }
-
-
 
   private def contentWidth: Double = {
     val columns = columnCount
@@ -372,12 +349,11 @@ final class DataGrid[T] private (
   private def contentHeight: Double =
     geometry.contentHeight(renderableCount)
 
-  override protected def renderableCount: Int = math.max(0, items.totalLength)
+  override protected def renderableCount: Int = math.max(0, dataSource.totalLength)
 
-  /**
-   * DataGrid rechnet bei jeder Aenderung neu -- die Rasterposition jeder Zelle
-   * kann sich verschieben, sobald sich die Anzahl aendert.
-   */
+  /** DataGrid rechnet bei jeder Aenderung neu -- die Rasterposition jeder Zelle kann sich
+    * verschieben, sobald sich die Anzahl aendert.
+    */
   override protected def handleLocalItemsChange(change: ListProperty.Change[T]): Unit =
     refreshItemState()
 
@@ -397,14 +373,6 @@ final class DataGrid[T] private (
   private def headerHeight: Double        = math.max(0.0, headerHeightProperty.get)
   private def contentTopOffset: Double    =
     outerGap + headerHeight + (if (headerHeight > 0.5) gap else 0.0)
-
-
-
-
-
-
-
-
 
   private def px(value: Double): String = s"${value}px"
 }
@@ -427,20 +395,13 @@ object DataGrid {
   )
 
   def dataGrid[T](
+      source: ListDataSource[T]
+  )(
       body: DataGrid[T] ?=> Cursor ?=> Unit
   )(using AbstractComponent, Cursor): DataGrid[T] =
-    DslLayer.child(new DataGrid[T](body)) {}
+    DslLayer.child(new DataGrid[T](source, body)) {}
 
-  def items[T](using grid: DataGrid[T]): ListProperty[T] = grid.items
-
-  def items_=[T](value: ListProperty[T])(using grid: DataGrid[T]): Unit =
-    grid.setItems(value)
-
-  def items_=[T](value: IterableOnce[T])(using grid: DataGrid[T]): Unit =
-    value match {
-      case property: ListProperty[?] => grid.setItems(property.asInstanceOf[ListProperty[T]])
-      case _                         => grid.items.setAll(value)
-    }
+  def items[T](using grid: DataGrid[T]): ListDataSource[T] = grid.items
 
   def itemWidthPx(using grid: DataGrid[?]): Double                = grid.itemWidthProperty.get
   def itemWidthPx_=(value: Double)(using grid: DataGrid[?]): Unit =

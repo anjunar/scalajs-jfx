@@ -48,7 +48,7 @@ private[i18n] object I18nUrlResolver {
     if (path == null || path.isEmpty || path == "/") {
       "/"
     } else {
-      val trimmed = path.takeWhile(ch => ch != '?' && ch != '#')
+      val trimmed  = path.takeWhile(ch => ch != '?' && ch != '#')
       val prefixed =
         if (trimmed.startsWith("/")) trimmed
         else s"/$trimmed"

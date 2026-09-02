@@ -24,7 +24,9 @@ object Showcase {
   def showcasePage(
       title: RuntimeMessage,
       subtitle: RuntimeMessage
-  )(content: AbstractComponent ?=> Cursor ?=> Unit)(using parent: AbstractComponent, cursor: Cursor): Unit = {
+  )(
+      content: AbstractComponent ?=> Cursor ?=> Unit
+  )(using parent: AbstractComponent, cursor: Cursor): Unit = {
     var contentHost: Div = null
 
     vbox {
@@ -101,7 +103,9 @@ object Showcase {
   }
 
   @targetName("metricStripMessages")
-  def metricStrip(items: (RuntimeMessage, RuntimeMessage)*)(using AbstractComponent, Cursor): Unit = {
+  def metricStrip(
+      items: (RuntimeMessage, RuntimeMessage)*
+  )(using AbstractComponent, Cursor): Unit = {
     div {
       classes = Seq("showcase-metric-strip")
 
@@ -149,7 +153,10 @@ object Showcase {
     }
   }
 
-  def noteBlock(title: RuntimeMessage, body: RuntimeMessage)(using AbstractComponent, Cursor): Unit = {
+  def noteBlock(title: RuntimeMessage, body: RuntimeMessage)(using
+      AbstractComponent,
+      Cursor
+  ): Unit = {
     vbox {
       classes = Seq("showcase-note")
       div { classes = Seq("showcase-note__title"); text(title) {} }
@@ -177,12 +184,16 @@ object Showcase {
       title: String,
       summary: String = ""
   )(content: AbstractComponent ?=> Cursor ?=> Unit)(using AbstractComponent, Cursor): Unit =
-    renderComponentShowcase(Property(title), Option.when(summary.nonEmpty)(Property(summary)))(content)
+    renderComponentShowcase(Property(title), Option.when(summary.nonEmpty)(Property(summary)))(
+      content
+    )
 
   def componentShowcase(
       title: RuntimeMessage,
       summary: RuntimeMessage
-  )(content: AbstractComponent ?=> Cursor ?=> Unit)(using parent: AbstractComponent, cursor: Cursor): Unit = {
+  )(
+      content: AbstractComponent ?=> Cursor ?=> Unit
+  )(using parent: AbstractComponent, cursor: Cursor): Unit = {
     var contentHost: Div = null
 
     vbox {
@@ -213,7 +224,9 @@ object Showcase {
   def apiSection(
       title: RuntimeMessage,
       summary: RuntimeMessage
-  )(content: AbstractComponent ?=> Cursor ?=> Unit)(using parent: AbstractComponent, cursor: Cursor): Unit = {
+  )(
+      content: AbstractComponent ?=> Cursor ?=> Unit
+  )(using parent: AbstractComponent, cursor: Cursor): Unit = {
     var contentHost: Div = null
 
     vbox {
@@ -253,7 +266,9 @@ object Showcase {
   private def renderShowcasePage(
       title: ReadOnlyProperty[String],
       subtitle: ReadOnlyProperty[String]
-  )(content: AbstractComponent ?=> Cursor ?=> Unit)(using parent: AbstractComponent, cursor: Cursor): Unit = {
+  )(
+      content: AbstractComponent ?=> Cursor ?=> Unit
+  )(using parent: AbstractComponent, cursor: Cursor): Unit = {
     var contentHost: Div = null
 
     vbox {
@@ -279,7 +294,9 @@ object Showcase {
   private def renderComponentShowcase(
       title: ReadOnlyProperty[String],
       summary: Option[ReadOnlyProperty[String]]
-  )(content: AbstractComponent ?=> Cursor ?=> Unit)(using parent: AbstractComponent, cursor: Cursor): Unit = {
+  )(
+      content: AbstractComponent ?=> Cursor ?=> Unit
+  )(using parent: AbstractComponent, cursor: Cursor): Unit = {
     var contentHost: Div = null
 
     vbox {
@@ -306,7 +323,9 @@ object Showcase {
   private def renderApiSection(
       title: ReadOnlyProperty[String],
       summary: Option[ReadOnlyProperty[String]]
-  )(content: AbstractComponent ?=> Cursor ?=> Unit)(using parent: AbstractComponent, cursor: Cursor): Unit = {
+  )(
+      content: AbstractComponent ?=> Cursor ?=> Unit
+  )(using parent: AbstractComponent, cursor: Cursor): Unit = {
     var contentHost: Div = null
 
     vbox {

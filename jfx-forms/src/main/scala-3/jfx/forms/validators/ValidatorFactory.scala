@@ -10,7 +10,7 @@ object ValidatorFactory {
     annotations.iterator.flatMap(createValidator).toVector
 
   def createValidator(annotation: Annotation): Option[Validator[Any]] = {
-    val parameters = annotation.parameters
+    val parameters                      = annotation.parameters
     val validator: Option[Validator[?]] = annotation.annotationClassName match {
       case "jfx.forms.validators.NotNull" =>
         Some(NotNullValidator[Any](string(parameters, "message", "Must not be null")))
@@ -25,56 +25,78 @@ object ValidatorFactory {
       case "jfx.forms.validators.NotBlank" =>
         Some(NotBlankValidator(string(parameters, "message", "Must not be blank")))
       case "jfx.forms.validators.Size" =>
-        Some(SizeValidator[Any](
-          int(parameters, "min", 0),
-          int(parameters, "max", Int.MaxValue),
-          optionalMessage(parameters)
-        ))
+        Some(
+          SizeValidator[Any](
+            int(parameters, "min", 0),
+            int(parameters, "max", Int.MaxValue),
+            optionalMessage(parameters)
+          )
+        )
       case "jfx.forms.validators.Min" =>
         Some(MinValidator[Any](long(parameters, "value", 0L), optionalMessage(parameters)))
       case "jfx.forms.validators.Max" =>
         Some(MaxValidator[Any](long(parameters, "value", 0L), optionalMessage(parameters)))
       case "jfx.forms.validators.DecimalMin" =>
-        Some(DecimalMinValidator[Any](
-          BigDecimal(string(parameters, "value", "0")),
-          boolean(parameters, "inclusive", true),
-          optionalMessage(parameters)
-        ))
+        Some(
+          DecimalMinValidator[Any](
+            BigDecimal(string(parameters, "value", "0")),
+            boolean(parameters, "inclusive", true),
+            optionalMessage(parameters)
+          )
+        )
       case "jfx.forms.validators.DecimalMax" =>
-        Some(DecimalMaxValidator[Any](
-          BigDecimal(string(parameters, "value", "0")),
-          boolean(parameters, "inclusive", true),
-          optionalMessage(parameters)
-        ))
+        Some(
+          DecimalMaxValidator[Any](
+            BigDecimal(string(parameters, "value", "0")),
+            boolean(parameters, "inclusive", true),
+            optionalMessage(parameters)
+          )
+        )
       case "jfx.forms.validators.Positive" =>
         Some(PositiveValidator[Any](string(parameters, "message", "Must be positive")))
       case "jfx.forms.validators.PositiveOrZero" =>
-        Some(PositiveOrZeroValidator[Any](string(parameters, "message", "Must be positive or zero")))
+        Some(
+          PositiveOrZeroValidator[Any](string(parameters, "message", "Must be positive or zero"))
+        )
       case "jfx.forms.validators.Negative" =>
         Some(NegativeValidator[Any](string(parameters, "message", "Must be negative")))
       case "jfx.forms.validators.NegativeOrZero" =>
-        Some(NegativeOrZeroValidator[Any](string(parameters, "message", "Must be negative or zero")))
+        Some(
+          NegativeOrZeroValidator[Any](string(parameters, "message", "Must be negative or zero"))
+        )
       case "jfx.forms.validators.Digits" =>
-        Some(DigitsValidator[Any](
-          int(parameters, "integer", 0),
-          int(parameters, "fraction", 0),
-          optionalMessage(parameters)
-        ))
+        Some(
+          DigitsValidator[Any](
+            int(parameters, "integer", 0),
+            int(parameters, "fraction", 0),
+            optionalMessage(parameters)
+          )
+        )
       case "jfx.forms.validators.Pattern" =>
-        Some(PatternValidator(
-          new Regex(string(parameters, "regex", "")),
-          string(parameters, "message", "Has an invalid format")
-        ))
+        Some(
+          PatternValidator(
+            new Regex(string(parameters, "regex", "")),
+            string(parameters, "message", "Has an invalid format")
+          )
+        )
       case "jfx.forms.validators.EmailConstraint" =>
         Some(EmailValidator(string(parameters, "message", "Must be a valid email address")))
       case "jfx.forms.validators.Past" =>
         Some(PastValidator[Any](string(parameters, "message", "Must be in the past")))
       case "jfx.forms.validators.PastOrPresent" =>
-        Some(PastOrPresentValidator[Any](string(parameters, "message", "Must be in the past or present")))
+        Some(
+          PastOrPresentValidator[Any](
+            string(parameters, "message", "Must be in the past or present")
+          )
+        )
       case "jfx.forms.validators.Future" =>
         Some(FutureValidator[Any](string(parameters, "message", "Must be in the future")))
       case "jfx.forms.validators.FutureOrPresent" =>
-        Some(FutureOrPresentValidator[Any](string(parameters, "message", "Must be in the future or present")))
+        Some(
+          FutureOrPresentValidator[Any](
+            string(parameters, "message", "Must be in the future or present")
+          )
+        )
       case _ => None
     }
 

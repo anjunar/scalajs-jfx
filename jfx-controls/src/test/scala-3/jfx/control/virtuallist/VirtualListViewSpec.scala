@@ -11,7 +11,7 @@ import jfx.core.layout.Div.div
 import jfx.core.layout.TextComponent.text
 import jfx.core.render.{Cursor, SsrCursor}
 import jfx.core.request.{RequestContext, RequestHeaders}
-import jfx.core.state.ListProperty
+import jfx.core.state.{ListDataSource, ListProperty}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -73,8 +73,9 @@ class VirtualListViewSpec extends AnyFlatSpec with Matchers {
           )
         ) {
           override protected def content(using AbstractComponent, Cursor): Unit =
-            virtualList[String] {
-              items = (0 until 20).map(index => s"Member $index")
+            virtualList[String](
+              ListProperty(js.Array((0 until 20).map(index => s"Member $index")*))
+            ) {
               estimateHeightPx = 40
               overscanPx = 0
               crawlable = true
@@ -104,8 +105,7 @@ class VirtualListViewSpec extends AnyFlatSpec with Matchers {
     val root = Runtime.mount(
       new VirtualListTestRoot {
         override protected def content(using AbstractComponent, Cursor): Unit =
-          control = virtualList[String] {
-            VirtualListView.items = items
+          control = virtualList[String](items) {
             estimateHeightPx = 40
             overscanPx = 0
             controlViewportHeight(100)
@@ -130,15 +130,14 @@ class VirtualListViewSpec extends AnyFlatSpec with Matchers {
   }
 
   "VirtualListView list lifecycle" should "track mutations and detach renderers on unmount" in {
-    val items  = ListProperty[String](js.Array("Alice", "Cara"))
-    val cursor = new SsrCursor()
+    val items                            = ListProperty[String](js.Array("Alice", "Cara"))
+    val cursor                           = new SsrCursor()
     var control: VirtualListView[String] = null
 
     val root = Runtime.mount(
       new VirtualListTestRoot {
         override protected def content(using AbstractComponent, Cursor): Unit =
-          control = virtualList[String] {
-            VirtualListView.items = items
+          control = virtualList[String](items) {
             estimateHeightPx = 40
             overscanPx = 0
             cellRenderer = rowRenderer
@@ -176,15 +175,14 @@ class VirtualListViewSpec extends AnyFlatSpec with Matchers {
     error.getMessage should include("VirtualListView requires a stable crawlId")
   }
 
-  private def renderList(itemsToRender: ListProperty[String])(
+  private def renderList(itemsToRender: ListDataSource[String])(
       extra: VirtualListView[String] ?=> Cursor ?=> Unit = {}
   ): String =
     Runtime.renderToString { cursor =>
       Runtime.mount(
         new VirtualListTestRoot {
           override protected def content(using AbstractComponent, Cursor): Unit =
-            virtualList[String] {
-              VirtualListView.items = itemsToRender
+            virtualList[String](itemsToRender) {
               estimateHeightPx = 40
               overscanPx = 0
               prefetchItems = 4

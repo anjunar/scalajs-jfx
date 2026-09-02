@@ -179,16 +179,16 @@ final class EditorSpec extends AnyFlatSpec with Matchers {
   }
 
   "Editor dialog bridge" should "mount Lexical dialog content through the JFX3 Viewport" in {
-    Viewport.windows.clear()
-    val cursor = new SsrCursor()
-    val root   = Runtime.mount(
+    val cursor                    = new SsrCursor()
+    var mountedViewport: Viewport = null
+    val root                      = Runtime.mount(
       new EditorRoot {
         override protected def content(using AbstractComponent, Cursor): Unit =
-          viewport {}
+          mountedViewport = viewport {}
       },
       cursor
     )
-    val service = new DefaultDialogService()
+    val service = new DefaultDialogService(mountedViewport)
 
     try {
       service.show(
@@ -197,8 +197,8 @@ final class EditorSpec extends AnyFlatSpec with Matchers {
         _ => ()
       )
 
-      Viewport.windows.length shouldBe 1
-      Viewport.windows.head.title.get shouldBe "Edit image"
+      mountedViewport.windows.length shouldBe 1
+      mountedViewport.windows.head.title.get shouldBe "Edit image"
       val html = cursor.collectHtml()
       html should include("class=\"jfx-window\"")
       html should include("class=\"jfx-editor-dialog\"")
@@ -206,10 +206,10 @@ final class EditorSpec extends AnyFlatSpec with Matchers {
       html should include("Confirm")
 
       service.close()
-      Viewport.windows.head.visible.get shouldBe false
+      mountedViewport.windows.head.visible.get shouldBe false
     } finally {
       Runtime.unmount(root)
-      Viewport.windows.clear()
+      mountedViewport.windows shouldBe empty
     }
   }
 

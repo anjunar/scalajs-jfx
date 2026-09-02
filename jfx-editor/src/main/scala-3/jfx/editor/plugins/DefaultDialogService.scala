@@ -15,7 +15,7 @@ import jfx.viewport.Viewport
 import lexical.DialogService
 import org.scalajs.dom.HTMLElement
 
-final class DefaultDialogService extends DialogService, AutoCloseable {
+final class DefaultDialogService(owner: AbstractComponent) extends DialogService, AutoCloseable {
   private var activeWindow: Viewport.WindowConf | Null = null
 
   override def show(
@@ -46,7 +46,7 @@ final class DefaultDialogService extends DialogService, AutoCloseable {
     )
     conf.title = title
     activeWindow = conf
-    Viewport.addWindow(conf)
+    Viewport.addWindow(conf)(using owner)
   }
 
   override def close(): Unit =
@@ -54,7 +54,7 @@ final class DefaultDialogService extends DialogService, AutoCloseable {
 
   private def closeWindow(conf: Viewport.WindowConf): Unit = {
     if (activeWindow eq conf) activeWindow = null
-    if (Viewport.windows.exists(_ eq conf)) Viewport.closeWindow(conf)
+    Viewport.closeWindow(conf)
   }
 
   private def windowClosed(conf: Viewport.WindowConf): Unit =

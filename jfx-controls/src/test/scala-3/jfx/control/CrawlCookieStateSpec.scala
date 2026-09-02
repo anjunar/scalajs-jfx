@@ -108,7 +108,7 @@ class CrawlCookieStateSpec extends AnyFlatSpec with Matchers {
 
     override def compose(cursor: Cursor): Unit =
       DslLayer.render(this, cursor) {
-        tableView[String] {
+        tableView[String](ListProperty[String]()) {
           TableView.crawlable = true
         }
       }
@@ -120,19 +120,17 @@ class CrawlCookieStateSpec extends AnyFlatSpec with Matchers {
     override def compose(cursor: Cursor): Unit = {
       RequestContext.provide(request)(using this)
       DslLayer.render(this, cursor) {
-        tableView[String] {
+        tableView[String](ListProperty(js.Array((0 until 20).map(index => s"Member $index")*))) {
           TableView.crawlable = true
           TableView.crawlId = "members-table"
-          TableView.items = (0 until 20).map(index => s"Member $index")
           TableColumn.column[String, String]("Name") {
             TableColumn.cell(item => text(s"table:${item.drop(7)}:$item") {})
           }
         }
 
-        dataGrid[String] {
+        dataGrid[String](ListProperty(js.Array((0 until 20).map(index => s"Member $index")*))) {
           DataGrid.crawlable = true
           DataGrid.crawlId = "members-grid"
-          DataGrid.items = (0 until 20).map(index => s"Member $index")
           DataGrid.cellRenderer = { (item: String | Null, index: Int) =>
             div {
               text(s"grid:$index:${Option(item).getOrElse("loading")}") {}
@@ -148,7 +146,7 @@ class CrawlCookieStateSpec extends AnyFlatSpec with Matchers {
 
     override def compose(cursor: Cursor): Unit =
       DslLayer.render(this, cursor) {
-        dataGrid[String] {
+        dataGrid[String](ListProperty[String]()) {
           DataGrid.crawlable = true
         }
       }

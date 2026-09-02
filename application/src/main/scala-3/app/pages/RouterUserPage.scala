@@ -13,8 +13,8 @@ object RouterUserPage {
       i18n"This page exists to prove that path params no longer arrive through Route.requireContext."
     ) {
       Showcase.metricStrip(
-        "id" -> context.pathParams.getOrElse("id", "?"),
-        "path" -> context.path,
+        "id"     -> context.pathParams.getOrElse("id", "?"),
+        "path"   -> context.path,
         "locale" -> context.locale.map(_.code).getOrElse("none")
       )
 

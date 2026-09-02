@@ -11,14 +11,12 @@ import scala.scalajs.js.timers.setTimeout
 
 object AppRoutes {
 
-  /**
-   * Ein Loader, der erst nach `millis` liefert.
-   *
-   * Steht hier, damit mindestens eine Demo-Route den asynchronen Pfad wirklich
-   * durchlaeuft. Alle anderen Routen haben ihre Daten sofort zur Hand und
-   * liefern ein bereits erfuelltes Future -- an denen wuerde nie auffallen, wenn
-   * die Hydration einen laufenden Loader nicht aushielte.
-   */
+  /** Ein Loader, der erst nach `millis` liefert.
+    *
+    * Steht hier, damit mindestens eine Demo-Route den asynchronen Pfad wirklich durchlaeuft. Alle
+    * anderen Routen haben ihre Daten sofort zur Hand und liefern ein bereits erfuelltes Future --
+    * an denen wuerde nie auffallen, wenn die Hydration einen laufenden Loader nicht aushielte.
+    */
   private def delayed(millis: Int)(component: => AbstractComponent): Future[AbstractComponent] = {
     val promise = Promise[AbstractComponent]()
     setTimeout(millis.toDouble)(promise.success(component))

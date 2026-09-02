@@ -302,14 +302,13 @@ class Router(
       }
     }
 
-  /**
-   * Der Rahmen um die gerenderte Route.
-   *
-   * Ohne Kind ist es der Platzhalter fuer die Hydration: er uebernimmt den
-   * server-gerenderten Bereich ungeprueft, statt ihn nachzubauen. Der Klassenname
-   * bestimmt das Anker-Label, deshalb muessen beide Faelle dieselbe Klasse sein
-   * -- sonst passt der Anker nicht auf das, was der Server geschrieben hat.
-   */
+  /** Der Rahmen um die gerenderte Route.
+    *
+    * Ohne Kind ist es der Platzhalter fuer die Hydration: er uebernimmt den server-gerenderten
+    * Bereich ungeprueft, statt ihn nachzubauen. Der Klassenname bestimmt das Anker-Label, deshalb
+    * muessen beide Faelle dieselbe Klasse sein -- sonst passt der Anker nicht auf das, was der
+    * Server geschrieben hat.
+    */
   private final class RoutedComponent(
       child: AbstractComponent | Null
   ) extends AbstractCustomComponent {

@@ -16,7 +16,7 @@ class RouterLinkSpec extends AnyFlatSpec with Matchers {
   "RouterLink" should "resolve application paths, track the active route and navigate on click" in {
     val currentPath = Property("/users/42")
     val navigations = mutable.ArrayBuffer.empty[String]
-    val handler = RouterLinkHandler(
+    val handler     = RouterLinkHandler(
       navigate = navigations += _,
       currentPath = currentPath,
       hrefForAppPath = path => s"/app/de$path"
@@ -116,14 +116,15 @@ private final class LinkTestHostElement(val tagName: String) extends HostElement
   private val listeners  = mutable.Map.empty[String, UiEvent => Unit]
 
   override def setAttribute(name: String, value: String): Unit = attributes.update(name, value)
-  override def removeAttribute(name: String): Unit              = attributes.remove(name)
-  override def attribute(name: String): Option[String]          = attributes.get(name)
-  override def setProperty(name: String, value: Any): Unit      = properties.update(name, value)
-  override def property[T](name: String): Option[T]             = properties.get(name).map(_.asInstanceOf[T])
-  override def setStyle(name: String, value: String): Unit      = styles.update(name, value)
-  override def removeStyle(name: String): Unit                  = styles.remove(name)
-  override def setClassNames(names: Seq[String]): Unit          = attributes.update("class", names.mkString(" "))
-  override def insertChild(index: Int, child: HostNode): Unit   = children.insert(index, child)
+  override def removeAttribute(name: String): Unit             = attributes.remove(name)
+  override def attribute(name: String): Option[String]         = attributes.get(name)
+  override def setProperty(name: String, value: Any): Unit     = properties.update(name, value)
+  override def property[T](name: String): Option[T] = properties.get(name).map(_.asInstanceOf[T])
+  override def setStyle(name: String, value: String): Unit = styles.update(name, value)
+  override def removeStyle(name: String): Unit             = styles.remove(name)
+  override def setClassNames(names: Seq[String]): Unit     =
+    attributes.update("class", names.mkString(" "))
+  override def insertChild(index: Int, child: HostNode): Unit = children.insert(index, child)
   override def insertBefore(child: HostNode, before: Option[HostNode]): Unit =
     before.map(children.indexOf).filter(_ >= 0) match {
       case Some(index) => children.insert(index, child)
@@ -147,8 +148,8 @@ private final class LinkTestHostElement(val tagName: String) extends HostElement
   def fireClick(): Boolean = {
     var prevented = false
     listeners("click")(new UiEvent {
-      override def raw: Any              = null
-      override def preventDefault(): Unit = prevented = true
+      override def raw: Any                = null
+      override def preventDefault(): Unit  = prevented = true
       override def stopPropagation(): Unit = ()
     })
     prevented

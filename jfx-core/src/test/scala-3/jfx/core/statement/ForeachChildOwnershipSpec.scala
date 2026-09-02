@@ -11,17 +11,16 @@ import org.scalatest.matchers.should.Matchers
 
 import scala.scalajs.js
 
-/**
- * Wer besitzt die Kinderliste eines Containers?
- *
- * Vor P4-3 gab es zwei Antworten. `Runtime.mountWithCursor` trug das Kind ein,
- * und `Foreach.mountAt` baute die Liste danach mit `syncChildOrder()` aus seiner
- * eigenen Buchfuehrung neu auf. Solange nur Foreach selbst mountete, fiel das
- * nicht auf -- alles andere verschwand beim naechsten Abgleich stillschweigend.
- *
- * Jetzt schreibt nur noch Runtime: beim Mounten an der uebergebenen Position,
- * beim Unmounten wieder heraus.
- */
+/** Wer besitzt die Kinderliste eines Containers?
+  *
+  * Vor P4-3 gab es zwei Antworten. `Runtime.mountWithCursor` trug das Kind ein, und
+  * `Foreach.mountAt` baute die Liste danach mit `syncChildOrder()` aus seiner eigenen Buchfuehrung
+  * neu auf. Solange nur Foreach selbst mountete, fiel das nicht auf -- alles andere verschwand beim
+  * naechsten Abgleich stillschweigend.
+  *
+  * Jetzt schreibt nur noch Runtime: beim Mounten an der uebergebenen Position, beim Unmounten
+  * wieder heraus.
+  */
 class ForeachChildOwnershipSpec extends AnyFlatSpec with Matchers {
 
   "Foreach" should "keep children in list order" in {

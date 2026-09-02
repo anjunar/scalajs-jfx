@@ -2,7 +2,7 @@ package jfx.control.virtuallist
 
 import jfx.control.virtualized.{CrawlableCollection, MeasuredRowGeometry, VirtualizedCollection}
 import jfx.core.component.AbstractComponent
-import jfx.core.remote.{RemoteListProperty, RemoteSort}
+import jfx.core.remote.RemoteSort
 import jfx.core.dsl.ClassDsl.{addClass, classIf, classes}
 import jfx.core.dsl.DslLayer
 import jfx.core.dsl.EventDsl.{on, onClick}
@@ -24,8 +24,9 @@ import scala.scalajs.js
 import scala.scalajs.js.JSConverters.*
 
 final class VirtualListView[T] private (
+    source: ListDataSource[T],
     configure: VirtualListView[T] ?=> Cursor ?=> Unit
-) extends VirtualizedCollection[T],
+) extends VirtualizedCollection[T](source),
       CrawlableCollection[T] {
 
   private given ExecutionContext = ExecutionContext.global
@@ -38,11 +39,10 @@ final class VirtualListView[T] private (
   private val visibleSlotsProperty = ListProperty[VirtualListView.VisibleSlot[T]]()
   private val headerHeightProperty = Property(0.0)
 
-  /**
-   * Gemessene Hoehen, eine Spalte. Alles, was VirtualListView von TableView und
-   * DataGrid unterscheidet, steckt hier -- der Rest kommt aus
-   * VirtualizedCollection und CrawlableCollection.
-   */
+  /** Gemessene Hoehen, eine Spalte. Alles, was VirtualListView von TableView und DataGrid
+    * unterscheidet, steckt hier -- der Rest kommt aus VirtualizedCollection und
+    * CrawlableCollection.
+    */
   override protected val geometry: MeasuredRowGeometry =
     new MeasuredRowGeometry(
       estimateHeight = () => estimateHeight,
@@ -60,12 +60,7 @@ final class VirtualListView[T] private (
   private var headerComponent: Div | Null                               = null
   private var compositionReady                                          = false
 
-  def $itemsProperty: Property[ListProperty[T]] = itemsRefProperty
-  def $getItems: ListProperty[T]                 = getItems
-  def $items: ListProperty[T]                    = getItems
-  def items: ListProperty[T]                     = getItems
-  def items_=(value: ListProperty[T]): Unit      = setItems(value)
-
+  def items: ListDataSource[T] = dataSource
 
   def setRenderer(renderer: VirtualListView.Renderer[T]): Unit = {
     cellRendererBody = Option(renderer)
@@ -186,7 +181,8 @@ final class VirtualListView[T] private (
                 display = "block"
                 padding = "20px"
                 textAlign = "center"
-                marginTop = if (browserRendering) "0px" else s"${geometry.offsetFor(offset + limit)}px"
+                marginTop =
+                  if (browserRendering) "0px" else s"${geometry.offsetFor(offset + limit)}px"
               }
             }
           }
@@ -206,7 +202,6 @@ final class VirtualListView[T] private (
     }
 
   private def installObservers(): Unit = {
-    addDisposable(itemsRefProperty.observeWithoutInitial(_ => rewireItemsObserver()))
     addDisposable(scrollTopProperty.observeWithoutInitial { _ =>
       recomputeVisible()
       persistVisibleScrollOffset()
@@ -223,9 +218,6 @@ final class VirtualListView[T] private (
     addDisposable(headerHeightProperty.observeWithoutInitial(_ => refreshItemState()))
     installItemObservers()
   }
-
-
-
 
   override protected def recomputeVisible(): Unit = {
     geometry.rebuildPrefixIfDirty()
@@ -253,7 +245,6 @@ final class VirtualListView[T] private (
     tailPaddingItems = defaultTailPadding
     lastVisibleSlots = Vector.empty
   }
-
 
   private def slotFor(index: Int): VirtualListView.VisibleSlot[T] =
     VirtualListView.VisibleSlot(
@@ -289,64 +280,33 @@ final class VirtualListView[T] private (
       }
     }
 
-
-
-
   private def knownItemCount: Option[Int] =
     currentRemoteItems match {
-      case null   => Some(getItems.length)
+      case null   => Some(dataSource.totalLength)
       case remote => remote.totalCountProperty.get
     }
 
-  /**
-   * Weiter gefasst als der Standard der Basis: solange noch geladen wird oder die
-   * Gesamtzahl unbekannt ist, reserviert die Liste Platz am Ende, damit das
-   * Scrollen nicht am vorlaeufigen Ende haengenbleibt.
-   */
+  /** Weiter gefasst als der Standard der Basis: solange noch geladen wird oder die Gesamtzahl
+    * unbekannt ist, reserviert die Liste Platz am Ende, damit das Scrollen nicht am vorlaeufigen
+    * Ende haengenbleibt.
+    */
   override protected def canStillGrow: Boolean =
     Option(currentRemoteItems).exists { remote =>
-      remote.loadingProperty.get || remote.hasMoreProperty.get ||
-      remote.nextQueryProperty.get.nonEmpty || remote.totalCountProperty.get.isEmpty
+      remote.loadingProperty.get || remote.canLoadMore || remote.totalCountProperty.get.isEmpty
     }
 
   override protected def renderableCount: Int =
     knownItemCount.getOrElse {
-      if (canStillGrow) getItems.length + tailPaddingItems else getItems.length
+      val loaded = Option(currentRemoteItems).fold(dataSource.totalLength)(_.loadedLength)
+      if (canStillGrow) loaded + tailPaddingItems else loaded
     }
-
-
-
-
-
-
-
-
-
 
   private def contentHeight: Double =
     geometry.contentHeight(renderableCount)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  private def estimateHeight: Double = math.max(1.0, estimateHeightProperty.get)
-  private def headerHeight: Double   = math.max(0.0, headerHeightProperty.get)
+  private def estimateHeight: Double  = math.max(1.0, estimateHeightProperty.get)
+  private def headerHeight: Double    = math.max(0.0, headerHeightProperty.get)
   private def defaultTailPadding: Int = math.max(1, prefetchItemsProperty.get) * 3
-
 
 }
 
@@ -366,20 +326,13 @@ object VirtualListView {
     (_: T | Null, _: Int) => (_: AbstractComponent) ?=> (_: Cursor) ?=> ()
 
   def virtualList[T](
+      source: ListDataSource[T]
+  )(
       body: VirtualListView[T] ?=> Cursor ?=> Unit
   )(using AbstractComponent, Cursor): VirtualListView[T] =
-    DslLayer.child(new VirtualListView[T](body)) {}
+    DslLayer.child(new VirtualListView[T](source, body)) {}
 
-  def items[T](using list: VirtualListView[T]): ListProperty[T] = list.getItems
-
-  def items_=[T](value: ListProperty[T])(using list: VirtualListView[T]): Unit =
-    list.setItems(value)
-
-  def items_=[T](value: IterableOnce[T])(using list: VirtualListView[T]): Unit =
-    value match {
-      case property: ListProperty[?] => list.setItems(property.asInstanceOf[ListProperty[T]])
-      case _                         => list.getItems.setAll(value)
-    }
+  def items[T](using list: VirtualListView[T]): ListDataSource[T] = list.items
 
   def estimateHeight(using list: VirtualListView[?]): Double = list.estimateHeightProperty.get
   def estimateHeight_=(value: Double)(using list: VirtualListView[?]): Unit =
@@ -397,15 +350,15 @@ object VirtualListView {
   def prefetchItems_=(value: Int)(using list: VirtualListView[?]): Unit =
     list.prefetchItemsProperty.set(math.max(1, value))
 
-  def crawlable(using list: VirtualListView[?]): Boolean = list.crawlableProperty.get
+  def crawlable(using list: VirtualListView[?]): Boolean                = list.crawlableProperty.get
   def crawlable_=(value: Boolean)(using list: VirtualListView[?]): Unit =
     list.crawlableProperty.set(value)
 
-  def crawlId(using list: VirtualListView[?]): Option[String] = list.crawlIdProperty.get
+  def crawlId(using list: VirtualListView[?]): Option[String]        = list.crawlIdProperty.get
   def crawlId_=(value: String)(using list: VirtualListView[?]): Unit =
     list.crawlIdProperty.set(Option(value))
 
-  def cellRenderer[T](using list: VirtualListView[T]): Renderer[T] = list.getRenderer
+  def cellRenderer[T](using list: VirtualListView[T]): Renderer[T]                = list.getRenderer
   def cellRenderer_=[T](value: Renderer[T])(using list: VirtualListView[T]): Unit =
     list.setRenderer(value)
 

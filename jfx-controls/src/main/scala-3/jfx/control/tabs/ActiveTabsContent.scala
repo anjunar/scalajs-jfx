@@ -28,4 +28,3 @@ final class ActiveTabsContent(tabs: Tabs) extends AbstractCustomComponent {
       case None               => new EmptyTabsContent
     }
 }
-

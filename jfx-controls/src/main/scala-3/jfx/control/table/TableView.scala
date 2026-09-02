@@ -3,7 +3,7 @@ package jfx.control.table
 import jfx.control.virtualized.{CrawlableCollection, FixedRowGeometry, VirtualizedCollection}
 import jfx.control.table.TableRow.{placeholderRow, rowItem, tableRow}
 import jfx.core.component.AbstractComponent
-import jfx.core.remote.{RemoteListProperty, RemoteSort}
+import jfx.core.remote.RemoteSort
 import jfx.core.dsl.ClassDsl.{addClass, classIf, classes}
 import jfx.core.dsl.DslLayer
 import jfx.core.dsl.EventDsl.{on, onClick}
@@ -17,6 +17,7 @@ import jfx.core.render.{Cursor, DomHostElement}
 import jfx.core.state.{
   CompositeDisposable,
   Disposable,
+  ListDataSource,
   ListProperty,
   Property,
   ReadOnlyProperty
@@ -31,23 +32,24 @@ import scala.scalajs.js
 import scala.scalajs.js.JSConverters.*
 
 final class TableView[S] private (
+    source: ListDataSource[S],
     configure: TableView[S] ?=> Cursor ?=> Unit
-) extends VirtualizedCollection[S],
+) extends VirtualizedCollection[S](source),
       CrawlableCollection[S] {
 
   private given ExecutionContext = ExecutionContext.global
 
   override val tagName: String = "div"
 
-  val columns: ListProperty[TableColumn[S, ?]]      = ListProperty()
-  val showHeaderProperty: Property[Boolean]         = Property(true)
-  val rowHeightProperty: Property[Double]           = Property(32.0)
-  val prefWidthProperty: Property[Option[Double]]   = Property(None)
-  val fixedHeightProperty: Property[Option[Double]] = Property(None)
-  val scrollLeftProperty: Property[Double]          = Property(0.0)
-  val viewportWidthProperty: Property[Double]       = Property(800.0)
-  val selectedIndexProperty: Property[Int]          = Property(-1)
-  val selectedItemProperty: Property[S | Null]      = Property(null)
+  val columns: ListProperty[TableColumn[S, ?]]                   = ListProperty()
+  val showHeaderProperty: Property[Boolean]                      = Property(true)
+  val rowHeightProperty: Property[Double]                        = Property(32.0)
+  val prefWidthProperty: Property[Option[Double]]                = Property(None)
+  val fixedHeightProperty: Property[Option[Double]]              = Property(None)
+  val scrollLeftProperty: Property[Double]                       = Property(0.0)
+  val viewportWidthProperty: Property[Double]                    = Property(800.0)
+  val selectedIndexProperty: Property[Int]                       = Property(-1)
+  val selectedItemProperty: Property[S | Null]                   = Property(null)
   val rowDoubleClickHandlerProperty: Property[Option[S => Unit]] = Property(None)
 
   private final case class VisibleRow(index: Int, item: Option[S])
@@ -61,11 +63,10 @@ final class TableView[S] private (
   private var placeholderBody: Option[AbstractComponent ?=> Cursor ?=> Unit]   = None
   private var contentHeaderComponent: Div | Null                               = null
 
-  /**
-   * Feste Zeilenhoehe, eine Spalte. Das ist alles, was TableView von DataGrid
-   * und VirtualListView unterscheidet -- die Spaltenbreiten sind eine Frage der
-   * Darstellung, nicht der Virtualisierung.
-   */
+  /** Feste Zeilenhoehe, eine Spalte. Das ist alles, was TableView von DataGrid und VirtualListView
+    * unterscheidet -- die Spaltenbreiten sind eine Frage der Darstellung, nicht der
+    * Virtualisierung.
+    */
   override protected val geometry: FixedRowGeometry =
     new FixedRowGeometry(
       rowHeight = () => rowHeightProperty.get,
@@ -76,12 +77,11 @@ final class TableView[S] private (
   override protected def crawlControlName: String = "TableView"
   override protected def crawlDefaultLimit: Int   = TableView.defaultLimit
 
-  override protected def renderableCount: Int = math.max(0, $items.totalLength)
+  override protected def renderableCount: Int = math.max(0, dataSource.totalLength)
 
-  /**
-   * TableView rechnet bei jeder Aenderung neu -- bei fester Zeilenhoehe
-   * verschiebt jede Einfuegung alle folgenden Zeilen.
-   */
+  /** TableView rechnet bei jeder Aenderung neu -- bei fester Zeilenhoehe verschiebt jede Einfuegung
+    * alle folgenden Zeilen.
+    */
   override protected def handleLocalItemsChange(change: ListProperty.Change[S]): Unit =
     refreshItemState()
 
@@ -103,12 +103,7 @@ final class TableView[S] private (
   private val totalColumnWidthProperty: ReadOnlyProperty[Double] =
     renderedWidthsProperty.map(_.sum)
 
-  def $itemsProperty: Property[ListProperty[S]] = itemsRefProperty
-
-
-
-  def $items: ListProperty[S]                      = getItems
-  def $items_=(value: ListProperty[S]): Unit       = setItems(value)
+  def items: ListDataSource[S]                     = dataSource
   def $getColumns: ListProperty[TableColumn[S, ?]] = columns
   def $getFixedCellSize: Double                    = rowHeightProperty.get
   def setFixedCellSize(value: Double): Unit        = rowHeightProperty.set(value)
@@ -373,7 +368,6 @@ final class TableView[S] private (
     }
 
   private def installObservers(): Unit = {
-    addDisposable(itemsRefProperty.observeWithoutInitial(_ => rewireItemsObserver()))
     addDisposable(scrollTopProperty.observeWithoutInitial { _ =>
       recomputeVisible()
       persistVisibleScrollOffset()
@@ -392,8 +386,6 @@ final class TableView[S] private (
     installItemObservers()
   }
 
-
-
   override protected def recomputeVisible(): Unit = {
     val total = renderableCount
     if (total == 0) visibleRowsProperty.clear()
@@ -404,16 +396,12 @@ final class TableView[S] private (
     }
   }
 
-
-
-
-  /**
-   * TableView haengt zwei eigene Nachlaeufer an die geerbten Zaehler.
-   *
-   * Beide gingen beim Zusammenlegen in P3-1 zunaechst verloren, weil die Basis
-   * die Fassungen der anderen Controls uebernahm -- nur TableView hat einen
-   * Kopfbereich mit Sortieranzeigen und eine Auswahl.
-   */
+  /** TableView haengt zwei eigene Nachlaeufer an die geerbten Zaehler.
+    *
+    * Beide gingen beim Zusammenlegen in P3-1 zunaechst verloren, weil die Basis die Fassungen der
+    * anderen Controls uebernahm -- nur TableView hat einen Kopfbereich mit Sortieranzeigen und eine
+    * Auswahl.
+    */
   override protected def bumpRemoteState(): Unit = {
     super.bumpRemoteState()
     bumpHeaderState()
@@ -431,11 +419,6 @@ final class TableView[S] private (
     )
   }
 
-
-
-
-
-
   private def contentHeightProperty: ReadOnlyProperty[String] =
     itemStateRevisionProperty.flatMap(_ =>
       rowHeightProperty.map(rowHeight => s"${renderableCount * rowHeight}px")
@@ -452,9 +435,6 @@ final class TableView[S] private (
             if (remoteError.nonEmpty) "Could not load table data" else "No content in table"
           )
     }
-
-
-
 
   private def currentRemoteSorting: Vector[RemoteSort] =
     Option(currentRemoteItems).fold(Vector.empty[RemoteSort])(_.getSorting)
@@ -487,21 +467,11 @@ final class TableView[S] private (
       case _ => ()
     }
 
-
-
-
-
-
-
   def select(index: Int): Unit =
     selectedIndexProperty.set(if (index >= 0 && index < renderableCount) index else -1)
 
   def select(item: S): Unit = {
-    val index = currentRemoteItems match {
-      case null   => $items.toSeq.indexOf(item)
-      case remote =>
-        (0 until remote.totalLength).find(i => remote.getLoadedItem(i).contains(item)).getOrElse(-1)
-    }
+    val index = (0 until dataSource.totalLength).find(i => itemAt(i).contains(item)).getOrElse(-1)
     select(index)
   }
 
@@ -511,8 +481,6 @@ final class TableView[S] private (
   private[control] def fireRowDoubleClick(item: S): Unit =
     rowDoubleClickHandlerProperty.get.foreach(_(item))
 
-
-
   private def bumpColumnState(): Unit = {
     columnStateRevisionProperty.set(columnStateRevisionProperty.get + 1)
     bumpHeaderState()
@@ -520,13 +488,6 @@ final class TableView[S] private (
 
   private def bumpHeaderState(): Unit =
     headerStateRevisionProperty.set(headerStateRevisionProperty.get + 1)
-
-
-
-
-
-
-
 
   private def contentHeaderHeight: Double = math.max(0.0, contentHeaderHeightProperty.get)
 
@@ -581,20 +542,13 @@ object TableView {
   private val defaultLimit                   = 50
 
   def tableView[S](
+      source: ListDataSource[S]
+  )(
       body: TableView[S] ?=> Cursor ?=> Unit
   )(using AbstractComponent, Cursor): TableView[S] =
-    DslLayer.child(new TableView[S](body)) {}
+    DslLayer.child(new TableView[S](source, body)) {}
 
-  def items[S](using table: TableView[S]): ListProperty[S] = table.$items
-
-  def items_=[S](value: ListProperty[S])(using table: TableView[S]): Unit =
-    table.setItems(value)
-
-  def items_=[S](value: IterableOnce[S])(using table: TableView[S]): Unit =
-    value match {
-      case property: ListProperty[?] => table.setItems(property.asInstanceOf[ListProperty[S]])
-      case _                         => table.$items.setAll(value)
-    }
+  def items[S](using table: TableView[S]): ListDataSource[S] = table.items
 
   def rowHeight(using table: TableView[?]): Double                = table.rowHeightProperty.get
   def rowHeight_=(value: Double)(using table: TableView[?]): Unit =

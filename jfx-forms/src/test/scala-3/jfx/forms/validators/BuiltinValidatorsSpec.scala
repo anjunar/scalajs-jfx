@@ -36,7 +36,9 @@ class BuiltinValidatorsSpec extends AnyFlatSpec with Matchers {
   "Decimal and digit validators" should "enforce inclusive bounds and precision" in {
     DecimalMinValidator[String](BigDecimal("1.5")).validate("1.49") should not be empty
     DecimalMinValidator[String](BigDecimal("1.5")).validate("1.5") shouldBe None
-    DecimalMaxValidator[Double](BigDecimal("2.5"), inclusive = false).validate(2.5) should not be empty
+    DecimalMaxValidator[Double](BigDecimal("2.5"), inclusive = false).validate(
+      2.5
+    ) should not be empty
     DigitsValidator[String](integer = 3, fraction = 2).validate("123.45") shouldBe None
     DigitsValidator[String](integer = 3, fraction = 2).validate("1234.5") should not be empty
   }

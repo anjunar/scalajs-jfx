@@ -53,7 +53,9 @@ object ViewportPage {
                   }
                   div {
                     classes = Seq("window-page__launch-copy")
-                    text(i18n"This content is mounted into the shared viewport layer, not into the route subtree.") {}
+                    text(
+                      i18n"This content is mounted into the shared viewport layer, not into the route subtree."
+                    ) {}
                   }
                 }
               }
@@ -63,9 +65,21 @@ object ViewportPage {
       }
 
       Showcase.insightGrid(
-        ("Global", "Rendered once", "The viewport owns windows and notifications as central lists."),
-        ("Layered", "Outside the route subtree", "Routed content triggers overlays without coupling itself to local DOM hacks."),
-        ("Composable", "Still ordinary components", "Window bodies are written with the same DSL as the rest of the app.")
+        (
+          "Global",
+          "Rendered once",
+          "The viewport owns windows and notifications as central lists."
+        ),
+        (
+          "Layered",
+          "Outside the route subtree",
+          "Routed content triggers overlays without coupling itself to local DOM hacks."
+        ),
+        (
+          "Composable",
+          "Still ordinary components",
+          "Window bodies are written with the same DSL as the rest of the app."
+        )
       )
     }
   }

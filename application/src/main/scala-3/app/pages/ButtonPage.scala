@@ -34,10 +34,14 @@ object ButtonPage {
         ) {
           div {
             style { marginBottom = "12px"; opacity = "0.8" }
-            text(i18n"Buttons are the heart of interaction. They are not just click targets; they bring your app to life.") {}
+            text(
+              i18n"Buttons are the heart of interaction. They are not just click targets; they bring your app to life."
+            ) {}
           }
           button(i18n"Click me and bring me to life") {
-            onClick { _ => dom.window.alert(i18nRuntime.resolveNow(i18n"I was clicked! The magic begins.")) }
+            onClick { _ =>
+              dom.window.alert(i18nRuntime.resolveNow(i18n"I was clicked! The magic begins."))
+            }
           }
         }
 
@@ -47,19 +51,40 @@ object ButtonPage {
         ) {
           hbox {
             classes = Seq("showcase-action-row")
-            button(i18n"Save") { onClick { _ => dom.window.alert(i18nRuntime.resolveNow(i18n"Saved.")) } }
-            button(i18n"Check") { onClick { _ => dom.window.alert(i18nRuntime.resolveNow(i18n"Checked.")) } }
-            button(i18n"Reset") { onClick { _ => dom.window.alert(i18nRuntime.resolveNow(i18n"Reset.")) } }
+            button(i18n"Save") {
+              onClick { _ => dom.window.alert(i18nRuntime.resolveNow(i18n"Saved.")) }
+            }
+            button(i18n"Check") {
+              onClick { _ => dom.window.alert(i18nRuntime.resolveNow(i18n"Checked.")) }
+            }
+            button(i18n"Reset") {
+              onClick { _ => dom.window.alert(i18nRuntime.resolveNow(i18n"Reset.")) }
+            }
           }
         }
 
         insightGrid(
-          (i18n"State", i18n"The button says what happens", i18n"A good label describes the next action, not the technical implementation behind it."),
-          (i18n"Event", i18n"onClick stays local", i18n"The DSL keeps trigger and reaction visible in the same place."),
-          (i18n"Feedback", i18n"Actions need a response", i18n"After the click, the interface should show something visible: a message, status, navigation, or data update.")
+          (
+            i18n"State",
+            i18n"The button says what happens",
+            i18n"A good label describes the next action, not the technical implementation behind it."
+          ),
+          (
+            i18n"Event",
+            i18n"onClick stays local",
+            i18n"The DSL keeps trigger and reaction visible in the same place."
+          ),
+          (
+            i18n"Feedback",
+            i18n"Actions need a response",
+            i18n"After the click, the interface should show something visible: a message, status, navigation, or data update."
+          )
         )
 
-        apiSection(i18n"The simplicity of the DSL", i18n"The core stays intentionally small: create the button, bind the handler, done.") {
+        apiSection(
+          i18n"The simplicity of the DSL",
+          i18n"The core stays intentionally small: create the button, bind the handler, done."
+        ) {
           codeBlock("scala", "button(\"Click me\") {\n  onClick { _ => println(\"Clicked\") }\n}")
         }
       }

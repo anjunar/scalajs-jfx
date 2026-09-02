@@ -17,7 +17,7 @@ class Input(val name: String, val standalone: Boolean = false)
       Control[String],
       Placeholder {
 
-  val tagName = "input"
+  val tagName                         = "input"
   val valueProperty: Property[String] = Property("")
 
   override def compose(cursor: Cursor): Unit = {

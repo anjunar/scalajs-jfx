@@ -19,10 +19,9 @@ trait Cursor {
   def parentHost: Option[HostElement] =
     None
 
-  /**
-   * Completes a hydration session and verifies that every server-rendered node was claimed.
-   * Non-hydrating cursors have nothing to complete.
-   */
+  /** Completes a hydration session and verifies that every server-rendered node was claimed.
+    * Non-hydrating cursors have nothing to complete.
+    */
   def completeHydration(): Unit = ()
 
   def claimElement(tag: String): HostElement
@@ -38,13 +37,11 @@ trait Cursor {
     VirtualRange(start, end, before(end))
   }
 
-  /**
-   * Wie [[claimRange]], uebernimmt den Bereich aber ungeprueft, wenn der Cursor
-   * hydriert.
-   *
-   * Nur [[HydratingCursor]] unterscheidet die beiden Faelle; ueberall sonst gibt
-   * es nichts zu uebernehmen, weil noch nichts da ist.
-   */
+  /** Wie [[claimRange]], uebernimmt den Bereich aber ungeprueft, wenn der Cursor hydriert.
+    *
+    * Nur [[HydratingCursor]] unterscheidet die beiden Faelle; ueberall sonst gibt es nichts zu
+    * uebernehmen, weil noch nichts da ist.
+    */
   def adoptRange(label: String): VirtualRange =
     claimRange(label)
 
@@ -58,8 +55,8 @@ trait Cursor {
 
 object Cursor {
 
-  def isBrowser(using c: Cursor) : Boolean = c.isBrowser
+  def isBrowser(using c: Cursor): Boolean = c.isBrowser
 
-  def isHydrating(using c: Cursor) : Boolean = c.isHydrating
+  def isHydrating(using c: Cursor): Boolean = c.isHydrating
 
 }

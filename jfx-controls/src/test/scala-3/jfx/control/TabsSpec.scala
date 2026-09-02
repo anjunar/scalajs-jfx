@@ -77,8 +77,8 @@ class TabsSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "replace active content and normalize selection across list mutations" in {
-    val firstTitle = Property("First")
-    val cursor     = new SsrCursor()
+    val firstTitle    = Property("First")
+    val cursor        = new SsrCursor()
     var control: Tabs = null
 
     val root = Runtime.mount(
@@ -117,7 +117,7 @@ class TabsSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "switch render modes through the public property" in {
-    val cursor = new SsrCursor()
+    val cursor        = new SsrCursor()
     var control: Tabs = null
 
     val root = Runtime.mount(
@@ -146,8 +146,8 @@ class TabsSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "support click and keyboard selection and remove handlers on unmount" in {
-    val hosts  = mutable.ArrayBuffer.empty[TabsTestHostElement]
-    val cursor = new TabsEventCursor(hosts += _)
+    val hosts         = mutable.ArrayBuffer.empty[TabsTestHostElement]
+    val cursor        = new TabsEventCursor(hosts += _)
     var control: Tabs = null
 
     val root = Runtime.mount(
@@ -180,8 +180,8 @@ class TabsSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "clamp a reactively bound selected index" in {
-    val selected = Property(99)
-    val cursor   = new SsrCursor()
+    val selected      = Property(99)
+    val cursor        = new SsrCursor()
     var control: Tabs = null
 
     val root = Runtime.mount(
@@ -253,14 +253,15 @@ private final class TabsTestHostElement(val tagName: String) extends HostElement
   private val listeners  = mutable.Map.empty[String, UiEvent => Unit]
 
   override def setAttribute(name: String, value: String): Unit = attributes.update(name, value)
-  override def removeAttribute(name: String): Unit              = attributes.remove(name)
-  override def attribute(name: String): Option[String]          = attributes.get(name)
-  override def setProperty(name: String, value: Any): Unit      = properties.update(name, value)
-  override def property[T](name: String): Option[T]             = properties.get(name).map(_.asInstanceOf[T])
-  override def setStyle(name: String, value: String): Unit      = styles.update(name, value)
-  override def removeStyle(name: String): Unit                  = styles.remove(name)
-  override def setClassNames(names: Seq[String]): Unit          = attributes.update("class", names.mkString(" "))
-  override def insertChild(index: Int, child: HostNode): Unit   = children.insert(index, child)
+  override def removeAttribute(name: String): Unit             = attributes.remove(name)
+  override def attribute(name: String): Option[String]         = attributes.get(name)
+  override def setProperty(name: String, value: Any): Unit     = properties.update(name, value)
+  override def property[T](name: String): Option[T] = properties.get(name).map(_.asInstanceOf[T])
+  override def setStyle(name: String, value: String): Unit = styles.update(name, value)
+  override def removeStyle(name: String): Unit             = styles.remove(name)
+  override def setClassNames(names: Seq[String]): Unit     =
+    attributes.update("class", names.mkString(" "))
+  override def insertChild(index: Int, child: HostNode): Unit = children.insert(index, child)
   override def insertBefore(child: HostNode, before: Option[HostNode]): Unit =
     before.map(children.indexOf).filter(_ >= 0) match {
       case Some(index) => children.insert(index, child)
@@ -281,8 +282,8 @@ private final class TabsTestHostElement(val tagName: String) extends HostElement
   def fire(eventName: String, rawEvent: Any = null): Boolean = {
     var prevented = false
     listeners(eventName)(new UiEvent {
-      override def raw: Any               = rawEvent
-      override def preventDefault(): Unit = prevented = true
+      override def raw: Any                = rawEvent
+      override def preventDefault(): Unit  = prevented = true
       override def stopPropagation(): Unit = ()
     })
     prevented

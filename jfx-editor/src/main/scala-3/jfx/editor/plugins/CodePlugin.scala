@@ -7,9 +7,9 @@ import lexical.codemirror.{CodeMirrorModule, CodeMirrorNode}
 import scala.scalajs.js
 
 final class CodePlugin extends EditorPlugin {
-  override val name: String                          = "code"
+  override val name: String                         = "code"
   override val toolbarElements: Seq[ToolbarElement] = Seq(new CodeMirrorModule())
-  override val nodes: Seq[js.Any]                    = Seq(js.constructorOf[CodeMirrorNode])
+  override val nodes: Seq[js.Any]                   = Seq(js.constructorOf[CodeMirrorNode])
 }
 
 object CodePlugin {

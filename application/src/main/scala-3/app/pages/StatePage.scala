@@ -40,7 +40,10 @@ object StatePage {
           div {
             classes = Seq("docs-card")
             div { classes = Seq("docs-card__title"); text(status) {} }
-            div { classes = Seq("docs-card__summary"); text(i18n"The visible text is derived directly from a Property[Int].") {} }
+            div {
+              classes = Seq("docs-card__summary");
+              text(i18n"The visible text is derived directly from a Property[Int].") {}
+            }
           }
 
           div {

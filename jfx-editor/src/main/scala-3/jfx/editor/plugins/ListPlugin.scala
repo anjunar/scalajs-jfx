@@ -6,9 +6,9 @@ import lexical.{LexicalList, ListModules, ToolbarElement}
 import scala.scalajs.js
 
 final class ListPlugin extends EditorPlugin {
-  override val name: String                          = "list"
+  override val name: String                         = "list"
   override val toolbarElements: Seq[ToolbarElement] = Seq(ListModules.BULLET, ListModules.NUMBERED)
-  override val nodes: Seq[js.Any]                    =
+  override val nodes: Seq[js.Any]                   =
     Seq(LexicalList.ListNode, LexicalList.ListItemNode)
 }
 

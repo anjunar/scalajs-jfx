@@ -8,7 +8,7 @@ private[jfx] object DomNodes {
       case host: DomHostElement    => host.node
       case text: DomTextNode       => text.node
       case comment: DomCommentNode => comment.node
-      case other =>
+      case other                   =>
         throw new IllegalArgumentException(s"Not a browser DOM node: ${other.getClass.getName}")
     }
 
@@ -18,7 +18,7 @@ private[jfx] object DomNodes {
       case element: dom.Element => new DomHostElement(element)
       case text: dom.Text       => new DomTextNode(text)
       case comment: dom.Comment => new DomCommentNode(comment)
-      case other =>
+      case other                =>
         throw new IllegalArgumentException(s"Unsupported DOM node type: ${other.nodeType}")
     }
 }

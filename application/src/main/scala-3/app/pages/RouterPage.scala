@@ -23,14 +23,26 @@ object RouterPage {
 
       Showcase.metricStrip(
         "basePath" -> "/scalajs-jfx",
-        "locale" -> "/de or /en",
-        "load" -> "Future[AbstractComponent]"
+        "locale"   -> "/de or /en",
+        "load"     -> "Future[AbstractComponent]"
       )
 
       Showcase.insightGrid(
-        ("URL", "Browser path stays human", "The router strips base path and locale for matching, then restores both for history updates."),
-        ("Context", "Route data is explicit", "Loaders get path params, locale, browserPath and query params as a plain value."),
-        ("Hydration", "Initial route must stay immediate", "Hydration still requires the first route to resolve synchronously from the Future state.")
+        (
+          "URL",
+          "Browser path stays human",
+          "The router strips base path and locale for matching, then restores both for history updates."
+        ),
+        (
+          "Context",
+          "Route data is explicit",
+          "Loaders get path params, locale, browserPath and query params as a plain value."
+        ),
+        (
+          "Hydration",
+          "Initial route must stay immediate",
+          "Hydration still requires the first route to resolve synchronously from the Future state."
+        )
       )
 
       Showcase.componentShowcase(

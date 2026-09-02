@@ -62,8 +62,8 @@ object CarouselPage {
         )
 
         metricStrip(
-          i18n"Looping" -> i18n"Next after the last slide starts at the beginning.",
-          i18n"Autoplay" -> i18n"A positive interval advances only while the control is mounted.",
+          i18n"Looping"    -> i18n"Next after the last slide starts at the beginning.",
+          i18n"Autoplay"   -> i18n"A positive interval advances only while the control is mounted.",
           i18n"SSR states" -> i18n"The server can expose every slide or only the active one."
         )
 
@@ -78,8 +78,7 @@ object CarouselPage {
               Carousel.items = slides
               Carousel.autoAdvanceMs = 2600
               Carousel.ssrShowAllStates = true
-              Carousel.slideRenderer = (slide: SlideCard, index: Int) =>
-                renderSlide(slide, index)
+              Carousel.slideRenderer = (slide: SlideCard, index: Int) => renderSlide(slide, index)
             }
 
             hbox {

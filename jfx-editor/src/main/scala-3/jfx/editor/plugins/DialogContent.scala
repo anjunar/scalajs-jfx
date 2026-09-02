@@ -13,7 +13,7 @@ private[plugins] abstract class DialogContent extends AbstractComponent {
   final def htmlElement: HTMLElement =
     host match {
       case domHost: DomHostElement => domHost.node.asInstanceOf[HTMLElement]
-      case _ =>
+      case _                       =>
         throw new IllegalStateException("Dialog content is not mounted in a browser DOM.")
     }
 }
@@ -38,8 +38,7 @@ private[plugins] object DialogContent {
   }
 }
 
-private[plugins] final class DialogElement(override val tagName: String)
-    extends AbstractComponent
+private[plugins] final class DialogElement(override val tagName: String) extends AbstractComponent
 
 private[plugins] object DialogElement {
   def element(tagName: String)(body: DialogElement ?=> Cursor ?=> Unit = {})(using

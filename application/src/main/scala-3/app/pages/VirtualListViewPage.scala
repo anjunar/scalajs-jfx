@@ -43,9 +43,9 @@ object VirtualListViewPage {
         )
 
         metricStrip(
-          i18n"1,000" -> i18n"records in the local showcase",
+          i18n"1,000"     -> i18n"records in the local showcase",
           i18n"44–120 px" -> i18n"measured variable row heights",
-          i18n"Header" -> i18n"custom content in the same scroll flow"
+          i18n"Header"    -> i18n"custom content in the same scroll flow"
         )
 
         componentShowcase(
@@ -60,8 +60,7 @@ object VirtualListViewPage {
               overflow = "hidden"
             }
 
-            virtualList[ShowcaseItem] {
-              items = showcaseItems
+            virtualList[ShowcaseItem](showcaseItems) {
               estimateHeightPx = 64
               overscanPx = 240
               prefetchItems = 80
@@ -80,7 +79,9 @@ object VirtualListViewPage {
                     borderBottom = "1px solid var(--aj-line-faint)"
                     boxSizing = "border-box"
                   }
-                  text(current.map(value => s"$index — ${value.title}").getOrElse(s"$index — Loading…")) {}
+                  text(
+                    current.map(value => s"$index — ${value.title}").getOrElse(s"$index — Loading…")
+                  ) {}
                 }
               }
 
@@ -101,7 +102,9 @@ object VirtualListViewPage {
                   }
                   div {
                     style { color = "var(--aj-ink-muted)" }
-                    text(i18n"Measured heights replace their estimates without mounting the complete list.") {}
+                    text(
+                      i18n"Measured heights replace their estimates without mounting the complete list."
+                    ) {}
                   }
                 }
               }
@@ -133,8 +136,7 @@ object VirtualListViewPage {
         ) {
           codeBlock(
             "scala",
-            """|virtualList[ShowcaseItem] {
-               |  items = showcaseItems
+            """|virtualList[ShowcaseItem](showcaseItems) {
                |  estimateHeightPx = 64
                |  overscanPx = 240
                |  crawlable = true

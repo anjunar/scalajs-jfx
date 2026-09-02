@@ -8,11 +8,11 @@ import jfx.core.dsl.DslLayer
 import jfx.core.render.Cursor
 
 private final class TabPanel(
-                              tabs: Tabs,
-                              tab: TabSpec,
-                              index: Int,
-                              keepMounted: Boolean
-                            ) extends AbstractComponent {
+    tabs: Tabs,
+    tab: TabSpec,
+    index: Int,
+    keepMounted: Boolean
+) extends AbstractComponent {
   override val tagName: String = "div"
 
   override def compose(cursor: Cursor): Unit =

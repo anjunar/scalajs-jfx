@@ -7,21 +7,19 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.*
 
-/**
- * Remote-Paging: HTTP-Abfrage, Seiten, Sortierung.
- *
- * Lag vorher in jfx.core.state neben Property und Disposable -- HTTP-Paging-,
- * Sortier- und Query-Semantik sass damit im Fundament, und jeder Konsument von
- * scalajs-jfx-core bekam sie mit. Siehe CHANGE.md P2-5.
- */
+/** Remote-Paging: HTTP-Abfrage, Seiten, Sortierung.
+  *
+  * Lag vorher in jfx.core.state neben Property und Disposable -- HTTP-Paging-, Sortier- und
+  * Query-Semantik sass damit im Fundament, und jeder Konsument von scalajs-jfx-core bekam sie mit.
+  * Siehe CHANGE.md P2-5.
+  */
 
-/**
- * Laedt eine Seite. Das Ergebnis ist ein Future -- Future ist das interne
- * Async-Modell des Frameworks (siehe ARCHITECTURE.md). js.Promise erscheint nur
- * an der JS-Exportgrenze und in Facades gegenueber JS-Bibliotheken.
- *
- * Wer einen Loader gegen eine JS-API schreibt, nimmt [[RemoteLoader.fromPromise]].
- */
+/** Laedt eine Seite. Das Ergebnis ist ein Future -- Future ist das interne Async-Modell des
+  * Frameworks (siehe ARCHITECTURE.md). js.Promise erscheint nur an der JS-Exportgrenze und in
+  * Facades gegenueber JS-Bibliotheken.
+  *
+  * Wer einen Loader gegen eine JS-API schreibt, nimmt [[RemoteLoader.fromPromise]].
+  */
 trait RemoteLoader[V, Query] {
   def load(query: Query): Future[RemotePage[V, Query]]
 }
@@ -34,10 +32,9 @@ object RemoteLoader {
         loadFn(query)
     }
 
-  /**
-   * JS-Grenze: adaptiert einen Promise-basierten Loader auf das interne
-   * Future-Modell. Genau eine Konvertierung, an einer benannten Stelle.
-   */
+  /** JS-Grenze: adaptiert einen Promise-basierten Loader auf das interne Future-Modell. Genau eine
+    * Konvertierung, an einer benannten Stelle.
+    */
   def fromPromise[V, Query](
       loadFn: Query => js.Promise[RemotePage[V, Query]]
   ): RemoteLoader[V, Query] =
@@ -95,7 +92,7 @@ final case class RestRequest(
     if (normalizedParams.isEmpty) {
       url
     } else {
-      val separator = if (url.contains("?")) "&" else "?"
+      val separator   = if (url.contains("?")) "&" else "?"
       val queryString = normalizedParams
         .map { case (key, value) => s"${encodeURIComponent(key)}=${encodeURIComponent(value)}" }
         .mkString("&")
@@ -179,5 +176,3 @@ private[remote] def expandQueryParamValue(value: Any): Seq[String] =
 
 private[remote] def encodeURIComponent(value: String): String =
   js.URIUtils.encodeURIComponent(value)
-
-

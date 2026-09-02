@@ -1,64 +1,42 @@
 package jfx.core.remote
 
-import jfx.core.component.{AbstractComponent, Runtime}
-import jfx.core.dsl.DslLayer
-import jfx.core.layout.TextComponent.text
-import jfx.core.render.{Cursor, SsrCursor}
-import jfx.core.state.ListProperty
-import jfx.core.statement.Foreach
+import jfx.core.state.{ListDataSource, ListProperty}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.{Future, Promise}
-import scala.scalajs.js
 import scala.util.{Failure, Success}
 
 class RemoteListPropertySpec extends AnyFlatSpec with Matchers {
 
   private given ExecutionContext = ExecutionContext.parasitic
 
-  "RemoteListProperty" should "append a page without remounting the rows already mounted" in {
+  "RemoteListProperty" should "append a page without replacing the materialized prefix" in {
     val remote = pagedMembers(total = 1000, pageSize = 50)
-    val cursor = new SsrCursor()
 
     remote.reload()
-    val root = Runtime.mount(new ForeachRoot(remote), cursor)
-
-    val mountedBefore = foreachItemsOf(root)
-    mountedBefore.length shouldBe 50
+    val prefixBefore = remote.get.toSeq
+    prefixBefore.length shouldBe 50
 
     remote.loadMore()
 
-    val mountedAfter = foreachItemsOf(root)
-    mountedAfter.length shouldBe 100
-
-    // Component-Identitaet: die ersten 50 Zeilen sind dieselben Instanzen.
-    mountedAfter.take(50).map(System.identityHashCode) shouldBe
-      mountedBefore.map(System.identityHashCode)
+    remote.loadedLength shouldBe 100
+    remote.get.toSeq.take(50) shouldBe prefixBefore
   }
 
-  it should "keep row identity on append even with reindexOnStructuralChange" in {
-    // foreachIndexed (Carousel, DataGrid-Header) benutzt reindexOnStructuralChange
-    // = true, wo InsertAll ein rebuildFrom(index) ausloest. Beim Anhaengen ist
-    // index == mounted.length, rebuildFrom unmountet also nichts -- das ist der
-    // Grund, warum InsertAll auch hier die richtige Aussage ist und Reset nicht.
-    val remote = pagedMembers(total = 1000, pageSize = 50)
-    val cursor = new SsrCursor()
+  it should "publish itself as the source of ListDataSource changes" in {
+    val remote                         = pagedMembers(total = 1000, pageSize = 50)
+    val source: ListDataSource[String] = remote
+    val changedSources                 = mutable.ArrayBuffer.empty[ListDataSource[String]]
+    source.observeChanges(change => changedSources += change.source)
 
     remote.reload()
-    val root = Runtime.mount(new ReindexingForeachRoot(remote), cursor)
-
-    val mountedBefore = foreachItemsOf(root)
-    mountedBefore.length shouldBe 50
-
     remote.loadMore()
 
-    val mountedAfter = foreachItemsOf(root)
-    mountedAfter.length shouldBe 100
-    mountedAfter.take(50).map(System.identityHashCode) shouldBe
-      mountedBefore.map(System.identityHashCode)
+    changedSources should have size 2
+    all(changedSources.map(_.eq(remote))) shouldBe true
   }
 
   it should "emit InsertAll when a page is appended" in {
@@ -112,9 +90,9 @@ class RemoteListPropertySpec extends AnyFlatSpec with Matchers {
   it should "keep the dense order when a gap is filled later" in {
     val remote = pagedMembers(total = 1000, pageSize = 10)
 
-    remote.reload()                       // absolut 0..9
-    remote.ensureRangeLoaded(100, 110)    // Luecke: absolut 100..109
-    remote.ensureRangeLoaded(50, 60)      // faellt zwischen die beiden
+    remote.reload()                    // absolut 0..9
+    remote.ensureRangeLoaded(100, 110) // Luecke: absolut 100..109
+    remote.ensureRangeLoaded(50, 60)   // faellt zwischen die beiden
 
     remote.get.toSeq shouldBe
       ((0 until 10) ++ (50 until 60) ++ (100 until 110)).map(index => s"Member $index")
@@ -169,6 +147,20 @@ class RemoteListPropertySpec extends AnyFlatSpec with Matchers {
 
     controllable.completeAll()
     remote.isRangeLoaded(100, 110) shouldBe true
+  }
+
+  it should "deduplicate an identical reload without advancing the generation" in {
+    val controllable = new ControllableLoader(total = 1000)
+    val remote       = remoteWith(controllable)
+
+    val first  = remote.reload()
+    val second = remote.reload()
+
+    controllable.requestCount shouldBe 1
+    first should be theSameInstanceAs second
+
+    controllable.completeAll()
+    remote.isRangeLoaded(0, 10) shouldBe true
   }
 
   it should "load non-overlapping ranges in parallel instead of rejecting the second" in {
@@ -285,10 +277,10 @@ class RemoteListPropertySpec extends AnyFlatSpec with Matchers {
       rangeQueryUpdater = Some((query, index, limit) => query.copy(index = index, limit = limit))
     )
 
-  /** Loader, der Antworten erst auf Zuruf liefert -- so lassen sich mehrere
-    * gleichzeitig laufende Anfragen ueberhaupt beobachten. */
-  private final class ControllableLoader(total: Int)
-      extends RemoteLoader[String, PageQuery] {
+  /** Loader, der Antworten erst auf Zuruf liefert -- so lassen sich mehrere gleichzeitig laufende
+    * Anfragen ueberhaupt beobachten.
+    */
+  private final class ControllableLoader(total: Int) extends RemoteLoader[String, PageQuery] {
 
     private val pending =
       mutable.ArrayBuffer.empty[(PageQuery, Promise[RemotePage[String, PageQuery]])]
@@ -334,9 +326,6 @@ class RemoteListPropertySpec extends AnyFlatSpec with Matchers {
     changes
   }
 
-  private def foreachItemsOf(root: AbstractComponent): Seq[AbstractComponent] =
-    root.children.headOption.toSeq.flatMap(_.children)
-
   private final case class PageQuery(index: Int, limit: Int)
 
   private def pagedMembers(total: Int, pageSize: Int): RemoteListProperty[String, PageQuery] =
@@ -359,24 +348,4 @@ class RemoteListPropertySpec extends AnyFlatSpec with Matchers {
       executionContext = ExecutionContext.parasitic,
       rangeQueryUpdater = Some((query, index, limit) => query.copy(index = index, limit = limit))
     )
-}
-
-private final class ReindexingForeachRoot(items: ListProperty[String]) extends AbstractComponent {
-  override val tagName: String = "ul"
-
-  override def compose(cursor: Cursor): Unit =
-    DslLayer.render(this, cursor) {
-      DslLayer.child(
-        new Foreach[String](items, (value, _) => text(value) {}, reindexOnStructuralChange = true)
-      ) {}
-    }
-}
-
-private final class ForeachRoot(items: ListProperty[String]) extends AbstractComponent {
-  override val tagName: String = "ul"
-
-  override def compose(cursor: Cursor): Unit =
-    DslLayer.render(this, cursor) {
-      DslLayer.child(new Foreach[String](items, (value, _) => text(value) {})) {}
-    }
 }

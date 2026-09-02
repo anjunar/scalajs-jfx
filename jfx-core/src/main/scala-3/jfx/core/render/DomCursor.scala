@@ -65,8 +65,8 @@ object DomCursor {
 
   /** A browser cursor whose nodes start out in a detached document fragment.
     *
-    * This is useful for component-based integration points that have to hand an already-created
-    * DOM element to third-party code. The component still gets mounted through the regular DSL and
+    * This is useful for component-based integration points that have to hand an already-created DOM
+    * element to third-party code. The component still gets mounted through the regular DSL and
     * runtime, without briefly attaching it to the live document.
     */
   def detached(): DomCursor =

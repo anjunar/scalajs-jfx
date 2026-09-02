@@ -11,7 +11,7 @@ final case class I18nLocale(code: String) {
   def parent: Option[I18nLocale] =
     code.lastIndexOf('-') match {
       case index if index > 0 => Some(I18nLocale(code.substring(0, index)))
-      case _ => None
+      case _                  => None
     }
 }
 
@@ -95,7 +95,8 @@ object MessageCatalog {
 
 final case class LocaleFallback(primary: I18nLocale, defaultLocale: I18nLocale = I18nLocale.En) {
   def chain: Vector[I18nLocale] = {
-    val parents = Iterator.iterate(primary.parent)(_.flatMap(_.parent)).takeWhile(_.isDefined).flatten
+    val parents =
+      Iterator.iterate(primary.parent)(_.flatMap(_.parent)).takeWhile(_.isDefined).flatten
     (Iterator.single(primary) ++ parents ++ Iterator.single(defaultLocale)).toVector.distinct
   }
 }
@@ -115,7 +116,10 @@ final class I18nResolver(catalog: MessageCatalog) {
     interpolate(pattern, message.args)
   }
 
-  def resolve(message: RuntimeMessage, locale: ReadOnlyProperty[I18nLocale]): ReadOnlyProperty[String] =
+  def resolve(
+      message: RuntimeMessage,
+      locale: ReadOnlyProperty[I18nLocale]
+  ): ReadOnlyProperty[String] =
     locale.map(resolve(message, _))
 
   private def interpolate(pattern: String, args: Vector[MessageArg]): String =
@@ -152,11 +156,11 @@ object I18nRuntime {
   ): I18nRuntime =
     new I18nRuntime {
       override val locale: ReadOnlyProperty[I18nLocale] = localeProperty
-      override val resolver: I18nResolver = resolverInstance
-      override val supportedLocales: Seq[I18nLocale] =
+      override val resolver: I18nResolver               = resolverInstance
+      override val supportedLocales: Seq[I18nLocale]    =
         if (configuredSupportedLocales.nonEmpty) configuredSupportedLocales.distinct
         else Seq(configuredDefaultLocale)
-      override val defaultLocale: I18nLocale = configuredDefaultLocale
+      override val defaultLocale: I18nLocale           = configuredDefaultLocale
       override def setLocale(locale: I18nLocale): Unit = ()
     }
 
@@ -173,10 +177,10 @@ object I18nRuntime {
 
     new I18nRuntime {
       override val locale: ReadOnlyProperty[I18nLocale] = localeProperty
-      override val resolver: I18nResolver = config.resolver
-      override val supportedLocales: Seq[I18nLocale] = config.supportedLocales
-      override val defaultLocale: I18nLocale = config.defaultLocale
-      override def setLocale(locale: I18nLocale): Unit = localeProperty.set(locale)
+      override val resolver: I18nResolver               = config.resolver
+      override val supportedLocales: Seq[I18nLocale]    = config.supportedLocales
+      override val defaultLocale: I18nLocale            = config.defaultLocale
+      override def setLocale(locale: I18nLocale): Unit  = localeProperty.set(locale)
     }
   }
 

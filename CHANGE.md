@@ -3,13 +3,24 @@
 Arbeitsliste aus dem Architektur-Review vom 2026-09-02. Enthält nur strukturelle
 Befunde, keine Kleinigkeiten (Formatierung, Namensgeschmack, einzelne Warnungen).
 
+**Nachreview 2026-09-03.** Die Listen- und Viewport-Grenzen wurden noch einmal
+geschärft: `TableView`, `DataGrid` und `VirtualListView` erhalten ihre feste
+`ListDataSource[T]` direkt beim Bau. `ListProperty` implementiert diesen Vertrag;
+`RemoteListProperty` implementiert den erweiterten `RemoteListDataSource`-Vertrag
+und erbt nicht mehr von der mutierbaren lokalen Liste. Unterschiedliche
+Range-Loads laufen parallel, identische Requests werden in der Quelle
+dedupliziert. Der Viewport-Zustand gehört jetzt der jeweiligen `Viewport`-Instanz
+und wird über den Component-Context aufgelöst; globale Window-, Overlay- und
+Notification-Registries sind entfallen.
+
 **Arbeitsweise**
 
 - Immer `sbtn`, nie `sbt` (siehe `AGENTS.md`).
 - Keine Workarounds — Ursache verstehen, dann lösen.
 - Eine Aufgabe pro Commit. Aufgaben-ID in die Commit-Message (`P1-4: …`).
 - Vor jeder Aufgabe: bestehende Muster im betroffenen Modul prüfen.
-- Nach jeder Aufgabe: `sbtn test` muss grün sein, bevor die Box abgehakt wird.
+- Nach jeder Aufgabe: `sbtn "Test/testOnly *"` muss grün sein, bevor die Box
+  abgehakt wird (`sbtn test` nutzt nur `testQuick`).
 
 **Legende**
 
@@ -253,7 +264,7 @@ An jeder Grenze steht `.toFuture` / `.toJSPromise`. Fehlerbehandlung,
 Abbruchsemantik und Nichtbehandlung von Rejections unterscheiden sich zwischen
 beiden — dieselbe Logik verhält sich je nach Aufrufweg anders.
 
-**Dateien.** `jfx-core/src/main/scala-3/jfx/core/state/RemoteListProperty.scala`,
+**Dateien.** `jfx-core/src/main/scala-3/jfx/core/remote/RemoteListProperty.scala`,
 `ListProperty.scala`, Aufrufstellen in `jfx-controls`
 
 **Schritte.**
@@ -277,7 +288,7 @@ erzeugt ein `Reset`-Change, das `Foreach.resetAll()` auslöst — **alle** Zeile
 werden unmountet und neu gemountet. Seite 2 nachzuladen rendert die komplette
 Liste neu. Genau in der Klasse, die große Listen tragen soll.
 
-**Dateien.** `jfx-core/src/main/scala-3/jfx/core/state/RemoteListProperty.scala`
+**Dateien.** `jfx-core/src/main/scala-3/jfx/core/remote/RemoteListProperty.scala`
 (`applyPage`), `ListProperty.scala` (Change-Typen), `jfx-core/.../statement/Foreach.scala`
 
 **Schritte.**
@@ -307,7 +318,7 @@ gemountete Zeile unmountet wird.
 Für eine Liste, deren Zweck große Datenmengen sind, ist das die falsche
 Datenstruktur.
 
-**Dateien.** `jfx-core/src/main/scala-3/jfx/core/state/RemoteListProperty.scala`
+**Dateien.** `jfx-core/src/main/scala-3/jfx/core/remote/RemoteListProperty.scala`
 
 **Schritte.**
 1. `loadedItemsByIndex: mutable.Map[Int, V]` durch eine Struktur ersetzen, die
@@ -332,7 +343,7 @@ für alle Zugriffsarten. `VirtualListView` und `DataGrid` prefetchen mehrere
 Bereiche gleichzeitig — im Normalbetrieb entstehen dadurch abgelehnte Promises,
 die niemand behandelt (unhandled rejections beim Scrollen).
 
-**Dateien.** `jfx-core/src/main/scala-3/jfx/core/state/RemoteListProperty.scala`,
+**Dateien.** `jfx-core/src/main/scala-3/jfx/core/remote/RemoteListProperty.scala`,
 Prefetch-Pfade in `jfx-controls`
 
 **Schritte.**
@@ -361,7 +372,7 @@ neueren Daten.
 Sortier- und Query-Semantik sitzt damit im Fundament neben `Property` und
 `Disposable`. Jeder Konsument von `scalajs-jfx-core` bekommt das mit.
 
-**Dateien.** `jfx-core/src/main/scala-3/jfx/core/state/RemoteListProperty.scala`,
+**Dateien.** `jfx-core/src/main/scala-3/jfx/core/remote/RemoteListProperty.scala`,
 `ListProperty.scala` (Typen `RemoteLoader`, `RemotePage`, `RemoteSort`)
 
 **Schritte.**
@@ -391,7 +402,7 @@ Vorher fiel das kaum auf, weil der globale Lock ohnehin nur einen Ladevorgang
 zuließ. Seit P2-4 laufen mehrere Bereiche parallel — welche Abfrage am Ende in
 `queryProperty` steht, hängt jetzt von der Reihenfolge ab.
 
-**Dateien.** `jfx-core/src/main/scala-3/jfx/core/state/RemoteListProperty.scala`
+**Dateien.** `jfx-core/src/main/scala-3/jfx/core/remote/RemoteListProperty.scala`
 
 **Schritte.**
 1. Klären, was `queryProperty` bedeuten soll: die *Basis*-Abfrage der Liste
@@ -769,7 +780,8 @@ Regeln, die nirgends stehen. Ohne sie wandert alles zurück.
 - Modulgraph mit erlaubten Kanten (und der Regel: publizierte Module hängen nur
   auf publizierte).
 - Paketwurzel = Modulname, keine Split-Packages.
-- `jfx-core` enthält keine Domäne, kein Remote, kein Routing.
+- `jfx-core` enthält keine Domäne und kein Routing; Remote-Fähigkeiten liegen
+  ausschließlich in `jfx.core.remote`, nicht im allgemeinen State-Paket.
 - `Future` ist das interne Async-Modell; `js.Promise` nur an JS-Grenzen.
 - Kein requestabhängiger Zustand in `object`s (SSR läuft im geteilten Prozess).
 - Wo Styling herkommt (Ergebnis aus **P5-2**).

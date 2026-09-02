@@ -1,27 +1,25 @@
 package jfx.control.virtualized
 
-/**
- * Wo liegt Element `index`, und welche Elemente sind sichtbar?
- *
- * Das ist der einzige echte Unterschied zwischen TableView, DataGrid und
- * VirtualListView. Alles andere -- Scroll-Zustand, Messung, Remote-Anbindung,
- * Crawl-Zustand -- war dreimal dieselbe Logik und liegt jetzt in
- * [[VirtualizedCollection]] beziehungsweise [[CrawlableCollection]].
- *
- * Die Achse ist zweidimensional, nicht nur "feste gegen gemessene Hoehe":
- *
- * {{{
- *                    Hoehe                Spalten   Ueberhang
- *   TableView        fix (rowHeight)      1         overscanRows (Konstante)
- *   DataGrid         fix (itemHeight+gap) N         overscanRows (Property)
- *   VirtualListView  gemessen             1         overscanPx   (Property)
- * }}}
- *
- * Implementierungen duerfen Zustand halten -- [[MeasuredRowGeometry]] traegt die
- * gemessenen Hoehen und deren Praefixsummen.
- *
- * Siehe jfx-controls/VIRTUALIZATION.md und CHANGE.md P3-1.
- */
+/** Wo liegt Element `index`, und welche Elemente sind sichtbar?
+  *
+  * Das ist der einzige echte Unterschied zwischen TableView, DataGrid und VirtualListView. Alles
+  * andere -- Scroll-Zustand, Messung, Remote-Anbindung, Crawl-Zustand -- war dreimal dieselbe Logik
+  * und liegt jetzt in [[VirtualizedCollection]] beziehungsweise [[CrawlableCollection]].
+  *
+  * Die Achse ist zweidimensional, nicht nur "feste gegen gemessene Hoehe":
+  *
+  * {{{
+  *                    Hoehe                Spalten   Ueberhang
+  *   TableView        fix (rowHeight)      1         overscanRows (Konstante)
+  *   DataGrid         fix (itemHeight+gap) N         overscanRows (Property)
+  *   VirtualListView  gemessen             1         overscanPx   (Property)
+  * }}}
+  *
+  * Implementierungen duerfen Zustand halten -- [[MeasuredRowGeometry]] traegt die gemessenen Hoehen
+  * und deren Praefixsummen.
+  *
+  * Siehe jfx-controls/VIRTUALIZATION.md und CHANGE.md P3-1.
+  */
 trait ItemGeometry {
 
   /** Abstand oberhalb des ersten Elements, etwa durch einen Header. */
@@ -30,29 +28,26 @@ trait ItemGeometry {
   /** Obere Kante von Element `index`, inklusive [[headerOffset]]. */
   def topForIndex(index: Int): Double
 
-  /**
-   * Index des Elements an der Scroll-Position `offset`, wobei `offset` bereits
-   * um [[headerOffset]] bereinigt ist.
-   */
+  /** Index des Elements an der Scroll-Position `offset`, wobei `offset` bereits um [[headerOffset]]
+    * bereinigt ist.
+    */
   def indexForOffset(offset: Double): Int
 
   /** Gesamthoehe des Inhalts fuer `total` Elemente, ohne [[headerOffset]]. */
   def contentHeight(total: Int): Double
 
-  /**
-   * Sichtbarer Bereich als `[start, end)`.
-   *
-   * Nur der Nicht-Crawl-Fall: der Crawl-Zweig ist in allen drei Controls
-   * wortgleich und liegt in [[VirtualizedCollection.visibleRange]].
-   */
+  /** Sichtbarer Bereich als `[start, end)`.
+    *
+    * Nur der Nicht-Crawl-Fall: der Crawl-Zweig ist in allen drei Controls wortgleich und liegt in
+    * [[VirtualizedCollection.visibleRange]].
+    */
   def visibleRange(total: Int, scrollTop: Double, viewportHeight: Double): (Int, Int)
 }
 
-/**
- * Feste Zeilenhoehe, eine Spalte -- das Modell von TableView.
- *
- * Der Ueberhang ist in Zeilen angegeben.
- */
+/** Feste Zeilenhoehe, eine Spalte -- das Modell von TableView.
+  *
+  * Der Ueberhang ist in Zeilen angegeben.
+  */
 final class FixedRowGeometry(
     rowHeight: () => Double,
     headerHeightValue: () => Double,
@@ -79,8 +74,8 @@ final class FixedRowGeometry(
   ): (Int, Int) = {
     val rowHeightValue     = effectiveRowHeight
     val effectiveScrollTop = math.max(0.0, scrollTop - headerOffset)
-    val firstVisible       = math.min(total - 1, math.floor(effectiveScrollTop / rowHeightValue).toInt)
-    val visibleCount       = math.ceil(math.max(1.0, viewportHeight) / rowHeightValue).toInt + 1
+    val firstVisible = math.min(total - 1, math.floor(effectiveScrollTop / rowHeightValue).toInt)
+    val visibleCount = math.ceil(math.max(1.0, viewportHeight) / rowHeightValue).toInt + 1
 
     (
       math.max(0, firstVisible - overscanRows),
@@ -89,17 +84,15 @@ final class FixedRowGeometry(
   }
 }
 
-/**
- * Feste Zellengroesse in einem Raster mit N Spalten -- das Modell von DataGrid.
- *
- * Der Ueberhang ist in Zeilen angegeben: es werden immer vollstaendige
- * Rasterzeilen sichtbar gemacht.
- *
- * itemHeight und gap stehen einzeln und nicht als fertiger rowStep, weil die
- * Gesamthoehe die Luecken zwischen den Zeilen zaehlt und nicht hinter der
- * letzten: `rows * itemHeight + (rows - 1) * gap`. Mit rowStep waere eine Luecke
- * zu viel drin.
- */
+/** Feste Zellengroesse in einem Raster mit N Spalten -- das Modell von DataGrid.
+  *
+  * Der Ueberhang ist in Zeilen angegeben: es werden immer vollstaendige Rasterzeilen sichtbar
+  * gemacht.
+  *
+  * itemHeight und gap stehen einzeln und nicht als fertiger rowStep, weil die Gesamthoehe die
+  * Luecken zwischen den Zeilen zaehlt und nicht hinter der letzten:
+  * `rows * itemHeight + (rows - 1) * gap`. Mit rowStep waere eine Luecke zu viel drin.
+  */
 final class GridGeometry(
     columnCount: () => Int,
     itemHeight: () => Double,
@@ -150,21 +143,19 @@ final class GridGeometry(
   }
 }
 
-/**
- * Gemessene Hoehen, eine Spalte -- das Modell von VirtualListView.
- *
- * Traegt die gemessenen Hoehen und deren Praefixsummen. Was noch nicht gemessen
- * wurde, gilt mit der Schaetzung; `prefixDirtyFrom` merkt sich, ab wo die Summen
- * neu gebildet werden muessen, damit eine einzelne Messung nicht die ganze Liste
- * neu berechnet.
- *
- * Ueber den gemessenen Bereich hinaus wird mit der Schaetzung extrapoliert --
- * `renderableCount` darf groesser sein als die Zahl gemessener Zeilen, etwa
- * durch die Tail-Padding-Reserve beim Nachladen.
- *
- * Der Ueberhang ist in Pixeln angegeben, nicht in Zeilen: bei variablen Hoehen
- * ist eine Zeilenzahl keine sinnvolle Groesse.
- */
+/** Gemessene Hoehen, eine Spalte -- das Modell von VirtualListView.
+  *
+  * Traegt die gemessenen Hoehen und deren Praefixsummen. Was noch nicht gemessen wurde, gilt mit
+  * der Schaetzung; `prefixDirtyFrom` merkt sich, ab wo die Summen neu gebildet werden muessen,
+  * damit eine einzelne Messung nicht die ganze Liste neu berechnet.
+  *
+  * Ueber den gemessenen Bereich hinaus wird mit der Schaetzung extrapoliert -- `renderableCount`
+  * darf groesser sein als die Zahl gemessener Zeilen, etwa durch die Tail-Padding-Reserve beim
+  * Nachladen.
+  *
+  * Der Ueberhang ist in Pixeln angegeben, nicht in Zeilen: bei variablen Hoehen ist eine Zeilenzahl
+  * keine sinnvolle Groesse.
+  */
 final class MeasuredRowGeometry(
     estimateHeight: () => Double,
     headerHeightValue: () => Double,
@@ -191,10 +182,9 @@ final class MeasuredRowGeometry(
   def heightFor(index: Int): Double =
     heights.lift(index).getOrElse(estimate)
 
-  /**
-   * Traegt eine gemessene Hoehe ein und liefert die Differenz zur bisherigen,
-   * oder None, wenn sie sich nicht nennenswert geaendert hat.
-   */
+  /** Traegt eine gemessene Hoehe ein und liefert die Differenz zur bisherigen, oder None, wenn sie
+    * sich nicht nennenswert geaendert hat.
+    */
   def updateHeight(index: Int, newHeight: Double): Option[Double] =
     if (index < 0) None
     else {
@@ -257,18 +247,16 @@ final class MeasuredRowGeometry(
 
   override def contentHeight(total: Int): Double = {
     rebuildPrefixIfDirty()
-    val measured      = math.min(total, heights.length)
+    val measured       = math.min(total, heights.length)
     val measuredHeight = prefix.lift(measured).getOrElse(0.0)
     measuredHeight + math.max(0, total - measured) * estimate
   }
 
-  /**
-   * Obergrenze fuer die Zahl gleichzeitig gemounteter Zeilen.
-   *
-   * Ohne sie wuerde eine Liste, deren Zeilen alle deutlich niedriger als die
-   * Schaetzung ausfallen, beliebig viele Zeilen in den sichtbaren Bereich
-   * ziehen.
-   */
+  /** Obergrenze fuer die Zahl gleichzeitig gemounteter Zeilen.
+    *
+    * Ohne sie wuerde eine Liste, deren Zeilen alle deutlich niedriger als die Schaetzung ausfallen,
+    * beliebig viele Zeilen in den sichtbaren Bereich ziehen.
+    */
   private def maxSlotsForViewport(viewportHeight: Double): Int = {
     val minimum = math.max(12.0, math.min(estimate, math.max(estimate / 2.0, 1.0)))
     val area    = viewportHeight + 2 * math.max(0.0, overscanPx())

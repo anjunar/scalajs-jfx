@@ -11,7 +11,7 @@ import scala.collection.mutable
 
 class FieldSet(val name: String) extends AbstractComponent, Control[Unit], FormController {
 
-  val tagName = "fieldset"
+  val tagName                       = "fieldset"
   val valueProperty: Property[Unit] = Property(())
   private var contextPrefix: String = name
 
@@ -52,7 +52,8 @@ class FieldSet(val name: String) extends AbstractComponent, Control[Unit], FormC
     }
 
   def setErrorResponses(errors: Seq[ErrorResponse]): Unit =
-    errors.groupBy(_.path.headOption.getOrElse(""))
+    errors
+      .groupBy(_.path.headOption.getOrElse(""))
       .foreach { case (fieldName, fieldErrors) =>
         fields.get(fieldName).foreach {
           case nested: Formular[?] => nested.setErrorResponses(fieldErrors.map(_.withoutHead))

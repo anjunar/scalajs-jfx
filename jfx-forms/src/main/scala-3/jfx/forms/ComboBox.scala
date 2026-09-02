@@ -123,13 +123,12 @@ final class ComboBox[T] private (
               flexDirection = "column"
             }
 
-            tableView[T] {
+            tableView[T](ComboBox.this.itemsProperty) {
               classes = Seq("jfx-combo-box__table")
               TableView.showHeader = false
               TableView.rowHeight = math.max(1.0, rowHeightProperty.get)
               TableView.tablePrefWidth =
                 Overlay.effectiveWidth.map(width => math.max(0.0, width - 2.0))
-              TableView.items = ComboBox.this.itemsProperty
               style {
                 height = "auto"
                 minHeight = "0"

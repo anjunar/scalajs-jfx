@@ -47,8 +47,12 @@ object CarouselSlide {
       count: Int,
       renderer: Renderer[T],
       observeActiveIndex: Boolean
-  )(body: CarouselSlide[?] ?=> Cursor ?=> Unit = {})(using AbstractComponent, Cursor): CarouselSlide[T] =
-    DslLayer.child(new CarouselSlide[T](carousel, item, index, count, renderer, observeActiveIndex)) {
+  )(
+      body: CarouselSlide[?] ?=> Cursor ?=> Unit = {}
+  )(using AbstractComponent, Cursor): CarouselSlide[T] =
+    DslLayer.child(
+      new CarouselSlide[T](carousel, item, index, count, renderer, observeActiveIndex)
+    ) {
       body
     }
 }

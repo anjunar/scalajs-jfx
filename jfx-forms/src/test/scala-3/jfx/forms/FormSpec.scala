@@ -24,7 +24,7 @@ class FormSpec extends AnyFlatSpec with Matchers {
     val second = Person()
     second.name.set("Grace")
     var mountedForm: Form[Person] = null
-    var nameInput: Input = null
+    var nameInput: Input          = null
 
     val root = mount {
       mountedForm = form(first) {
@@ -51,7 +51,7 @@ class FormSpec extends AnyFlatSpec with Matchers {
     val person = Person()
     person.address.get.street.set("Analytical Engine Way")
     var mountedForm: Form[Person] = null
-    var streetInput: Input = null
+    var streetInput: Input        = null
 
     val root = mount {
       mountedForm = form(person) {
@@ -104,8 +104,8 @@ class FormSpec extends AnyFlatSpec with Matchers {
 
   it should "connect InputContainer labels, state classes, and validation messages" in {
     var container: InputContainer = null
-    var nameInput: Input = null
-    val label = Property("Name")
+    var nameInput: Input          = null
+    val label                     = Property("Name")
 
     val root = mount {
       container = inputContainer(label) {
@@ -143,7 +143,8 @@ class FormSpec extends AnyFlatSpec with Matchers {
     }
 }
 
-private final class TestRoot(body: AbstractComponent ?=> Cursor ?=> Unit) extends AbstractComponent {
+private final class TestRoot(body: AbstractComponent ?=> Cursor ?=> Unit)
+    extends AbstractComponent {
   val tagName = "div"
 
   override def compose(cursor: Cursor): Unit =

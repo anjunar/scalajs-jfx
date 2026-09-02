@@ -3,12 +3,12 @@ package jfx.core.dsl
 import jfx.core.state.ReadOnlyProperty
 
 trait ClassDsl {
-  
-  def addClass(name : String) : Unit
-  
-  def getClasses : Seq[String]
-  
-  def setClasses(values : Seq[String]) : Unit
+
+  def addClass(name: String): Unit
+
+  def getClasses: Seq[String]
+
+  def setClasses(values: Seq[String]): Unit
 
   def classCondition(name: String, condition: ReadOnlyProperty[Boolean]): Unit
 

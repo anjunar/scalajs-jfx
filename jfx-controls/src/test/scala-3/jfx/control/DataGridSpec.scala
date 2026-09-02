@@ -10,7 +10,7 @@ import jfx.core.layout.Div.div
 import jfx.core.layout.TextComponent.text
 import jfx.core.render.{Cursor, SsrCursor}
 import jfx.core.request.{RequestContext, RequestHeaders}
-import jfx.core.state.ListProperty
+import jfx.core.state.{ListDataSource, ListProperty}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -57,7 +57,7 @@ class DataGridSpec extends AnyFlatSpec with Matchers {
 
   it should "render crawlable windows from its component cookie" in {
     val members = (0 until 20).map(index => s"Member $index")
-    val html = Runtime.renderToString { cursor =>
+    val html    = Runtime.renderToString { cursor =>
       Runtime.mount(
         new CrawlTestRoot(
           crawlPath = "/",
@@ -66,8 +66,7 @@ class DataGridSpec extends AnyFlatSpec with Matchers {
           )
         ) {
           override protected def content(using AbstractComponent, Cursor): Unit =
-            dataGrid[String] {
-              items = members
+            dataGrid[String](ListProperty(js.Array(members*))) {
               itemWidthPx = 400
               itemHeightPx = 100
               gapPx = 0
@@ -183,7 +182,7 @@ class DataGridSpec extends AnyFlatSpec with Matchers {
     renderConfiguredGrid(values)(extra)
   }
 
-  private def renderConfiguredGrid(itemsToRender: ListProperty[String])(
+  private def renderConfiguredGrid(itemsToRender: ListDataSource[String])(
       extra: DataGrid[String] ?=> Cursor ?=> Unit
   ): String =
     Runtime.renderToString { cursor =>
@@ -192,8 +191,7 @@ class DataGridSpec extends AnyFlatSpec with Matchers {
           override val tagName: String                      = "main"
           override def compose(contentCursor: Cursor): Unit =
             DslLayer.render(this, contentCursor) {
-              dataGrid[String] {
-                items = itemsToRender
+              dataGrid[String](itemsToRender) {
                 itemWidthPx = 400
                 itemHeightPx = 100
                 gapPx = 0
@@ -217,13 +215,12 @@ class DataGridSpec extends AnyFlatSpec with Matchers {
   private def visibleText(html: String): String =
     html.replaceAll("<!--.*?-->", "").replaceAll("<[^>]+>", "")
 
-  private final class GridRoot(itemsProperty: ListProperty[String]) extends AbstractComponent {
+  private final class GridRoot(itemsProperty: ListDataSource[String]) extends AbstractComponent {
     override val tagName: String = "main"
 
     override def compose(cursor: Cursor): Unit =
       DslLayer.render(this, cursor) {
-        dataGrid[String] {
-          items = itemsProperty
+        dataGrid[String](itemsProperty) {
           itemWidthPx = 400
           itemHeightPx = 100
           gapPx = 0

@@ -308,7 +308,7 @@ final class ImageCropper private (
         conf.title = windowTitleProperty.get
         session.windowConf = conf
         activeSession = session
-        Viewport.addWindow(conf)
+        Viewport.addWindow(conf)(using this)
     }
   }
 

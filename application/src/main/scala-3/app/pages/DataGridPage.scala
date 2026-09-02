@@ -139,8 +139,7 @@ object DataGridPage {
                 overflow = "hidden"
               }
 
-              dataGrid[Tile] {
-                items = tiles
+              dataGrid[Tile](tiles) {
                 itemWidthPx = 240
                 itemHeightPx = 196
                 gapPx = 16
@@ -253,8 +252,7 @@ object DataGridPage {
         ) {
           codeBlock(
             "scala",
-            """|dataGrid[Tile] {
-               |  items = tiles
+            """|dataGrid[Tile](tiles) {
                |  itemWidthPx = 240
                |  itemHeightPx = 196
                |  gapPx = 16

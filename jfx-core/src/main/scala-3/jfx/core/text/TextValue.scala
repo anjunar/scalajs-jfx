@@ -15,7 +15,9 @@ object TextValue {
     textValue.asReadOnlyProperty(value)
 
   given stringTextValue: TextValue[String] with
-    override def asReadOnlyProperty(value: String)(using AbstractComponent): ReadOnlyProperty[String] =
+    override def asReadOnlyProperty(value: String)(using
+        AbstractComponent
+    ): ReadOnlyProperty[String] =
       Property(Option(value).getOrElse(""))
 
   given propertyTextValue: TextValue[ReadOnlyProperty[String]] with

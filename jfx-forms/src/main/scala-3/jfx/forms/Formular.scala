@@ -57,7 +57,7 @@ trait Formular[M] extends FormController, Editable { self: AbstractComponent =>
           case nested: Formular[?] => nested.setErrorResponses(errors.map(_.withoutHead))
           case array: ArrayForm[?] => array.setErrorResponses(errors.map(_.withoutHead))
           case group: FieldSet     => group.setErrorResponses(errors.map(_.withoutHead))
-          case control            => control.setErrors(errors.map(_.message))
+          case control             => control.setErrors(errors.map(_.message))
         }
       }
 
@@ -109,15 +109,17 @@ trait Formular[M] extends FormController, Editable { self: AbstractComponent =>
 
   private def bindNow(control: Control[?], model: M): Disposable = {
     val descriptor = descriptorFor(model)
-    val property = descriptor.flatMap(_.getProperty(control.name))
-    val accessor = property.flatMap(_.accessor)
+    val property   = descriptor.flatMap(_.getProperty(control.name))
+    val accessor   = property.flatMap(_.accessor)
 
     if (accessor.isEmpty) {
-      warn(s"Skipping form binding for control '${control.name}': no matching readable model property on ${model.getClass.getName}.")
+      warn(
+        s"Skipping form binding for control '${control.name}': no matching readable model property on ${model.getClass.getName}."
+      )
       return Disposable.empty
     }
 
-    val composite = new CompositeDisposable()
+    val composite       = new CompositeDisposable()
     val addedValidators = addModelValidators(control, property.toSeq)
     composite.add(Disposable(removeValidators(control, addedValidators)))
 
@@ -128,7 +130,9 @@ trait Formular[M] extends FormController, Editable { self: AbstractComponent =>
       case (source: ListProperty[Any @unchecked], target: ListProperty[Any @unchecked]) =>
         composite.add(ListProperty.subscribeBidirectional(source, target))
       case _ =>
-        warn(s"Skipping form binding for control '${control.name}': model and control property types do not match.")
+        warn(
+          s"Skipping form binding for control '${control.name}': model and control property types do not match."
+        )
     }
 
     composite
@@ -148,7 +152,7 @@ trait Formular[M] extends FormController, Editable { self: AbstractComponent =>
     val validators = properties.iterator
       .flatMap(property => ValidatorFactory.createValidators(property.annotations))
       .toVector
-    val raw = control.validators.asInstanceOf[ListProperty[Validator[Any]]]
+    val raw   = control.validators.asInstanceOf[ListProperty[Validator[Any]]]
     val added = validators.filterNot(raw.contains)
     added.foreach(raw += _)
     added

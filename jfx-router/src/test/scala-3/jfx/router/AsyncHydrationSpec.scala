@@ -10,18 +10,17 @@ import org.scalatest.matchers.should.Matchers
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
-/**
- * Routen sind asynchron -- alle, ohne Ausnahme.
- *
- * Vor P4-1 warf der Router beim Hydrieren, sobald ein Loader nicht synchron
- * fertig war. Das fiel nur deshalb nicht auf, weil saemtliche Demo-Routen mit
- * Future.successful arbeiteten; die erste echte Datenroute haette die Hydration
- * gebrochen. SSR war damit faktisch nur fuer statische Seiten benutzbar.
- *
- * Jetzt uebernimmt der Router den server-gerenderten Baum ungeprueft und
- * ersetzt ihn, sobald der Loader liefert. Der Preis ist ein zweiter
- * Ladevorgang -- bewusst so gewaehlt statt eines SSR-Datencaches.
- */
+/** Routen sind asynchron -- alle, ohne Ausnahme.
+  *
+  * Vor P4-1 warf der Router beim Hydrieren, sobald ein Loader nicht synchron fertig war. Das fiel
+  * nur deshalb nicht auf, weil saemtliche Demo-Routen mit Future.successful arbeiteten; die erste
+  * echte Datenroute haette die Hydration gebrochen. SSR war damit faktisch nur fuer statische
+  * Seiten benutzbar.
+  *
+  * Jetzt uebernimmt der Router den server-gerenderten Baum ungeprueft und ersetzt ihn, sobald der
+  * Loader liefert. Der Preis ist ein zweiter Ladevorgang -- bewusst so gewaehlt statt eines
+  * SSR-Datencaches.
+  */
 class AsyncHydrationSpec extends AnyFlatSpec with Matchers {
 
   private given ExecutionContext = ExecutionContext.parasitic
@@ -83,14 +82,12 @@ class AsyncHydrationSpec extends AnyFlatSpec with Matchers {
     new Router(Seq(Route.view("/")(_ => loaded)), "/")
 }
 
-/**
- * Cursor, der eine laufende Hydration vortaeuscht und mitschreibt, welche
- * Bereiche beansprucht und welche uebernommen wurden.
- *
- * Ein echter HydratingCursor braucht ein DOM; die Testumgebung hat keines. Fuer
- * die Frage, die hier zaehlt -- beansprucht der Router oder uebernimmt er --
- * genuegt der Mitschrieb.
- */
+/** Cursor, der eine laufende Hydration vortaeuscht und mitschreibt, welche Bereiche beansprucht und
+  * welche uebernommen wurden.
+  *
+  * Ein echter HydratingCursor braucht ein DOM; die Testumgebung hat keines. Fuer die Frage, die
+  * hier zaehlt -- beansprucht der Router oder uebernimmt er -- genuegt der Mitschrieb.
+  */
 private final class HydrationTestCursor extends Cursor {
 
   val claimed = mutable.ArrayBuffer.empty[String]
@@ -146,9 +143,9 @@ private final class TestHostElement(val tagName: String) extends HostElement {
   override def attribute(name: String): Option[String]         = attributes.get(name)
   override def setProperty(name: String, value: Any): Unit     = properties.update(name, value)
   override def property[T](name: String): Option[T] = properties.get(name).map(_.asInstanceOf[T])
-  override def setStyle(name: String, value: String): Unit    = styles.update(name, value)
-  override def removeStyle(name: String): Unit                = styles.remove(name)
-  override def setClassNames(names: Seq[String]): Unit        =
+  override def setStyle(name: String, value: String): Unit = styles.update(name, value)
+  override def removeStyle(name: String): Unit             = styles.remove(name)
+  override def setClassNames(names: Seq[String]): Unit     =
     attributes.update("class", names.mkString(" "))
   override def insertChild(index: Int, child: HostNode): Unit = children.insert(index, child)
   override def insertBefore(child: HostNode, before: Option[HostNode]): Unit =

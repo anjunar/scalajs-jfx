@@ -90,7 +90,8 @@ final class Editor private[editor] (
             }
 
             surfaceHost = div {
-              classes = Seq("jfx-editor__surface", "lexical-editor-container", "lexical-editor-input")
+              classes =
+                Seq("jfx-editor__surface", "lexical-editor-container", "lexical-editor-input")
               setAttribute("role", "textbox")
               setAttribute("aria-multiline", "true")
               setAttribute("contenteditable", editableProperty.get.toString)
@@ -260,7 +261,7 @@ final class Editor private[editor] (
   private def resolveDialogService(): DialogService =
     dialogServiceValue
       .orElse(Editor.DialogServiceContext.inject(using this))
-      .getOrElse(new DefaultDialogService())
+      .getOrElse(new DefaultDialogService(this))
 
   private def renderToolbar(editor: LexicalEditor): Unit =
     domElement[HTMLElement](toolbarHost).foreach { target =>
@@ -547,9 +548,7 @@ private final class PreviewNode(node: js.Any) extends AbstractComponent {
             )
             previewInt(node, "width")
               .orElse(extraInt(node, "width"))
-              .foreach(width =>
-                setDslAttribute("width", width.toString)
-              )
+              .foreach(width => setDslAttribute("width", width.toString))
             style {
               maxWidth = "100%"
               height = "auto"

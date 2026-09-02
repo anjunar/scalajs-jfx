@@ -47,7 +47,7 @@ final class ImagePlugin extends EditorPlugin {
   private var activeReader: FileReader | Null = null
 
   override val toolbarElements: Seq[ToolbarElement] = Seq(new ImageModule())
-  override val nodes: Seq[js.Any]                    = Seq(js.constructorOf[ImageNode])
+  override val nodes: Seq[js.Any]                   = Seq(js.constructorOf[ImageNode])
 
   override def install(editor: LexicalEditor): js.Function0[Unit] = {
     val unregisterCommand = editor.registerCommand(

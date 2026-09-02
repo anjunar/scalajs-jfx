@@ -2,30 +2,27 @@ package jfx.core.remote
 
 import scala.collection.mutable
 
-/**
- * Die geladenen Ausschnitte einer Remote-Liste, als zusammenhaengende Bereiche.
- *
- * Vorher lag das als `mutable.Map[Int, V]` von absolutem Index auf Wert vor. Das
- * ist die falsche Struktur fuer den Zweck: die Map traegt keine Ordnung, also
- * musste jede Operation, die Ordnung braucht, erst sortieren -- `O(n log n)` pro
- * Einzel-Update in einer Klasse, deren Zweck grosse Datenmengen sind.
- *
- * Geladene Daten sind aber nie verstreute Einzelindizes, sondern Seiten: wenige
- * zusammenhaengende Bereiche mit Luecken dazwischen. Genau das bildet diese
- * Struktur ab. Alle Operationen laufen in `O(r)` oder `O(log r)`, wobei `r` die
- * Anzahl der Bereiche ist -- typischerweise eine Handvoll, unabhaengig davon, wie
- * viele Eintraege geladen sind.
- *
- * Invarianten:
- *   - `ranges` ist nach `start` aufsteigend sortiert.
- *   - Bereiche ueberlappen nicht und grenzen nicht aneinander; beruehrende
- *     Bereiche werden verschmolzen. Zwischen zwei Bereichen liegt also immer
- *     eine echte Luecke.
- *   - Kein Bereich ist leer.
- *
- * "Absolut" meint den Index in der vollstaendigen Remote-Liste, "dicht" den Index
- * in der ListProperty darunter, die nur die geladenen Eintraege haelt.
- */
+/** Die geladenen Ausschnitte einer Remote-Liste, als zusammenhaengende Bereiche.
+  *
+  * Vorher lag das als `mutable.Map[Int, V]` von absolutem Index auf Wert vor. Das ist die falsche
+  * Struktur fuer den Zweck: die Map traegt keine Ordnung, also musste jede Operation, die Ordnung
+  * braucht, erst sortieren -- `O(n log n)` pro Einzel-Update in einer Klasse, deren Zweck grosse
+  * Datenmengen sind.
+  *
+  * Geladene Daten sind aber nie verstreute Einzelindizes, sondern Seiten: wenige zusammenhaengende
+  * Bereiche mit Luecken dazwischen. Genau das bildet diese Struktur ab. Alle Operationen laufen in
+  * `O(r)` oder `O(log r)`, wobei `r` die Anzahl der Bereiche ist -- typischerweise eine Handvoll,
+  * unabhaengig davon, wie viele Eintraege geladen sind.
+  *
+  * Invarianten:
+  *   - `ranges` ist nach `start` aufsteigend sortiert.
+  *   - Bereiche ueberlappen nicht und grenzen nicht aneinander; beruehrende Bereiche werden
+  *     verschmolzen. Zwischen zwei Bereichen liegt also immer eine echte Luecke.
+  *   - Kein Bereich ist leer.
+  *
+  * "Absolut" meint den Index in der vollstaendigen Remote-Liste, "dicht" den Index in der
+  * ListProperty darunter, die nur die geladenen Eintraege haelt.
+  */
 private[remote] final class LoadedRanges[V] {
 
   private final class Range(var start: Int, val items: mutable.ArrayBuffer[V]) {
@@ -51,11 +48,10 @@ private[remote] final class LoadedRanges[V] {
 
   def clear(): Unit = ranges.clear()
 
-  /**
-   * Index des Bereichs, der `absolute` enthaelt. Ist er in keinem Bereich, wird
-   * `-(Einfuegeposition) - 1` geliefert -- dieselbe Konvention wie
-   * `java.util.Arrays.binarySearch`.
-   */
+  /** Index des Bereichs, der `absolute` enthaelt. Ist er in keinem Bereich, wird
+    * `-(Einfuegeposition) - 1` geliefert -- dieselbe Konvention wie
+    * `java.util.Arrays.binarySearch`.
+    */
   private def search(absolute: Int): Int = {
     var low  = 0
     var high = ranges.length - 1
@@ -146,11 +142,9 @@ private[remote] final class LoadedRanges[V] {
     }
   }
 
-  /**
-   * Traegt eine zusammenhaengende Seite ein. Ueberlappende und angrenzende
-   * Bereiche werden mit ihr verschmolzen; wo sich alte und neue Daten
-   * ueberschneiden, gewinnen die neuen.
-   */
+  /** Traegt eine zusammenhaengende Seite ein. Ueberlappende und angrenzende Bereiche werden mit ihr
+    * verschmolzen; wo sich alte und neue Daten ueberschneiden, gewinnen die neuen.
+    */
   def put(startAbsolute: Int, items: Seq[V]): Unit = {
     if (items.isEmpty) return
 
@@ -204,10 +198,9 @@ private[remote] final class LoadedRanges[V] {
     ranges ++= result
   }
 
-  /**
-   * Entfernt den Eintrag am absoluten Index und schiebt alles danach um eins
-   * nach unten -- die Liste wird kuerzer, nicht luecken-behafteter.
-   */
+  /** Entfernt den Eintrag am absoluten Index und schiebt alles danach um eins nach unten -- die
+    * Liste wird kuerzer, nicht luecken-behafteter.
+    */
   def removeAt(absolute: Int): Unit = {
     val index = search(absolute)
 

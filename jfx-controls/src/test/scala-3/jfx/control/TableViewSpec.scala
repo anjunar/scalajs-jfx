@@ -11,7 +11,7 @@ import jfx.core.layout.Div.div
 import jfx.core.layout.TextComponent.text
 import jfx.core.render.{Cursor, SsrCursor}
 import jfx.core.request.{RequestContext, RequestHeaders}
-import jfx.core.state.ListProperty
+import jfx.core.state.{ListDataSource, ListProperty}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -33,10 +33,9 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
           )
         ) {
           override protected def content(using AbstractComponent, Cursor): Unit =
-            tableView[String] {
+            tableView[String](ListProperty(js.Array(members*))) {
               crawlable = true
               crawlId = "members-table"
-              items = members
               column[String, String]("Name") {
                 prefWidth = 240.0
                 cell { item => text(item) {} }
@@ -125,10 +124,9 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
           )
         ) {
           override protected def content(using AbstractComponent, Cursor): Unit =
-            tableView[String] {
+            tableView[String](remote) {
               crawlable = true
               crawlId = "remote-members-table"
-              items = remote
               column[String, String]("Name") {
                 cell { item => text(item) {} }
               }
@@ -197,8 +195,7 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
           override val tagName: String                      = "main"
           override def compose(contentCursor: Cursor): Unit =
             DslLayer.render(this, contentCursor) {
-              tableView[String] {
-                items = itemsToRender
+              tableView[String](ListProperty(js.Array(itemsToRender*))) {
                 column[String, String]("Name") {
                   cell { item => text(item) {} }
                 }
@@ -219,8 +216,7 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
 
     override def compose(cursor: Cursor): Unit =
       DslLayer.render(this, cursor) {
-        tableView[String] {
-          items = itemsProperty
+        tableView[String](itemsProperty) {
           column[String, String]("Name") {
             cell { item => text(item) {} }
           }
@@ -228,14 +224,13 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
       }
   }
 
-  private final class SingleTableRoot(itemsProperty: ListProperty[String])
+  private final class SingleTableRoot(itemsProperty: ListDataSource[String])
       extends AbstractComponent {
     override val tagName: String = "main"
 
     override def compose(cursor: Cursor): Unit =
       DslLayer.render(this, cursor) {
-        tableView[String] {
-          items = itemsProperty
+        tableView[String](itemsProperty) {
           column[String, String]("Name") {
             sortable = true
             sortKey = "name"

@@ -18,10 +18,10 @@ object RouteMatcher {
       }
 
   private def resolveRoute(
-                            parentPath: String,
-                            route: Route,
-                            targetPath: String
-                          ): Option[List[RouteMatch]] = {
+      parentPath: String,
+      route: Route,
+      targetPath: String
+  ): Option[List[RouteMatch]] = {
     val routePath = join(parentPath, route.path)
 
     if (!prefixMatches(route, routePath, targetPath)) {
@@ -42,10 +42,10 @@ object RouteMatcher {
   }
 
   private def matches(
-                       route: Route,
-                       routePath: String,
-                       requestPath: String
-                     ): Option[Map[String, String]] = {
+      route: Route,
+      routePath: String,
+      requestPath: String
+  ): Option[Map[String, String]] = {
     val routeSegments   = segments(normalize(routePath))
     val requestSegments = segments(normalize(requestPath))
 
@@ -67,10 +67,10 @@ object RouteMatcher {
   }
 
   private def matchSegments(
-                             routeSegments: Vector[String],
-                             requestSegments: Vector[String],
-                             constraints: Map[String, String => Boolean]
-                           ): Option[Map[String, String]] =
+      routeSegments: Vector[String],
+      requestSegments: Vector[String],
+      constraints: Map[String, String => Boolean]
+  ): Option[Map[String, String]] =
     routeSegments.zip(requestSegments).foldLeft(Option(Map.empty[String, String])) {
       case (None, _) =>
         None
@@ -97,16 +97,16 @@ object RouteMatcher {
     val requestSegments = segments(normalize(requestPath))
 
     routePath == "/" ||
-      routeSegments.indexOf("*") >= 0 ||
-      (requestSegments.length >= routeSegments.length &&
-        routeSegments.zip(requestSegments).forall { case (routeSegment, requestSegment) =>
-          if (routeSegment.startsWith(":") && routeSegment.length > 1) {
-            val name = routeSegment.drop(1)
-            route.constraints.get(name).forall(_(decode(requestSegment)))
-          } else {
-            routeSegment == requestSegment
-          }
-        })
+    routeSegments.indexOf("*") >= 0 ||
+    (requestSegments.length >= routeSegments.length &&
+      routeSegments.zip(requestSegments).forall { case (routeSegment, requestSegment) =>
+        if (routeSegment.startsWith(":") && routeSegment.length > 1) {
+          val name = routeSegment.drop(1)
+          route.constraints.get(name).forall(_(decode(requestSegment)))
+        } else {
+          routeSegment == requestSegment
+        }
+      })
   }
 
   private def join(parentPath: String, childPath: String): String = {

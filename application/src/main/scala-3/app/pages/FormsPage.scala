@@ -22,7 +22,7 @@ import jfx.forms.Input.inputType
 
 object FormsPage {
   def render()(using parent: AbstractComponent, cursor: Cursor): Unit = {
-    val locale = I18nRuntime.require.locale
+    val locale  = I18nRuntime.require.locale
     val profile = DemoProfile()
     profile.name.set("Ada Lovelace")
     profile.email.set("ada@example.org")
@@ -30,7 +30,7 @@ object FormsPage {
     val validationStatus = Property(
       AppI18n.resolve(i18n"Edit a value or validate the complete form.", locale.get)
     )
-    val snapshot = Property("")
+    val snapshot               = Property("")
     def updateSnapshot(): Unit =
       snapshot.set(s"name = ${profile.name.get}\nemail = ${profile.email.get}")
 

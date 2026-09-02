@@ -15,11 +15,11 @@ class TableRow[S] private[control] (
   override val tagName: String = "div"
 
   val itemProperty: Property[S | Null] = Property(null)
-  val indexProperty: Property[Int] = Property(-1)
+  val indexProperty: Property[Int]     = Property(-1)
 
-  private var tableView: TableView[S] | Null = null
+  private var tableView: TableView[S] | Null  = null
   private var columns: Seq[TableColumn[S, ?]] = Seq.empty
-  private var placeholder = false
+  private var placeholder                     = false
 
   override def compose(cursor: Cursor): Unit = {
     initialize(using this)(using cursor)
@@ -40,7 +40,7 @@ class TableRow[S] private[control] (
         addClass("jfx-table-row-placeholder")
         setAttribute("aria-selected", "false")
       } else {
-        val table = requireTableView()
+        val table    = requireTableView()
         val selected = table.selectedIndexProperty.map(_ == indexProperty.get)
         classIf("jfx-table-row-selected", selected)
         addDisposable(selected.observe(value => setAttribute("aria-selected", value.toString)))

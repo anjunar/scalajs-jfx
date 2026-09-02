@@ -11,7 +11,8 @@ import scala.util.control.NonFatal
 
 class ListProperty[V](val underlying: js.Array[V] = js.Array[V]())
     extends ReadOnlyProperty[js.Array[V]],
-      mutable.Buffer[V] {
+      mutable.Buffer[V],
+      ListDataSource[V] {
 
   import ListProperty.*
 
@@ -66,7 +67,7 @@ class ListProperty[V](val underlying: js.Array[V] = js.Array[V]())
     () => listeners -= listener
   }
 
-  def observeChanges(listener: Change[V] => Unit): Disposable = {
+  override def observeChanges(listener: Change[V] => Unit): Disposable = {
     changeListeners += listener
     () => changeListeners -= listener
   }
@@ -166,15 +167,28 @@ class ListProperty[V](val underlying: js.Array[V] = js.Array[V]())
   override def iterator: Iterator[V] =
     underlying.iterator
 
-  def totalLength: Int =
+  override def totalLength: Int =
     length
 
+  override def itemAt(index: Int): Option[V] =
+    Option.when(index >= 0 && index < length)(underlying(index))
 
   def asProperty: ReadOnlyProperty[js.Array[V]] = this
 
 }
 
 object ListProperty {
+
+  type Change[V] = ListDataSource.Change[V]
+  val Reset: ListDataSource.Reset.type             = ListDataSource.Reset
+  val Add: ListDataSource.Add.type                 = ListDataSource.Add
+  val Insert: ListDataSource.Insert.type           = ListDataSource.Insert
+  val InsertAll: ListDataSource.InsertAll.type     = ListDataSource.InsertAll
+  val RemoveAt: ListDataSource.RemoveAt.type       = ListDataSource.RemoveAt
+  val RemoveRange: ListDataSource.RemoveRange.type = ListDataSource.RemoveRange
+  val UpdateAt: ListDataSource.UpdateAt.type       = ListDataSource.UpdateAt
+  val Patch: ListDataSource.Patch.type             = ListDataSource.Patch
+  val Clear: ListDataSource.Clear.type             = ListDataSource.Clear
 
   def apply[V](underlying: js.Array[V] = js.Array[V]()): ListProperty[V] =
     new ListProperty[V](underlying)
@@ -184,7 +198,6 @@ object ListProperty {
       underlying: js.Array[V] = js.Array[V]()
   ): ListProperty[V] =
     new ListProperty[V](underlying).registerDisposableOwner(owner)
-
 
   def subscribeBidirectional[V](a: ListProperty[V], b: ListProperty[V]): Disposable = {
     if (a.eq(b)) return () => ()
@@ -248,27 +261,5 @@ object ListProperty {
       case Clear(_, _) =>
         target.clear()
     }
-
-  trait Change[V] {
-    def list: ListProperty[V]
-  }
-
-  final case class Reset[V](list: ListProperty[V])                          extends Change[V]
-  final case class Add[V](element: V, list: ListProperty[V])                extends Change[V]
-  final case class Insert[V](index: Int, element: V, list: ListProperty[V]) extends Change[V]
-  final case class InsertAll[V](index: Int, elements: js.Array[V], list: ListProperty[V])
-      extends Change[V]
-  final case class RemoveAt[V](index: Int, element: V, list: ListProperty[V]) extends Change[V]
-  final case class RemoveRange[V](index: Int, elements: js.Array[V], list: ListProperty[V])
-      extends Change[V]
-  final case class UpdateAt[V](index: Int, oldElement: V, newElement: V, list: ListProperty[V])
-      extends Change[V]
-  final case class Patch[V](
-      from: Int,
-      removed: js.Array[V],
-      inserted: js.Array[V],
-      list: ListProperty[V]
-  ) extends Change[V]
-  final case class Clear[V](removed: js.Array[V], list: ListProperty[V]) extends Change[V]
 
 }

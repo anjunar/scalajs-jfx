@@ -9,14 +9,17 @@ import org.scalatest.matchers.should.Matchers
 class I18nSpec extends AnyFlatSpec with Matchers {
 
   "i18n interpolator" should "use the full English source as visible identity" in {
-    val user = "Mira"
+    val user  = "Mira"
     val group = "Design"
 
     val message = i18n"User $user invited you to $group"
 
     message.key.source shouldBe "User {user} invited you to {group}"
     message.key.placeholders shouldBe Vector("user", "group")
-    message.args.map(arg => arg.name -> arg.value).toMap shouldBe Map("user" -> "Mira", "group" -> "Design")
+    message.args.map(arg => arg.name -> arg.value).toMap shouldBe Map(
+      "user"  -> "Mira",
+      "group" -> "Design"
+    )
   }
 
   it should "support explicit placeholder names for expressions" in {
@@ -29,13 +32,15 @@ class I18nSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "resolve message-centered multilingual catalog entries with locale fallback" in {
-    val count = 3
+    val count   = 3
     val message = i18n"$count documents selected"
     val catalog = MessageCatalog(
-      I18n.entry(message.key).translations(
-        I18nLocale("de") -> "{count} Dokumente ausgewahlt",
-        I18nLocale("fr") -> "{count} documents selectionnes"
-      )
+      I18n
+        .entry(message.key)
+        .translations(
+          I18nLocale("de") -> "{count} Dokumente ausgewahlt",
+          I18nLocale("fr") -> "{count} documents selectionnes"
+        )
     )
     val resolver = I18nResolver(catalog)
 
@@ -44,12 +49,14 @@ class I18nSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "produce reactive text from a reactive locale" in {
-    val locale = Property(I18nLocale("en"))
+    val locale  = Property(I18nLocale("en"))
     val message = i18n"Delete document"
     val catalog = MessageCatalog(
-      I18n.entry(message.key).translations(
-        I18nLocale("de") -> "Dokument loschen"
-      )
+      I18n
+        .entry(message.key)
+        .translations(
+          I18nLocale("de") -> "Dokument loschen"
+        )
     )
 
     val text = I18nResolver(catalog).resolve(message, locale)
@@ -60,15 +67,17 @@ class I18nSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "resolve runtime messages through the component i18n context" in {
-    val locale = Property(I18nLocale("en"))
+    val locale  = Property(I18nLocale("en"))
     val message = i18n"Delete document"
     val catalog = MessageCatalog(
-      I18n.entry(message.key).translations(
-        I18nLocale("de") -> "Dokument loschen"
-      )
+      I18n
+        .entry(message.key)
+        .translations(
+          I18nLocale("de") -> "Dokument loschen"
+        )
     )
 
-    val root = new AbstractCustomComponent {}
+    val root                = new AbstractCustomComponent {}
     given AbstractComponent = root
 
     I18nRuntime.provide(I18nRuntime(locale, I18nResolver(catalog)))

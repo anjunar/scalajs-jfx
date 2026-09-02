@@ -2,40 +2,38 @@ package jfx.control.virtualized
 
 import jfx.core.component.AbstractComponent
 import jfx.core.layout.Div
-import jfx.core.remote.RemoteListProperty
+import jfx.core.remote.RemoteListDataSource
 import jfx.core.render.DomHostElement
-import jfx.core.state.{CompositeDisposable, Disposable, ListProperty, Property}
+import jfx.core.state.{CompositeDisposable, Disposable, ListDataSource, ListProperty, Property}
 import org.scalajs.dom
 
 import scala.concurrent.Future
 
-/**
- * Gemeinsame Basis von TableView, DataGrid und VirtualListView.
- *
- * Vor P3-1 teilten sich die drei rund 70 bis 100 identisch benannte Member --
- * Scroll-Zustand, Viewport-Messung, Remote-Anbindung, Item-Zustand,
- * Revisionszaehler und DOM-Zugriff lagen dreimal parallel. Jede Korrektur musste
- * dreimal gemacht werden; bei `requestLazyLoadIfNecessary` wurde sie es nicht
- * (siehe jfx-controls/VIRTUALIZATION.md).
- *
- * Was die drei tatsaechlich unterscheidet, steckt in [[ItemGeometry]].
- *
- * Die Unterklasse liefert:
- *   - [[geometry]]           -- wo liegt Element i, was ist sichtbar
- *   - [[renderableCount]]    -- wie viele Elemente insgesamt darstellbar sind
- *   - [[recomputeVisible]]   -- den controlspezifischen Neuaufbau der Sichtliste
- *   - [[handleLocalItemsChange]] und [[resetMeasurements]]
- */
-abstract class VirtualizedCollection[T] extends AbstractComponent {
+/** Gemeinsame Basis von TableView, DataGrid und VirtualListView.
+  *
+  * Vor P3-1 teilten sich die drei rund 70 bis 100 identisch benannte Member -- Scroll-Zustand,
+  * Viewport-Messung, Remote-Anbindung, Item-Zustand, Revisionszaehler und DOM-Zugriff lagen dreimal
+  * parallel. Jede Korrektur musste dreimal gemacht werden; bei `requestLazyLoadIfNecessary` wurde
+  * sie es nicht (siehe jfx-controls/VIRTUALIZATION.md).
+  *
+  * Was die drei tatsaechlich unterscheidet, steckt in [[ItemGeometry]].
+  *
+  * Die Unterklasse liefert:
+  *   - [[geometry]] -- wo liegt Element i, was ist sichtbar
+  *   - [[renderableCount]] -- wie viele Elemente insgesamt darstellbar sind
+  *   - [[recomputeVisible]] -- den controlspezifischen Neuaufbau der Sichtliste
+  *   - [[handleLocalItemsChange]] und [[resetMeasurements]]
+  */
+abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource[T])
+    extends AbstractComponent {
 
   // --- von der Unterklasse zu liefern -------------------------------------
 
   protected def geometry: ItemGeometry
 
-  /**
-   * Anzahl darstellbarer Elemente. Bei einer Remote-Liste ist das die
-   * Gesamtzahl, nicht die Zahl der bereits geladenen.
-   */
+  /** Anzahl darstellbarer Elemente. Bei einer Remote-Liste ist das die Gesamtzahl, nicht die Zahl
+    * der bereits geladenen.
+    */
   protected def renderableCount: Int
 
   /** Baut die controlspezifische Liste sichtbarer Elemente neu auf. */
@@ -51,12 +49,10 @@ abstract class VirtualizedCollection[T] extends AbstractComponent {
   protected def canStillGrow: Boolean =
     currentRemoteItems match {
       case null   => false
-      case remote => remote.hasMoreProperty.get || remote.nextQueryProperty.get.nonEmpty
+      case remote => remote.canLoadMore
     }
 
   // --- Zustand -------------------------------------------------------------
-
-  protected val itemsRefProperty: Property[ListProperty[T]] = Property(ListProperty[T]())
 
   val scrollTopProperty: Property[Double]      = Property(0.0)
   val viewportHeightProperty: Property[Double] = Property(400.0)
@@ -73,36 +69,15 @@ abstract class VirtualizedCollection[T] extends AbstractComponent {
   protected var browserRendering         = false
   protected var hydrating                = false
 
-  // --- Items ---------------------------------------------------------------
-
-  def itemsProperty: Property[ListProperty[T]] = itemsRefProperty
-  def getItems: ListProperty[T]                = itemsRefProperty.get
-
-  def setItems(value: ListProperty[T]): Unit = {
-    val normalized = Option(value).getOrElse(ListProperty[T]())
-    if (!itemsRefProperty.get.eq(normalized)) itemsRefProperty.setAlways(normalized)
-  }
-
-  /**
-   * Die Item-Liste als Remote-Liste, oder null.
-   *
-   * Frueher fragte das ListProperty selbst ueber remotePropertyOrNull -- eine
-   * Rueckwaerts-Abhaengigkeit vom Allgemeinen aufs Spezielle, entfernt in P2-5.
-   * Der Cast ist sicher: getItems ist ListProperty[T], und eine
-   * RemoteListProperty, die zugleich ListProperty[T] ist, hat notwendig T als
-   * Elementtyp. Nur sehen kann der Compiler das wegen Type Erasure nicht.
-   */
-  protected def currentRemoteItems: RemoteListProperty[T, ?] | Null =
-    getItems match {
-      case remote: RemoteListProperty[?, ?] => remote.asInstanceOf[RemoteListProperty[T, ?]]
-      case _                                => null
+  /** Die Item-Liste als Remote-Liste, oder null.
+    */
+  protected def currentRemoteItems: RemoteListDataSource[T] | Null =
+    dataSource match {
+      case remote: RemoteListDataSource[?] => remote.asInstanceOf[RemoteListDataSource[T]]
+      case _                               => null
     }
 
-  protected def itemAt(index: Int): Option[T] =
-    currentRemoteItems match {
-      case null   => Option.when(index >= 0 && index < getItems.length)(getItems(index))
-      case remote => remote.getLoadedItem(index)
-    }
+  protected def itemAt(index: Int): Option[T] = dataSource.itemAt(index)
 
   protected def remoteLoading: Boolean =
     currentRemoteItems match {
@@ -131,29 +106,30 @@ abstract class VirtualizedCollection[T] extends AbstractComponent {
 
   // --- Beobachter ----------------------------------------------------------
 
-  /**
-   * Haengt die Beobachter neu an die aktuelle Item-Liste.
-   *
-   * Aufzurufen, wenn itemsRefProperty auf eine andere Liste zeigt.
-   * [[onRemoteSortingChanged]] ist der Haken fuer CrawlableCollection.
-   */
-  protected def rewireItemsObserver(): Unit = {
+  /** Haengt die Beobachter an die beim Bau uebergebene Datenquelle. [[onRemoteSortingChanged]] ist
+    * der Haken fuer CrawlableCollection.
+    */
+  protected def wireItemsObserver(): Unit = {
     itemsObserver.dispose()
     remoteItemsObserver.dispose()
     bumpRemoteState()
 
     val remote = currentRemoteItems
 
-    itemsObserver = getItems.observeChanges { change =>
+    itemsObserver = dataSource.observeChanges { change =>
       if (remote == null) handleLocalItemsChange(change)
       else {
+        change match {
+          case ListDataSource.Reset(_) => resetMeasurements()
+          case _                       => ()
+        }
         bumpRemoteState()
         refreshItemState()
       }
     }
 
     currentRemoteItems match {
-      case null => remoteItemsObserver = Disposable.empty
+      case null   => remoteItemsObserver = Disposable.empty
       case remote =>
         val composite = new CompositeDisposable()
 
@@ -167,11 +143,6 @@ abstract class VirtualizedCollection[T] extends AbstractComponent {
         })
         composite.add(remote.totalCountProperty.observe(_ => refreshItemState()))
         composite.add(remote.hasMoreProperty.observe(_ => refreshItemState()))
-        composite.add(remote.nextQueryProperty.observe(_ => refreshItemState()))
-        composite.add(remote.queryProperty.observeWithoutInitial { _ =>
-          resetMeasurements()
-          refreshItemState()
-        })
         composite.add(remote.sortingProperty.observeWithoutInitial { sorting =>
           resetMeasurements()
           refreshItemState()
@@ -181,7 +152,7 @@ abstract class VirtualizedCollection[T] extends AbstractComponent {
         remoteItemsObserver = composite
 
         if (
-          browserRendering && remote.length == 0 &&
+          browserRendering && remote.loadedLength == 0 &&
           !remote.loadingProperty.get && remote.errorProperty.get.isEmpty
         ) discardResult(remote.reload())
     }
@@ -209,25 +180,22 @@ abstract class VirtualizedCollection[T] extends AbstractComponent {
   protected def updateViewportSize(element: dom.html.Element): Unit =
     applyViewportSize(element.clientWidth.toDouble, element.clientHeight.toDouble)
 
-  /**
-   * Uebernimmt eine gemessene Viewport-Groesse.
-   *
-   * Getrennt von [[updateViewportSize]], damit die Uebernahme ohne DOM testbar
-   * ist. Der Fehler, den das absichert, sass genau hier: die Basis uebernahm
-   * zunaechst nur die Hoehe, weil sie aus VirtualListView stammte. TableView und
-   * DataGrid brauchen aber auch die Breite -- ohne sie blieben beide bei ihrem
-   * Startwert von 800 stehen, das Grid zeigte eine Spalte zu wenig und die
-   * Tabelle verteilte ihre Spaltenbreiten auf eine zu schmale Flaeche.
-   */
+  /** Uebernimmt eine gemessene Viewport-Groesse.
+    *
+    * Getrennt von [[updateViewportSize]], damit die Uebernahme ohne DOM testbar ist. Der Fehler,
+    * den das absichert, sass genau hier: die Basis uebernahm zunaechst nur die Hoehe, weil sie aus
+    * VirtualListView stammte. TableView und DataGrid brauchen aber auch die Breite -- ohne sie
+    * blieben beide bei ihrem Startwert von 800 stehen, das Grid zeigte eine Spalte zu wenig und die
+    * Tabelle verteilte ihre Spaltenbreiten auf eine zu schmale Flaeche.
+    */
   private[control] def applyViewportSize(width: Double, height: Double): Unit = {
     if (width > 0) onViewportWidthMeasured(width)
     if (height > 0) viewportHeightProperty.set(height)
   }
 
-  /**
-   * Haken fuer Controls mit horizontaler Ausdehnung. VirtualListView ist
-   * einspaltig und braucht die Breite nicht.
-   */
+  /** Haken fuer Controls mit horizontaler Ausdehnung. VirtualListView ist einspaltig und braucht
+    * die Breite nicht.
+    */
   protected def onViewportWidthMeasured(width: Double): Unit = ()
 
   protected def scheduleViewportMeasure(): Unit =
@@ -242,46 +210,39 @@ abstract class VirtualizedCollection[T] extends AbstractComponent {
       ()
     }
 
-  /**
-   * Der Rumpf einer Viewport-Messung: Groesse uebernehmen, dann die Nachlaeufer
-   * benachrichtigen.
-   *
-   * Vom requestAnimationFrame getrennt, damit die Verkettung ohne DOM pruefbar
-   * ist. Genau hier sass ein Fehler: beim Zusammenlegen in P3-1 ist der zweite
-   * Schritt verloren gegangen, wodurch die gespeicherte Scroll-Position nie
-   * wiederhergestellt wurde und hydrating dauerhaft true blieb -- was wiederum
-   * das Nachladen blockierte.
-   */
+  /** Der Rumpf einer Viewport-Messung: Groesse uebernehmen, dann die Nachlaeufer benachrichtigen.
+    *
+    * Vom requestAnimationFrame getrennt, damit die Verkettung ohne DOM pruefbar ist. Genau hier
+    * sass ein Fehler: beim Zusammenlegen in P3-1 ist der zweite Schritt verloren gegangen, wodurch
+    * die gespeicherte Scroll-Position nie wiederhergestellt wurde und hydrating dauerhaft true
+    * blieb -- was wiederum das Nachladen blockierte.
+    */
   private[control] def measureViewport(width: Double, height: Double): Unit = {
     applyViewportSize(width, height)
     onViewportMeasured()
   }
 
-  /**
-   * Haken nach einer Viewport-Messung. CrawlableCollection stellt darueber die
-   * gespeicherte Scroll-Position wieder her und gibt die Hydration frei.
-   */
+  /** Haken nach einer Viewport-Messung. CrawlableCollection stellt darueber die gespeicherte
+    * Scroll-Position wieder her und gibt die Hydration frei.
+    */
   protected def onViewportMeasured(): Unit = ()
 
-  /**
-   * Haengt die Item-Beobachter an und sorgt dafuer, dass sie beim Entsorgen der
-   * Komponente wieder abgehen. Von installObservers der Unterklasse aufzurufen.
-   */
+  /** Haengt die Item-Beobachter an und sorgt dafuer, dass sie beim Entsorgen der Komponente wieder
+    * abgehen. Von installObservers der Unterklasse aufzurufen.
+    */
   protected def installItemObservers(): Unit = {
     addDisposable(Disposable {
       itemsObserver.dispose()
       remoteItemsObserver.dispose()
     })
-    rewireItemsObserver()
+    wireItemsObserver()
   }
 
-  /**
-   * Beobachtet die Groesse des Viewports.
-   *
-   * Stand in allen drei Controls wortgleich in afterCompose -- ein ResizeObserver
-   * auf dem Viewport plus ein resize-Listener am Fenster, beide auf
-   * scheduleViewportMeasure.
-   */
+  /** Beobachtet die Groesse des Viewports.
+    *
+    * Stand in allen drei Controls wortgleich in afterCompose -- ein ResizeObserver auf dem Viewport
+    * plus ein resize-Listener am Fenster, beide auf scheduleViewportMeasure.
+    */
   protected def observeViewportSize(): Unit = {
     domElement(viewportComponent).foreach { element =>
       val observer = new dom.ResizeObserver((_, _) => scheduleViewportMeasure())
@@ -294,11 +255,9 @@ abstract class VirtualizedCollection[T] extends AbstractComponent {
     addDisposable(Disposable(dom.window.removeEventListener("resize", listener)))
   }
 
-  /**
-   * Misst die Hoehe eines Header-Elements laufend und schreibt sie in
-   * `target`. Die drei Controls unterscheiden sich nur darin, welches Element
-   * und welche Property sie uebergeben.
-   */
+  /** Misst die Hoehe eines Header-Elements laufend und schreibt sie in `target`. Die drei Controls
+    * unterscheiden sich nur darin, welches Element und welche Property sie uebergeben.
+    */
   protected def observeHeaderHeight(
       header: AbstractComponent | Null,
       target: Property[Double]
@@ -332,15 +291,13 @@ abstract class VirtualizedCollection[T] extends AbstractComponent {
   protected def topForIndex(index: Int): Double =
     geometry.topForIndex(index)
 
-  /**
-   * Sichtbarer Bereich als `[start, end)`.
-   *
-   * Der vordere Zweig ist in allen drei Controls wortgleich: beim
-   * Server-Rendering und waehrend der Hydration bestimmt der Crawl-Zustand den
-   * Ausschnitt, nicht die Scroll-Position -- sonst waere der gerenderte
-   * Ausschnitt nicht reproduzierbar. Erst der else-Zweig unterscheidet sich, und
-   * der liegt in der Geometrie.
-   */
+  /** Sichtbarer Bereich als `[start, end)`.
+    *
+    * Der vordere Zweig ist in allen drei Controls wortgleich: beim Server-Rendering und waehrend
+    * der Hydration bestimmt der Crawl-Zustand den Ausschnitt, nicht die Scroll-Position -- sonst
+    * waere der gerenderte Ausschnitt nicht reproduzierbar. Erst der else-Zweig unterscheidet sich,
+    * und der liegt in der Geometrie.
+    */
   protected def visibleRange(total: Int): (Int, Int) =
     if ((!browserRendering || hydrating) && crawlWindow.nonEmpty) {
       val (offset, limit) = crawlWindow.get
@@ -350,26 +307,24 @@ abstract class VirtualizedCollection[T] extends AbstractComponent {
       geometry.visibleRange(total, scrollTopProperty.get, viewportHeightProperty.get)
     }
 
-  /**
-   * Der beim Server-Rendering zu zeigende Ausschnitt, oder None.
-   * CrawlableCollection ueberschreibt das.
-   */
+  /** Der beim Server-Rendering zu zeigende Ausschnitt, oder None. CrawlableCollection ueberschreibt
+    * das.
+    */
   protected def crawlWindow: Option[(Int, Int)] = None
 
   // --- Nachladen -----------------------------------------------------------
 
-  /**
-   * Faehrt den Prefetch fuer den sichtbaren Bereich.
-   *
-   * Diese Fassung stammt aus DataGrid und VirtualListView; TableView hatte eine
-   * aeltere ohne Prefetch-Fenster und ohne Seiten-Ausrichtung und erbt die
-   * Verbesserung hier mit. Siehe VIRTUALIZATION.md.
-   */
+  /** Faehrt den Prefetch fuer den sichtbaren Bereich.
+    *
+    * Diese Fassung stammt aus DataGrid und VirtualListView; TableView hatte eine aeltere ohne
+    * Prefetch-Fenster und ohne Seiten-Ausrichtung und erbt die Verbesserung hier mit. Siehe
+    * VIRTUALIZATION.md.
+    */
   protected def requestLazyLoadIfNecessary(start: Int, end: Int): Unit =
     currentRemoteItems match {
-      case null                                                                      => ()
-      case remote if remote.loadingProperty.get || remote.errorProperty.get.nonEmpty => ()
-      case remote if remote.supportsRangeLoading                                     =>
+      case null                                        => ()
+      case remote if remote.errorProperty.get.nonEmpty => ()
+      case remote if remote.supportsRangeLoading       =>
         val prefetch    = math.max(1, prefetchItemsProperty.get)
         val total       = renderableCount
         val requestFrom = math.max(0, start - prefetch)
@@ -388,16 +343,16 @@ abstract class VirtualizedCollection[T] extends AbstractComponent {
         }
       case remote if canStillGrow =>
         val threshold = math.max(1, prefetchItemsProperty.get / 2)
-        if (remote.length == 0) discardResult(remote.reload())
-        else if (end >= math.max(0, remote.length - threshold)) discardResult(remote.loadMore())
+        if (remote.loadedLength == 0) discardResult(remote.reload())
+        else if (end >= math.max(0, remote.loadedLength - threshold))
+          discardResult(remote.loadMore())
       case _ => ()
     }
 
-  /**
-   * Ein Lade-Future, dessen Ergebnis das Control nicht braucht. Der recover
-   * verhindert eine unbehandelte Fehlermeldung -- der Fehler selbst steht in
-   * RemoteListProperty.errorProperty und wird von dort gerendert.
-   */
+  /** Ein Lade-Future, dessen Ergebnis das Control nicht braucht. Der recover verhindert eine
+    * unbehandelte Fehlermeldung -- der Fehler selbst steht in RemoteListProperty.errorProperty und
+    * wird von dort gerendert.
+    */
   protected def discardResult(result: Future[?]): Unit = {
     result.recover { case _ => () }(using scala.concurrent.ExecutionContext.global)
     ()

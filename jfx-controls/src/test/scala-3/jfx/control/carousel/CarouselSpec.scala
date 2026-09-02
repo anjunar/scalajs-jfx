@@ -16,8 +16,8 @@ import scala.scalajs.js
 class CarouselSpec extends AnyFlatSpec with Matchers {
 
   "Carousel navigation" should "wrap or clamp through its public state" in {
-    val items = ListProperty[String](js.Array("One", "Two", "Three"))
-    val cursor = new SsrCursor()
+    val items                     = ListProperty[String](js.Array("One", "Two", "Three"))
+    val cursor                    = new SsrCursor()
     var control: Carousel[String] = null
 
     val root = Runtime.mount(
@@ -89,9 +89,9 @@ class CarouselSpec extends AnyFlatSpec with Matchers {
   }
 
   "Carousel list lifecycle" should "follow mutations, replacement and render-mode changes" in {
-    val first  = ListProperty[String](js.Array("One", "Two", "Three"))
-    val second = ListProperty[String](js.Array("Alpha", "Beta"))
-    val cursor = new SsrCursor()
+    val first                     = ListProperty[String](js.Array("One", "Two", "Three"))
+    val second                    = ListProperty[String](js.Array("Alpha", "Beta"))
+    val cursor                    = new SsrCursor()
     var control: Carousel[String] = null
 
     val root = Runtime.mount(
@@ -99,8 +99,7 @@ class CarouselSpec extends AnyFlatSpec with Matchers {
         override protected def content(using AbstractComponent, Cursor): Unit =
           control = carousel[String] {
             Carousel.items = first
-            Carousel.slideRenderer = (item: String, index: Int) =>
-              div { text(s"$index:$item") {} }
+            Carousel.slideRenderer = (item: String, index: Int) => div { text(s"$index:$item") {} }
           }
       },
       cursor
@@ -130,9 +129,9 @@ class CarouselSpec extends AnyFlatSpec with Matchers {
   }
 
   "Carousel interaction" should "handle buttons and keyboard and remove handlers on unmount" in {
-    val hosts  = mutable.ArrayBuffer.empty[CarouselTestHostElement]
-    val cursor = new CarouselEventCursor(hosts += _)
-    val items  = ListProperty[String](js.Array("One", "Two", "Three"))
+    val hosts                     = mutable.ArrayBuffer.empty[CarouselTestHostElement]
+    val cursor                    = new CarouselEventCursor(hosts += _)
+    val items                     = ListProperty[String](js.Array("One", "Two", "Three"))
     var control: Carousel[String] = null
 
     val root = Runtime.mount(
@@ -145,7 +144,7 @@ class CarouselSpec extends AnyFlatSpec with Matchers {
       cursor
     )
 
-    val carouselHost = hosts.find(_.tagName == "section").get
+    val carouselHost    = hosts.find(_.tagName == "section").get
     val secondIndicator = hosts.find(_.attribute("aria-label").contains("Go to slide 2")).get
     val nextButton      = hosts.find(_.attribute("aria-label").contains("Next slide")).get
 
@@ -165,10 +164,10 @@ class CarouselSpec extends AnyFlatSpec with Matchers {
   }
 
   "Carousel autoplay" should "restart its browser timer and dispose it with the component" in {
-    val scheduler = new TestIntervalScheduler
-    val hosts     = mutable.ArrayBuffer.empty[CarouselTestHostElement]
-    val cursor    = new CarouselEventCursor(hosts += _, browser = true)
-    val items     = ListProperty[String](js.Array("One", "Two", "Three"))
+    val scheduler                 = new TestIntervalScheduler
+    val hosts                     = mutable.ArrayBuffer.empty[CarouselTestHostElement]
+    val cursor                    = new CarouselEventCursor(hosts += _, browser = true)
+    val items                     = ListProperty[String](js.Array("One", "Two", "Three"))
     var control: Carousel[String] = null
 
     val root = Runtime.mount(
@@ -176,10 +175,11 @@ class CarouselSpec extends AnyFlatSpec with Matchers {
         override protected def content(using parent: AbstractComponent, cursor: Cursor): Unit =
           control = DslLayer.child(
             new Carousel[String](
-              (current: Carousel[String]) ?=> (_: Cursor) ?=> {
-                current.setItems(items)
-                current.autoAdvanceMsProperty.set(2500)
-              },
+              (current: Carousel[String]) ?=>
+                (_: Cursor) ?=> {
+                  current.setItems(items)
+                  current.autoAdvanceMsProperty.set(2500)
+                },
               scheduler
             )
           ) {}
@@ -229,9 +229,9 @@ private final class TestIntervalScheduler extends IntervalScheduler {
     var active: Boolean = true
   }
 
-  private val tasks = mutable.ArrayBuffer.empty[Task]
+  private val tasks      = mutable.ArrayBuffer.empty[Task]
   val scheduledIntervals = mutable.ArrayBuffer.empty[Int]
-  var disposedCount = 0
+  var disposedCount      = 0
 
   override def schedule(intervalMs: Int)(action: () => Unit): Disposable = {
     val task = new Task(action)
@@ -281,14 +281,14 @@ private final class CarouselTestHostElement(val tagName: String) extends HostEle
   private val listeners  = mutable.Map.empty[String, UiEvent => Unit]
 
   override def setAttribute(name: String, value: String): Unit = attributes.update(name, value)
-  override def removeAttribute(name: String): Unit              = attributes.remove(name)
-  override def attribute(name: String): Option[String]          = attributes.get(name)
-  override def setProperty(name: String, value: Any): Unit      = properties.update(name, value)
-  override def property[T](name: String): Option[T] =
+  override def removeAttribute(name: String): Unit             = attributes.remove(name)
+  override def attribute(name: String): Option[String]         = attributes.get(name)
+  override def setProperty(name: String, value: Any): Unit     = properties.update(name, value)
+  override def property[T](name: String): Option[T]            =
     properties.get(name).map(_.asInstanceOf[T])
   override def setStyle(name: String, value: String): Unit = styles.update(name, value)
-  override def removeStyle(name: String): Unit              = styles.remove(name)
-  override def setClassNames(names: Seq[String]): Unit =
+  override def removeStyle(name: String): Unit             = styles.remove(name)
+  override def setClassNames(names: Seq[String]): Unit     =
     attributes.update("class", names.mkString(" "))
   override def insertChild(index: Int, child: HostNode): Unit = children.insert(index, child)
   override def insertBefore(child: HostNode, before: Option[HostNode]): Unit =

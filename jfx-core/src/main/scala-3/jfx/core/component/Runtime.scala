@@ -11,20 +11,17 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object Runtime {
 
-  /**
-   * Haengt `component` unter `parent` ein.
-   *
-   * `childIndex` gibt die Position in der Kinderliste an. Ohne Angabe wird
-   * angehaengt -- das ist der Normalfall, weil die meisten Komponenten in
-   * Reihenfolge komponiert werden. Container, die an beliebiger Stelle einfuegen
-   * (Foreach), geben die Position mit.
-   *
-   * Vor P4-3 gab es die Angabe nicht: Runtime haengte immer an, und Foreach
-   * baute die Kinderliste danach aus seiner eigenen Buchfuehrung neu auf. Zwei
-   * Quellen der Wahrheit fuer dieselbe Liste -- und alles, was auf anderem Weg
-   * in einen Foreach gemountet wurde, verschwand beim naechsten Abgleich
-   * stillschweigend.
-   */
+  /** Haengt `component` unter `parent` ein.
+    *
+    * `childIndex` gibt die Position in der Kinderliste an. Ohne Angabe wird angehaengt -- das ist
+    * der Normalfall, weil die meisten Komponenten in Reihenfolge komponiert werden. Container, die
+    * an beliebiger Stelle einfuegen (Foreach), geben die Position mit.
+    *
+    * Vor P4-3 gab es die Angabe nicht: Runtime haengte immer an, und Foreach baute die Kinderliste
+    * danach aus seiner eigenen Buchfuehrung neu auf. Zwei Quellen der Wahrheit fuer dieselbe Liste
+    * -- und alles, was auf anderem Weg in einen Foreach gemountet wurde, verschwand beim naechsten
+    * Abgleich stillschweigend.
+    */
   def mount[C <: AbstractComponent](
       component: C,
       cursor: Cursor,
@@ -157,7 +154,7 @@ object Runtime {
   @tailrec
   private def parentHostElement(parent: Option[AbstractComponent]): Option[HostElement] =
     parent match {
-      case None => None
+      case None            => None
       case Some(component) =>
         if (!component.isVirtual) Some(component.host)
         else parentHostElement(component._parent)

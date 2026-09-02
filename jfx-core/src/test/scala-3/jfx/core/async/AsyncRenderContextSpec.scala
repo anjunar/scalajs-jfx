@@ -23,7 +23,7 @@ class AsyncRenderContextSpec extends AsyncFlatSpec with Matchers {
   }
 
   it should "drain tasks registered by earlier tasks" in {
-    val context = new AsyncRenderContext()
+    val context   = new AsyncRenderContext()
     var completed = false
 
     context.add(Future.successful {
@@ -38,7 +38,7 @@ class AsyncRenderContextSpec extends AsyncFlatSpec with Matchers {
   }
 
   it should "fail deterministically when nested tasks exceed the maximum depth" in {
-    val pending = ArrayBuffer.empty[Runnable]
+    val pending                    = ArrayBuffer.empty[Runnable]
     val controlledExecutionContext = new ExecutionContext {
       override def execute(runnable: Runnable): Unit =
         pending += runnable
@@ -62,7 +62,7 @@ class AsyncRenderContextSpec extends AsyncFlatSpec with Matchers {
 
     val error = drained.value match {
       case Some(Failure(error: IllegalStateException)) => error
-      case result                                      => fail(s"Expected depth failure, got $result")
+      case result => fail(s"Expected depth failure, got $result")
     }
 
     error.getMessage shouldBe "AsyncRender: max depth exceeded"

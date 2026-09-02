@@ -18,32 +18,31 @@ abstract class AbstractComponent
 
   val tagName: String
 
-  private[jfx] var _host: HostNode                    = _
-  private[jfx] var _parent: Option[AbstractComponent] = None
+  private[jfx] var _host: HostNode                       = _
+  private[jfx] var _parent: Option[AbstractComponent]    = None
   private[jfx] var _mountParentHost: Option[HostElement] = None
-  private[jfx] var _contentCursor: Cursor = _
-  /**
-   * Die Kinder dieser Komponente.
-   *
-   * Eigentuemer ist [[jfx.core.component.Runtime]]: `mount` traegt ein --
-   * angehaengt oder an der uebergebenen Position --, `unmount` traegt aus.
-   * Container fuehren daneben keine zweite Liste, aus der sie diese
-   * rekonstruieren; genau das tat Foreach bis P4-3, und alles, was auf anderem
-   * Weg gemountet wurde, verschwand dabei stillschweigend.
-   *
-   * Einzige Ausnahme ist [[dispose]]: dort raeumt eine Komponente ihre eigene
-   * Liste ab, waehrend sie stirbt. Das ist kein Verwalten fremder Kinder.
-   */
-  private[jfx] val _children                          = mutable.ArrayBuffer.empty[AbstractComponent]
-  private[jfx] val disposables                        = new CompositeDisposable()
-  private[jfx] val _contextValues                     = mutable.HashMap.empty[AnyRef, AnyRef]
+  private[jfx] var _contentCursor: Cursor                = _
+
+  /** Die Kinder dieser Komponente.
+    *
+    * Eigentuemer ist [[jfx.core.component.Runtime]]: `mount` traegt ein -- angehaengt oder an der
+    * uebergebenen Position --, `unmount` traegt aus. Container fuehren daneben keine zweite Liste,
+    * aus der sie diese rekonstruieren; genau das tat Foreach bis P4-3, und alles, was auf anderem
+    * Weg gemountet wurde, verschwand dabei stillschweigend.
+    *
+    * Einzige Ausnahme ist [[dispose]]: dort raeumt eine Komponente ihre eigene Liste ab, waehrend
+    * sie stirbt. Das ist kein Verwalten fremder Kinder.
+    */
+  private[jfx] val _children      = mutable.ArrayBuffer.empty[AbstractComponent]
+  private[jfx] val disposables    = new CompositeDisposable()
+  private[jfx] val _contextValues = mutable.HashMap.empty[AnyRef, AnyRef]
 
   private val baseClasses = mutable.ArrayBuffer.empty[String]
   private val userClasses = mutable.ArrayBuffer.empty[String]
 
   def host: HostElement = _host match {
     case h: HostElement => h
-    case _ =>
+    case _              =>
       throw new IllegalStateException(
         s"Component '${getClass.getSimpleName}' (tagName='$tagName') has no HostElement. " +
           "Virtual components must access it through the parent."
@@ -62,13 +61,12 @@ abstract class AbstractComponent
       virtualStart.toSeq ++ adoptedNodes ++
         _children.flatMap(_.physicalHosts).toSeq ++ virtualEnd.toSeq
 
-  /**
-   * Uebernimmt diese Komponente beim Hydrieren den server-gerenderten Inhalt
-   * ungeprueft, statt ihn nachzubauen?
-   *
-   * Nur fuer Komponenten gedacht, die ihren Inhalt erst spaeter kennen -- etwa
-   * eine Route, deren Loader noch laeuft. Siehe CHANGE.md P4-1.
-   */
+  /** Uebernimmt diese Komponente beim Hydrieren den server-gerenderten Inhalt ungeprueft, statt ihn
+    * nachzubauen?
+    *
+    * Nur fuer Komponenten gedacht, die ihren Inhalt erst spaeter kennen -- etwa eine Route, deren
+    * Loader noch laeuft. Siehe CHANGE.md P4-1.
+    */
   private[jfx] def adoptsHydratedContent: Boolean = false
 
   private def adoptedNodes: Seq[HostNode] = _host match {
@@ -76,13 +74,12 @@ abstract class AbstractComponent
     case _                 => Nil
   }
 
-  /**
-   * Der erste DOM-Knoten dieser Komponente, ohne die uebrigen zu sammeln.
-   *
-   * [[physicalHosts]] baut den kompletten Teilbaum auf. Wer nur den Anfang
-   * braucht -- etwa Foreach fuer die Einfuegeposition -- bezahlt das sonst mit,
-   * und zwar pro Einfuegung. Siehe CHANGE.md P4-2.
-   */
+  /** Der erste DOM-Knoten dieser Komponente, ohne die uebrigen zu sammeln.
+    *
+    * [[physicalHosts]] baut den kompletten Teilbaum auf. Wer nur den Anfang braucht -- etwa Foreach
+    * fuer die Einfuegeposition -- bezahlt das sonst mit, und zwar pro Einfuegung. Siehe CHANGE.md
+    * P4-2.
+    */
   def firstPhysicalHost: Option[HostNode] =
     if (!isVirtual && _host != null) Some(_host)
     else
@@ -122,8 +119,8 @@ abstract class AbstractComponent
       syncClasses()
     }
   }
-  
-  def getClasses : Seq[String] = userClasses.toSeq
+
+  def getClasses: Seq[String] = userClasses.toSeq
 
   def setClasses(names: Seq[String]): Unit = {
     userClasses.clear()

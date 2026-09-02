@@ -13,4 +13,3 @@ final class MountedTabsContent(tabs: Tabs) extends AbstractCustomComponent {
       }
     }
 }
-

@@ -90,7 +90,7 @@ final class HydratingCursor private (
     val node = take()
     node match {
       case text: dom.Text => new DomTextNode(text)
-      case other =>
+      case other          =>
         throw hydrationFault(
           "DOM node type does not match.",
           expected = "TextNode",
@@ -103,7 +103,7 @@ final class HydratingCursor private (
     val node = take()
     node match {
       case comment: dom.Comment => new DomCommentNode(comment)
-      case other =>
+      case other                =>
         throw hydrationFault(
           "DOM node type does not match.",
           expected = "CommentNode",
@@ -115,12 +115,11 @@ final class HydratingCursor private (
   override def claimRange(label: String): VirtualRange =
     rangeFor(label, adopt = false)
 
-  /**
-   * Uebernimmt den Bereich, ohne seinen Inhalt zu pruefen.
-   *
-   * Die Knoten dazwischen gehen an die Komponente, damit sie beim Austausch
-   * mit ihr verschwinden. Siehe [[HydrationMode.Adopt]].
-   */
+  /** Uebernimmt den Bereich, ohne seinen Inhalt zu pruefen.
+    *
+    * Die Knoten dazwischen gehen an die Komponente, damit sie beim Austausch mit ihr verschwinden.
+    * Siehe [[HydrationMode.Adopt]].
+    */
   override def adoptRange(label: String): VirtualRange =
     rangeFor(label, adopt = true)
 
@@ -297,7 +296,7 @@ final class HydratingCursor private (
     val contextParent = focus.flatMap(node => Option(node.parentNode)).getOrElse(parent)
     val children      = contextParent.childNodes
     val focusIndex    = focus.map(indexOfChild(contextParent, _)).getOrElse(-1)
-    val start =
+    val start         =
       if (focusIndex >= 0) math.max(0, focusIndex - 2)
       else math.max(0, children.length - 5)
     val end =
@@ -399,7 +398,7 @@ final class HydratingCursor private (
 object HydratingCursor {
 
   private final class HydrationSession {
-    private val cursors = scala.collection.mutable.ArrayBuffer.empty[HydratingCursor]
+    private val cursors   = scala.collection.mutable.ArrayBuffer.empty[HydratingCursor]
     private var completed = false
 
     def register(cursor: HydratingCursor): Unit =

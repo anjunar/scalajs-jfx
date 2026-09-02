@@ -57,17 +57,57 @@ class App(
       NavEntry(i18n"Architecture", i18n"Windows", i18n"Room for focus", "/window"),
       NavEntry(i18n"Foundation", i18n"Router", i18n"Paths, locale and loaders", "/router"),
       NavEntry(i18n"Foundation", i18n"i18n", i18n"Toolbar locale meets URL locale", "/i18n"),
-      NavEntry(i18n"Runtime", i18n"Rendering", i18n"SSR, hydration and shell stability", "/rendering"),
+      NavEntry(
+        i18n"Runtime",
+        i18n"Rendering",
+        i18n"SSR, hydration and shell stability",
+        "/rendering"
+      ),
       NavEntry(i18n"Runtime", i18n"State", i18n"Reactive properties in plain sight", "/state"),
       NavEntry(i18n"Composition", i18n"Forms", i18n"Control registration and context", "/forms"),
-      NavEntry(i18n"Composition", i18n"Image cropper", i18n"Upload, crop and thumbnail binding", "/image-cropper"),
-      NavEntry(i18n"Composition", i18n"Editor", i18n"Lexical JSON and composable plugins", "/editor"),
-      NavEntry(i18n"Composition", i18n"Tabs", i18n"Panel lifecycle and keyboard selection", "/tabs"),
-      NavEntry(i18n"Composition", i18n"Carousel", i18n"Looping slides and lifecycle-bound autoplay", "/carousel"),
-      NavEntry(i18n"Composition", i18n"ComboBox", i18n"Typed selection and stable identity", "/combo-box"),
+      NavEntry(
+        i18n"Composition",
+        i18n"Image cropper",
+        i18n"Upload, crop and thumbnail binding",
+        "/image-cropper"
+      ),
+      NavEntry(
+        i18n"Composition",
+        i18n"Editor",
+        i18n"Lexical JSON and composable plugins",
+        "/editor"
+      ),
+      NavEntry(
+        i18n"Composition",
+        i18n"Tabs",
+        i18n"Panel lifecycle and keyboard selection",
+        "/tabs"
+      ),
+      NavEntry(
+        i18n"Composition",
+        i18n"Carousel",
+        i18n"Looping slides and lifecycle-bound autoplay",
+        "/carousel"
+      ),
+      NavEntry(
+        i18n"Composition",
+        i18n"ComboBox",
+        i18n"Typed selection and stable identity",
+        "/combo-box"
+      ),
       NavEntry(i18n"Composition", i18n"Table", i18n"Reactive rows and remote ranges", "/table"),
-      NavEntry(i18n"Composition", i18n"DataGrid", i18n"Virtual cards and remote ranges", "/data-grid"),
-      NavEntry(i18n"Composition", i18n"VirtualList", i18n"Variable-height visible ranges", "/virtual-list"),
+      NavEntry(
+        i18n"Composition",
+        i18n"DataGrid",
+        i18n"Virtual cards and remote ranges",
+        "/data-grid"
+      ),
+      NavEntry(
+        i18n"Composition",
+        i18n"VirtualList",
+        i18n"Variable-height visible ranges",
+        "/virtual-list"
+      ),
       NavEntry(i18n"Composition", i18n"Viewport", i18n"Notifications and windows", "/viewport")
     )
 
@@ -194,7 +234,8 @@ class App(
 
                   image {
                     classes = Seq("app-toolbar__scala-badge")
-                    src = "https://img.shields.io/badge/Scala.js-1.21.0-DC322F.svg?logo=scala&logoColor=white"
+                    src =
+                      "https://img.shields.io/badge/Scala.js-1.21.0-DC322F.svg?logo=scala&logoColor=white"
                     alt = "Scala.js 1.21.0"
                   }
                 }
@@ -252,7 +293,9 @@ class App(
                 classes = Seq("app-footer")
                 div {
                   classes = Seq("app-footer__text")
-                  text(i18n"Pure Scala.js architecture, rebuilt around the modules that actually exist here.") {}
+                  text(
+                    i18n"Pure Scala.js architecture, rebuilt around the modules that actually exist here."
+                  ) {}
                 }
               }
             }
@@ -266,7 +309,7 @@ class App(
     val nextLocale =
       i18nRuntime.locale.get match {
         case AppI18n.German => AppI18n.English
-        case _               => AppI18n.German
+        case _              => AppI18n.German
       }
 
     val router = Router.current(using this).get

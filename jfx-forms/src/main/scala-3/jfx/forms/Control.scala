@@ -11,10 +11,10 @@ trait Control[V] extends Editable { self: AbstractComponent =>
   val valueProperty: ReadOnlyProperty[V]
 
   def addDisposable(disposable: Disposable): Unit
-  val focusedProperty: Property[Boolean]  = Property(false)
-  val dirtyProperty: Property[Boolean]    = Property(false)
-  val validators: ListProperty[Validator[V]] = ListProperty()
-  val errors: ListProperty[String]            = ListProperty()
+  val focusedProperty: Property[Boolean]         = Property(false)
+  val dirtyProperty: Property[Boolean]           = Property(false)
+  val validators: ListProperty[Validator[V]]     = ListProperty()
+  val errors: ListProperty[String]               = ListProperty()
   val invalidProperty: ReadOnlyProperty[Boolean] = errors.map(_.nonEmpty)
 
   def value: ReadOnlyProperty[V] = valueProperty

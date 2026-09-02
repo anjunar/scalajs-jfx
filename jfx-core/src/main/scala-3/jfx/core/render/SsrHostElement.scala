@@ -3,9 +3,9 @@ package jfx.core.render
 import scala.collection.mutable
 
 final class SsrHostElement(val tagName: String) extends HostElement, SsrNode {
-  private val attrs    = mutable.LinkedHashMap.empty[String, String]
-  private val styles   = mutable.LinkedHashMap.empty[String, String]
-  private val children = mutable.ArrayBuffer.empty[HostNode]
+  private val attrs      = mutable.LinkedHashMap.empty[String, String]
+  private val styles     = mutable.LinkedHashMap.empty[String, String]
+  private val children   = mutable.ArrayBuffer.empty[HostNode]
   private val properties = mutable.LinkedHashMap.empty[String, Any]
 
   def setAttribute(name: String, value: String): Unit = attrs(name) = value

@@ -157,7 +157,7 @@ object Overlay {
         widthPx = widthPx,
         effectiveWidthProperty = Property(initialWidth)
       )
-      Viewport.addOverlay(registration)
+      Viewport.addOverlay(registration)(using this)
       addDisposable(Disposable(Viewport.closeOverlay(registration)))
     }
   }

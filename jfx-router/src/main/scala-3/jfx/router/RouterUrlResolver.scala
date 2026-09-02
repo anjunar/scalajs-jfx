@@ -65,14 +65,14 @@ private[router] object RouterUrlResolver {
       path: String,
       i18n: Option[I18nRuntime]
   ): ExtractedLocale = {
-    val normalized = normalizePath(path)
-    val pathSegments = segments(normalized)
+    val normalized    = normalizePath(path)
+    val pathSegments  = segments(normalized)
     val localesByCode =
       i18n.toSeq.flatMap(_.supportedLocales).iterator.map(locale => locale.code -> locale).toMap
 
     pathSegments.headOption.flatMap(localesByCode.get) match {
       case Some(matchedLocale) =>
-        val remainder = pathSegments.drop(1)
+        val remainder     = pathSegments.drop(1)
         val remainingPath =
           if (remainder.isEmpty) "/"
           else s"/${remainder.mkString("/")}"
@@ -151,7 +151,7 @@ private[router] object RouterUrlResolver {
     if (path == null || path.isEmpty || path == "/") {
       "/"
     } else {
-      val trimmed = path.takeWhile(ch => ch != '?' && ch != '#')
+      val trimmed  = path.takeWhile(ch => ch != '?' && ch != '#')
       val prefixed =
         if (trimmed.startsWith("/")) trimmed
         else s"/$trimmed"

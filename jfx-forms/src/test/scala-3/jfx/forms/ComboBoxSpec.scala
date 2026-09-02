@@ -40,12 +40,13 @@ class ComboBoxSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "mount its TableView and contextual renderers through the viewport overlay" in {
-    val cursor                  = new SsrCursor()
-    var combo: ComboBox[Member] = null
-    val root                    = Runtime.mount(
+    val cursor                    = new SsrCursor()
+    var combo: ComboBox[Member]   = null
+    var mountedViewport: Viewport = null
+    val root                      = Runtime.mount(
       new ComboRoot {
         override protected def content(using AbstractComponent, Cursor): Unit =
-          viewport {
+          mountedViewport = viewport {
             combo = comboBox[Member]("owner", standalone = true) {
               items = members
               converter = _.name
@@ -87,10 +88,10 @@ class ComboBoxSpec extends AnyFlatSpec with Matchers {
       html should include("member-value")
       html should include("Alice")
       html should include("Manage members")
-      Viewport.overlays.length shouldBe 1
+      mountedViewport.overlays.length shouldBe 1
     } finally Runtime.unmount(root)
 
-    Viewport.overlays shouldBe empty
+    mountedViewport.overlays shouldBe empty
   }
 
   "ComboBox selection" should "use stable identity and adopt replacement item instances" in {
@@ -149,13 +150,15 @@ class ComboBoxSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "close and reject user selection while readonly" in {
-    val cursor = new SsrCursor()
+    val cursor                  = new SsrCursor()
     var combo: ComboBox[Member] = null
-    val root = Runtime.mount(
+    val root                    = Runtime.mount(
       new ComboRoot {
         override protected def content(using AbstractComponent, Cursor): Unit =
-          combo = comboBox[Member]("owner", standalone = true) {
-            items = members
+          viewport {
+            combo = comboBox[Member]("owner", standalone = true) {
+              items = members
+            }
           }
       },
       cursor

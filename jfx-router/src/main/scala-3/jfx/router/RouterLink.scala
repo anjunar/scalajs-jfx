@@ -43,7 +43,7 @@ object RouterLink {
   )(
       body: Anchor ?=> Cursor ?=> Unit
   )(using AbstractComponent, Cursor): Anchor = {
-    val link = new Anchor()
+    val link          = new Anchor()
     val activeMatcher = defaultActiveMatcher(to)
 
     DslLayer.child(link) {
@@ -98,8 +98,8 @@ object RouterLink {
   }
 
   private def normalizeInternalPath(path: String): String = {
-    val pathname = Option(path).getOrElse("/").takeWhile(ch => ch != '?' && ch != '#')
-    val segments = pathname.split("/").filter(_.nonEmpty).toVector
+    val pathname      = Option(path).getOrElse("/").takeWhile(ch => ch != '?' && ch != '#')
+    val segments      = pathname.split("/").filter(_.nonEmpty).toVector
     val withoutLocale =
       segments.headOption match {
         case Some("de" | "en") => segments.drop(1)

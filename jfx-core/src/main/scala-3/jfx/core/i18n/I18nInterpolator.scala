@@ -51,21 +51,25 @@ private object I18nMacros {
     }
 
     val placeholderNames = args.map(placeholderName)
-    val duplicates = placeholderNames.groupBy(identity).collect { case (name, all) if all.size > 1 => name }
+    val duplicates       =
+      placeholderNames.groupBy(identity).collect { case (name, all) if all.size > 1 => name }
     if (duplicates.nonEmpty) {
       report.errorAndAbort(s"Duplicate i18n placeholder(s): ${duplicates.mkString(", ")}")
     }
 
-    val source = parts.zipAll(placeholderNames, "", "").map {
-      case (part, "") => part
-      case (part, name) => part + "{" + name + "}"
-    }.mkString
+    val source = parts
+      .zipAll(placeholderNames, "", "")
+      .map {
+        case (part, "")   => part
+        case (part, name) => part + "{" + name + "}"
+      }
+      .mkString
 
-    val fingerprint = fingerprintOf(source, contextValue)
-    val position = Position.ofMacroExpansion
-    val sourceFile = Expr(position.sourceFile.jpath.toString)
-    val sourceLine = Expr(position.startLine + 1)
-    val sourceColumn = Expr(position.startColumn + 1)
+    val fingerprint    = fingerprintOf(source, contextValue)
+    val position       = Position.ofMacroExpansion
+    val sourceFile     = Expr(position.sourceFile.jpath.toString)
+    val sourceLine     = Expr(position.startLine + 1)
+    val sourceColumn   = Expr(position.startColumn + 1)
     val sourcePosition = '{ MessageSourcePosition($sourceFile, $sourceLine, $sourceColumn) }
 
     val argExprs = args.zip(placeholderNames).map { case (arg, name) =>
@@ -73,7 +77,7 @@ private object I18nMacros {
     }
 
     val placeholderExpr = Expr.ofSeq(placeholderNames.map(Expr(_)))
-    val argsVectorExpr = Expr.ofSeq(argExprs).asExprOf[Seq[MessageArg]]
+    val argsVectorExpr  = Expr.ofSeq(argExprs).asExprOf[Seq[MessageArg]]
 
     '{
       RuntimeMessage(
@@ -111,7 +115,7 @@ private object I18nMacros {
 
     arg.asTerm.underlyingArgument match {
       case Apply(_, List(_, value)) => value.asExpr
-      case _ => arg
+      case _                        => arg
     }
   }
 
@@ -119,10 +123,10 @@ private object I18nMacros {
     name.matches("[A-Za-z][A-Za-z0-9_]*")
 
   private def fingerprintOf(source: String, context: Option[String]): String = {
-    val input = context.fold(source)(ctx => source + "\u001f" + ctx)
+    val input  = context.fold(source)(ctx => source + "\u001f" + ctx)
     val offset = 0xcbf29ce484222325L
-    val prime = 0x100000001b3L
-    val hash = input.foldLeft(offset) { (hash, char) =>
+    val prime  = 0x100000001b3L
+    val hash   = input.foldLeft(offset) { (hash, char) =>
       (hash ^ char.toLong) * prime
     }
     java.lang.Long.toUnsignedString(hash, 16)

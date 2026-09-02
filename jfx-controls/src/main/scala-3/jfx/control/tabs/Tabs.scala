@@ -25,10 +25,10 @@ final class Tabs(
 
   override val tagName: String = "section"
 
-  val tabsProperty: ListProperty[TabSpec]             = ListProperty[TabSpec]()
-  val selectedIndexProperty: Property[Int]            = Property(math.max(0, initialSelectedIndex))
-  val renderModeProperty: Property[RenderMode]        = Property(initialRenderMode)
-  private[control] val contentRevisionProperty: Property[Int] = Property(0)
+  val tabsProperty: ListProperty[TabSpec]      = ListProperty[TabSpec]()
+  val selectedIndexProperty: Property[Int]     = Property(math.max(0, initialSelectedIndex))
+  val renderModeProperty: Property[RenderMode] = Property(initialRenderMode)
+  private[control] val contentRevisionProperty: Property[Int]       = Property(0)
   private val contentComponentProperty: Property[AbstractComponent] =
     Property(new EmptyTabsContent)
 
@@ -189,8 +189,9 @@ object Tabs {
     tabs.addTab(
       new TabSpec(
         textValue.asReadOnlyProperty(title)(using tabs),
-        (currentTabs: Tabs) ?=> (component: AbstractComponent) ?=> (cursor: Cursor) ?=>
-          content(using currentTabs)(using component)(using cursor)
+        (currentTabs: Tabs) ?=>
+          (component: AbstractComponent) ?=>
+            (cursor: Cursor) ?=> content(using currentTabs)(using component)(using cursor)
       )
     )
 
@@ -209,4 +210,3 @@ object Tabs {
   def renderMode_=(value: RenderMode)(using tabs: Tabs): Unit =
     tabs.renderModeProperty.set(value)
 }
-

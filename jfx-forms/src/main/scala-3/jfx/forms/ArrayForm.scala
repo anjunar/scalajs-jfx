@@ -22,9 +22,9 @@ class ArrayForm[V](val name: String, val standalone: Boolean = false)
 
   override val valueProperty: ListProperty[V] = ListProperty()
 
-  private val mountedByIndex = mutable.Map.empty[Int, Control[?]]
-  private var currentIndex = -1
-  private var contextPrefix = name
+  private val mountedByIndex             = mutable.Map.empty[Int, Control[?]]
+  private var currentIndex               = -1
+  private var contextPrefix              = name
   private var renderer: Option[Renderer] = None
 
   override def prefix: String = contextPrefix
@@ -43,7 +43,8 @@ class ArrayForm[V](val name: String, val standalone: Boolean = false)
     if (currentIndex >= 0) mountedByIndex.put(currentIndex, control)
 
   override def unregister(control: Control[?]): Unit =
-    mountedByIndex.collectFirst { case (index, current) if current eq control => index }
+    mountedByIndex
+      .collectFirst { case (index, current) if current eq control => index }
       .foreach(mountedByIndex.remove)
 
   override def validate(forceVisible: Boolean): Seq[String] =
@@ -96,9 +97,12 @@ class ArrayForm[V](val name: String, val standalone: Boolean = false)
     render(this, cursor) {
       val parentController =
         if (standalone) None
-        else Some(FormContext.inject.getOrElse(
-          throw new IllegalStateException(s"ArrayForm '$name' requires a Form context.")
-        ))
+        else
+          Some(
+            FormContext.inject.getOrElse(
+              throw new IllegalStateException(s"ArrayForm '$name' requires a Form context.")
+            )
+          )
 
       parentController.foreach { parent =>
         contextPrefix = s"${parent.prefix}.$name"
@@ -129,7 +133,7 @@ class ArrayForm[V](val name: String, val standalone: Boolean = false)
 
   private def setControlValue(control: Control[?], value: V): Unit =
     control.valueProperty match {
-      case property: Property[Any @unchecked] => property.set(value)
+      case property: Property[Any @unchecked]     => property.set(value)
       case property: ListProperty[Any @unchecked] =>
         value match {
           case values: js.Array[?] => property.setAll(values.asInstanceOf[js.Array[Any]].toSeq)
