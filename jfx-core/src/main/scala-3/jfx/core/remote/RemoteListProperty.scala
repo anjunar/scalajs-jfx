@@ -58,7 +58,7 @@ final class RemoteListProperty[V, Query](
 
   def getSorting: Vector[RemoteSort] = sortingProperty.get
 
-  override def totalLength: Int = totalCountProperty.get.getOrElse(loadedLength)
+  override def totalLength: Int = totalCountProperty.get.getOrElse(nextSequentialAbsoluteIndex)
 
   override def loadedLength: Int = loadedItems.length
 
@@ -314,11 +314,12 @@ final class RemoteListProperty[V, Query](
       else loadedItems.patchInPlace(insertPosition, page.items, replacedCount)
     }
 
-    // totalCount beschreibt die ganze Liste und gilt unabhaengig davon, wie
-    // geladen wurde. nextQuery und hasMore sind dagegen der Cursor des
-    // sequenziellen Blaetterns -- eine Bereichsabfrage darf ihn nicht
-    // verstellen, sonst blaettert loadMore() danach vom Bereich aus weiter.
-    totalCountProperty.set(page.totalCount)
+    // Ein Reload definiert die Liste neu und darf daher auch einen zuvor
+    // bekannten Gesamtumfang auf unbekannt setzen. Bei abgeleiteten Range- und
+    // Paging-Loads ist ein fehlender Count dagegen keine neue Information; ein
+    // explizit gelieferter Count darf den bekannten Wert weiterhin korrigieren.
+    if (replaceExisting) totalCountProperty.set(page.totalCount)
+    else page.totalCount.foreach(count => totalCountProperty.set(Some(count)))
 
     if (sequential) {
       nextQueryProperty.set(page.nextQuery)

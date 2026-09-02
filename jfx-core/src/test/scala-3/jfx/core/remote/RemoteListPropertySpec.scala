@@ -98,6 +98,112 @@ class RemoteListPropertySpec extends AnyFlatSpec with Matchers {
       ((0 until 10) ++ (50 until 60) ++ (100 until 110)).map(index => s"Member $index")
   }
 
+  it should "keep a known total count when a later range response omits it" in {
+    val total = 10000
+    val remote = RemoteListProperty[String, PageQuery](
+      loader = RemoteLoader { query =>
+        val from = math.max(0, query.index)
+        val to   = math.min(total, from + query.limit)
+        Future.successful(
+          RemotePage[String, PageQuery](
+            items = (from until to).map(index => s"Member $index"),
+            offset = Some(from),
+            totalCount = Option.when(from == 0)(total)
+          )
+        )
+      },
+      initialQuery = PageQuery(0, 10),
+      executionContext = ExecutionContext.parasitic,
+      rangeQueryUpdater = Some((query, index, limit) => query.copy(index = index, limit = limit))
+    )
+
+    remote.reload()
+    remote.totalCountProperty.get shouldBe Some(total)
+
+    remote.ensureRangeLoaded(500, 510)
+
+    remote.totalCountProperty.get shouldBe Some(total)
+    remote.totalLength shouldBe total
+  }
+
+  it should "accept an explicit updated total count from a range response" in {
+    val remote = RemoteListProperty[String, PageQuery](
+      loader = RemoteLoader { query =>
+        val from = math.max(0, query.index)
+        Future.successful(
+          RemotePage[String, PageQuery](
+            items = (from until from + query.limit).map(index => s"Member $index"),
+            offset = Some(from),
+            totalCount = Some(if (from == 0) 1000 else 900)
+          )
+        )
+      },
+      initialQuery = PageQuery(0, 10),
+      executionContext = ExecutionContext.parasitic,
+      rangeQueryUpdater = Some((query, index, limit) => query.copy(index = index, limit = limit))
+    )
+
+    remote.reload()
+    remote.totalCountProperty.get shouldBe Some(1000)
+
+    remote.ensureRangeLoaded(500, 510)
+
+    remote.totalCountProperty.get shouldBe Some(900)
+    remote.totalLength shouldBe 900
+  }
+
+  it should "let a reload redefine a known total count as unknown" in {
+    var reportedTotal = Option(1000)
+    val remote = RemoteListProperty[String, PageQuery](
+      loader = RemoteLoader { query =>
+        val from = math.max(0, query.index)
+        Future.successful(
+          RemotePage[String, PageQuery](
+            items = (from until from + query.limit).map(index => s"Member $index"),
+            offset = Some(from),
+            totalCount = reportedTotal
+          )
+        )
+      },
+      initialQuery = PageQuery(0, 10),
+      executionContext = ExecutionContext.parasitic
+    )
+
+    remote.reload()
+    remote.totalCountProperty.get shouldBe Some(1000)
+
+    reportedTotal = None
+    remote.reload()
+
+    remote.totalCountProperty.get shouldBe None
+    remote.totalLength shouldBe 10
+  }
+
+  it should "span sparse loaded ranges when the total count is unknown" in {
+    val remote = RemoteListProperty[String, PageQuery](
+      loader = RemoteLoader { query =>
+        val from = math.max(0, query.index)
+        val to   = from + query.limit
+        Future.successful(
+          RemotePage[String, PageQuery](
+            items = (from until to).map(index => s"Member $index"),
+            offset = Some(from),
+            totalCount = None
+          )
+        )
+      },
+      initialQuery = PageQuery(0, 10),
+      executionContext = ExecutionContext.parasitic,
+      rangeQueryUpdater = Some((query, index, limit) => query.copy(index = index, limit = limit))
+    )
+
+    remote.reload()
+    remote.ensureRangeLoaded(500, 510)
+
+    remote.loadedLength shouldBe 20
+    remote.totalLength shouldBe 510
+  }
+
   it should "survive 10 000 entries with 100 single updates in reasonable time" in {
     // Abnahme aus P2-3. Vorher sortierte absoluteIndexForLoadedPosition bei jedem
     // update und remove die komplette Index-Map -- O(n log n) pro Einzeloperation.
