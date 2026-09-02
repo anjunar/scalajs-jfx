@@ -412,7 +412,7 @@ wie `reload()` allein. Ein Test belegt das.
 Der teuerste Posten im Projekt. Erst nach Phase 2 angehen, sonst wird die
 gemeinsame Basis um die heutigen Schwächen herumgebaut.
 
-### [ ] P3-1 · Gemeinsame Basis extrahieren
+### [x] P3-1 · Gemeinsame Basis extrahieren
 
 **Problem.** `TableView` (856 Zeilen), `DataGrid` (796) und `VirtualListView`
 (760) teilen sich rund 70–100 **identisch benannte** Member. Dieselbe Logik ist
