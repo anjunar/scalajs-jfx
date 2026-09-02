@@ -26,6 +26,7 @@ final class SsrHostElement(val tagName: String) extends HostElement, SsrNode {
     properties.get(name).asInstanceOf[Option[T]]
 
   def setStyle(name: String, value: String): Unit = styles(name) = value
+  def style(name: String): Option[String]         = styles.get(name)
   def removeStyle(name: String): Unit             = styles.remove(name)
 
   def setClassNames(names: Seq[String]): Unit =

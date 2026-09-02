@@ -32,6 +32,13 @@ final class DomHostElement(private[jfx] val node: dom.Element) extends HostEleme
       case _                     => ()
     }
 
+  /** The inline value, not the computed one — the same scope as `setStyle`. */
+  def style(name: String): Option[String] =
+    node match {
+      case html: dom.HTMLElement => Option(html.style.getPropertyValue(name)).filter(_.nonEmpty)
+      case _                     => None
+    }
+
   def setClassNames(names: Seq[String]): Unit =
     if (names.isEmpty) node.removeAttribute("class")
     else node.setAttribute("class", names.mkString(" "))

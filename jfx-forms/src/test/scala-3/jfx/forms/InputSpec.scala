@@ -92,6 +92,7 @@ private final class TestHostElement(val tagName: String) extends HostElement {
   override def property[T](name: String): Option[T] = properties.get(name).map(_.asInstanceOf[T])
   override def setStyle(name: String, value: String): Unit = styles.update(name, value)
   override def removeStyle(name: String): Unit             = styles.remove(name)
+  override def style(name: String): Option[String]         = styles.get(name)
   override def setClassNames(names: Seq[String]): Unit = setAttribute("class", names.mkString(" "))
   override def insertChild(index: Int, child: HostNode): Unit = children.insert(index, child)
   override def insertBefore(child: HostNode, before: Option[HostNode]): Unit =

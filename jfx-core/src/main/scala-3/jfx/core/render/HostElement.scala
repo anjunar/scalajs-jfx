@@ -11,6 +11,7 @@ trait HostElement extends HostNode {
   def property[T](name: String): Option[T]
   def setStyle(name: String, value: String): Unit
   def removeStyle(name: String): Unit
+  def style(name: String): Option[String]
   def setClassNames(names: Seq[String]): Unit
   def insertChild(index: Int, child: HostNode): Unit
   def insertBefore(child: HostNode, before: Option[HostNode]): Unit

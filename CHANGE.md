@@ -685,7 +685,7 @@ installieren und bekommt korrekt gestylte Komponenten.
 
 ---
 
-### [ ] P5-3 · `StyleDsl` überdenken
+### [x] P5-3 · `StyleDsl` überdenken
 
 **Abhängig von:** P5-2
 
@@ -706,6 +706,36 @@ Properties, willkürlich verteilt.
    die wirklich häufigen Fälle. Die Fake-Getter entfallen.
 3. `ReadOnlyProperty`-Unterstützung einheitlich, nicht für neun ausgewählte
    Properties.
+
+
+**Ergebnis.** Zu Schritt 1: Inline-Styles bleiben. Rund 300 Zuweisungen stehen
+im Code, und sie tragen genau das, was CSS nicht wissen kann — gemessene
+Breiten, Zeilen-Offsets virtualisierter Listen, berechnete Transforms. Das ist
+kein Ersatz für Komponenten-CSS, sondern etwas anderes; die Regel dazu steht in
+`npm/scalajs-jfx/README.md`.
+
+Zu Schritt 2: Die Getter bleiben — sie waren keine Attrappen, sondern nur nie zu
+Ende gebaut. Zwei Gründe. Erstens schreibt Scala `width = v` nur dann zu
+`width_=(v)` um, wenn ein gleichnamiger Getter existiert; ohne ihn scheitert die
+Aufrufstelle mit „Not found: width — did you mean width_=?". Nachgemessen, nicht
+vermutet. Zweitens gibt es einen Wert zurückzugeben: `HostElement` konnte
+Styles setzen und entfernen, aber nicht lesen. Mit dem neuen
+`HostElement.style(name)` liefern die Getter jetzt den gesetzten Inline-Wert
+statt `""` — derselbe Geltungsbereich wie beim Setter, nicht der berechnete
+Stil, den es beim SSR nicht gibt.
+
+Die Whitelist ist damit keine Grenze mehr: `css(name)` liest, `css(name, value)`
+setzt und `clearCss(name)` entfernt jede Property über ihren CSS-Namen. Alle 49
+benannten Properties bleiben und sind jetzt dünne Hüllen über `css` — sie
+schreiben den CSS-Namen einmal auf und machen aus einem Tippfehler einen
+Compile-Fehler.
+
+Zu Schritt 3: `ReadOnlyProperty[String]` gab es für neun willkürlich gewählte
+Properties. Jetzt für alle 49 und für `css` selbst.
+
+Belegt durch `jfx-core/src/test/scala-3/jfx/core/dsl/StyleDslSpec.scala`:
+`aspect-ratio` und `scroll-margin-block` lassen sich setzen, binden und
+zurücklesen, ohne dass `jfx-core` sie kennt.
 
 **Fertig wenn.** Eine neue CSS-Property braucht keine Änderung an `jfx-core`.
 
