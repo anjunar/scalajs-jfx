@@ -1,10 +1,11 @@
-package jfx.forms
+package jfx.editor
 
 import jfx.core.component.{AbstractComponent, Runtime}
 import jfx.core.dsl.DslLayer.render
 import jfx.core.render.{Cursor, SsrCursor}
-import jfx.forms.Editor.*
-import jfx.forms.editor.plugins.*
+import jfx.editor.Editor.*
+import jfx.editor.plugins.*
+import jfx.forms.{Control, Form, FormController}
 import jfx.layout.Viewport
 import jfx.layout.Viewport.viewport
 import org.scalajs.dom.HTMLElement

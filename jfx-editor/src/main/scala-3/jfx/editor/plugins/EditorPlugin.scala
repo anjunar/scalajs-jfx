@@ -1,4 +1,4 @@
-package jfx.forms.editor.plugins
+package jfx.editor.plugins
 
 import lexical.{EditorModule, LexicalEditor, ToolbarElement}
 

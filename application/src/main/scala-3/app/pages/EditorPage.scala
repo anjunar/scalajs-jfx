@@ -9,8 +9,8 @@ import jfx.core.layout.TextComponent.text
 import jfx.core.layout.VBox.vbox
 import jfx.core.render.Cursor
 import jfx.core.state.Property
-import jfx.forms.Editor.*
-import jfx.forms.editor.plugins.*
+import jfx.editor.Editor.*
+import jfx.editor.plugins.*
 import jfx.i18n.i18n
 
 import scala.scalajs.js
@@ -52,7 +52,7 @@ object EditorPage {
             codePlugin()
             horizontalRulePlugin()
 
-            summon[jfx.forms.Editor].addDisposable(valueProperty.observe(state.set))
+            summon[jfx.editor.Editor].addDisposable(valueProperty.observe(state.set))
           }
 
           div {

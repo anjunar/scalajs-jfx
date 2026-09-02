@@ -121,7 +121,7 @@ genauen Versionierung auf der sbt-Seite.
 Diese Phase ist überwiegend mechanisch, berührt aber viele Dateien. Sie sollte
 am Stück laufen, damit nicht ein halber Umzug im Repo liegen bleibt.
 
-### [ ] P1-1 · Split-Package `jfx.forms` auflösen
+### [x] P1-1 · Split-Package `jfx.forms` auflösen
 
 **Problem.** `jfx-editor/src/main/scala-3/jfx/forms/Editor.scala` deklariert
 `package jfx.forms` — dasselbe Paket, das `jfx-forms` füllt. Zwei Artefakte

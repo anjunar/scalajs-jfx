@@ -1,4 +1,4 @@
-package jfx.forms.editor.plugins
+package jfx.editor.plugins
 
 import jfx.core.component.{AbstractComponent, Runtime}
 import jfx.core.dsl.ClassDsl.classes

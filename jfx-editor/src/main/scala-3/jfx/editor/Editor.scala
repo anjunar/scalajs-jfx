@@ -1,4 +1,4 @@
-package jfx.forms
+package jfx.editor
 
 import jfx.core.component.AbstractComponent
 import jfx.core.di.Context
@@ -14,7 +14,8 @@ import jfx.core.render.{Cursor, DomHostElement}
 import jfx.core.state.{Disposable, Property}
 import jfx.core.statement.DynamicComponentRenderer.dynamic
 import jfx.forms.Form.FormContext
-import jfx.forms.editor.plugins.{DefaultDialogService, EditorPlugin}
+import jfx.forms.{Control, Editable, Placeholder}
+import jfx.editor.plugins.{DefaultDialogService, EditorPlugin}
 import lexical.*
 import org.scalajs.dom
 import org.scalajs.dom.{HTMLDivElement, HTMLElement}
@@ -26,7 +27,7 @@ import scala.util.control.NonFatal
 enum EditorToolbarMode:
   case Ribbon, Menu, Floating
 
-final class Editor private[forms] (
+final class Editor private[editor] (
     val name: String,
     val standalone: Boolean,
     configure: Editor ?=> Cursor ?=> Unit
@@ -131,17 +132,17 @@ final class Editor private[forms] (
   override protected def setPlaceholder(value: String): Unit =
     placeholderProperty.set(Option(value).getOrElse(""))
 
-  private[forms] def registerPlugin(plugin: EditorPlugin): Unit =
+  private[editor] def registerPlugin(plugin: EditorPlugin): Unit =
     if (!plugins.exists(_.name == plugin.name)) plugins += plugin
 
-  private[forms] def toolbarMode: EditorToolbarMode = toolbarModeValue
+  private[editor] def toolbarMode: EditorToolbarMode = toolbarModeValue
 
-  private[forms] def toolbarMode_=(mode: EditorToolbarMode): Unit =
+  private[editor] def toolbarMode_=(mode: EditorToolbarMode): Unit =
     toolbarModeValue = Option(mode).getOrElse(EditorToolbarMode.Ribbon)
 
-  private[forms] def dialogService: Option[DialogService] = dialogServiceValue
+  private[editor] def dialogService: Option[DialogService] = dialogServiceValue
 
-  private[forms] def dialogService_=(service: DialogService): Unit =
+  private[editor] def dialogService_=(service: DialogService): Unit =
     dialogServiceValue = Option(service)
 
   private def installControlObservers(): Unit = {

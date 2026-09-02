@@ -1,6 +1,6 @@
-package jfx.forms.editor.plugins
+package jfx.editor.plugins
 
-import jfx.forms.Editor
+import jfx.editor.Editor
 import lexical.{LexicalTable, RemoveTableModule, TableModule, ToolbarElement}
 
 import scala.scalajs.js

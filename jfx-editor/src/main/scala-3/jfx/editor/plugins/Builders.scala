@@ -1,6 +1,6 @@
-package jfx.forms.editor.plugins
+package jfx.editor.plugins
 
-import jfx.forms.Editor
+import jfx.editor.Editor
 
 def basePlugin(body: BasePlugin ?=> Unit = {})(using editor: Editor): BasePlugin =
   BasePlugin.basePlugin(body)
