@@ -270,7 +270,7 @@ nur noch Treffer an dokumentierten JS-Grenzen.
 
 ---
 
-### [ ] P2-2 · `RemoteListProperty`: inkrementelle Änderungen statt `setAll`
+### [x] P2-2 · `RemoteListProperty`: inkrementelle Änderungen statt `setAll`
 
 **Problem.** `applyPage` baut die gesamte Liste neu und ruft `setAll`. Das
 erzeugt ein `Reset`-Change, das `Foreach.resetAll()` auslöst — **alle** Zeilen

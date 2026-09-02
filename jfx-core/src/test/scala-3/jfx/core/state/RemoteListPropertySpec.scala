@@ -37,6 +37,28 @@ class RemoteListPropertySpec extends AnyFlatSpec with Matchers {
       mountedBefore.map(System.identityHashCode)
   }
 
+  it should "keep row identity on append even with reindexOnStructuralChange" in {
+    // foreachIndexed (Carousel, DataGrid-Header) benutzt reindexOnStructuralChange
+    // = true, wo InsertAll ein rebuildFrom(index) ausloest. Beim Anhaengen ist
+    // index == mounted.length, rebuildFrom unmountet also nichts -- das ist der
+    // Grund, warum InsertAll auch hier die richtige Aussage ist und Reset nicht.
+    val remote = pagedMembers(total = 1000, pageSize = 50)
+    val cursor = new SsrCursor()
+
+    remote.reload()
+    val root = Runtime.mount(new ReindexingForeachRoot(remote), cursor)
+
+    val mountedBefore = foreachItemsOf(root)
+    mountedBefore.length shouldBe 50
+
+    remote.loadMore()
+
+    val mountedAfter = foreachItemsOf(root)
+    mountedAfter.length shouldBe 100
+    mountedAfter.take(50).map(System.identityHashCode) shouldBe
+      mountedBefore.map(System.identityHashCode)
+  }
+
   it should "emit InsertAll when a page is appended" in {
     val remote  = pagedMembers(total = 1000, pageSize = 50)
     val changes = recordChanges(remote)
@@ -129,6 +151,17 @@ class RemoteListPropertySpec extends AnyFlatSpec with Matchers {
       executionContext = ExecutionContext.parasitic,
       rangeQueryUpdater = Some((query, index, limit) => query.copy(index = index, limit = limit))
     )
+}
+
+private final class ReindexingForeachRoot(items: ListProperty[String]) extends AbstractComponent {
+  override val tagName: String = "ul"
+
+  override def compose(cursor: Cursor): Unit =
+    DslLayer.render(this, cursor) {
+      DslLayer.child(
+        new Foreach[String](items, (value, _) => text(value) {}, reindexOnStructuralChange = true)
+      ) {}
+    }
 }
 
 private final class ForeachRoot(items: ListProperty[String]) extends AbstractComponent {
