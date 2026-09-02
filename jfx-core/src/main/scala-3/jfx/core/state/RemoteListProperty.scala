@@ -56,43 +56,43 @@ final class RemoteListProperty[V, Query](
     (normalizedFrom until normalizedTo).forall(isIndexLoaded)
   }
 
-  def applySorting(sorting: Seq[ListProperty.RemoteSort]): js.Promise[js.Array[V]] =
+  def applySorting(sorting: Seq[ListProperty.RemoteSort]): Future[js.Array[V]] =
     sortUpdater match {
       case Some(updateSorting) =>
         val normalizedSorting = sorting.toVector
         sortingProperty.set(normalizedSorting)
         reload(updateSorting(queryProperty.get, normalizedSorting))
       case None =>
-        js.Promise.reject(
+        Future.failed(
           IllegalStateException("This RemoteListProperty does not support remote sorting")
         )
     }
 
-  def reload(): js.Promise[js.Array[V]] =
+  def reload(): Future[js.Array[V]] =
     load(queryProperty.get, append = false)
 
-  def reload(query: Query): js.Promise[js.Array[V]] =
+  def reload(query: Query): Future[js.Array[V]] =
     load(query, append = false)
 
-  def reload(update: Query => Query): js.Promise[js.Array[V]] =
+  def reload(update: Query => Query): Future[js.Array[V]] =
     reload(update(queryProperty.get))
 
-  def loadMore(): js.Promise[js.Array[V]] =
+  def loadMore(): Future[js.Array[V]] =
     nextQueryProperty.get match {
       case Some(nextQuery) =>
         loadQuery(nextQuery, replaceExisting = false, expectedOffset = Some(length))
-      case None => js.Promise.resolve(get)
+      case None => Future.successful(get)
     }
 
-  def loadMore(query: Query): js.Promise[js.Array[V]] =
+  def loadMore(query: Query): Future[js.Array[V]] =
     load(query, append = true)
 
-  def loadMore(update: Query => Query): js.Promise[js.Array[V]] =
+  def loadMore(update: Query => Query): Future[js.Array[V]] =
     loadMore(update(queryProperty.get))
 
-  def ensureRangeLoaded(fromIndex: Int, toExclusive: Int): js.Promise[js.Array[V]] =
+  def ensureRangeLoaded(fromIndex: Int, toExclusive: Int): Future[js.Array[V]] =
     if (isRangeLoaded(fromIndex, toExclusive)) {
-      js.Promise.resolve(get)
+      Future.successful(get)
     } else {
       rangeQueryUpdater match {
         case Some(updateRange) =>
@@ -104,7 +104,7 @@ final class RemoteListProperty[V, Query](
             expectedOffset = Some(normalizedFrom)
           )
         case None =>
-          js.Promise.reject(
+          Future.failed(
             IllegalStateException("This RemoteListProperty does not support range loading")
           )
       }
@@ -158,7 +158,7 @@ final class RemoteListProperty[V, Query](
     }
   }
 
-  private def load(query: Query, append: Boolean): js.Promise[js.Array[V]] =
+  private def load(query: Query, append: Boolean): Future[js.Array[V]] =
     loadQuery(
       query,
       replaceExisting = !append,
@@ -169,9 +169,9 @@ final class RemoteListProperty[V, Query](
       query: Query,
       replaceExisting: Boolean,
       expectedOffset: Option[Int]
-  ): js.Promise[js.Array[V]] =
+  ): Future[js.Array[V]] =
     if (loadingProperty.get) {
-      js.Promise.reject(ListProperty.alreadyLoadingFailure)
+      Future.failed(ListProperty.alreadyLoadingFailure)
     } else {
       queryProperty.set(query)
       loadingProperty.set(true)
@@ -179,7 +179,6 @@ final class RemoteListProperty[V, Query](
 
       loader
         .load(query)
-        .toFuture
         .map { page =>
           applyPage(page, replaceExisting, expectedOffset)
           get
@@ -191,7 +190,6 @@ final class RemoteListProperty[V, Query](
         .andThen { case _ =>
           loadingProperty.set(false)
         }
-        .toJSPromise
     }
 
   private def applyPage(

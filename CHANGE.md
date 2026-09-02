@@ -244,7 +244,7 @@ Dies ist die Voraussetzung für Phase 3. Erst wenn `RemoteListProperty`
 inkrementelle Änderungen liefert, lässt sich eine gemeinsame
 Virtualisierungsbasis bauen, die nicht die alten Kosten erbt.
 
-### [ ] P2-1 · Ein Async-Modell
+### [x] P2-1 · Ein Async-Modell
 
 **Problem.** Zwei Welten nebeneinander: `Route.load`, `FetchComponent` und
 `AsyncRenderContext` arbeiten mit `Future`; `RemoteListProperty` gibt

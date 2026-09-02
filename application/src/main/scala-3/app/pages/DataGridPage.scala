@@ -1,5 +1,7 @@
 package app.pages
 
+import scala.concurrent.Future
+
 import app.components.Showcase.*
 import jfx.control.datagrid.DataGrid.*
 import jfx.core.component.AbstractComponent
@@ -76,7 +78,7 @@ object DataGridPage {
       loader = ListProperty.RemoteLoader { query =>
         val page       = allTiles.slice(query.offset, query.offset + query.limit)
         val nextOffset = query.offset + page.length
-        js.Promise.resolve(
+        Future.successful(
           ListProperty.RemotePage[Tile, TileQuery](
             items = page,
             offset = Some(query.offset),

@@ -20,6 +20,7 @@ import org.scalajs.dom
 
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.*
 
@@ -354,7 +355,7 @@ final class DataGrid[T] private (
         if (
           browserRendering && remote.length == 0 &&
           !remote.loadingProperty.get && remote.errorProperty.get.isEmpty
-        ) discardPromise(remote.reload())
+        ) discardResult(remote.reload())
     }
 
     refreshItemState()
@@ -441,13 +442,12 @@ final class DataGrid[T] private (
           pendingRangeLoads += key
           remote
             .ensureRangeLoaded(pageFrom, pageTo)
-            .toFuture
             .onComplete(_ => pendingRangeLoads -= key)
         }
       case remote if remote.hasMoreProperty.get || remote.nextQueryProperty.get.nonEmpty =>
         val threshold = math.max(1, prefetchItemsProperty.get / 2)
-        if (remote.length == 0) discardPromise(remote.reload())
-        else if (end >= math.max(0, remote.length - threshold)) discardPromise(remote.loadMore())
+        if (remote.length == 0) discardResult(remote.reload())
+        else if (end >= math.max(0, remote.length - threshold)) discardResult(remote.loadMore())
       case _ => ()
     }
 
@@ -525,7 +525,7 @@ final class DataGrid[T] private (
   ): Unit = {
     var active = true
     val handle = dom.window.requestAnimationFrame { _ =>
-      if (active) discardPromise(remote.applySorting(sorting))
+      if (active) discardResult(remote.applySorting(sorting))
     }
     addDisposable(Disposable {
       active = false
@@ -613,8 +613,13 @@ final class DataGrid[T] private (
   private def bumpRemoteState(): Unit =
     remoteStateRevisionProperty.setAlways(remoteStateRevisionProperty.get + 1)
 
-  private def discardPromise(promise: js.Promise[?]): Unit = {
-    promise.toFuture.recover { case _ => () }
+  /**
+   * Ein Lade-Future, dessen Ergebnis das Control nicht braucht. Der recover
+   * verhindert eine unbehandelte Fehlermeldung -- der Fehler selbst steht in
+   * RemoteListProperty.errorProperty und wird von dort gerendert.
+   */
+  private def discardResult(result: Future[?]): Unit = {
+    result.recover { case _ => () }
     ()
   }
 

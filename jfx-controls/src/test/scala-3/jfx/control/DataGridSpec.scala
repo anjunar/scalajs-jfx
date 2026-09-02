@@ -159,7 +159,7 @@ class DataGridSpec extends AnyFlatSpec with Matchers {
       loader = ListProperty.RemoteLoader { query =>
         val page = members.slice(query.index, query.index + query.limit)
         val next = query.index + page.length
-        js.Promise.resolve(
+        Future.successful(
           ListProperty.RemotePage[String, PageQuery](
             items = page,
             offset = Some(query.index),

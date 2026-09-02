@@ -1,5 +1,7 @@
 package app.pages
 
+import scala.concurrent.Future
+
 import app.components.Showcase.*
 import jfx.control.table.TableColumn.*
 import jfx.control.table.TableView.*
@@ -55,7 +57,7 @@ object TableViewPage {
         val page = sorted.slice(query.offset, query.offset + query.limit)
         val nextOffset = query.offset + page.length
 
-        js.Promise.resolve(
+        Future.successful(
           ListProperty.RemotePage[Book, BookQuery](
             items = page,
             offset = Some(query.offset),
@@ -250,7 +252,7 @@ object TableViewPage {
                |    val sorted = sortBooks(generatedBooks, query.sorting)
                |    val page = sorted.slice(query.offset, query.offset + query.limit)
                |
-               |    js.Promise.resolve(
+               |    Future.successful(
                |      ListProperty.RemotePage(
                |        items = page,
                |        offset = Some(query.offset),

@@ -26,6 +26,7 @@ import jfx.core.context.CrawlScope
 import org.scalajs.dom
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.*
 
@@ -466,16 +467,21 @@ final class TableView[S] private (
       case null                                                                       => ()
       case remote if remote.loadingProperty.get || remote.errorProperty.get.nonEmpty  => ()
       case remote if remote.supportsRangeLoading && !remote.isRangeLoaded(start, end) =>
-        discardPromise(remote.ensureRangeLoaded(start, end))
+        discardResult(remote.ensureRangeLoaded(start, end))
       case remote if !remote.supportsRangeLoading && remote.hasMoreProperty.get =>
         val remainingLoadedRows = math.max(0, remote.length - end)
         if (remainingLoadedRows <= TableView.lazyLoadThresholdRows)
-          discardPromise(remote.loadMore())
+          discardResult(remote.loadMore())
       case _ => ()
     }
 
-  private def discardPromise(promise: js.Promise[?]): Unit = {
-    promise.toFuture.recover { case _ => () }
+  /**
+   * Ein Lade-Future, dessen Ergebnis das Control nicht braucht. Der recover
+   * verhindert eine unbehandelte Fehlermeldung -- der Fehler selbst steht in
+   * RemoteListProperty.errorProperty und wird von dort gerendert.
+   */
+  private def discardResult(result: Future[?]): Unit = {
+    result.recover { case _ => () }
     ()
   }
 
@@ -559,7 +565,7 @@ final class TableView[S] private (
         persistCrawlState(crawlState)
         scrollTopProperty.set(0.0)
         domElement(viewportComponent).foreach(_.scrollTop = 0.0)
-        discardPromise(remote.applySorting(next))
+        discardResult(remote.applySorting(next))
       case _ => ()
     }
 
@@ -607,7 +613,7 @@ final class TableView[S] private (
   ): Unit = {
     var active = true
     val handle = dom.window.requestAnimationFrame { _ =>
-      if (active) discardPromise(remote.applySorting(sorting))
+      if (active) discardResult(remote.applySorting(sorting))
     }
     addDisposable(Disposable {
       active = false

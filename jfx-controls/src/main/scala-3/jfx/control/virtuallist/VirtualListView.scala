@@ -18,6 +18,7 @@ import org.scalajs.dom
 
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.*
 
@@ -306,7 +307,7 @@ final class VirtualListView[T] private (
         if (
           browserRendering && remote.length == 0 &&
           !remote.loadingProperty.get && remote.errorProperty.get.isEmpty
-        ) discardPromise(remote.reload())
+        ) discardResult(remote.reload())
     }
 
     resetMeasurements()
@@ -417,12 +418,12 @@ final class VirtualListView[T] private (
           !pendingRangeLoads.contains(key)
         ) {
           pendingRangeLoads += key
-          remote.ensureRangeLoaded(pageFrom, pageTo).toFuture.onComplete(_ => pendingRangeLoads -= key)
+          remote.ensureRangeLoaded(pageFrom, pageTo).onComplete(_ => pendingRangeLoads -= key)
         }
       case remote if canStillGrow =>
         val threshold = math.max(1, prefetchItemsProperty.get / 2)
-        if (remote.length == 0) discardPromise(remote.reload())
-        else if (end >= math.max(0, remote.length - threshold)) discardPromise(remote.loadMore())
+        if (remote.length == 0) discardResult(remote.reload())
+        else if (end >= math.max(0, remote.length - threshold)) discardResult(remote.loadMore())
       case _ => ()
     }
 
@@ -580,7 +581,7 @@ final class VirtualListView[T] private (
   ): Unit = {
     var active = true
     val frame = dom.window.requestAnimationFrame { _ =>
-      if (active) discardPromise(remote.applySorting(sorting))
+      if (active) discardResult(remote.applySorting(sorting))
     }
     addDisposable(Disposable {
       active = false
@@ -690,8 +691,13 @@ final class VirtualListView[T] private (
   private def bumpRemoteState(): Unit =
     remoteStateRevisionProperty.setAlways(remoteStateRevisionProperty.get + 1)
 
-  private def discardPromise(promise: js.Promise[?]): Unit = {
-    promise.toFuture.recover { case _ => () }
+  /**
+   * Ein Lade-Future, dessen Ergebnis das Control nicht braucht. Der recover
+   * verhindert eine unbehandelte Fehlermeldung -- der Fehler selbst steht in
+   * RemoteListProperty.errorProperty und wird von dort gerendert.
+   */
+  private def discardResult(result: Future[?]): Unit = {
+    result.recover { case _ => () }
     ()
   }
 }

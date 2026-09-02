@@ -289,17 +289,33 @@ object ListProperty {
   ) extends Change[V]
   final case class Clear[V](removed: js.Array[V], list: ListProperty[V]) extends Change[V]
 
+  /**
+   * Laedt eine Seite. Das Ergebnis ist ein Future -- Future ist das interne
+   * Async-Modell des Frameworks (siehe ARCHITECTURE.md). js.Promise erscheint nur
+   * an der JS-Exportgrenze und in Facades gegenueber JS-Bibliotheken.
+   *
+   * Wer einen Loader gegen eine JS-API schreibt, nimmt [[RemoteLoader.fromPromise]].
+   */
   trait RemoteLoader[V, Query] {
-    def load(query: Query): js.Promise[RemotePage[V, Query]]
+    def load(query: Query): Future[RemotePage[V, Query]]
   }
 
   object RemoteLoader {
 
-    def apply[V, Query](loadFn: Query => js.Promise[RemotePage[V, Query]]): RemoteLoader[V, Query] =
+    def apply[V, Query](loadFn: Query => Future[RemotePage[V, Query]]): RemoteLoader[V, Query] =
       new RemoteLoader[V, Query] {
-        override def load(query: Query): js.Promise[RemotePage[V, Query]] =
+        override def load(query: Query): Future[RemotePage[V, Query]] =
           loadFn(query)
       }
+
+    /**
+     * JS-Grenze: adaptiert einen Promise-basierten Loader auf das interne
+     * Future-Modell. Genau eine Konvertierung, an einer benannten Stelle.
+     */
+    def fromPromise[V, Query](
+        loadFn: Query => js.Promise[RemotePage[V, Query]]
+    ): RemoteLoader[V, Query] =
+      RemoteLoader(query => loadFn(query).toFuture)
 
     def rest[V, Query](
         requestFor: Query => RestRequest,
@@ -392,7 +408,7 @@ object ListProperty {
       query: Query,
       decode: (js.Any, Query) => RemotePage[V, Query],
       executionContext: ExecutionContext
-  ): js.Promise[RemotePage[V, Query]] = {
+  ): Future[RemotePage[V, Query]] = {
     given ExecutionContext = executionContext
 
     dom
@@ -412,7 +428,6 @@ object ListProperty {
             )
         }
       }
-      .toJSPromise
   }
 
   private def normalizeQueryParams(params: Map[String, Any]): Seq[(String, String)] =
