@@ -73,7 +73,7 @@ class AsyncHydrationSpec extends AnyFlatSpec with Matchers {
     Runtime.mount(routerFor(pending.future), cursor)
     pending.failure(new RuntimeException("Laden fehlgeschlagen"))
 
-    cursor.texts.exists(_.contains("Laden fehlgeschlagen")) shouldBe true
+    cursor.texts should contain("Route could not be loaded")
   }
 
   it should "hydrate the parent while adopting an unresolved child route" in {

@@ -40,7 +40,11 @@ class App(
 
   private val routerConfig =
     RouterConfig(
-      basePath = SiteConfig.basePath
+      basePath = SiteConfig.basePath,
+      notFound = AppRouterBoundaries.notFound,
+      loading = AppRouterBoundaries.loading,
+      error = AppRouterBoundaries.error,
+      renderErrorsOnServer = true
     )
 
   private val initialLocation =
@@ -134,8 +138,7 @@ class App(
     new Router(routes, initialLocation, routerConfig)
 
   private[app] def ssrStatus: Int =
-    if (appRouter.state.get.currentMatchOption.isDefined) 200
-    else 404
+    appRouter.responseStatus.get
 
   override def compose(cursor: Cursor): Unit = {
     RequestContext.provide(request)(using this)

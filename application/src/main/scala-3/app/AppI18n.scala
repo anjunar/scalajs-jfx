@@ -20,6 +20,7 @@ object AppI18n {
   val catalog: MessageCatalog =
     TranslationSupport.catalog(
       AppTranslations.entries,
+      AppRouterBoundaryTranslations.entries,
       OverviewPageTranslations.entries,
       ButtonPageTranslations.entries,
       ImagePageTranslations.entries,

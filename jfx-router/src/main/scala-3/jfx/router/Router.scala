@@ -4,8 +4,6 @@ import jfx.core.context.CrawlScope
 import jfx.core.component.{AbstractComponent, AbstractCustomComponent, Runtime}
 import jfx.core.di.Context
 import jfx.core.dsl.DslLayer
-import jfx.core.layout.Div.div
-import jfx.core.layout.TextComponent.text
 import jfx.core.render.Cursor
 import jfx.core.state.{Property, ReadOnlyProperty}
 import jfx.core.statement.DynamicComponentRenderer.dynamic
@@ -34,6 +32,13 @@ class Router(
 
   def state: ReadOnlyProperty[RouterState] =
     stateProperty
+
+  private val responseStatusProperty =
+    Property(200)
+
+  /** HTTP status represented by the currently rendered route boundary. */
+  def responseStatus: ReadOnlyProperty[Int] =
+    responseStatusProperty
 
   private val componentProperty =
     Property[AbstractComponent](Router.emptyComponent())
@@ -123,13 +128,16 @@ class Router(
 
     state.matches.headOption match {
       case Some(_) =>
+        responseStatusProperty.set(200)
+
         val context =
           RouteRenderContext(this, state, state.matches, index = 0, token = token)
 
         loadRoute(context, componentProperty, hydrating, asyncCursorContext)
 
       case None =>
-        componentProperty.set(Router.notFoundComponent(state.browserPath))
+        responseStatusProperty.set(404)
+        componentProperty.set(config.notFound(state))
     }
   }
 
@@ -178,7 +186,7 @@ class Router(
 
         case Some(Failure(error)) =>
           if (renderContext.token == renderToken) {
-            handleRouteFailure(error, target)
+            handleRouteFailure(error, context, target, hydrating)
           }
 
         case None =>
@@ -186,7 +194,7 @@ class Router(
             // Keep the server-rendered range in place until the asynchronous loader has completed.
             target.set(RoutedComponent.adoptingServerRender(renderContext))
           } else {
-            target.set(Router.loadingComponent())
+            target.set(config.loading(context))
           }
 
           val handled =
@@ -197,11 +205,7 @@ class Router(
                     target.set(new RoutedComponent(component, renderContext))
 
                   case Failure(error) =>
-                    if (browserEnabled || hydrating) {
-                      target.set(Router.errorComponent(error))
-                    } else {
-                      throw error
-                    }
+                    handleRouteFailure(error, context, target, hydrating)
                 }
               }
 
@@ -213,7 +217,7 @@ class Router(
     } catch {
       case error: Throwable =>
         if (renderContext.token == renderToken) {
-          handleRouteFailure(error, target)
+          handleRouteFailure(error, context, target, hydrating)
         }
     }
   }
@@ -240,10 +244,20 @@ class Router(
 
   private def handleRouteFailure(
       error: Throwable,
-      target: Property[AbstractComponent]
-  ): Unit =
-    if (browserEnabled) target.set(Router.errorComponent(error))
-    else throw error
+      context: RouteContext,
+      target: Property[AbstractComponent],
+      hydrating: Boolean
+  ): Unit = {
+    val renderError =
+      browserEnabled || hydrating || config.renderErrorsOnServer
+
+    if (renderError) {
+      responseStatusProperty.set(500)
+      target.set(config.error(error, context))
+    } else {
+      throw error
+    }
+  }
 
   private def resolve(url: String, preferredLocale: Option[I18nLocale]): RouterState = {
     val resolved =
@@ -360,35 +374,4 @@ object Router {
   private[router] def emptyComponent(): AbstractComponent =
     new AbstractCustomComponent {}
 
-  private def loadingComponent(): AbstractComponent =
-    new AbstractCustomComponent {
-      override def compose(cursor: Cursor): Unit =
-        DslLayer.render(this, cursor) {
-          div {
-            text("Loading...") {}
-          }
-        }
-    }
-
-  private def errorComponent(error: Throwable): AbstractComponent =
-    new AbstractCustomComponent {
-      override def compose(cursor: Cursor): Unit =
-        DslLayer.render(this, cursor) {
-          div {
-            text(
-              Option(error.getMessage).filter(_.nonEmpty).getOrElse("Route could not be loaded")
-            ) {}
-          }
-        }
-    }
-
-  private def notFoundComponent(path: String): AbstractComponent =
-    new AbstractCustomComponent {
-      override def compose(cursor: Cursor): Unit =
-        DslLayer.render(this, cursor) {
-          div {
-            text(s"No route matched for: $path") {}
-          }
-        }
-    }
 }

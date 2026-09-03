@@ -1,17 +1,66 @@
 package jfx.router
 
+import jfx.core.component.{AbstractComponent, AbstractCustomComponent}
+import jfx.core.dsl.DslLayer
+import jfx.core.layout.Div.div
+import jfx.core.layout.TextComponent.text
+import jfx.core.render.Cursor
 import org.scalajs.dom
 
 import scala.scalajs.js
 
+/** Application-owned rendering at the router boundary.
+  *
+  * Loader failures still fail SSR by default. Applications that can render a complete error page
+  * set `renderErrorsOnServer`; the router then exposes status 500 through
+  * [[Router.responseStatus]].
+  */
 final case class RouterConfig(
-    basePath: String = RouterConfig.detectBasePath()
+    basePath: String = RouterConfig.detectBasePath(),
+    notFound: RouterState => AbstractComponent = RouterConfig.defaultNotFound,
+    loading: RouteContext => AbstractComponent = RouterConfig.defaultLoading,
+    error: (Throwable, RouteContext) => AbstractComponent = RouterConfig.defaultError,
+    renderErrorsOnServer: Boolean = false
 ) {
   val normalizedBasePath: String =
     RouterConfig.normalizeBasePath(basePath)
 }
 
 object RouterConfig {
+
+  private[router] val defaultNotFound: RouterState => AbstractComponent =
+    state =>
+      new AbstractCustomComponent {
+        override def compose(cursor: Cursor): Unit =
+          DslLayer.render(this, cursor) {
+            div {
+              text(s"No route matched for: ${state.browserPath}") {}
+            }
+          }
+      }
+
+  private[router] val defaultLoading: RouteContext => AbstractComponent =
+    _ =>
+      new AbstractCustomComponent {
+        override def compose(cursor: Cursor): Unit =
+          DslLayer.render(this, cursor) {
+            div {
+              text("Loading...") {}
+            }
+          }
+      }
+
+  private[router] val defaultError: (Throwable, RouteContext) => AbstractComponent =
+    (_, _) =>
+      new AbstractCustomComponent {
+        override def compose(cursor: Cursor): Unit =
+          DslLayer.render(this, cursor) {
+            div {
+              // Loader errors can contain internal URLs or implementation details.
+              text("Route could not be loaded") {}
+            }
+          }
+      }
 
   private[router] def detectBasePath(): String =
     if (!hasBrowserWindow) {

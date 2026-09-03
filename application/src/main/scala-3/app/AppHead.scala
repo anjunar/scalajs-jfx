@@ -28,6 +28,7 @@ final class AppHead(
     val page = documentHead.handle(owner)
 
     owner.addDisposable(router.state.observe(_ => updatePage(page)))
+    owner.addDisposable(router.responseStatus.observeWithoutInitial(_ => updatePage(page)))
     owner.addDisposable(i18n.locale.observeWithoutInitial(_ => updatePage(page)))
 
     val themeColor = documentHead.handle(owner)
@@ -75,10 +76,13 @@ final class AppHead(
     val state  = router.state.get
     val locale = i18n.locale.get
     val entry  = navigation.find(_.matches(state.path))
-    val found  = state.currentMatchOption.isDefined
+    val status = router.responseStatus.get
+    val found  = status != 404
+    val failed = status >= 500
 
     val title =
       if (!found) s"${notFoundTitle(locale)} | ${SiteConfig.name}"
+      else if (failed) s"${errorTitle(locale)} | ${SiteConfig.name}"
       else
         entry.filter(_.path != "/") match {
           case Some(matched) => s"${matched.title(locale)} | ${SiteConfig.name}"
@@ -96,7 +100,7 @@ final class AppHead(
       Seq(
         HeadEntry.title(title),
         HeadEntry.meta("description", description),
-        HeadEntry.meta("robots", if (found) "index, follow" else "noindex, nofollow"),
+        HeadEntry.meta("robots", if (status == 200) "index, follow" else "noindex, nofollow"),
         HeadEntry.link("canonical", canonical),
         HeadEntry.property("og:title", title),
         HeadEntry.property("og:description", description),
@@ -126,6 +130,9 @@ final class AppHead(
   private def notFoundTitle(locale: I18nLocale): String =
     if (locale == AppI18n.German) "Seite nicht gefunden" else "Page not found"
 
+  private def errorTitle(locale: I18nLocale): String =
+    if (locale == AppI18n.German) "Route nicht verfügbar" else "Route unavailable"
+
   private def baseHref: String =
     if (SiteConfig.basePath.isEmpty) "/" else s"${SiteConfig.basePath}/"
 
@@ -148,8 +155,8 @@ final class AppHead(
        |}""".stripMargin
 
   /** Runs before the first paint and sets `data-theme`, so the page does not start in the wrong
-    * theme and correct itself once the bundle is loaded. It is the one piece of the head that has to
-    * be a script: the server cannot know what the visitor stored.
+    * theme and correct itself once the bundle is loaded. It is the one piece of the head that has
+    * to be a script: the server cannot know what the visitor stored.
     *
     * [[AppTheme.BrowserEffects]] takes over from there and writes the same attribute.
     */

@@ -133,6 +133,19 @@ class AppSsrSpec extends AsyncFlatSpec with Matchers {
     mounted("/no-such-page").ssrStatus shouldBe 404
   }
 
+  it should "render the localized application boundary for an unknown route" in {
+    val document = documentFor(desktopRequest, "/de/no-such-page")
+
+    Runtime
+      .renderToStringAsync(cursor => Runtime.mount(document, cursor))
+      .map { html =>
+        document.ssrStatus shouldBe 404
+        html should include("Seite nicht gefunden")
+        html should include("/de/no-such-page")
+        html should include("Zur Übersicht")
+      }
+  }
+
   "The app" should "publish request, i18n and theme through the component context" in {
     val app = mounted("/").app
 
