@@ -5,11 +5,14 @@ import jfx.core.dsl.DslLayer
 import jfx.core.render.{Cursor, VirtualHost}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 class FetchComponent[A](
     load: () => Future[A]
 )(
     renderLoaded: A => AbstractComponent ?=> Cursor ?=> Unit
+)(
+    renderFailed: Throwable => AbstractComponent ?=> Cursor ?=> Unit
 )(
     ec: ExecutionContext
 ) extends AbstractComponent {
@@ -24,20 +27,28 @@ class FetchComponent[A](
       }
     val mountPoint = new DynamicMountPoint(this, initialCursor)
 
+    val rendering =
+      Future
+        .fromTry(Try(load()))
+        .flatten
+        .transform { result =>
+          Try {
+            try {
+              if (isBound) {
+                given AbstractComponent = this
+                given Cursor            = mountPoint.appendCursor
+
+                result.fold(renderFailed, renderLoaded)
+              }
+            } finally {
+              mountPoint.finishInitialComposition()
+            }
+          }
+        }(ec)
+
     cursor.asyncContext match {
-      case Some(async) =>
-        async.add {
-          load().map { value =>
-            given AbstractComponent = this
-            given Cursor            = mountPoint.appendCursor
-
-            renderLoaded(value)
-            mountPoint.finishInitialComposition()
-          }(ec)
-        }
-
-      case None =>
-        mountPoint.finishInitialComposition()
+      case Some(async) => async.add(rendering)
+      case None        => rendering.failed.foreach(ec.reportFailure)(ec)
     }
   }
 }
@@ -48,10 +59,12 @@ object FetchComponent {
       load: () => Future[A]
   )(
       renderLoaded: A => AbstractComponent ?=> Cursor ?=> Unit
+  )(
+      renderFailed: Throwable => AbstractComponent ?=> Cursor ?=> Unit
   )(using
       parent: AbstractComponent,
       cursor: Cursor,
       ec: ExecutionContext
   ): FetchComponent[A] =
-    DslLayer.child(new FetchComponent(load)(renderLoaded)(ec)) {}
+    DslLayer.child(new FetchComponent(load)(renderLoaded)(renderFailed)(ec)) {}
 }

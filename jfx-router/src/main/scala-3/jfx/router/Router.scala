@@ -193,6 +193,11 @@ class Router(
           if (hydrating) {
             // Keep the server-rendered range in place until the asynchronous loader has completed.
             target.set(RoutedComponent.adoptingServerRender(renderContext))
+          } else if (!browserEnabled && asyncContext.nonEmpty) {
+            // SSR waits for this loader through AsyncRenderContext. Rendering a transient loading
+            // boundary would only put markup into the final response that is obsolete before the
+            // response is serialized.
+            target.set(Router.emptyComponent())
           } else {
             target.set(config.loading(context))
           }
