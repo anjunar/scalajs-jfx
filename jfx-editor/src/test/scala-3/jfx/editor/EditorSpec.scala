@@ -97,12 +97,20 @@ final class EditorSpec extends AnyFlatSpec with Matchers {
       )
     }
 
-    html should include("class=\"jfx-editor-host\"")
-    html should include("aria-disabled=\"true\"")
-    html should include("aria-readonly=\"true\"")
-    html should include("Write a summary")
-    html should include("data-jfx-editor-loading=\"false\"")
-  }
+      html should include("class=\"jfx-editor-host\"")
+      html should include("aria-disabled=\"true\"")
+      html should include("aria-readonly=\"true\"")
+      html should include("Write a summary")
+      html should include("data-jfx-editor-loading=\"false\"")
+
+      val hostStart    = html.indexOf("class=\"jfx-editor-host")
+      val hostEnd      = html.indexOf('>', hostStart)
+      val surfaceStart = html.indexOf("class=\"jfx-editor__surface lexical")
+      val surfaceEnd   = html.indexOf('>', surfaceStart)
+
+      html.substring(hostStart, hostEnd) should not include ("contenteditable")
+      html.substring(surfaceStart, surfaceEnd) should include ("contenteditable=\"false\"")
+    }
 
   it should "anchor an empty placeholder for hydration" in {
     val html = Runtime.renderToString { cursor =>

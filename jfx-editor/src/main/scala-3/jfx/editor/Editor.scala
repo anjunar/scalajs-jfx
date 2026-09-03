@@ -74,7 +74,7 @@ final class Editor private[editor] (
 
           toolbarHost = div {
             classes = Seq("jfx-editor__toolbar")
-            setAttribute("aria-label", "Editor toolbar")
+            setDslAttribute("aria-label", "Editor toolbar")
             style {
               display = toolbarDisplay(editableProperty.get)
             }
@@ -85,18 +85,18 @@ final class Editor private[editor] (
 
             previewHost = div {
               classes = Seq("jfx-editor__preview", "jfx-editor-readonly")
-              setAttribute("aria-hidden", "false")
+              setDslAttribute("aria-hidden", "false")
               dynamic(valueProperty.map[AbstractComponent](value => new EditorPreview(value)))
             }
 
             surfaceHost = div {
               classes =
                 Seq("jfx-editor__surface", "lexical-editor-container", "lexical-editor-input")
-              setAttribute("role", "textbox")
-              setAttribute("aria-multiline", "true")
-              setAttribute("contenteditable", editableProperty.get.toString)
-              setAttribute("aria-readonly", (!editableProperty.get).toString)
-              setAttribute("spellcheck", "true")
+              setDslAttribute("role", "textbox")
+              setDslAttribute("aria-multiline", "true")
+              setDslAttribute("contenteditable", editableProperty.get.toString)
+              setDslAttribute("aria-readonly", (!editableProperty.get).toString)
+              setDslAttribute("spellcheck", "true")
               style {
                 display = "none"
                 opacity = "0"
