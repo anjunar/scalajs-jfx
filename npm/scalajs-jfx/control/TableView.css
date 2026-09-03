@@ -51,6 +51,42 @@
   scrollbar-gutter: stable both-edges;
 }
 
+.jfx-table-footer,
+.jfx-virtualized-footer {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 8px 12px;
+  box-sizing: border-box;
+  border-top: 1px solid var(--aj-line);
+}
+
+.jfx-virtualized-page-button,
+.jfx-virtualized-mode-button {
+  appearance: none;
+  border: 1px solid var(--aj-line);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: var(--aj-ink);
+  background: var(--aj-surface);
+  cursor: pointer;
+}
+
+.jfx-virtualized-page-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.jfx-virtualized-page-status {
+  min-width: 7rem;
+  color: var(--aj-ink-soft);
+  text-align: center;
+  font-size: 13px;
+}
+
 .jfx-table-content {
   position: relative;
   min-height: 100%;

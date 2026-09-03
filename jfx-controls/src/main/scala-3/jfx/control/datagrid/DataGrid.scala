@@ -1,6 +1,6 @@
 package jfx.control.datagrid
 
-import jfx.control.virtualized.{CrawlableCollection, GridGeometry, VirtualizedCollection}
+import jfx.control.virtualized.{CollectionDisplayMode, CrawlableCollection, GridGeometry, VirtualizedCollection}
 import jfx.control.datagrid.DataGrid
 import jfx.core.component.AbstractComponent
 import jfx.core.remote.RemoteSort
@@ -64,6 +64,7 @@ final class DataGrid[T] private (
 
   override protected def crawlControlName: String = "DataGrid"
   override protected def crawlDefaultLimit: Int   = DataGrid.defaultLimit
+  override protected def pagingUrlKey: String     = crawlIdProperty.get.getOrElse("grid")
 
   private var lastVisibleCells                               = Vector.empty[DataGrid.VisibleCell[T]]
   private var cellRendererBody: Option[DataGrid.Renderer[T]] = None
@@ -116,9 +117,10 @@ final class DataGrid[T] private (
     // dynamic mount point is created so SSR and hydration see the same tree.
     configure(using this)(using cursor)
     initializeCrawlState()
+    initializeUrlState()
     installObservers()
 
-    if (browserRendering) {
+    if (browserRendering && !isPaging) {
       val (offset, _) = crawlParams
       if (offset > 0) {
         initialScrollIndex = offset
@@ -133,7 +135,8 @@ final class DataGrid[T] private (
       classIf("jfx-data-grid-error", remoteStateRevisionProperty.map(_ => remoteError.nonEmpty))
 
       style {
-        display = "block"
+        display = "flex"
+        flexDirection = "column"
         width = "100%"
         height = "100%"
         overflow = "hidden"
@@ -144,8 +147,12 @@ final class DataGrid[T] private (
         classes = Seq("jfx-data-grid-viewport")
         style {
           width = "100%"
-          height = "100%"
-          overflow = "auto"
+          flex = "1 1 auto"
+          minHeight = "0"
+          overflow = displayModeProperty.map {
+            case CollectionDisplayMode.Paging    => "hidden"
+            case CollectionDisplayMode.Scrolling => "auto"
+          }
           position = "relative"
         }
 
@@ -258,8 +265,11 @@ final class DataGrid[T] private (
               }
             }
           }
-        }
       }
+
+      }
+
+      renderPagingFooter("jfx-data-grid")
     }
   }
 
@@ -272,6 +282,12 @@ final class DataGrid[T] private (
     }
 
   private def installObservers(): Unit = {
+    addDisposable(displayModeProperty.observeWithoutInitial(_ => refreshItemState()))
+    addDisposable(pageSizeProperty.observeWithoutInitial { _ =>
+      pageIndexProperty.set(0)
+      refreshItemState()
+    })
+    addDisposable(pageIndexProperty.observeWithoutInitial(_ => refreshItemState()))
     addDisposable(scrollTopProperty.observeWithoutInitial { _ =>
       recomputeVisible()
       persistVisibleScrollOffset()
@@ -290,12 +306,15 @@ final class DataGrid[T] private (
   }
 
   override protected def recomputeVisible(): Unit = {
-    val total = renderableCount
+    val total = displayItemCount
     if (total <= 0) publishVisibleCells(Seq.empty)
     else {
       val (start, end) = visibleRange(total)
       publishVisibleCells((start until end).map(cellFor))
-      if (browserRendering && end > start) requestLazyLoadIfNecessary(start, end)
+      if (browserRendering && end > start) {
+        if (isPaging) requestPageLoad(start, end)
+        else requestLazyLoadIfNecessary(start, end)
+      }
     }
   }
 
@@ -309,8 +328,9 @@ final class DataGrid[T] private (
 
   private def cellFor(index: Int): DataGrid.VisibleCell[T] = {
     val columns = columnCount
-    val row     = index / columns
-    val column  = index % columns
+    val localIndex = layoutIndex(index)
+    val row     = localIndex / columns
+    val column  = localIndex % columns
     DataGrid.VisibleCell(
       index = index,
       item = itemAt(index),
@@ -347,7 +367,7 @@ final class DataGrid[T] private (
   }
 
   private def contentHeight: Double =
-    geometry.contentHeight(renderableCount)
+    geometry.contentHeight(layoutCount(displayItemCount))
 
   override protected def renderableCount: Int = math.max(0, dataSource.totalLength)
 
@@ -421,6 +441,17 @@ object DataGrid {
   def prefetchItems(using grid: DataGrid[?]): Int                = grid.prefetchItemsProperty.get
   def prefetchItems_=(value: Int)(using grid: DataGrid[?]): Unit =
     grid.prefetchItemsProperty.set(math.max(1, value))
+
+  def paging(using grid: DataGrid[?]): Boolean = grid.displayModeProperty.get == CollectionDisplayMode.Paging
+  def paging_=(value: Boolean)(using grid: DataGrid[?]): Unit =
+    grid.displayModeProperty.set(if (value) CollectionDisplayMode.Paging else CollectionDisplayMode.Scrolling)
+
+  def scrolling(using grid: DataGrid[?]): Boolean = !paging
+  def scrolling_=(value: Boolean)(using grid: DataGrid[?]): Unit = paging_=( !value )
+
+  def pageSize(using grid: DataGrid[?]): Int = grid.pageSizeProperty.get
+  def pageSize_=(value: Int)(using grid: DataGrid[?]): Unit =
+    grid.pageSizeProperty.set(math.max(1, value))
 
   def crawlable(using grid: DataGrid[?]): Boolean                = grid.crawlableProperty.get
   def crawlable_=(value: Boolean)(using grid: DataGrid[?]): Unit = grid.crawlableProperty.set(value)

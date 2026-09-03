@@ -21,7 +21,9 @@ import scala.scalajs.js
 class DataGridSpec extends AnyFlatSpec with Matchers {
 
   "DataGrid SSR" should "render only the visible local grid cells" in {
-    val html = renderGrid((0 until 30).map(index => s"Item $index"))()
+    val html = renderGrid((0 until 30).map(index => s"Item $index")) {
+      scrolling = true
+    }
 
     html should include("jfx-data-grid")
     html should include("0:Item 0")

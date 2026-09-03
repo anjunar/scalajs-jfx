@@ -1,13 +1,20 @@
 package jfx.control.virtualized
 
 import jfx.core.component.AbstractComponent
+import jfx.core.context.UrlScope
+import jfx.core.dsl.ClassDsl.classes
+import jfx.core.dsl.EventDsl.onClick
+import jfx.core.layout.Button.*
 import jfx.core.layout.Div
+import jfx.core.layout.Div.div
+import jfx.core.layout.TextComponent.text
 import jfx.core.remote.RemoteListDataSource
 import jfx.core.render.DomHostElement
 import jfx.core.state.{CompositeDisposable, Disposable, ListDataSource, ListProperty, Property}
 import org.scalajs.dom
 
 import scala.concurrent.Future
+import scala.scalajs.js
 
 /** Shared base for TableView, DataGrid, and VirtualListView.
   *
@@ -24,8 +31,17 @@ import scala.concurrent.Future
   *   - [[recomputeVisible]] -- rebuilding the control-specific visible list
   *   - [[handleLocalItemsChange]] and [[resetMeasurements]]
   */
+enum CollectionDisplayMode {
+  case Paging, Scrolling
+}
+
 abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource[T])
     extends AbstractComponent {
+
+  val displayModeProperty: Property[CollectionDisplayMode] =
+    Property(CollectionDisplayMode.Paging)
+  val pageSizeProperty: Property[Int]              = Property(10)
+  val pageIndexProperty: Property[Int]             = Property(0)
 
   // --- supplied by the subclass -------------------------------------------
 
@@ -68,6 +84,8 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
   protected var viewportMeasureScheduled = false
   protected var browserRendering         = false
   protected var hydrating                = false
+  protected var initialScrollIndex       = -1
+  protected var urlPagingStatePresent   = false
 
   /** The item list as a remote list, or null.
     */
@@ -78,6 +96,229 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
     }
 
   protected def itemAt(index: Int): Option[T] = dataSource.itemAt(index)
+
+  /** Stable URL namespace for this control. Subclasses normally use their crawl ID. */
+  protected def pagingUrlKey: String = getClass.getSimpleName.stripSuffix("$").toLowerCase
+
+  protected def isPaging: Boolean = displayModeProperty.get == CollectionDisplayMode.Paging
+
+  protected def pageSize: Int = math.max(1, pageSizeProperty.get)
+
+  /** Absolute item offset of the current page. Every page starts at a limit boundary. */
+  protected def pageStart: Int = math.max(0, pageIndexProperty.get) * pageSize
+
+  protected def pageIndexForOffset(offset: Int): Int = math.max(0, offset) / pageSize
+
+  protected def pageRange(total: Int): (Int, Int) = {
+    val start = math.min(pageStart, math.max(0, total))
+    start -> math.min(total, start + pageSize)
+  }
+
+  /** Reserves the requested page while a remote source has not published its final count yet. */
+  protected def displayItemCount: Int =
+    if (isPaging) {
+      Option(currentRemoteItems) match {
+        case Some(remote) if remote.totalCountProperty.get.isEmpty && canStillGrow =>
+          math.max(renderableCount, pageStart + pageSize)
+        case _ => renderableCount
+      }
+    } else renderableCount
+
+  protected def pagedVisibleRange: Boolean =
+    isPaging && !((!browserRendering || hydrating) && crawlWindow.nonEmpty && !urlPagingStatePresent)
+
+  protected def layoutIndex(index: Int): Int =
+    if (pagedVisibleRange) math.max(0, index - pageStart) else index
+
+  protected def layoutCount(total: Int): Int =
+    if (pagedVisibleRange) {
+      val (start, end) = pageRange(total)
+      math.max(0, end - start)
+    } else total
+
+  /** Reads the route URL before the first visible range is composed. */
+  protected def initializeUrlState(): Unit = {
+    val key = pagingUrlKey
+    val url = UrlScope.current(using this).map(_.url)
+    val requestedLimit = url.flatMap(queryValue(_, s"$key.limit")).flatMap(parsePositiveInt)
+    val requestedOffset = url.flatMap(queryValue(_, s"$key.offset")).flatMap(parseNonNegativeInt)
+    val limit = requestedLimit.getOrElse(pageSize)
+    val offset = requestedOffset.getOrElse(pageIndexProperty.get * limit)
+    val mode = url.flatMap(queryValue(_, s"$key.mode")).map(_.toLowerCase)
+    urlPagingStatePresent = requestedLimit.nonEmpty || requestedOffset.nonEmpty || mode.nonEmpty
+
+    pageSizeProperty.set(limit)
+    if (requestedOffset.nonEmpty) pageIndexProperty.set(offset / limit)
+    displayModeProperty.set(
+      mode match {
+        case Some("scroll") => CollectionDisplayMode.Scrolling
+        case Some("page")   => CollectionDisplayMode.Paging
+        case _               => displayModeProperty.get
+      }
+    )
+
+    if (!isPaging && offset > 0) {
+      initialScrollIndex = offset
+      scrollTopProperty.set(topForIndex(offset))
+    } else {
+      initialScrollIndex = -1
+      scrollTopProperty.set(0.0)
+    }
+  }
+
+  protected def normalizePage(): Unit = {
+    val totalPages = pageCount(renderableCount)
+    if (totalPages > 0 && pageIndexProperty.get >= totalPages)
+      pageIndexProperty.set(totalPages - 1)
+    else if (pageIndexProperty.get < 0) pageIndexProperty.set(0)
+  }
+
+  protected def pageCount(total: Int): Int =
+    if (total <= 0) 0 else (total + pageSize - 1) / pageSize
+
+  protected def hasPreviousPage: Boolean = isPaging && pageIndexProperty.get > 0
+
+  protected def hasNextPage: Boolean =
+    if (!isPaging) false
+    else
+      Option(currentRemoteItems) match {
+        case Some(remote) if remote.totalCountProperty.get.isEmpty => canStillGrow
+        case _                                                     => pageStart + pageSize < renderableCount
+      }
+
+  protected def pageStatusProperty: jfx.core.state.ReadOnlyProperty[String] =
+    itemStateRevisionProperty.map { _ =>
+      val total = pageCount(displayItemCount)
+      if (total == 0) "No items"
+      else s"Page ${math.min(pageIndexProperty.get + 1, total)} of $total"
+    }
+
+  protected def setPage(index: Int): Unit = {
+    setPageOffset(math.max(0, index) * pageSize)
+  }
+
+  protected def setPageOffset(offset: Int): Unit = {
+    val nextOffset = pageIndexForOffset(offset) * pageSize
+    pageIndexProperty.set(pageIndexForOffset(nextOffset))
+    scrollTopProperty.set(0.0)
+    requestPageLoad(pageStart, pageStart + pageSize)
+    navigatePagingUrl(nextOffset, scrolling = false)
+    recomputeVisible()
+  }
+
+  protected def toggleDisplayMode(): Unit = {
+    if (isPaging) {
+      displayModeProperty.set(CollectionDisplayMode.Scrolling)
+      val offset = pageStart
+      scrollTopProperty.set(topForIndex(offset))
+      domElement(viewportComponent).foreach(_.scrollTop = scrollTopProperty.get)
+      navigatePagingUrl(pageStart, scrolling = true)
+    } else {
+      val offset = geometry.indexForOffset(math.max(0.0, scrollTopProperty.get - geometry.headerOffset))
+      val nextPage = math.max(0, offset / pageSize)
+      pageIndexProperty.set(nextPage)
+      displayModeProperty.set(CollectionDisplayMode.Paging)
+      scrollTopProperty.set(0.0)
+      domElement(viewportComponent).foreach(_.scrollTop = 0.0)
+      navigatePagingUrl(nextPage * pageSize, scrolling = false)
+      recomputeVisible()
+    }
+  }
+
+  protected def renderPagingFooter(cssPrefix: String)(using AbstractComponent, jfx.core.render.Cursor): Unit =
+    div {
+      classes = Seq(s"$cssPrefix-footer", "jfx-virtualized-footer")
+
+      button("Previous") {
+        classes = Seq("jfx-virtualized-page-button")
+        disabled = pageStatusProperty.map(_ => !hasPreviousPage)
+        onClick(_ => setPageOffset(pageStart - pageSize))
+      }
+      div {
+        classes = Seq("jfx-virtualized-page-status")
+        text(pageStatusProperty) {}
+      }
+      button("Next") {
+        classes = Seq("jfx-virtualized-page-button")
+        disabled = pageStatusProperty.map(_ => !hasNextPage)
+        onClick(_ => setPageOffset(pageStart + pageSize))
+      }
+      button(
+        displayModeProperty.map {
+          case CollectionDisplayMode.Paging   => "Switch to scrolling"
+          case CollectionDisplayMode.Scrolling => "Switch to paging"
+        }
+      ) {
+        classes = Seq("jfx-virtualized-mode-button")
+        onClick(_ => toggleDisplayMode())
+      }
+    }
+
+  protected def requestPageLoad(start: Int, end: Int): Unit =
+    if (browserRendering) {
+      currentRemoteItems match {
+        case null => ()
+        case remote if remote.errorProperty.get.nonEmpty => ()
+        case remote if remote.supportsRangeLoading && !remote.isRangeLoaded(start, end) =>
+          discardResult(remote.ensureRangeLoaded(start, end))
+        case remote if !remote.supportsRangeLoading && end > remote.loadedLength && remote.canLoadMore =>
+          discardResult(remote.loadMore())
+        case _ => ()
+      }
+    }
+
+  private def navigatePagingUrl(offset: Int, scrolling: Boolean): Unit =
+    UrlScope.current(using this).foreach { scope =>
+      val normalizedOffset = math.max(0, offset / pageSize) * pageSize
+      val withOffset = replaceQueryParameter(scope.url, s"$pagingUrlKey.offset", normalizedOffset.toString)
+      val withLimit = replaceQueryParameter(withOffset, s"$pagingUrlKey.limit", pageSize.toString)
+      val next =
+        if (scrolling) replaceQueryParameter(withLimit, s"$pagingUrlKey.mode", "scroll")
+        else removeQueryParameter(withLimit, s"$pagingUrlKey.mode")
+      scope.navigate(next, replace = false)
+    }
+
+  private def queryValue(url: String, name: String): Option[String] =
+    queryEntries(url).collectFirst { case (`name`, value) => value }
+
+  private def queryEntries(url: String): Vector[(String, String)] = {
+    val search = url.takeWhile(_ != '#').dropWhile(_ != '?').stripPrefix("?")
+    if (search.isEmpty) Vector.empty
+    else search.split("&").iterator.filter(_.nonEmpty).map { entry =>
+      val parts = entry.split("=", 2)
+      decode(parts.head) -> decode(parts.lift(1).getOrElse(""))
+    }.toVector
+  }
+
+  private def parsePositiveInt(value: String): Option[Int] =
+    value.toIntOption.filter(_ > 0)
+
+  private def parseNonNegativeInt(value: String): Option[Int] =
+    value.toIntOption.filter(_ >= 0)
+
+  private def decode(value: String): String =
+    try js.URIUtils.decodeURIComponent(value.replace("+", " "))
+    catch case _: Throwable => value
+
+  private def encode(value: String): String = js.URIUtils.encodeURIComponent(value)
+
+  private def replaceQueryParameter(url: String, name: String, value: String): String =
+    replaceQueryParameter(url, name, Some(value))
+
+  private def removeQueryParameter(url: String, name: String): String =
+    replaceQueryParameter(url, name, None)
+
+  private def replaceQueryParameter(url: String, name: String, value: Option[String]): String = {
+    val hash = url.indexOf('#') match {
+      case -1 => ""
+      case index => url.drop(index)
+    }
+    val withoutHash = if (hash.isEmpty) url else url.dropRight(hash.length)
+    val path = withoutHash.takeWhile(_ != '?')
+    val entries = queryEntries(withoutHash).filterNot(_._1 == name) ++ value.map(name -> _)
+    val search = if (entries.isEmpty) "" else entries.map { case (key, current) => s"${encode(key)}=${encode(current)}" }.mkString("?", "&", "")
+    s"$path$search$hash"
+  }
 
   protected def remoteLoading: Boolean =
     currentRemoteItems match {
@@ -295,10 +536,12 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
     * would not be reproducible. Only the else branch differs and belongs to geometry.
     */
   protected def visibleRange(total: Int): (Int, Int) =
-    if ((!browserRendering || hydrating) && crawlWindow.nonEmpty) {
+    if ((!browserRendering || hydrating) && crawlWindow.nonEmpty && !urlPagingStatePresent) {
       val (offset, limit) = crawlWindow.get
       val start           = math.min(offset, total)
       (start, math.min(total, start + limit))
+    } else if (isPaging) {
+      pageRange(total)
     } else {
       geometry.visibleRange(total, scrollTopProperty.get, viewportHeightProperty.get)
     }

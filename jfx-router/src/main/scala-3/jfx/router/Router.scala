@@ -1,6 +1,7 @@
 package jfx.router
 
 import jfx.core.context.CrawlScope
+import jfx.core.context.UrlScope
 import jfx.core.component.{AbstractComponent, AbstractCustomComponent, Runtime}
 import jfx.core.di.Context
 import jfx.core.dsl.DslLayer
@@ -433,6 +434,11 @@ class Router(
 
     override def compose(cursor: Cursor): Unit = {
       RouteRenderContext.provide(renderContext)(using this)
+      UrlScope.provide(
+        UrlScope(() => renderContext.state.url) { (url, replace) =>
+          renderContext.router.navigate(url, replace)
+        }
+      )(using this)
       Option(child).foreach(Runtime.mount(_, cursor, Some(this)))
     }
   }

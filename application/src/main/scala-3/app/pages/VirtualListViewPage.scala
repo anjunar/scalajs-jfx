@@ -10,13 +10,14 @@ import jfx.core.layout.TextComponent.text
 import jfx.core.layout.VBox.vbox
 import jfx.core.render.Cursor
 import jfx.core.state.ListProperty
+import jfx.core.state.ListDataSource
 import jfx.core.i18n.i18n
 
 object VirtualListViewPage {
 
   final case class ShowcaseItem(title: String, height: Double, color: String)
 
-  def render()(using AbstractComponent, Cursor): Unit = {
+  def createShowcaseItems(): ListProperty[ShowcaseItem] = {
     val showcaseItems = ListProperty[ShowcaseItem]()
     showcaseItems.setAll(
       (1 to 1000).map { index =>
@@ -31,6 +32,10 @@ object VirtualListViewPage {
         ShowcaseItem(s"Record #$index", height, color)
       }
     )
+    showcaseItems
+  }
+
+  def render(showcaseItems: ListDataSource[ShowcaseItem])(using AbstractComponent, Cursor): Unit = {
 
     showcasePage(i18n"VirtualListView", i18n"Variable heights with a stable visible window.") {
       vbox {

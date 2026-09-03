@@ -4,6 +4,7 @@ import jfx.control.table.TableColumn.*
 import jfx.control.table.TableView
 import jfx.control.table.TableView.*
 import jfx.core.component.{AbstractComponent, Runtime}
+import jfx.core.context.UrlScope
 import jfx.core.remote.{RemoteListProperty, RemoteLoader, RemotePage, RemoteSort}
 import jfx.core.dsl.ClassDsl.addClass
 import jfx.core.dsl.DslLayer
@@ -74,9 +75,40 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
     html.indexOf("jfx-table-header-cell") should be < html.indexOf("jfx:Foreach:end")
   }
 
+  it should "restore the page from the route URL" in {
+    val members = (0 until 25).map(index => s"Member $index")
+    val html = Runtime.renderToString { cursor =>
+      Runtime.mount(
+        new AbstractComponent {
+          override val tagName: String = "main"
+
+          override def compose(contentCursor: Cursor): Unit =
+            DslLayer.render(this, contentCursor) {
+              UrlScope.provide(
+                UrlScope(() => "/table?members.offset=10&members.limit=10") { (_, _) => () }
+              )
+              tableView[String](ListProperty(js.Array(members*))) {
+                crawlId = "members"
+                column[String, String]("Name") {
+                  cell { item => text(item) {} }
+                }
+              }
+            }
+        },
+        cursor
+      )
+    }
+
+    html should include("Member 10")
+    html should not include "Member 9"
+    html should include("Page 2 of 3")
+    html should include("jfx-table-footer")
+  }
+
   it should "apply an exact fixed height and keep the body viewport scrollable" in {
     val html = renderTable((0 until 40).map(index => s"Member $index")) {
       fixedHeight = 240.0
+      scrolling = true
     }
 
     html should include("height: 240px")

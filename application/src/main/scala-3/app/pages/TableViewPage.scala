@@ -44,13 +44,14 @@ object TableViewPage {
       template.copy(title = s"${template.title} #${index + 1}")
     }
 
-  private def createRemoteBooks(
+  def createRemoteBooks(
       rowCount: Int = 1000,
-      pageSize: Int = 50
+      pageSize: Int = 50,
+      offset: Int = 0
   ): RemoteListProperty[Book, BookQuery] = {
     val allBooks           = generatedBooks(rowCount)
     val normalizedPageSize = math.max(1, pageSize)
-    val initialQuery       = BookQuery(offset = 0, limit = normalizedPageSize)
+    val initialQuery       = BookQuery(offset = math.max(0, offset), limit = normalizedPageSize)
 
     val remote = RemoteListProperty[Book, BookQuery](
       loader = RemoteLoader { query =>
@@ -71,7 +72,7 @@ object TableViewPage {
         )
       },
       initialQuery = initialQuery,
-      underlying = js.Array(allBooks.take(normalizedPageSize)*),
+      underlying = js.Array(allBooks.slice(initialQuery.offset, initialQuery.offset + normalizedPageSize)*),
       sortUpdater = Some((query, sorting) =>
         query.copy(offset = 0, limit = normalizedPageSize, sorting = sorting.toVector)
       ),
@@ -105,8 +106,7 @@ object TableViewPage {
       case None => books
     }
 
-  def render()(using AbstractComponent, Cursor): Unit = {
-    val books        = createRemoteBooks()
+  def render(books: RemoteListProperty[Book, BookQuery])(using AbstractComponent, Cursor): Unit = {
     val status       = Property("Double-click a row to inspect it.")
     val loadedStatus = books.totalCountProperty.flatMap { totalCount =>
       books.loadedLengthProperty.map(loaded =>

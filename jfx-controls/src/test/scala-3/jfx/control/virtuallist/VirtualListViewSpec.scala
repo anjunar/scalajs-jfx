@@ -24,7 +24,9 @@ class VirtualListViewSpec extends AnyFlatSpec with Matchers {
   "VirtualListView SSR" should "render only the estimated local viewport" in {
     val items = ListProperty[String](js.Array((0 until 30).map(index => s"Item $index")*))
 
-    val html = renderList(items)()
+    val html = renderList(items) {
+      scrolling = true
+    }
 
     html should include("jfx-virtual-list")
     html should include("0:Item 0")
@@ -109,6 +111,7 @@ class VirtualListViewSpec extends AnyFlatSpec with Matchers {
             estimateHeightPx = 40
             overscanPx = 0
             controlViewportHeight(100)
+            scrolling = true
             cellRenderer = rowRenderer
           }
       },

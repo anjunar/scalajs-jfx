@@ -2,6 +2,7 @@ package app
 
 import app.pages.*
 import jfx.router.Route
+import jfx.router.RouteContext
 
 import jfx.core.component.AbstractComponent
 
@@ -22,6 +23,24 @@ object AppRoutes {
     setTimeout(millis.toDouble)(promise.success(component))
     promise.future
   }
+
+  private def queryInt(context: RouteContext, name: String, fallback: Int): Int =
+    context.queryParams.get(name).flatMap(_.toIntOption).filter(_ >= 0).getOrElse(fallback)
+
+  private def paging(context: RouteContext, key: String, defaultLimit: Int): (Int, Int) = {
+    val limit = context.queryParams
+      .get(s"$key.limit")
+      .flatMap(_.toIntOption)
+      .filter(_ > 0)
+      .getOrElse(defaultLimit)
+    val offset = queryInt(context, s"$key.offset", 0)
+    ((offset / limit) * limit, limit)
+  }
+
+  private def loaded(load: => Future[?])(
+      render: => AbstractComponent
+  ): Future[AbstractComponent] =
+    load.map(_ => render)
 
   def routes: Seq[Route] =
     Seq(
@@ -114,19 +133,24 @@ object AppRoutes {
           ComboBoxPage.render()
         })
       },
-      Route.view("/table") { _ =>
-        Future.successful(Route.component {
-          TableViewPage.render()
-        })
+      Route.view("/table") { context =>
+        val (offset, limit) = paging(context, "table", 10)
+        val source = TableViewPage.createRemoteBooks(pageSize = limit, offset = offset)
+        loaded(source.reload()) {
+          Route.component { TableViewPage.render(source) }
+        }
       },
-      Route.view("/data-grid") { _ =>
-        Future.successful(Route.component {
-          DataGridPage.render()
-        })
+      Route.view("/data-grid") { context =>
+        val (offset, limit) = paging(context, "showcase-tiles", 10)
+        val source = DataGridPage.createRemoteTiles(pageSize = limit, offset = offset)
+        loaded(source.reload()) {
+          Route.component { DataGridPage.render(source) }
+        }
       },
       Route.view("/virtual-list") { _ =>
+        val source = VirtualListViewPage.createShowcaseItems()
         Future.successful(Route.component {
-          VirtualListViewPage.render()
+          VirtualListViewPage.render(source)
         })
       },
       Route.view("/viewport") { _ =>

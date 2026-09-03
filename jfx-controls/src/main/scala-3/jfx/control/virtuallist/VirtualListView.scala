@@ -1,6 +1,6 @@
 package jfx.control.virtuallist
 
-import jfx.control.virtualized.{CrawlableCollection, MeasuredRowGeometry, VirtualizedCollection}
+import jfx.control.virtualized.{CollectionDisplayMode, CrawlableCollection, MeasuredRowGeometry, VirtualizedCollection}
 import jfx.core.component.AbstractComponent
 import jfx.core.remote.RemoteSort
 import jfx.core.dsl.ClassDsl.{addClass, classIf, classes}
@@ -51,6 +51,7 @@ final class VirtualListView[T] private (
 
   override protected def crawlControlName: String = "VirtualListView"
   override protected def crawlDefaultLimit: Int   = VirtualListView.defaultLimit
+  override protected def pagingUrlKey: String     = crawlIdProperty.get.getOrElse("list")
 
   private var lastVisibleSlots = Vector.empty[VirtualListView.VisibleSlot[T]]
   private var tailPaddingItems = defaultTailPadding
@@ -97,7 +98,8 @@ final class VirtualListView[T] private (
     // SSR or hydration range.
     configure(using this)(using cursor)
     initializeCrawlState()
-    if (browserRendering && crawlState.offset > 0) {
+    initializeUrlState()
+    if (browserRendering && !isPaging && crawlState.offset > 0) {
       initialScrollIndex = crawlState.offset
       if (!hydrating) scrollTopProperty.set(topForIndex(crawlState.offset))
     }
@@ -109,7 +111,8 @@ final class VirtualListView[T] private (
       classIf("jfx-virtual-list-loading", remoteStateRevisionProperty.map(_ => remoteLoading))
       classIf("jfx-virtual-list-error", remoteStateRevisionProperty.map(_ => remoteError.nonEmpty))
       style {
-        display = "block"
+        display = "flex"
+        flexDirection = "column"
         width = "100%"
         height = "100%"
         minWidth = "0"
@@ -122,8 +125,12 @@ final class VirtualListView[T] private (
         classes = Seq("jfx-virtual-list-viewport")
         style {
           width = "100%"
-          height = "100%"
-          overflow = "auto"
+          flex = "1 1 auto"
+          minHeight = "0"
+          overflow = displayModeProperty.map {
+            case CollectionDisplayMode.Paging    => "hidden"
+            case CollectionDisplayMode.Scrolling => "auto"
+          }
           position = "relative"
         }
 
@@ -187,6 +194,8 @@ final class VirtualListView[T] private (
           }
         }
       }
+
+      renderPagingFooter("jfx-virtual-list")
     }
 
     compositionReady = true
@@ -201,6 +210,12 @@ final class VirtualListView[T] private (
     }
 
   private def installObservers(): Unit = {
+    addDisposable(displayModeProperty.observeWithoutInitial(_ => refreshItemState()))
+    addDisposable(pageSizeProperty.observeWithoutInitial { _ =>
+      pageIndexProperty.set(0)
+      refreshItemState()
+    })
+    addDisposable(pageIndexProperty.observeWithoutInitial(_ => refreshItemState()))
     addDisposable(scrollTopProperty.observeWithoutInitial { _ =>
       recomputeVisible()
       persistVisibleScrollOffset()
@@ -220,13 +235,16 @@ final class VirtualListView[T] private (
 
   override protected def recomputeVisible(): Unit = {
     geometry.rebuildPrefixIfDirty()
-    val total = renderableCount
+    val total = displayItemCount
 
     if (total <= 0) publishVisibleSlots(Seq.empty)
     else {
       val (start, end) = visibleRange(total)
       publishVisibleSlots((start until end).map(slotFor))
-      if (browserRendering && !hydrating && end > start) requestLazyLoadIfNecessary(start, end)
+      if (browserRendering && !hydrating && end > start) {
+        if (isPaging) requestPageLoad(start, end)
+        else requestLazyLoadIfNecessary(start, end)
+      }
     }
   }
 
@@ -249,7 +267,9 @@ final class VirtualListView[T] private (
     VirtualListView.VisibleSlot(
       index = index,
       item = itemAt(index),
-      top = geometry.offsetFor(index),
+      top =
+        if (pagedVisibleRange) geometry.offsetFor(index) - geometry.offsetFor(pageStart)
+        else geometry.offsetFor(index),
       height = geometry.heightFor(index)
     )
 
@@ -300,7 +320,10 @@ final class VirtualListView[T] private (
     }
 
   private def contentHeight: Double =
-    geometry.contentHeight(renderableCount)
+    if (pagedVisibleRange) {
+      val (start, end) = pageRange(displayItemCount)
+      geometry.contentHeight(end) - geometry.offsetFor(start)
+    } else geometry.contentHeight(renderableCount)
 
   private def estimateHeight: Double  = math.max(1.0, estimateHeightProperty.get)
   private def headerHeight: Double    = math.max(0.0, headerHeightProperty.get)
@@ -347,6 +370,17 @@ object VirtualListView {
   def prefetchItems(using list: VirtualListView[?]): Int = list.prefetchItemsProperty.get
   def prefetchItems_=(value: Int)(using list: VirtualListView[?]): Unit =
     list.prefetchItemsProperty.set(math.max(1, value))
+
+  def paging(using list: VirtualListView[?]): Boolean = list.displayModeProperty.get == CollectionDisplayMode.Paging
+  def paging_=(value: Boolean)(using list: VirtualListView[?]): Unit =
+    list.displayModeProperty.set(if (value) CollectionDisplayMode.Paging else CollectionDisplayMode.Scrolling)
+
+  def scrolling(using list: VirtualListView[?]): Boolean = !paging
+  def scrolling_=(value: Boolean)(using list: VirtualListView[?]): Unit = paging_=( !value )
+
+  def pageSize(using list: VirtualListView[?]): Int = list.pageSizeProperty.get
+  def pageSize_=(value: Int)(using list: VirtualListView[?]): Unit =
+    list.pageSizeProperty.set(math.max(1, value))
 
   def crawlable(using list: VirtualListView[?]): Boolean                = list.crawlableProperty.get
   def crawlable_=(value: Boolean)(using list: VirtualListView[?]): Unit =

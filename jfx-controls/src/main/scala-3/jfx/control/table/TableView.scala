@@ -1,6 +1,6 @@
 package jfx.control.table
 
-import jfx.control.virtualized.{CrawlableCollection, FixedRowGeometry, VirtualizedCollection}
+import jfx.control.virtualized.{CollectionDisplayMode, CrawlableCollection, FixedRowGeometry, VirtualizedCollection}
 import jfx.control.table.TableRow.{placeholderRow, rowItem, tableRow}
 import jfx.core.component.AbstractComponent
 import jfx.core.remote.RemoteSort
@@ -75,6 +75,7 @@ final class TableView[S] private (
 
   override protected def crawlControlName: String = "TableView"
   override protected def crawlDefaultLimit: Int   = TableView.defaultLimit
+  override protected def pagingUrlKey: String     = crawlIdProperty.get.getOrElse("table")
 
   override protected def renderableCount: Int = math.max(0, dataSource.totalLength)
 
@@ -135,7 +136,8 @@ final class TableView[S] private (
     // This gives SSR and hydration the same initial columns, rows and optional slots.
     configure(using this)(using cursor)
     initializeCrawlState()
-    if (browserRendering && crawlState.offset > 0) {
+    initializeUrlState()
+    if (browserRendering && !isPaging && crawlState.offset > 0) {
       initialScrollIndex = crawlState.offset
       if (!hydrating) scrollTopProperty.set(topForIndex(crawlState.offset))
     }
@@ -244,9 +246,12 @@ final class TableView[S] private (
           classes = Seq("jfx-table-viewport")
           style {
             position = "relative"
-            overflow = "auto"
             width = "100%"
             height = "100%"
+            overflow = displayModeProperty.map {
+              case CollectionDisplayMode.Paging    => "hidden"
+              case CollectionDisplayMode.Scrolling => "auto"
+            }
           }
 
           on("scroll") { event =>
@@ -291,7 +296,7 @@ final class TableView[S] private (
                   classes = Seq("jfx-table-row-slot")
                   style {
                     position = "absolute"
-                    top = s"${rowDefinition.index * rowHeightProperty.get}px"
+                    top = s"${layoutIndex(rowDefinition.index) * rowHeightProperty.get}px"
                     left = "0"
                     width = totalColumnWidthProperty.map(value => s"${value}px")
                     height = s"${rowHeightProperty.get}px"
@@ -355,6 +360,8 @@ final class TableView[S] private (
           }
         }
       }
+
+      renderPagingFooter("jfx-table")
     }
   }
 
@@ -367,6 +374,12 @@ final class TableView[S] private (
     }
 
   private def installObservers(): Unit = {
+    addDisposable(displayModeProperty.observeWithoutInitial(_ => refreshItemState()))
+    addDisposable(pageSizeProperty.observeWithoutInitial { _ =>
+      pageIndexProperty.set(0)
+      refreshItemState()
+    })
+    addDisposable(pageIndexProperty.observeWithoutInitial(_ => refreshItemState()))
     addDisposable(scrollTopProperty.observeWithoutInitial { _ =>
       recomputeVisible()
       persistVisibleScrollOffset()
@@ -386,12 +399,15 @@ final class TableView[S] private (
   }
 
   override protected def recomputeVisible(): Unit = {
-    val total = renderableCount
+    val total = displayItemCount
     if (total == 0) visibleRowsProperty.clear()
     else {
       val (start, end) = visibleRange(total)
       visibleRowsProperty.setAll((start until end).map(index => VisibleRow(index, itemAt(index))))
-      if (browserRendering) requestLazyLoadIfNecessary(start, end)
+      if (browserRendering) {
+        if (isPaging) requestPageLoad(start, end)
+        else requestLazyLoadIfNecessary(start, end)
+      }
     }
   }
 
@@ -419,7 +435,7 @@ final class TableView[S] private (
 
   private def contentHeightProperty: ReadOnlyProperty[String] =
     itemStateRevisionProperty.flatMap(_ =>
-      rowHeightProperty.map(rowHeight => s"${renderableCount * rowHeight}px")
+      rowHeightProperty.map(rowHeight => s"${layoutCount(displayItemCount) * rowHeight}px")
     )
 
   private def placeholderTextProperty: ReadOnlyProperty[String] =
@@ -571,6 +587,17 @@ object TableView {
     table.fixedHeightProperty.set(Some(value))
   def fixedHeight_=(value: ReadOnlyProperty[Double])(using table: TableView[?]): Unit =
     table.addDisposable(value.observe(height => table.fixedHeightProperty.set(Some(height))))
+
+  def paging(using table: TableView[?]): Boolean = table.displayModeProperty.get == CollectionDisplayMode.Paging
+  def paging_=(value: Boolean)(using table: TableView[?]): Unit =
+    table.displayModeProperty.set(if (value) CollectionDisplayMode.Paging else CollectionDisplayMode.Scrolling)
+
+  def scrolling(using table: TableView[?]): Boolean = !paging
+  def scrolling_=(value: Boolean)(using table: TableView[?]): Unit = paging_=( !value )
+
+  def pageSize(using table: TableView[?]): Int = table.pageSizeProperty.get
+  def pageSize_=(value: Int)(using table: TableView[?]): Unit =
+    table.pageSizeProperty.set(math.max(1, value))
 
   def crawlable(using table: TableView[?]): Boolean                = table.crawlableProperty.get
   def crawlable_=(value: Boolean)(using table: TableView[?]): Unit =

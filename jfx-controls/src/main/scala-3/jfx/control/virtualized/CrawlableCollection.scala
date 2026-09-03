@@ -37,9 +37,6 @@ trait CrawlableCollection[T] { self: VirtualizedCollection[T] =>
 
   protected var resolvedCrawlId: Option[String] = None
 
-  /** Index targeted during server rendering; -1 when none. */
-  protected var initialScrollIndex: Int = -1
-
   protected def crawlParams: (Int, Int) = crawlState.offset -> crawlState.limit
 
   override protected def crawlWindow: Option[(Int, Int)] =
@@ -113,7 +110,7 @@ trait CrawlableCollection[T] { self: VirtualizedCollection[T] =>
 
   protected def hasMoreCrawlPage: Boolean = {
     val (offset, limit) = crawlParams
-    crawlableProperty.get && offset + limit < renderableCount
+    crawlableProperty.get && !urlPagingStatePresent && offset + limit < renderableCount
   }
 
   /** Crawl-link target: the current path from CrawlScope.
@@ -143,7 +140,7 @@ trait CrawlableCollection[T] { self: VirtualizedCollection[T] =>
     }
 
   protected def persistVisibleScrollOffset(): Unit =
-    if (browserRendering && !hydrating && resolvedCrawlId.nonEmpty) {
+    if (browserRendering && !hydrating && resolvedCrawlId.nonEmpty && !isPaging) {
       val total  = renderableCount
       val offset =
         if (total <= 0) 0

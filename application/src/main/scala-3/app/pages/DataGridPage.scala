@@ -67,13 +67,14 @@ object DataGridPage {
       tile.copy(title = s"${tile.title} ${index + 1}")
     }
 
-  private def createRemoteTiles(
+  def createRemoteTiles(
       itemCount: Int = 180,
-      pageSize: Int = 24
+      pageSize: Int = 24,
+      offset: Int = 0
   ): RemoteListProperty[Tile, TileQuery] = {
     val allTiles           = generatedTiles(itemCount)
     val normalizedPageSize = math.max(1, pageSize)
-    val initialQuery       = TileQuery(0, normalizedPageSize)
+    val initialQuery       = TileQuery(math.max(0, offset), normalizedPageSize)
 
     val remote = RemoteListProperty[Tile, TileQuery](
       loader = RemoteLoader { query =>
@@ -92,7 +93,7 @@ object DataGridPage {
         )
       },
       initialQuery = initialQuery,
-      underlying = js.Array(allTiles.take(normalizedPageSize)*),
+      underlying = js.Array(allTiles.slice(initialQuery.offset, initialQuery.offset + normalizedPageSize)*),
       rangeQueryUpdater = Some((_, offset, limit) => TileQuery(offset, math.max(1, limit)))
     )
 
@@ -106,8 +107,7 @@ object DataGridPage {
     remote
   }
 
-  def render()(using AbstractComponent, Cursor): Unit = {
-    val tiles         = createRemoteTiles()
+  def render(tiles: RemoteListProperty[Tile, TileQuery])(using AbstractComponent, Cursor): Unit = {
     val selectedIndex = Property(-1)
     val status        = selectedIndex.map {
       case index if index >= 0 => s"Selected card ${index + 1} of 180"
