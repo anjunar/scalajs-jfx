@@ -2,29 +2,21 @@ package app
 
 import app.components.Showcase
 import jfx.core.component.AbstractComponent
-import jfx.core.dsl.ClassDsl.classes
-import jfx.core.dsl.EventDsl.onClick
 import jfx.core.i18n.i18n
-import jfx.core.layout.Button.button
-import jfx.router.{Route, RouteContext, Router, RouterState}
+import jfx.router.{Route, RouteContext, RouteFailure}
 
+/** How the demo answers a request that cannot be served.
+  *
+  * The pages themselves are routes -- `/404` and `/500` in [[AppRoutes]]. What is left here is the
+  * mapping from a failure to one of them, and the loading boundary, which is not a page: there is
+  * no URL for "still loading", it is a state a route passes through.
+  */
 object AppRouterBoundaries {
 
-  val notFound: RouterState => AbstractComponent =
-    state =>
-      Route.component {
-        Showcase.showcasePage(
-          i18n"Page not found",
-          i18n"The requested address does not match a route in this application."
-        ) {
-          Showcase.metricStrip(
-            "404"             -> "status",
-            state.browserPath -> "path"
-          )
-
-          homeButton()
-        }
-      }
+  val onFailure: RouteFailure => Option[String] = {
+    case _: RouteFailure.NotMatched => Some("/404")
+    case _: RouteFailure.LoadFailed => Some("/500")
+  }
 
   val loading: RouteContext => AbstractComponent =
     context =>
@@ -39,26 +31,4 @@ object AppRouterBoundaries {
           )
         }
       }
-
-  val error: (Throwable, RouteContext) => AbstractComponent =
-    (_, context) =>
-      Route.component {
-        Showcase.showcasePage(
-          i18n"Route unavailable",
-          i18n"This page could not be loaded. Internal error details are not exposed to visitors."
-        ) {
-          Showcase.metricStrip(
-            "500"        -> "status",
-            context.path -> "path"
-          )
-
-          homeButton()
-        }
-      }
-
-  private def homeButton()(using AbstractComponent, jfx.core.render.Cursor): Unit =
-    button(i18n"Return to overview") {
-      classes = Seq("calm-action", "calm-action--primary")
-      onClick { _ => Router.navigate("/") }
-    }
 }

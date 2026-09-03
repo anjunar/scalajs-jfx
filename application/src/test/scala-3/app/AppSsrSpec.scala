@@ -133,7 +133,7 @@ class AppSsrSpec extends AsyncFlatSpec with Matchers {
     mounted("/no-such-page").ssrStatus shouldBe 404
   }
 
-  it should "render the localized application boundary for an unknown route" in {
+  it should "forward an unknown route to the localized error page without changing the request" in {
     val document = documentFor(desktopRequest, "/de/no-such-page")
 
     Runtime
@@ -141,8 +141,29 @@ class AppSsrSpec extends AsyncFlatSpec with Matchers {
       .map { html =>
         document.ssrStatus shouldBe 404
         html should include("Seite nicht gefunden")
-        html should include("/de/no-such-page")
         html should include("Zur Übersicht")
+
+        // A forward, not a navigation: the router still holds the path that was asked for.
+        document.app.appRouter.state.get.browserPath shouldBe "/scalajs-jfx/de/no-such-page"
+
+        // And the head says so -- no canonical, no hreflang, not indexable.
+        html should include(
+          "<meta data-jfx-head=\"meta:name=robots\" name=\"robots\" content=\"noindex, nofollow\">"
+        )
+        html should not include "rel=\"canonical\""
+        html should not include "hreflang"
+      }
+  }
+
+  it should "answer the error route with its own status when it is reached directly" in {
+    val document = documentFor(desktopRequest, "/404")
+
+    Runtime
+      .renderToStringAsync(cursor => Runtime.mount(document, cursor))
+      .map { html =>
+        // This is the render the prerender writes to 404.html.
+        document.ssrStatus shouldBe 404
+        html should include("Page not found")
       }
   }
 

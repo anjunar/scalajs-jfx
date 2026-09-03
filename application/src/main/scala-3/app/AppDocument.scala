@@ -13,12 +13,12 @@ import jfx.core.request.RequestContext
   *
   * The demo has no index.html any more. Everything a page needs -- the doctype aside, which carries
   * no attributes and is prepended by the caller -- is rendered here and hydrated from here, so a
-  * route describes itself instead of inheriting one build-time head from a template. See
-  * REVIEW.md B-1.
+  * route describes itself instead of inheriting one build-time head from a template. See REVIEW.md
+  * B-1.
   *
-  * `clientAssets` is the one exception: the built bundle's file names carry a content hash that only
-  * the bundler knows, so they arrive as an argument, the way the request headers do, and become
-  * ordinary head entries.
+  * `clientAssets` is the one exception: the built bundle's file names carry a content hash that
+  * only the bundler knows, so they arrive as an argument, the way the request headers do, and
+  * become ordinary head entries.
   */
 final class AppDocument(
     request: RequestContext,

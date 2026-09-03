@@ -41,9 +41,8 @@ class App(
   private val routerConfig =
     RouterConfig(
       basePath = SiteConfig.basePath,
-      notFound = AppRouterBoundaries.notFound,
       loading = AppRouterBoundaries.loading,
-      error = AppRouterBoundaries.error,
+      onFailure = AppRouterBoundaries.onFailure,
       renderErrorsOnServer = true
     )
 

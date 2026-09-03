@@ -22,9 +22,10 @@ const outputDir = resolve(projectRoot, "dist", "static")
 const clientDist = resolve(projectRoot, "dist", "client")
 const serverEntry = resolve(projectRoot, "dist", "server", "entry-server.js")
 
-/** Ein Pfad, den AppRoutes nicht kennt -- die Seite rendert damit ihren eigenen
- *  Nicht-gefunden-Zustand samt `noindex`. */
-const notFoundPath = "/__not-found"
+/** Die Fehlerroute aus AppRoutes. Sie wird direkt gerendert -- nicht ueber einen
+ *  erfundenen Pfad, der zufaellig keine Route trifft -- und antwortet dabei mit
+ *  ihrem eigenen Status, weshalb der Kopf `noindex` traegt. */
+const notFoundPath = "/404"
 
 const languages = siteConfig.localizedLanguages ?? []
 

@@ -9,10 +9,10 @@ import scala.collection.mutable
 /** What the document head contains, collected from the whole component tree.
   *
   * The head is composed at the top of the document, but the components that know what belongs in it
-  * -- the page, the article, the route -- come far below and often only after a loader returned.
-  * So the head is not a component tree but a registry: components register entries, and a
-  * [[HeadSink]] writes them out. On the server that sink writes into the still-mutable SSR tree, in
-  * the browser it reconciles `document.head`.
+  * -- the page, the article, the route -- come far below and often only after a loader returned. So
+  * the head is not a component tree but a registry: components register entries, and a [[HeadSink]]
+  * writes them out. On the server that sink writes into the still-mutable SSR tree, in the browser
+  * it reconciles `document.head`.
   *
   * Registrations stack per [[HeadEntry.key]]: the last one wins, and disposing it uncovers the one
   * below. That is what lets a page override the site-wide description and restores the default when

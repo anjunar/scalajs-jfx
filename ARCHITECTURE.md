@@ -161,3 +161,34 @@ projektweiten Arbeits- und Entscheidungsdokumente (`AGENTS.md`, `ARCHITECTURE.md
 
 Die Grenze folgt dem Publikum: publizierter Quelltext ist Teil der Bibliotheks-API;
 Repository-Prozess und Buildbetrieb richten sich an die Maintainer dieses Projekts.
+
+## 10. Die Ränder des Routers
+
+**Eine Fehlerseite ist eine Seite.** Sie steht in der Routentabelle, nicht in
+einer Konfigurationsfunktion: damit hat sie einen Loader, ein Layout, eigene
+Kopfdaten und eine eigene Adresse — und ist prerenderbar. `RouterConfig` trägt
+nur noch die Zuordnung, welcher Fehler auf welchen Pfad zeigt (`onFailure`).
+
+**Der Router forwardet, er navigiert nicht.** Bei `/blog/tippfehler` bleibt die
+Adresse stehen, die History unberührt und `stateProperty` unverändert; nur eine
+andere Route rendert. Eine Navigation nach `/404` würde aus einem 404 einen
+Redirect mit anschließendem 200 machen — für alles, was Statuscodes liest, ist
+eine fehlende Seite dann von einer funktionierenden nicht mehr zu unterscheiden.
+Deshalb sieht die Fehlerroute in ihrem `RouteContext` weiterhin den Pfad des
+Besuchers; dass sie eine Fehlerroute ist, steht in `failure`.
+
+**Der Status gehört an die Route** (`Route.error(path, status)`), nicht in den
+Router. Er gilt auf beiden Wegen gleich: nach einem Forward und beim direkten
+Aufruf derselben Adresse. Sonst antwortet ausgerechnet die prerenderte
+`404.html` mit 200.
+
+**Nicht jeder Rand ist eine Seite.** Für „lädt gerade" gibt es keine URL; das
+bleibt ein Lambda (`loading`). Und es muss einen terminalen Ausgang geben
+(`fallback`) — scheitert die Fehlerroute selbst, würde ein weiterer Forward auf
+dieselbe Route zeigen und sich im Kreis drehen.
+
+**Eine falsch verdrahtete Grenze wird gemeldet.** Ein `onFailure`-Pfad ohne
+Route, oder eine Fehlerroute mit Status 200, ist ein Verdrahtungsfehler und
+keine Laufzeitlage, um die man sich herumdegradiert: er würde jeden Fehlschlag
+in einen plausibel aussehenden Erfolg verwandeln. Das wird geworfen, nicht
+geschluckt (§7).

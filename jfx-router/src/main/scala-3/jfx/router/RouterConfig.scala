@@ -11,15 +11,20 @@ import scala.scalajs.js
 
 /** Application-owned rendering at the router boundary.
   *
+  * Error pages are routes, not lambdas: [[onFailure]] names the path the router forwards to, and
+  * whatever route matches it renders -- with its own loader, its own outlets and its own
+  * [[Route.status]]. [[fallback]] is only the terminal case for applications that configure no
+  * error route and for an error route that fails itself.
+  *
   * Loader failures still fail SSR by default. Applications that can render a complete error page
-  * set `renderErrorsOnServer`; the router then exposes status 500 through
+  * set `renderErrorsOnServer`; the router then exposes the error route's status through
   * [[Router.responseStatus]].
   */
 final case class RouterConfig(
     basePath: String = RouterConfig.detectBasePath(),
-    notFound: RouterState => AbstractComponent = RouterConfig.defaultNotFound,
     loading: RouteContext => AbstractComponent = RouterConfig.defaultLoading,
-    error: (Throwable, RouteContext) => AbstractComponent = RouterConfig.defaultError,
+    onFailure: RouteFailure => Option[String] = RouterConfig.noErrorRoutes,
+    fallback: RouteFailure => AbstractComponent = RouterConfig.defaultFallback,
     renderErrorsOnServer: Boolean = false
 ) {
   val normalizedBasePath: String =
@@ -28,16 +33,9 @@ final case class RouterConfig(
 
 object RouterConfig {
 
-  private[router] val defaultNotFound: RouterState => AbstractComponent =
-    state =>
-      new AbstractCustomComponent {
-        override def compose(cursor: Cursor): Unit =
-          DslLayer.render(this, cursor) {
-            div {
-              text(s"No route matched for: ${state.browserPath}") {}
-            }
-          }
-      }
+  /** No error routes: every failure goes to [[defaultFallback]]. */
+  private[router] val noErrorRoutes: RouteFailure => Option[String] =
+    _ => None
 
   private[router] val defaultLoading: RouteContext => AbstractComponent =
     _ =>
@@ -50,8 +48,18 @@ object RouterConfig {
           }
       }
 
-  private[router] val defaultError: (Throwable, RouteContext) => AbstractComponent =
-    (_, _) =>
+  private[router] val defaultFallback: RouteFailure => AbstractComponent = {
+    case RouteFailure.NotMatched(state) =>
+      new AbstractCustomComponent {
+        override def compose(cursor: Cursor): Unit =
+          DslLayer.render(this, cursor) {
+            div {
+              text(s"No route matched for: ${state.browserPath}") {}
+            }
+          }
+      }
+
+    case _: RouteFailure.LoadFailed =>
       new AbstractCustomComponent {
         override def compose(cursor: Cursor): Unit =
           DslLayer.render(this, cursor) {
@@ -61,6 +69,7 @@ object RouterConfig {
             }
           }
       }
+  }
 
   private[router] def detectBasePath(): String =
     if (!hasBrowserWindow) {

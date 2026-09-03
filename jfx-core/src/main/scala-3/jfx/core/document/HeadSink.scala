@@ -1,6 +1,13 @@
 package jfx.core.document
 
-import jfx.core.render.{Cursor, DomHostElement, HostElement, SsrHostElement, SsrRawTextNode, SsrTextNode}
+import jfx.core.render.{
+  Cursor,
+  DomHostElement,
+  HostElement,
+  SsrHostElement,
+  SsrRawTextNode,
+  SsrTextNode
+}
 import org.scalajs.dom
 
 import scala.collection.mutable

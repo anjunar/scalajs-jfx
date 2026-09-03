@@ -133,6 +133,17 @@ object AppRoutes {
         Future.successful(Route.component {
           ViewportPage.render()
         })
+      },
+      // The error pages. Declared as routes so they are addressable and prerenderable, and so the
+      // status sits next to the page that expresses it. AppRouterBoundaries maps a failure to one
+      // of these paths; the router forwards there without changing the URL.
+      //
+      // Route.error keeps them out of the sitemap: tools/app-routes.mjs collects Route.view only.
+      Route.error("/404", status = 404) { _ =>
+        Future.successful(NotFoundPage.render())
+      },
+      Route.error("/500", status = 500) { _ =>
+        Future.successful(ErrorPage.render())
       }
     )
 }

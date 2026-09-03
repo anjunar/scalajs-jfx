@@ -135,7 +135,10 @@ class Router(
 
     state.matches.headOption match {
       case Some(_) =>
-        responseStatusProperty.set(200)
+        // From the route, not a constant: an error page reached directly by its own path answers
+        // with its own status. Otherwise `/404` would be a 200 for anything that reads status
+        // codes -- and the prerendered 404.html is exactly such a direct render.
+        responseStatusProperty.set(state.matches.last.route.status)
 
         val context =
           RouteRenderContext(this, state, state.matches, index = 0, token = token)
@@ -143,9 +146,7 @@ class Router(
         loadRoute(context, componentProperty, hydrating, asyncCursorContext)
 
       case None =>
-        responseStatusProperty.set(404)
-        componentProperty.set(config.notFound(state))
-        schedulePendingScroll()
+        renderFailure(RouteFailure.NotMatched(state), hydrating)
     }
   }
 
@@ -195,7 +196,7 @@ class Router(
 
         case Some(Failure(error)) =>
           if (renderContext.token == renderToken) {
-            handleRouteFailure(error, context, target, hydrating)
+            handleRouteFailure(error, context, hydrating)
           }
 
         case None =>
@@ -220,7 +221,7 @@ class Router(
                     schedulePendingScroll()
 
                   case Failure(error) =>
-                    handleRouteFailure(error, context, target, hydrating)
+                    handleRouteFailure(error, context, hydrating)
                 }
               }
 
@@ -232,7 +233,7 @@ class Router(
     } catch {
       case error: Throwable =>
         if (renderContext.token == renderToken) {
-          handleRouteFailure(error, context, target, hydrating)
+          handleRouteFailure(error, context, hydrating)
         }
     }
   }
@@ -253,27 +254,107 @@ class Router(
       queryParams = renderContext.state.queryParams,
       state = renderContext.state,
       routeMatch = routeMatch,
-      locale = renderContext.state.locale
+      locale = renderContext.state.locale,
+      failure = renderContext.failure
     )
   }
 
   private def handleRouteFailure(
       error: Throwable,
       context: RouteContext,
-      target: Property[AbstractComponent],
       hydrating: Boolean
   ): Unit = {
     val renderError =
       browserEnabled || hydrating || config.renderErrorsOnServer
 
-    if (renderError) {
-      responseStatusProperty.set(500)
-      target.set(config.error(error, context))
-      schedulePendingScroll()
-    } else {
+    if (!renderError) {
       throw error
+    } else {
+      context.failure match {
+        case Some(failure) =>
+          // The error route itself failed. Forwarding again would resolve to the same route and
+          // loop, so this is where it ends.
+          responseStatusProperty.set(failure.status)
+          componentProperty.set(config.fallback(failure))
+          schedulePendingScroll()
+
+        case None =>
+          renderFailure(RouteFailure.LoadFailed(error, context), hydrating)
+      }
     }
   }
+
+  /** Renders the error route configured for `failure`, or the terminal fallback.
+    *
+    * The result replaces the whole outlet chain rather than the outlet that failed: an error page
+    * that appears nested inside the frame of the page it replaces would inherit that page's layout
+    * and, through the head, its title and canonical URL.
+    *
+    * Nothing about the request changes here. `stateProperty` keeps the requested path, history is
+    * untouched, and the error route receives the visitor's path in its [[RouteContext]] -- this is
+    * a forward, not a navigation.
+    */
+  private def renderFailure(failure: RouteFailure, hydrating: Boolean): Unit = {
+    // Resolved before the token moves: a misconfigured boundary throws, and it has to surface
+    // rather than be swallowed by the token guard of the load that is unwinding.
+    val target = failureRoute(failure)
+
+    renderToken += 1
+    val token = renderToken
+
+    target match {
+      case Some(matches) =>
+        responseStatusProperty.set(matches.last.route.status)
+
+        loadRoute(
+          RouteRenderContext(
+            router = this,
+            state = failure.state,
+            matches = matches,
+            index = 0,
+            token = token,
+            failure = Some(failure)
+          ),
+          componentProperty,
+          hydrating,
+          asyncCursorContext
+        )
+
+      case None =>
+        responseStatusProperty.set(failure.status)
+        componentProperty.set(config.fallback(failure))
+        schedulePendingScroll()
+    }
+  }
+
+  /** The route chain [[RouterConfig.onFailure]] points at, if it points anywhere.
+    *
+    * `None` means the application wants no error route for this failure -- the terminal fallback
+    * handles it. A path that resolves to nothing, or to a route that answers `200`, is a wiring
+    * mistake instead: it would turn every failure into a plausible-looking success, which is the
+    * one outcome this mechanism exists to prevent. It is reported rather than absorbed.
+    */
+  private def failureRoute(failure: RouteFailure): Option[List[RouteMatch]] =
+    config.onFailure(failure).map { path =>
+      val normalized = RouterUrlResolver.normalizePath(path)
+
+      RouteMatcher.resolve(routes, normalized) match {
+        case Nil =>
+          throw new IllegalStateException(
+            s"RouterConfig.onFailure points at '$normalized' for ${failure.getClass.getSimpleName}, " +
+              "but no route matches that path."
+          )
+
+        case matches if matches.last.route.status == 200 =>
+          throw new IllegalStateException(
+            s"The error route '$normalized' declares status 200. Declare it with " +
+              s"Route.error(\"$normalized\", status = ${failure.status})."
+          )
+
+        case matches =>
+          matches
+      }
+    }
 
   private def resolve(url: String, preferredLocale: Option[I18nLocale]): RouterState = {
     val resolved =

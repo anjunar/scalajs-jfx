@@ -96,18 +96,27 @@ final class AppHead(
 
     documentHead.htmlAttribute("lang", locale.code)
 
+    // An error page has no canonical URL and no translations: the address it was reached under is
+    // not a page of this site. Claiming otherwise would point crawlers at something that does not
+    // exist -- `noindex` makes it harmless, but not true.
+    val addressing =
+      if (status != 200) Nil
+      else
+        Seq(
+          HeadEntry.link("canonical", canonical),
+          HeadEntry.property("og:url", canonical)
+        ) ++ alternates(state.path)
+
     page.set(
       Seq(
         HeadEntry.title(title),
         HeadEntry.meta("description", description),
         HeadEntry.meta("robots", if (status == 200) "index, follow" else "noindex, nofollow"),
-        HeadEntry.link("canonical", canonical),
         HeadEntry.property("og:title", title),
         HeadEntry.property("og:description", description),
-        HeadEntry.property("og:url", canonical),
         HeadEntry.meta("twitter:title", title),
         HeadEntry.meta("twitter:description", description)
-      ) ++ alternates(state.path)*
+      ) ++ addressing*
     )
   }
 
