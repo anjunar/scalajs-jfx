@@ -16,10 +16,10 @@ object RouterPageTranslations {
       i18n"The route loader always receives a RouteContext and always returns a Future[AbstractComponent]. There is no second synchronous API surface to drift away anymore.",
       "Der Routen-Loader erhält immer einen RouteContext und liefert immer ein Future[AbstractComponent]. Es gibt keine zweite synchrone API-Oberfläche mehr, die davon abweichen könnte."
     ),
-    de(i18n"Route context demo", "Routenkontext-Demo"),
+    de(i18n"Nested route demo", "Nested-Route-Demo"),
     de(
-      i18n"This button leads to a route with an explicit path parameter.",
-      "Dieser Button führt zu einer Route mit einem expliziten Pfadparameter."
+      i18n"The button activates a child route. Its component appears below through the parent's routerOutlet().",
+      "Der Button aktiviert eine Child-Route. Ihre Komponente erscheint darunter über routerOutlet() des Parents."
     ),
     de(i18n"Open /router/user/42", "/router/user/42 öffnen"),
     de(i18n"Current route shape", "Aktuelle Routenstruktur"),

@@ -5,6 +5,7 @@ import jfx.core.component.AbstractComponent
 import jfx.core.dsl.ClassDsl.classes
 import jfx.core.dsl.EventDsl.onClick
 import jfx.core.layout.Button.button
+import jfx.core.layout.VBox.vbox
 import jfx.core.render.Cursor
 import jfx.core.i18n.i18n
 import jfx.router.Router
@@ -40,18 +41,24 @@ object RouterPage {
         ),
         (
           "Hydration",
-          "Initial route must stay immediate",
-          "Hydration still requires the first route to resolve synchronously from the Future state."
+          "Async loaders keep SSR content",
+          "Pending route loaders adopt the server-rendered range and replace it after completion."
         )
       )
 
       Showcase.componentShowcase(
-        i18n"Route context demo",
-        i18n"This button leads to a route with an explicit path parameter."
+        i18n"Nested route demo",
+        i18n"The button activates a child route. Its component appears below through the parent's routerOutlet()."
       ) {
-        button(i18n"Open /router/user/42") {
-          classes = Seq("calm-action", "calm-action--primary")
-          onClick { _ => Router.navigate("/router/user/42") }
+        vbox {
+          classes = Seq("router-nested-demo")
+
+          button(i18n"Open /router/user/42") {
+            classes = Seq("calm-action", "calm-action--primary")
+            onClick { _ => Router.navigate("/router/user/42") }
+          }
+
+          Router.routerOutlet()
         }
       }
 
@@ -61,12 +68,19 @@ object RouterPage {
       ) {
         Showcase.codeBlock(
           "scala",
-          """Route.view("/router") { context =>
-            |  Future.successful {
-            |    Route.component {
-            |      // render page with explicit RouteContext
+          """Route.view(
+            |  "/router",
+            |  children = Seq(
+            |    Route.view("user/:id") { context =>
+            |      Future.successful(Route.component {
+            |        RouterUserPage.render(context)
+            |      })
             |    }
-            |  }
+            |  )
+            |) { _ =>
+            |  Future.successful(Route.component {
+            |    RouterPage.render() // contains Router.routerOutlet()
+            |  })
             |}""".stripMargin
         )
       }

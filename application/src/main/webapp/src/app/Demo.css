@@ -409,6 +409,18 @@
     box-shadow: var(--aj-shadow-panel);
 }
 
+.router-nested-demo,
+.router-nested-demo__child {
+    gap: 24px;
+    align-items: flex-start;
+}
+
+.router-nested-demo__child {
+    width: 100%;
+    padding-top: 24px;
+    border-top: 1px solid var(--aj-line);
+}
+
 .api-section {
     gap: 16px;
 }

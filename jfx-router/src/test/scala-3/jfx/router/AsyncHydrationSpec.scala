@@ -76,6 +76,37 @@ class AsyncHydrationSpec extends AnyFlatSpec with Matchers {
     cursor.texts.exists(_.contains("Laden fehlgeschlagen")) shouldBe true
   }
 
+  it should "hydrate the parent while adopting an unresolved child route" in {
+    val pending = Promise[AbstractComponent]()
+    val cursor  = new HydrationTestCursor
+    val router  =
+      new Router(
+        Seq(
+          Route.view(
+            "/parent",
+            children = Seq(Route.view("child")(_ => pending.future))
+          ) { _ =>
+            Future.successful(Route.component {
+              text("parent") {}
+              Router.routerOutlet()
+            })
+          }
+        ),
+        "/parent/child"
+      )
+
+    Runtime.mount(router, cursor)
+
+    cursor.texts should contain("parent")
+    cursor.claimed.count(_ == "RoutedComponent") shouldBe 1
+    cursor.adopted.count(_ == "RoutedComponent") shouldBe 1
+
+    pending.success(Route.component { text("child") {} })
+
+    cursor.texts should contain("child")
+    cursor.claimed.count(_ == "RoutedComponent") shouldBe 2
+  }
+
   private def routerFor(loaded: Future[AbstractComponent]): Router =
     new Router(Seq(Route.view("/")(_ => loaded)), "/")
 }

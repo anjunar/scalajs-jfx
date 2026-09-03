@@ -80,75 +80,7 @@ class Router(
     )
 
   private def prepareInitialHydrationRoute(): Unit = {
-    renderToken += 1
-
-    val token = renderToken
-    val state = stateProperty.get
-
-    state.currentMatchOption match {
-      case Some(routeMatch) =>
-        val context =
-          RouteContext(
-            path = state.path,
-            url = state.url,
-            browserPath = state.browserPath,
-            fullPath = routeMatch.fullPath,
-            pathParams = routeMatch.params,
-            queryParams = state.queryParams,
-            state = state,
-            routeMatch = routeMatch,
-            locale = state.locale
-          )
-
-        try {
-          val loaded = routeMatch.route.load(context)
-
-          loaded.value match {
-            case Some(Success(component)) =>
-              if (token == renderToken) {
-                componentProperty.set(new RoutedComponent(component))
-              }
-
-            case Some(Failure(error)) =>
-              if (token == renderToken) throw error
-
-            case None =>
-              // The loader is still running. The router used to throw here, making SSR usable only
-              // for routes whose loader completed synchronously.
-              //
-              // Instead, the router adopts the server-rendered tree without validation (a
-              // RoutedComponent without a child adopts it) and leaves it in place. The visitor sees
-              // uninterrupted content. Once the loader completes, the real tree replaces it and the
-              // adopted nodes disappear with the placeholder.
-              //
-              // The cost is a second load: the server already fetched the data and the client fetches
-              // it again. This is deliberate -- the alternative would be an SSR data cache with
-              // serialization and key selection. See CHANGE.md P4-1.
-              componentProperty.set(RoutedComponent.adoptingServerRender)
-
-              val handed =
-                loaded.transform { result =>
-                  if (token == renderToken) {
-                    result match {
-                      case Success(component) =>
-                        componentProperty.set(new RoutedComponent(component))
-                      case Failure(error) =>
-                        componentProperty.set(Router.errorComponent(error))
-                    }
-                  }
-                  Success(())
-                }
-
-              asyncCursorContext.foreach(_.add(handed))
-          }
-        } catch {
-          case error: Throwable =>
-            if (token == renderToken) throw error
-        }
-
-      case None =>
-        componentProperty.set(Router.notFoundComponent(state.browserPath))
-    }
+    resolveCurrentRoute(hydrating = true)
   }
 
   def navigate(path: String, replace: Boolean = false): Unit = {
@@ -180,62 +112,93 @@ class Router(
       initialized = true
     }
 
-  private def resolveCurrentRoute(): Unit = {
+  private def resolveCurrentRoute(): Unit =
+    resolveCurrentRoute(hydrating = false)
+
+  private def resolveCurrentRoute(hydrating: Boolean): Unit = {
     renderToken += 1
 
     val token = renderToken
     val state = stateProperty.get
 
-    state.currentMatchOption match {
-      case Some(routeMatch) =>
+    state.matches.headOption match {
+      case Some(_) =>
         val context =
-          RouteContext(
-            path = state.path,
-            url = state.url,
-            browserPath = state.browserPath,
-            fullPath = routeMatch.fullPath,
-            pathParams = routeMatch.params,
-            queryParams = state.queryParams,
-            state = state,
-            routeMatch = routeMatch,
-            locale = state.locale
-          )
+          RouteRenderContext(this, state, state.matches, index = 0, token = token)
 
-        loadRoute(token, context, routeMatch.route)
+        loadRoute(context, componentProperty, hydrating, asyncCursorContext)
 
       case None =>
         componentProperty.set(Router.notFoundComponent(state.browserPath))
     }
   }
 
-  private def loadRoute(token: Int, context: RouteContext, route: Route): Unit = {
+  private[router] def loadNestedRoute(
+      parentContext: RouteRenderContext,
+      target: Property[AbstractComponent],
+      cursor: Cursor
+  ): Unit = {
+    val childIndex = parentContext.index + 1
+
+    if (parentContext.token != renderToken) {
+      target.set(Router.emptyComponent())
+    } else {
+      parentContext.matches.lift(childIndex) match {
+        case Some(_) =>
+          loadRoute(
+            parentContext.copy(index = childIndex),
+            target,
+            hydrating = cursor.isHydrating,
+            asyncContext = cursor.asyncContext
+          )
+
+        case None =>
+          target.set(Router.emptyComponent())
+      }
+    }
+  }
+
+  private def loadRoute(
+      renderContext: RouteRenderContext,
+      target: Property[AbstractComponent],
+      hydrating: Boolean,
+      asyncContext: Option[jfx.core.async.AsyncRenderContext]
+  ): Unit = {
+    val context = routeContext(renderContext)
+    val route   = context.routeMatch.route
+
     try {
       val loaded = route.load(context)
 
       loaded.value match {
         case Some(Success(component)) =>
-          if (token == renderToken) {
-            componentProperty.set(new RoutedComponent(component))
+          if (renderContext.token == renderToken) {
+            target.set(new RoutedComponent(component, renderContext))
           }
 
         case Some(Failure(error)) =>
-          if (token == renderToken) {
-            handleRouteFailure(error)
+          if (renderContext.token == renderToken) {
+            handleRouteFailure(error, target)
           }
 
         case None =>
-          componentProperty.set(Router.loadingComponent())
+          if (hydrating) {
+            // Keep the server-rendered range in place until the asynchronous loader has completed.
+            target.set(RoutedComponent.adoptingServerRender(renderContext))
+          } else {
+            target.set(Router.loadingComponent())
+          }
 
           val handled =
             loaded.transform { result =>
-              if (token == renderToken) {
+              if (renderContext.token == renderToken) {
                 result match {
                   case Success(component) =>
-                    componentProperty.set(new RoutedComponent(component))
+                    target.set(new RoutedComponent(component, renderContext))
 
                   case Failure(error) =>
-                    if (browserEnabled) {
-                      componentProperty.set(Router.errorComponent(error))
+                    if (browserEnabled || hydrating) {
+                      target.set(Router.errorComponent(error))
                     } else {
                       throw error
                     }
@@ -245,18 +208,41 @@ class Router(
               Success(())
             }
 
-          asyncCursorContext.foreach(_.add(handled))
+          asyncContext.foreach(_.add(handled))
       }
     } catch {
       case error: Throwable =>
-        if (token == renderToken) {
-          handleRouteFailure(error)
+        if (renderContext.token == renderToken) {
+          handleRouteFailure(error, target)
         }
     }
   }
 
-  private def handleRouteFailure(error: Throwable): Unit =
-    if (browserEnabled) componentProperty.set(Router.errorComponent(error))
+  private def routeContext(renderContext: RouteRenderContext): RouteContext = {
+    val routeMatch = renderContext.matches(renderContext.index)
+    val pathParams =
+      renderContext.matches
+        .take(renderContext.index + 1)
+        .foldLeft(Map.empty[String, String])(_ ++ _.params)
+
+    RouteContext(
+      path = renderContext.state.path,
+      url = renderContext.state.url,
+      browserPath = renderContext.state.browserPath,
+      fullPath = routeMatch.fullPath,
+      pathParams = pathParams,
+      queryParams = renderContext.state.queryParams,
+      state = renderContext.state,
+      routeMatch = routeMatch,
+      locale = renderContext.state.locale
+    )
+  }
+
+  private def handleRouteFailure(
+      error: Throwable,
+      target: Property[AbstractComponent]
+  ): Unit =
+    if (browserEnabled) target.set(Router.errorComponent(error))
     else throw error
 
   private def resolve(url: String, preferredLocale: Option[I18nLocale]): RouterState = {
@@ -306,19 +292,23 @@ class Router(
     * must use the same class -- otherwise the anchor does not match what the server wrote.
     */
   private final class RoutedComponent(
-      child: AbstractComponent | Null
+      child: AbstractComponent | Null,
+      renderContext: RouteRenderContext
   ) extends AbstractCustomComponent {
 
     override private[jfx] def adoptsHydratedContent: Boolean = child == null
 
-    override def compose(cursor: Cursor): Unit =
+    override def compose(cursor: Cursor): Unit = {
+      RouteRenderContext.provide(renderContext)(using this)
       Option(child).foreach(Runtime.mount(_, cursor, Some(this)))
+    }
   }
 
   private object RoutedComponent {
 
     /** Placeholder that adopts and retains the server-rendered tree. */
-    def adoptingServerRender: RoutedComponent = new RoutedComponent(null)
+    def adoptingServerRender(renderContext: RouteRenderContext): RoutedComponent =
+      new RoutedComponent(null, renderContext)
   }
 }
 
@@ -359,7 +349,15 @@ object Router {
   def replace(path: String)(using component: AbstractComponent): Unit =
     requireCurrent.navigate(path, replace = true)
 
-  private def emptyComponent(): AbstractComponent =
+  /** Renders the next match in a nested route chain.
+    *
+    * The outlet must be composed by a matched route component. If the current route is the leaf,
+    * the outlet renders nothing.
+    */
+  def routerOutlet()(using parent: AbstractComponent, cursor: Cursor): RouterOutlet =
+    DslLayer.child(new RouterOutlet()) {}
+
+  private[router] def emptyComponent(): AbstractComponent =
     new AbstractCustomComponent {}
 
   private def loadingComponent(): AbstractComponent =

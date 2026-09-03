@@ -20,7 +20,8 @@ const entryId = "src/main.js"
 /** Im Dev-Server liefert Vite den Quelltext direkt; Vite haengt seinen eigenen
  *  Client separat an (transformIndexHtml). */
 export function developmentAssets() {
-  return [{ tag: "script", attributes: { type: "module", src: publicAssetUrl(entryId) } }]
+  // transformIndexHtml applies Vite's configured base path to root-relative source entries.
+  return [{ tag: "script", attributes: { type: "module", src: `/${entryId}` } }]
 }
 
 /** Im Produktionsbuild stehen die Namen im Vite-Manifest. */
@@ -51,5 +52,5 @@ export async function productionAssets(clientDist) {
 }
 
 function publicAssetUrl(file) {
-  return `${file}`
+  return `${siteConfig.basePath}/${file}`.replace(/\/{2,}/g, "/")
 }

@@ -50,14 +50,18 @@ object AppRoutes {
           ImagePage.render()
         })
       },
-      Route.view("/router") { _ =>
+      Route.view(
+        "/router",
+        children = Seq(
+          Route.view("user/:id") { context =>
+            Future.successful(Route.component {
+              RouterUserPage.render(context)
+            })
+          }
+        )
+      ) { _ =>
         Future.successful(Route.component {
           RouterPage.render()
-        })
-      },
-      Route.view("/router/user/:id") { context =>
-        Future.successful(Route.component {
-          RouterUserPage.render(context)
         })
       },
       Route.view("/i18n") { _ =>

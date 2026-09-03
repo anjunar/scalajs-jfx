@@ -92,9 +92,14 @@ class AppSsrSpec extends AsyncFlatSpec with Matchers {
         Runtime.mount(new AppDocument(desktopRequest, "/en/", assets), cursor)
       )
       .map { html =>
-        html.indexOf("data-jfx-head=\"title\"") should be < html.indexOf("data-jfx-head=\"asset:0\"")
-        html should include("<link data-jfx-head=\"asset:0\" rel=\"stylesheet\" href=\"/assets/app.css\">")
-        html should include("<script data-jfx-head=\"asset:1\" type=\"module\" src=\"/assets/app.js\"></script>")
+        html
+          .indexOf("data-jfx-head=\"title\"") should be < html.indexOf("data-jfx-head=\"asset:0\"")
+        html should include(
+          "<link data-jfx-head=\"asset:0\" rel=\"stylesheet\" href=\"/assets/app.css\">"
+        )
+        html should include(
+          "<script data-jfx-head=\"asset:1\" type=\"module\" src=\"/assets/app.js\"></script>"
+        )
       }
   }
 
@@ -106,6 +111,19 @@ class AppSsrSpec extends AsyncFlatSpec with Matchers {
       .map { html =>
         html should include("class=\"app-shell\"")
         html should not include "jfx:Route:pending"
+      }
+  }
+
+  it should "render the router demo child inside its parent route" in {
+    Runtime
+      .renderToStringAsync(cursor =>
+        Runtime.mount(documentFor(desktopRequest, "/router/user/42"), cursor)
+      )
+      .map { html =>
+        html should include("Router &amp; route model")
+        html should include("Nested route demo")
+        html should include("Explicit route context")
+        html should include("<div class=\"showcase-metric__label\">42</div>")
       }
   }
 
