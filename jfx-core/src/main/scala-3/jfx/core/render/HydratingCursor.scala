@@ -90,7 +90,15 @@ final class HydratingCursor private (
     val node = take()
     node match {
       case text: dom.Text => new DomTextNode(text)
-      case other          =>
+
+      // An empty text node left an anchor comment behind during SSR, because an empty text
+      // serializes to nothing at all. Swap it for the text node the client tree expects.
+      case comment: dom.Comment if comment.data == SsrTextNode.EmptyAnchorLabel =>
+        val text = dom.document.createTextNode("")
+        comment.parentNode.replaceChild(text, comment)
+        new DomTextNode(text)
+
+      case other =>
         throw hydrationFault(
           "DOM node type does not match.",
           expected = "TextNode",
