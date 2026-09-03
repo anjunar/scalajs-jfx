@@ -251,7 +251,11 @@ class App(
                   rel = "noopener noreferrer"
 
                   image {
-                    src = "./Octicons-mark-github.svg"
+                    src = "/GitHub_Invertocat_Black.svg"
+                    style {
+                      height = "32px"
+                      width = "32px"
+                    }
                   }
                 }
 
