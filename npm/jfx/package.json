@@ -1,0 +1,28 @@
+{
+  "name": "@anjunar/jfx",
+  "version": "3.0.0-SNAPSHOT",
+  "description": "Declarative TypeScript API for the JFX3 framework. Types and DSL over the Scala.js runtime published as com.anjunar::scalajs-jfx-bridge.",
+  "type": "module",
+  "types": "./dist/src/index.d.ts",
+  "main": "./dist/src/index.js",
+  "exports": {
+    ".": { "types": "./dist/src/index.d.ts", "default": "./dist/src/index.js" },
+    "./stub": { "types": "./dist/src/stub/index.d.ts", "default": "./dist/src/stub/index.js" }
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "demo": "tsc -p tsconfig.json && node dist/demo/statePage.js",
+    "demo:scope": "tsc -p tsconfig.json && node dist/demo/scopeRules.js",
+    "demo:bridge": "tsc -p tsconfig.json && node dist/demo/bridgeDemo.js"
+  },
+  "peerDependencies": {
+    "@anjunar/scalajs-jfx": "^3.0.0"
+  },
+  "devDependencies": {
+    "@anjunar/scalajs-jfx": "file:../scalajs-jfx",
+    "@anjunar/scalajs-jfx-bridge": "file:../scalajs-jfx-bridge",
+    "typescript": "^5.6.0"
+  },
+  "license": "MIT"
+}

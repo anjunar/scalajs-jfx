@@ -11,16 +11,16 @@ können.
                         ┌────────────┐
                         │  jfx-core  │◄──────────────┐
                         └─────┬──────┘               │
-        ┌────────────┬────────┼─────────┐            │
-        ▼            ▼        ▼         ▼            │
-  ┌──────────┐ ┌──────────┐ ┌──────┐ ┌──────────────┐│
-  │jfx-router│ │jfx-viewp.│ │  …   │ │ jfx-controls ││
-  └──────────┘ └────┬─────┘ │ json │ └──────┬───────┘│
-                    │       └──────┘        │        │
-                    └───────────┬───────────┘        │
-                                ▼                    │
-                          ┌───────────┐              │
-                          │ jfx-forms │──────────────┘
+        ┌────────────┬────────┼─────────┬──────────┐ │
+        ▼            ▼        ▼         ▼          ▼ │
+  ┌──────────┐ ┌──────────┐ ┌──────┐ ┌──────────┐┌──────────────┐│
+  │jfx-router│ │jfx-viewp.│ │  …   │ │jfx-bridge││ jfx-controls ││
+  └──────────┘ └────┬─────┘ │ json │ └──────────┘└──────┬───────┘│
+                    │       └──────┘                    │        │
+                    └───────────┬───────────────────────┘        │
+                                ▼                                │
+                          ┌───────────┐                          │
+                          │ jfx-forms │──────────────────────────┘
                           └─────┬─────┘
                                 ▼
                           ┌────────────┐      ┌───────────────┐
@@ -41,11 +41,18 @@ Kanten im Klartext:
 | `jfx-router` | core | ja |
 | `jfx-viewport` | core | ja |
 | `jfx-json` | core | ja |
+| `jfx-bridge` | core (Schritt 2 aus JAVASCRIPT_API.md §9 -- router/forms folgen später) | ja |
 | `jfx-controls` | core (viewport nur `test->compile`) | ja |
 | `jfx-forms` | core, controls, viewport | ja |
 | `jfx-webauthn` | nichts aus diesem Repo | ja |
 | `jfx-editor` | forms | nein |
 | `application` | alle | nein |
+
+`jfx-bridge` (`jfx.bridge`) ist die einzige Kante, die *für* JavaScript existiert,
+nicht für ein anderes Scala-Modul: sie exportiert `bridgeRuntime`, den
+`JAVASCRIPT_API.md` beschriebenen Vertrag über `AbstractComponent`, `Cursor` und
+`ReadOnlyProperty`. Kein anderes publiziertes Modul hängt auf sie, und keins
+sollte das je -- sie ist ein Blatt im Graphen, kein Fundament.
 
 **Die Publish-Regel.** Ein publiziertes Modul darf nur auf publizierte Module
 und auf externe Artefakte hängen. Sonst verweist der erzeugte POM auf ein
@@ -85,15 +92,19 @@ Kontext-Injektion. Nicht darin:
 ## 4. Async
 
 **`Future` ist das interne Async-Modell.** Jede Bibliotheks-API, die etwas
-Asynchrones zurückgibt, gibt `Future` zurück. `js.Promise` erscheint nur an den
-JavaScript-Grenzen und wird sofort in `Future` übersetzt:
+Asynchrones zurückgibt, gibt `Future` zurück. `js.Promise` erscheint
+ausschließlich in den Modulen, die als JavaScript-Grenze deklariert sind, und
+wird dort sofort in `Future` übersetzt:
 
 - `jfx.core.remote.Remote` — `fetch`
 - `jfx.webauthn.WebAuthn` — Browser-Credentials-API
 - `app.Main` — `@JSExportTopLevel`, weil der Aufrufer JavaScript ist
+- `jfx.bridge` — die einzige dieser vier, deren ganzer Zweck eine
+  JavaScript-Grenze ist (JAVASCRIPT_API.md §4)
 
-Das sind die drei erlaubten Stellen. Eine vierte braucht eine Begründung im
-Code.
+Die Regel ist scharf, die Liste ist begründet: jede weitere Stelle braucht
+dieselbe Begründung im Code -- "hier ruft JavaScript direkt hinein" --, nicht
+nur einen Eintrag hier.
 
 ## 5. Kein requestabhängiger Zustand in `object`s
 

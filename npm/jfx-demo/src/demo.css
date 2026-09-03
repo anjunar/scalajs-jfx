@@ -1,0 +1,82 @@
+/* Minimal styling for statePage()/libraryPage()'s class names. Not a design
+   system -- @anjunar/scalajs-jfx (imported in entry-client.ts) already covers
+   real component CSS; @anjunar/ui, which supplies the design tokens that CSS
+   reads (--aj-ink and friends), isn't installed here, so those fall back to
+   the browser default. Good enough for "does the prototype actually run",
+   not meant as a visual reference. */
+
+body {
+  font-family: system-ui, sans-serif;
+  margin: 2rem;
+  color: #1a1a1a;
+}
+
+.clarity-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 32rem;
+}
+
+.docs-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.docs-card__title {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.docs-card__summary {
+  color: #555;
+}
+
+.clarity-action-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.calm-action {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+
+.calm-action--primary {
+  background: #1a1a1a;
+  color: white;
+  border-color: #1a1a1a;
+}
+
+.library {
+  max-width: 32rem;
+}
+
+.library__empty {
+  color: #777;
+  font-style: italic;
+}
+
+.library__row {
+  padding: 0.25rem 0;
+}
+
+.page-nav {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.page-nav a {
+  color: #555;
+  text-decoration: none;
+}
+
+.page-nav a.page-nav__link--active {
+  color: #1a1a1a;
+  font-weight: 600;
+  text-decoration: underline;
+}

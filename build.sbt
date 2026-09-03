@@ -184,6 +184,27 @@ lazy val jfxJson = Project(id = "scalajs-jfx-json", base = file("jfx-json"))
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
 
+// The JavaScript boundary described in JAVASCRIPT_API.md. Depends on jfx-core alone for now --
+// step 2 of §9 there ("nur core: Property, Scope, mount/hydrate/renderToString"). Router and forms
+// facades are later steps in that same section, not missed dependencies here.
+lazy val jfxBridge = Project(id = "scalajs-jfx-bridge", base = file("jfx-bridge"))
+  .enablePlugins(ScalaJSPlugin)
+  .dependsOn(jfxCore)
+  .settings(
+    name       := "scalajs-jfx-bridge",
+    moduleName := "scalajs-jfx-bridge",
+    // "gelinktes ES-Modul" (JAVASCRIPT_API.md §7) -- linked straight into the npm package that
+    // ships it, the same way `app`'s viteFullLinkJS lands in target/vite for vite to pick up.
+    // fastLinkJS is what a TypeScript consumer's dev loop uses; fullLinkJS is step 4 of §9
+    // ("Bundle-Größe messen"), not yet wired into a production build of its own.
+    Compile / fastLinkJS / scalaJSLinkerOutputDirectory :=
+      (LocalRootProject / baseDirectory).value / "npm" / "scalajs-jfx-bridge" / "dist" / "fastopt",
+    Compile / fullLinkJS / scalaJSLinkerOutputDirectory :=
+      (LocalRootProject / baseDirectory).value / "npm" / "scalajs-jfx-bridge" / "dist" / "fullopt"
+  )
+  .settings(commonLibrarySettings)
+  .settings(commonJsSettings)
+
 lazy val jfxControls = Project(id = "scalajs-jfx-controls", base = file("jfx-controls"))
   .enablePlugins(ScalaJSPlugin)
   // Kein jfxRouter: eine generische Tabelle darf nicht wissen, dass es Routing
@@ -285,6 +306,7 @@ lazy val root = Project(id = "scalajs-jfx-root", base = file("."))
     jfxRouter,
     jfxViewport,
     jfxJson,
+    jfxBridge,
     jfxControls,
     jfxForms,
     jfxEditor,
