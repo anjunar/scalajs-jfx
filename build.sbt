@@ -243,6 +243,10 @@ lazy val app = Project(id = "scalajs-jfx-demo", base = file("application"))
   )
   .settings(
     scalaJSUseMainModuleInitializer := false,
+    // Die Integrationsschicht — SSR, Router, i18n, Theme — hatte keine Tests. Siehe CHANGE.md P5-6.
+    // Nur die Test-Abhaengigkeit, nicht `commonLibrarySettings`: das Demo-Modul wird nicht
+    // publiziert und braucht weder Doc-Jar-Regeln noch eine eigene scalajs-dom-Zeile.
+    libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.19" % Test,
     // site.config.json ist die einzige Quelle fuer Deploy-Pfad und Site-Metadaten.
     // Sie speist index.html (Vite-Plugin), sitemap.xml/robots.txt (tools/) und
     // ueber diesen Generator den Scala-Code.

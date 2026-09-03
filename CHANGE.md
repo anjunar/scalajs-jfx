@@ -845,7 +845,7 @@ und Bedingung, unter der er entfallen kann.
 
 ---
 
-### [ ] P5-6 · Testabdeckung an den Rändern
+### [~] P5-6 · Testabdeckung an den Rändern
 
 **Problem.** `jfx-viewport` hat keinen `src/test`. `application` hat keinen
 `src/test` — die Integrationsschicht, in der SSR, Hydration, Router, i18n und
@@ -861,6 +861,38 @@ Tests; die Ränder nicht.
 2. Erste Tests: SSR-Ausgabe einer Route ist stabil; Hydration derselben Route
    wirft nicht; Router-Navigation ändert den gerenderten Baum.
 3. `jfx-viewport`: Overlay-/Window-Lifecycle, insbesondere Dispose-Pfade.
+
+**Ergebnis.** Schritt 1: `app` bekommt nur die scalatest-Abhängigkeit, nicht
+`commonLibrarySettings` — das Demo-Modul wird nicht publiziert und braucht weder
+die Doc-Jar-Regel noch eine eigene scalajs-dom-Zeile.
+
+Schritt 2: `application/src/test/scala-3/app/AppSsrSpec.scala`. Die Startroute
+rendert zweimal identisch, die verzögerte Route `/rendering` rendert erst nach
+ihrem Loader, `ssrStatus` unterscheidet 200 und 404, Request/i18n/Theme sind
+über den Component-Context auflösbar, zwei `App`-Instanzen haben getrennte
+Themes (das Gegenstück zu P5-1), ein Mobile-User-Agent kommt als solcher an, und
+Router-Navigation ändert den gerenderten Baum. Die Suite läuft auf
+`JSExecutionContext.queue`, weil ScalaTests serieller Kontext keinen
+`setTimeout` treiben kann — sonst bleibt die verzögerte Route hängen.
+
+Schritt 3: `jfx-viewport/src/test/scala-3/jfx/viewport/ViewportLifecycleSpec.scala`
+deckt genau die Pfade ab, an denen die früheren globalen Registries geleakt
+haben: Besitz einer `WindowConf`, Trennung zweier Viewports, Ablehnung einer
+fremden Registrierung, Freigabe beim Dispose, Z-Stapel, Schließen mit Fade und —
+der eigentliche Punkt — das Abbrechen einer eingeplanten Entfernung, wenn der
+Viewport vorher stirbt. Dazu Notification- und Overlay-Lebenszyklus.
+
+Vorher: 192 Tests in 8 Modulen. Jetzt: 211 in 9.
+
+**Offen: echte Hydration.** `HydratingCursor` arbeitet gegen ein echtes DOM, und
+`scalajs-env-jsdom-nodejs` ist nur für Scala 2.12/2.13 publiziert — sbt 2
+übersetzt Build-Definitionen mit Scala 3 und kann es deshalb nicht laden. Ohne
+DOM-Umgebung lässt sich der Hydration-Pfad nicht end-to-end fahren. Abgedeckt
+sind stattdessen beide Hälften: die Serverseite (`AppSsrSpec`), der Anker, den
+die Hydration braucht (`SsrTextNodeSpec`), und der Adoptionspfad über einen
+Test-Cursor (`AsyncHydrationSpec`). Die Lücke bleibt real — der Fehler, den
+`SsrTextNodeSpec` festhält, wurde im Browser gefunden, nicht im Test. Ein
+eigener JSEnv oder ein DOM-Shim wäre die Auflösung; eigene Aufgabe.
 
 **Fertig wenn.** SSR und Hydration sind durch mindestens einen automatisierten
 Test abgedeckt. (Wird durch **P4-1** ohnehin gebraucht.)
