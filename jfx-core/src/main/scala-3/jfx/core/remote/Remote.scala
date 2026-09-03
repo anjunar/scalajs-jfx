@@ -177,7 +177,7 @@ private def prepareRequest(request: RestRequest): PreparedRequest =
       PreparedRequest(request.toRequestInit, () => ())
 
     case Some(timeoutMillis) =>
-      val controller = new dom.AbortController()
+      val controller                                  = new dom.AbortController()
       val forwardAbort: js.Function1[dom.Event, Unit] =
         _ => controller.abort()
 

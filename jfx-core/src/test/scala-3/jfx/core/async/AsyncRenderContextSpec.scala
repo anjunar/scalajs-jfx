@@ -56,7 +56,7 @@ class AsyncRenderContextSpec extends AsyncFlatSpec with Matchers {
   }
 
   it should "report failures from tasks added after the initial drain" in {
-    val failures = ArrayBuffer.empty[Throwable]
+    val failures               = ArrayBuffer.empty[Throwable]
     val directExecutionContext = new ExecutionContext {
       override def execute(runnable: Runnable): Unit =
         runnable.run()

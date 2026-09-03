@@ -5,8 +5,8 @@ package jfx.core.document
   * [[key]] decides identity, not position: pushing the same key again replaces the entry, so a page
   * that sets `meta:name=description` overrides the site-wide default instead of adding a second
   * description. The factories below derive the key from whatever makes the tag unique -- the `name`
-  * of a meta, the `rel` of a link -- and anything they do not cover builds a [[HeadEntry]]
-  * directly with a key of its own choosing.
+  * of a meta, the `rel` of a link -- and anything they do not cover builds a [[HeadEntry]] directly
+  * with a key of its own choosing.
   *
   * @param text
   *   the element's character data, if it has any (`<title>`, an inline script)

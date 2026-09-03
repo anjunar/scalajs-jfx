@@ -4,7 +4,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{ExecutionContext, Future}
 
 final class AsyncRenderContext(using ec: ExecutionContext) {
-  private val tasks = ArrayBuffer.empty[Future[Unit]]
+  private val tasks      = ArrayBuffer.empty[Future[Unit]]
   private var collecting = true
 
   private val MaxDrainDepth = 100
