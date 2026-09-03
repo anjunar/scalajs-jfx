@@ -8,8 +8,8 @@ import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Failure
+import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.util.{Failure, Success}
 
 class AsyncRenderContextSpec extends AsyncFlatSpec with Matchers {
 
@@ -35,6 +35,42 @@ class AsyncRenderContextSpec extends AsyncFlatSpec with Matchers {
     context.drain().map { _ =>
       completed shouldBe true
     }
+  }
+
+  it should "stop retaining tasks after the initial drain" in {
+    val directExecutionContext = new ExecutionContext {
+      override def execute(runnable: Runnable): Unit =
+        runnable.run()
+
+      override def reportFailure(cause: Throwable): Unit =
+        throw cause
+    }
+    val context = new AsyncRenderContext(using directExecutionContext)
+    val pending = Promise[Unit]()
+
+    context.drain().value shouldBe Some(Success(()))
+
+    context.add(pending.future)
+
+    context.drain().value shouldBe Some(Success(()))
+  }
+
+  it should "report failures from tasks added after the initial drain" in {
+    val failures = ArrayBuffer.empty[Throwable]
+    val directExecutionContext = new ExecutionContext {
+      override def execute(runnable: Runnable): Unit =
+        runnable.run()
+
+      override def reportFailure(cause: Throwable): Unit =
+        failures += cause
+    }
+    val context = new AsyncRenderContext(using directExecutionContext)
+    val error   = new IllegalStateException("late failure")
+
+    context.drain().value shouldBe Some(Success(()))
+    context.add(Future.failed(error))
+
+    failures should contain only error
   }
 
   it should "fail deterministically when nested tasks exceed the maximum depth" in {
