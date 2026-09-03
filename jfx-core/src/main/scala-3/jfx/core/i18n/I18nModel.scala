@@ -5,6 +5,8 @@ import jfx.core.di.Context
 import jfx.core.state.{Property, ReadOnlyProperty}
 import jfx.core.text.TextValue
 
+import java.util.regex.Matcher
+
 final case class I18nLocale(code: String) {
   require(code.nonEmpty, "Locale code must not be empty")
 
@@ -109,7 +111,7 @@ final class I18nResolver(catalog: MessageCatalog) {
     val pattern =
       catalog
         .entryFor(message.key)
-        .flatMap(entry => fallback.chain.iterator.flatMap(entry.value.at).toSeq.headOption)
+        .flatMap(entry => fallback.chain.iterator.flatMap(entry.value.at).nextOption())
         .map(_.value)
         .getOrElse(message.key.source)
 
@@ -122,10 +124,18 @@ final class I18nResolver(catalog: MessageCatalog) {
   ): ReadOnlyProperty[String] =
     locale.map(resolve(message, _))
 
-  private def interpolate(pattern: String, args: Vector[MessageArg]): String =
-    args.foldLeft(pattern) { (text, arg) =>
-      text.replace("{" + arg.name + "}", String.valueOf(arg.value))
-    }
+  private def interpolate(pattern: String, args: Vector[MessageArg]): String = {
+    val values = args.iterator.map(arg => arg.name -> String.valueOf(arg.value)).toMap
+
+    "\\{([A-Za-z][A-Za-z0-9_]*)\\}".r.replaceAllIn(
+      pattern,
+      matched =>
+        values
+          .get(matched.group(1))
+          .map(Matcher.quoteReplacement)
+          .getOrElse(matched.matched)
+    )
+  }
 }
 
 final case class NamedPlaceholder(name: String, value: Any)
@@ -149,7 +159,7 @@ object I18nRuntime {
     Context.create[I18nRuntime]("I18nRuntime")
 
   def apply(
-      localeProperty: ReadOnlyProperty[I18nLocale],
+      localeProperty: Property[I18nLocale],
       resolverInstance: I18nResolver,
       configuredSupportedLocales: Seq[I18nLocale] = Seq.empty,
       configuredDefaultLocale: I18nLocale = I18nLocale.En
@@ -161,7 +171,7 @@ object I18nRuntime {
         if (configuredSupportedLocales.nonEmpty) configuredSupportedLocales.distinct
         else Seq(configuredDefaultLocale)
       override val defaultLocale: I18nLocale           = configuredDefaultLocale
-      override def setLocale(locale: I18nLocale): Unit = ()
+      override def setLocale(locale: I18nLocale): Unit = localeProperty.set(locale)
     }
 
   def managed(

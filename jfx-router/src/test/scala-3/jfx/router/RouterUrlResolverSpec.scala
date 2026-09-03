@@ -27,7 +27,8 @@ class RouterUrlResolverSpec extends AnyFlatSpec with Matchers {
     resolved.path shouldBe "/about"
     resolved.browserPath shouldBe "/scalajs-jfx/de/about"
     resolved.search shouldBe "?tab=details"
-    resolved.queryParams shouldBe Map("tab" -> "details")
+    resolved.hash shouldBe ""
+    resolved.queryParams shouldBe QueryParams("tab" -> "details")
     resolved.locale shouldBe Some(I18nLocale("de"))
   }
 
@@ -52,5 +53,17 @@ class RouterUrlResolverSpec extends AnyFlatSpec with Matchers {
     resolved.path shouldBe "/about"
     resolved.browserPath shouldBe "/scalajs-jfx/about"
     resolved.locale shouldBe None
+  }
+
+  it should "decode form-style spaces and retain repeated query parameters" in {
+    val resolved =
+      RouterUrlResolver.resolve("/search?q=scala+js&tag=ui&tag=ssr#results%20list", config)
+
+    resolved.queryParams.get("q") shouldBe Some("scala js")
+    resolved.queryParams.get("tag") shouldBe Some("ssr")
+    resolved.queryParams.getAll("tag") shouldBe Vector("ui", "ssr")
+    resolved.hash shouldBe "#results%20list"
+    resolved.fragment shouldBe Some("results list")
+    resolved.url shouldBe "/scalajs-jfx/search?q=scala+js&tag=ui&tag=ssr#results%20list"
   }
 }

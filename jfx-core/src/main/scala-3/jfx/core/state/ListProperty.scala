@@ -9,20 +9,21 @@ import scala.scalajs.js
 import scala.scalajs.js.JSConverters.*
 import scala.util.control.NonFatal
 
-class ListProperty[V](val underlying: js.Array[V] = js.Array[V]())
+class ListProperty[V](initialValue: js.Array[V] = js.Array[V]())
     extends ReadOnlyProperty[js.Array[V]],
       mutable.Buffer[V],
       ListDataSource[V] {
 
   import ListProperty.*
 
+  private val underlying      = initialValue.slice(0, initialValue.length)
   private val listeners       = mutable.ArrayBuffer.empty[js.Array[V] => Unit]
   private val changeListeners = mutable.ArrayBuffer.empty[Change[V] => Unit]
   private var disposableOwner: CompositeDisposable | Null = null
   private var defaultValue: js.Array[V]                   = underlying.slice(0, underlying.length)
 
   override def get: js.Array[V] =
-    underlying
+    underlying.slice(0, underlying.length)
 
   def setDefaultValue(newValue: js.Array[V]): Unit = {
     defaultValue = newValue.slice(0, newValue.length)

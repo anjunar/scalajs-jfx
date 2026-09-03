@@ -10,7 +10,8 @@ import jfx.core.state.ReadOnlyProperty
 final case class RouterLinkHandler(
     navigate: String => Unit,
     currentPath: ReadOnlyProperty[String],
-    hrefForAppPath: String => String
+    hrefForAppPath: String => String,
+    appPathFor: String => String = RouterUrlResolver.normalizePath
 )
 
 object RouterLinkHandler {
@@ -43,14 +44,16 @@ object RouterLink {
   )(
       body: Anchor ?=> Cursor ?=> Unit
   )(using AbstractComponent, Cursor): Anchor = {
-    val link          = new Anchor()
-    val activeMatcher = defaultActiveMatcher(to)
+    val link = new Anchor()
 
     DslLayer.child(link) {
       RouterLinkHandler.inject(using link).orElse(routerHandler(using link)) match {
         case Some(handler) if isAppPath(to) =>
           link.href = handler.hrefForAppPath(to)
-          link.classCondition(activeClass, handler.currentPath.map(activeMatcher))
+          link.classCondition(
+            activeClass,
+            handler.currentPath.map(defaultActiveMatcher(handler.appPathFor(to)))
+          )
           body
           installNavigation(link, Some(handler.navigate))
 
@@ -79,7 +82,8 @@ object RouterLink {
       RouterLinkHandler(
         navigate = path => router.navigate(path),
         currentPath = router.state.map(_.path),
-        hrefForAppPath = path => router.hrefFor(path)
+        hrefForAppPath = path => router.hrefFor(path),
+        appPathFor = path => router.appPathFor(path)
       )
     }
 
@@ -89,24 +93,8 @@ object RouterLink {
   private def isAppPath(destination: String): Boolean =
     destination.startsWith("/") && !destination.startsWith("//")
 
-  private def defaultActiveMatcher(to: String): String => Boolean = {
-    val normalized = normalizeInternalPath(to)
-
+  private def defaultActiveMatcher(normalized: String): String => Boolean =
     currentPath =>
       if (normalized == "/") currentPath == "/"
       else currentPath == normalized || currentPath.startsWith(s"$normalized/")
-  }
-
-  private def normalizeInternalPath(path: String): String = {
-    val pathname      = Option(path).getOrElse("/").takeWhile(ch => ch != '?' && ch != '#')
-    val segments      = pathname.split("/").filter(_.nonEmpty).toVector
-    val withoutLocale =
-      segments.headOption match {
-        case Some("de" | "en") => segments.drop(1)
-        case _                 => segments
-      }
-
-    if (withoutLocale.isEmpty) "/"
-    else s"/${withoutLocale.mkString("/")}"
-  }
 }

@@ -6,11 +6,15 @@ private[router] final case class ResolvedRouterUrl(
     path: String,
     browserPath: String,
     search: String,
-    queryParams: Map[String, String],
+    hash: String,
+    queryParams: QueryParams,
     locale: Option[I18nLocale]
 ) {
   def url: String =
-    s"$browserPath$search"
+    s"$browserPath$search$hash"
+
+  def fragment: Option[String] =
+    Option(hash.stripPrefix("#")).filter(_.nonEmpty).map(RouterConfig.decode)
 }
 
 private[router] object RouterUrlResolver {
@@ -30,8 +34,14 @@ private[router] object RouterUrlResolver {
     val pathname =
       withoutOrigin.takeWhile(ch => ch != '?' && ch != '#')
 
+    val suffix =
+      withoutOrigin.drop(pathname.length)
+
     val search =
-      withoutOrigin.drop(pathname.length).takeWhile(_ != '#')
+      suffix.takeWhile(_ != '#')
+
+    val hash =
+      suffix.drop(search.length)
 
     val appRelativePath =
       stripBasePath(pathname, config.normalizedBasePath)
@@ -51,6 +61,7 @@ private[router] object RouterUrlResolver {
       path = normalizedPath,
       browserPath = buildBrowserPath(normalizedPath, locale, config),
       search = search,
+      hash = hash,
       queryParams = parseQueryParams(search),
       locale = locale
     )
@@ -118,11 +129,11 @@ private[router] object RouterUrlResolver {
     }
   }
 
-  private def parseQueryParams(search: String): Map[String, String] =
+  private def parseQueryParams(search: String): QueryParams =
     if (!search.startsWith("?")) {
-      Map.empty
+      QueryParams.empty
     } else {
-      search
+      val entries = search
         .drop(1)
         .split("&")
         .iterator
@@ -138,10 +149,15 @@ private[router] object RouterUrlResolver {
             if (index >= 0) part.drop(index + 1)
             else ""
 
-          RouterConfig.decode(key) -> RouterConfig.decode(value)
+          decodeQueryPart(key) -> decodeQueryPart(value)
         }
-        .toMap
+        .toVector
+
+      QueryParams(entries*)
     }
+
+  private def decodeQueryPart(value: String): String =
+    RouterConfig.decode(value.replace("+", " "))
 
   private[router] def segments(path: String): Vector[String] =
     if (path == "/") Vector.empty

@@ -10,16 +10,6 @@ object ClientDeviceDetector {
   def fromUserAgent(userAgent: String): ClientDevice = {
     val ua = userAgent.toLowerCase
 
-    val isIpad =
-      ua.contains("ipad") ||
-        (ua.contains("macintosh") && ua.contains("mobile") && ua.contains("safari"))
-
-    val isAndroidTablet =
-      ua.contains("android") && !ua.contains("mobile")
-
-    val isTablet =
-      isIpad || isAndroidTablet
-
     val isPhone =
       ua.contains("iphone") ||
         ua.contains("ipod") ||
@@ -31,8 +21,10 @@ object ClientDeviceDetector {
         ua.contains("opera mobi") ||
         (ua.contains("android") && ua.contains("mobile"))
 
-    if (isTablet) ClientDevice.Desktop
-    else if (isPhone) ClientDevice.Mobile
+    // The public model is deliberately binary: phone user agents are mobile; tablets use the
+    // desktop layout. In particular, Android tablets omit the "mobile" token and iPads therefore
+    // fall through to Desktop as well.
+    if (isPhone) ClientDevice.Mobile
     else ClientDevice.Desktop
   }
 }

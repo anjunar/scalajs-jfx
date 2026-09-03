@@ -13,9 +13,6 @@ final case class NavEntry(
     if (path == "/") currentPath == "/"
     else currentPath == path || currentPath.startsWith(s"$path/")
 
-  def zone(locale: I18nLocale): String =
-    AppI18n.resolve(zoneMessage, locale)
-
   def title(locale: I18nLocale): String =
     AppI18n.resolve(titleMessage, locale)
 

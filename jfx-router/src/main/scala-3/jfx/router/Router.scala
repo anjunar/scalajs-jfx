@@ -26,9 +26,10 @@ class Router(
   private var browserEnabled     = false
   private var currentBrowserUrl  = () => initialUrl
   private var initialized        = false
+  private var pendingScroll      = Option.empty[(String, Option[String])]
 
   private val stateProperty =
-    Property(RouterState("/", "/", Nil, Map.empty, "", None))
+    Property(RouterState("/", "/", Nil, QueryParams.empty, "", "", None))
 
   def state: ReadOnlyProperty[RouterState] =
     stateProperty
@@ -77,12 +78,15 @@ class Router(
     installPopStateListener()
   }
 
-  def hrefFor(path: String): String =
-    RouterUrlResolver.buildBrowserPath(
-      RouterUrlResolver.normalizePath(path),
-      Some(currentLocale),
-      config
-    )
+  def hrefFor(path: String): String = {
+    val resolved =
+      RouterUrlResolver.resolve(path, config, I18nRuntime.current(using this), Some(currentLocale))
+
+    resolved.url
+  }
+
+  def appPathFor(path: String): String =
+    RouterUrlResolver.resolve(path, config, I18nRuntime.current(using this)).path
 
   private def prepareInitialHydrationRoute(): Unit = {
     resolveCurrentRoute(hydrating = true)
@@ -92,12 +96,15 @@ class Router(
     val nextState = resolve(path, Some(currentLocale))
 
     if (browserEnabled) {
+      pendingScroll = Some(nextState.url -> nextState.fragment)
+
       if (replace) dom.window.history.replaceState(null, "", nextState.url)
       else dom.window.history.pushState(null, "", nextState.url)
     }
 
     stateProperty.set(nextState)
     synchronizeI18n(nextState)
+    schedulePendingScroll()
   }
 
   def localizedPath(path: String, locale: I18nLocale): String =
@@ -138,6 +145,7 @@ class Router(
       case None =>
         responseStatusProperty.set(404)
         componentProperty.set(config.notFound(state))
+        schedulePendingScroll()
     }
   }
 
@@ -182,6 +190,7 @@ class Router(
         case Some(Success(component)) =>
           if (renderContext.token == renderToken) {
             target.set(new RoutedComponent(component, renderContext))
+            schedulePendingScroll()
           }
 
         case Some(Failure(error)) =>
@@ -208,6 +217,7 @@ class Router(
                 result match {
                   case Success(component) =>
                     target.set(new RoutedComponent(component, renderContext))
+                    schedulePendingScroll()
 
                   case Failure(error) =>
                     handleRouteFailure(error, context, target, hydrating)
@@ -259,6 +269,7 @@ class Router(
     if (renderError) {
       responseStatusProperty.set(500)
       target.set(config.error(error, context))
+      schedulePendingScroll()
     } else {
       throw error
     }
@@ -277,6 +288,7 @@ class Router(
       matches = matches,
       queryParams = resolved.queryParams,
       search = resolved.search,
+      hash = resolved.hash,
       locale = resolved.locale
     )
   }
@@ -301,6 +313,27 @@ class Router(
 
       addDisposable { () =>
         dom.window.removeEventListener("popstate", listener)
+      }
+    }
+
+  private def schedulePendingScroll(): Unit =
+    if (browserEnabled && pendingScroll.nonEmpty) {
+      dom.window.requestAnimationFrame { _ =>
+        pendingScroll.foreach { case (url, fragment) =>
+          if (stateProperty.get.url == url) {
+            fragment match {
+              case Some(id) =>
+                Option(dom.document.getElementById(id)).foreach { target =>
+                  target.scrollIntoView()
+                  pendingScroll = None
+                }
+
+              case None =>
+                dom.window.scrollTo(0, 0)
+                pendingScroll = None
+            }
+          }
+        }
       }
     }
 

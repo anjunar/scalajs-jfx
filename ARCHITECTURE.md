@@ -152,3 +152,12 @@ hat.
 4. Gibt es etwas Asynchrones nach außen? `Future` (§4).
 5. Hält es Zustand in einem `object`? Umbauen (§5).
 6. Rendert es eigene Klassennamen? Dann gehört deren CSS ins npm-Paket (§6).
+
+## 9. Sprache
+
+Scala-/JavaScript-Quelltext, Bezeichner, Kommentare und Scaladoc sind Englisch. Die
+projektweiten Arbeits- und Entscheidungsdokumente (`AGENTS.md`, `ARCHITECTURE.md`,
+`CHANGE.md`, `REVIEW.md`) sowie betriebliche Kommentare im Build sind Deutsch.
+
+Die Grenze folgt dem Publikum: publizierter Quelltext ist Teil der Bibliotheks-API;
+Repository-Prozess und Buildbetrieb richten sich an die Maintainer dieses Projekts.

@@ -75,6 +75,29 @@ class RouterLinkSpec extends AnyFlatSpec with Matchers {
 
     Runtime.unmount(root)
   }
+
+  it should "use the router's locale resolver for its active state" in {
+    val handler = RouterLinkHandler(
+      navigate = _ => (),
+      currentPath = Property("/articles"),
+      hrefForAppPath = identity,
+      appPathFor = path => path.stripPrefix("/fr")
+    )
+    var linkHost: LinkTestHostElement = null
+    val cursor = new LinkTestCursor(host => if (host.tagName == "a") linkHost = host)
+
+    val root = Runtime.mount(
+      new RouterLinkRoot(handler) {
+        override protected def content(using AbstractComponent, Cursor): Unit =
+          routerLink("/fr/articles", activeClass = "selected") {}
+      },
+      cursor
+    )
+
+    linkHost.classNames should contain("selected")
+
+    Runtime.unmount(root)
+  }
 }
 
 private abstract class RouterLinkRoot(handler: RouterLinkHandler) extends AbstractComponent {

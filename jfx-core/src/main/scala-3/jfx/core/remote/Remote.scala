@@ -6,6 +6,8 @@ import org.scalajs.dom
 import scala.concurrent.{ExecutionContext, Future}
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.*
+import scala.scalajs.js.timers.{clearTimeout, setTimeout}
+import scala.util.Try
 
 /** Remote paging: HTTP requests, pages, and sorting.
   *
@@ -78,8 +80,12 @@ final case class RestRequest(
     queryParams: Map[String, Any] = Map.empty,
     headers: Map[String, String] = Map.empty,
     body: js.UndefOr[js.Any] = js.undefined,
-    initOverrides: Map[String, js.Any] = Map.empty
+    initOverrides: Map[String, js.Any] = Map.empty,
+    signal: Option[dom.AbortSignal] = None,
+    timeoutMillis: Option[Int] = None
 ) {
+
+  require(timeoutMillis.forall(_ > 0), "RestRequest.timeoutMillis must be positive")
 
   def withQueryParam(name: String, value: Any): RestRequest =
     copy(queryParams = queryParams.updated(name, value))
@@ -100,7 +106,12 @@ final case class RestRequest(
     }
   }
 
-  def toRequestInit: dom.RequestInit = {
+  def toRequestInit: dom.RequestInit =
+    toRequestInitWithSignal(signal)
+
+  private[remote] def toRequestInitWithSignal(
+      effectiveSignal: Option[dom.AbortSignal]
+  ): dom.RequestInit = {
     val init = js.Dynamic.literal(method = method)
 
     if (headers.nonEmpty) {
@@ -114,6 +125,8 @@ final case class RestRequest(
     initOverrides.foreach { case (key, value) =>
       init.updateDynamic(key)(value.asInstanceOf[js.Any])
     }
+
+    effectiveSignal.foreach(init.updateDynamic("signal")(_))
 
     init.asInstanceOf[dom.RequestInit]
   }
@@ -134,9 +147,11 @@ private[remote] def fetchPage[V, Query](
 ): Future[RemotePage[V, Query]] = {
   given ExecutionContext = executionContext
 
-  dom
-    .fetch(request.urlWithQueryString, request.toRequestInit)
-    .toFuture
+  val prepared = prepareRequest(request)
+
+  Future
+    .fromTry(Try(dom.fetch(request.urlWithQueryString, prepared.init).toFuture))
+    .flatten
     .flatMap { response =>
       if (response.ok) {
         response.json().toFuture.map(json => decode(json, query))
@@ -151,7 +166,38 @@ private[remote] def fetchPage[V, Query](
           )
       }
     }
+    .andThen { case _ => prepared.cleanup() }
 }
+
+private final case class PreparedRequest(init: dom.RequestInit, cleanup: () => Unit)
+
+private def prepareRequest(request: RestRequest): PreparedRequest =
+  request.timeoutMillis match {
+    case None =>
+      PreparedRequest(request.toRequestInit, () => ())
+
+    case Some(timeoutMillis) =>
+      val controller = new dom.AbortController()
+      val forwardAbort: js.Function1[dom.Event, Unit] =
+        _ => controller.abort()
+
+      request.signal.foreach { signal =>
+        if (signal.aborted) controller.abort()
+        else signal.addEventListener("abort", forwardAbort)
+      }
+
+      val timeout = setTimeout(timeoutMillis.toDouble) {
+        controller.abort()
+      }
+
+      PreparedRequest(
+        request.toRequestInitWithSignal(Some(controller.signal)),
+        () => {
+          clearTimeout(timeout)
+          request.signal.foreach(_.removeEventListener("abort", forwardAbort))
+        }
+      )
+  }
 
 private[remote] def normalizeQueryParams(params: Map[String, Any]): Seq[(String, String)] =
   params.toSeq.flatMap { case (key, value) =>

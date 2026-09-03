@@ -177,7 +177,7 @@ class App(
                     currentZone = Some(zoneKey)
                     div {
                       classes = Seq("app-sidebar__section-title")
-                      text(entry.zone(i18nRuntime.locale.get)) {}
+                      text(entry.zoneMessage) {}
                     }
                   }
 

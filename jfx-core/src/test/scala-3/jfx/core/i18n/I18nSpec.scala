@@ -88,5 +88,28 @@ class I18nSpec extends AnyFlatSpec with Matchers {
     text.get shouldBe "Dokument loschen"
   }
 
+  it should "change the locale of a directly constructed runtime" in {
+    val locale  = Property(I18nLocale.En)
+    val runtime = I18nRuntime(locale, I18nResolver(MessageCatalog.empty))
+
+    runtime.setLocale(I18nLocale("de"))
+
+    runtime.locale.get shouldBe I18nLocale("de")
+  }
+
+  it should "interpolate every placeholder in one pass" in {
+    val first   = "{second}"
+    val second  = "$5\\replacement"
+    val message = i18n"$first then $second"
+    val catalog = MessageCatalog(
+      I18n
+        .entry(message.key)
+        .translations(I18nLocale("de") -> "{first} und {second}")
+    )
+
+    I18nResolver(catalog).resolve(message, I18nLocale("de")) shouldBe
+      "{second} und $5\\replacement"
+  }
+
   private final case class User(name: String)
 }

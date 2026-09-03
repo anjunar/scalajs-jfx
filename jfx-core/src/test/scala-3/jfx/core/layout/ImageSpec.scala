@@ -18,6 +18,10 @@ class ImageSpec extends AnyFlatSpec with Matchers {
             image {
               src = "/assets/profile.png"
               alt = "Profile & portrait"
+              loading = "lazy"
+              srcset = "/assets/profile.png 1x, /assets/profile@2x.png 2x"
+              intrinsicWidth = 640
+              intrinsicHeight = 480
             }
         },
         cursor
@@ -25,7 +29,7 @@ class ImageSpec extends AnyFlatSpec with Matchers {
     }
 
     html shouldBe
-      "<main><img src=\"/assets/profile.png\" alt=\"Profile &amp; portrait\"></main>"
+      "<main><img src=\"/assets/profile.png\" alt=\"Profile &amp; portrait\" loading=\"lazy\" srcset=\"/assets/profile.png 1x, /assets/profile@2x.png 2x\" width=\"640\" height=\"480\"></main>"
   }
 
   it should "update reactive source and alternative text without changing its structure" in {

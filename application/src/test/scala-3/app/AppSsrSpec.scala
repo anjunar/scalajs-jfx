@@ -179,6 +179,19 @@ class AppSsrSpec extends AsyncFlatSpec with Matchers {
     RequestContext.current(using mounted("/", mobile).app).map(_.isMobile) shouldBe Some(true)
   }
 
+  it should "update sidebar section titles when the locale changes" in {
+    val cursor   = new SsrCursor()
+    val document = documentFor(desktopRequest, "/")
+    Runtime.mount(document, cursor)
+
+    cursor.collectHtml() should include(">Foundation<")
+
+    document.app.appRouter.navigate("/de/")
+
+    cursor.collectHtml() should include(">Grundlagen<")
+    cursor.collectHtml() should not include ">Foundation<"
+  }
+
   "The router" should "change the rendered tree on navigation" in {
     val async    = new AsyncRenderContext()
     val cursor   = new SsrCursor(async)

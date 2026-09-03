@@ -19,4 +19,16 @@ class RequestContextSpec extends AnyFlatSpec with Matchers {
     hydrationRequest.isMobile shouldBe true
     hydrationRequest.isDesktop shouldBe false
   }
+
+  it should "treat tablet user agents as desktop in the binary device model" in {
+    val ipad = RequestContext.withUserAgent(
+      "Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Safari/604.1"
+    )
+    val androidTablet = RequestContext.withUserAgent(
+      "Mozilla/5.0 (Linux; Android 14; Pixel Tablet) AppleWebKit/537.36 Safari/537.36"
+    )
+
+    ipad.isDesktop shouldBe true
+    androidTablet.isDesktop shouldBe true
+  }
 }
