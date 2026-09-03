@@ -3,7 +3,6 @@ package jfx.forms
 import jfx.core.component.AbstractComponent
 import jfx.core.state.{CompositeDisposable, Disposable, ListProperty, Property, ReadOnlyProperty}
 import jfx.forms.validators.{Validator, ValidatorFactory}
-import org.scalajs.dom
 import reflect.{ClassDescriptor, PropertyAccessor, PropertyDescriptor}
 
 import scala.collection.mutable
@@ -21,6 +20,9 @@ trait Formular[M] extends FormController, Editable { self: AbstractComponent =>
   val fields: mutable.LinkedHashMap[String, Control[?]] = mutable.LinkedHashMap.empty
 
   private val bindingsByControl = mutable.Map.empty[Control[?], CompositeDisposable]
+
+  /** Controls whose last binding attempt failed, by control name, with the reason. */
+  private val unboundControls = mutable.LinkedHashMap.empty[String, String]
 
   override def prefix: String = name
 
@@ -40,9 +42,22 @@ trait Formular[M] extends FormController, Editable { self: AbstractComponent =>
   override def unregister(control: Control[?]): Unit =
     fields.get(control.name).filter(_ eq control).foreach { _ =>
       fields.remove(control.name)
+      unboundControls.remove(control.name)
       bindingsByControl.remove(control).foreach(_.dispose())
       val index = controls.indexWhere(_ eq control)
       if (index >= 0) controls.remove(index)
+    }
+
+  /** Every control that did not find a model property, this form's and its nested forms'.
+    *
+    * Binding happens per control as it registers, so this is the check to run once the form is
+    * composed: a typo in a field name shows up here as a message instead of as a control that
+    * quietly does nothing.
+    */
+  def validateBindings(): Seq[String] =
+    unboundControls.values.toSeq ++ controls.toSeq.flatMap {
+      case nested: Formular[?] => nested.validateBindings()
+      case _                   => Seq.empty
     }
 
   def validate(): Seq[String] =
@@ -113,8 +128,9 @@ trait Formular[M] extends FormController, Editable { self: AbstractComponent =>
     val accessor   = property.flatMap(_.accessor)
 
     if (accessor.isEmpty) {
-      warn(
-        s"Skipping form binding for control '${control.name}': no matching readable model property on ${model.getClass.getName}."
+      failBinding(
+        control,
+        s"no readable property named '${control.name}' on ${model.getClass.getName}"
       )
       return Disposable.empty
     }
@@ -126,17 +142,24 @@ trait Formular[M] extends FormController, Editable { self: AbstractComponent =>
     val modelProperty = accessor.get.asInstanceOf[PropertyAccessor[Any, Any]].get(model)
     (modelProperty, control.valueProperty) match {
       case (source: Property[Any @unchecked], target: Property[Any @unchecked]) =>
+        unboundControls.remove(control.name)
         composite.add(Property.subscribeBidirectional(source, target))
       case (source: ListProperty[Any @unchecked], target: ListProperty[Any @unchecked]) =>
+        unboundControls.remove(control.name)
         composite.add(ListProperty.subscribeBidirectional(source, target))
       case _ =>
-        warn(
-          s"Skipping form binding for control '${control.name}': model and control property types do not match."
+        failBinding(
+          control,
+          s"model property ${describe(modelProperty)} does not pair with control property " +
+            s"${describe(control.valueProperty)}"
         )
     }
 
     composite
   }
+
+  private def describe(value: Any): String =
+    if (value == null) "null" else value.getClass.getSimpleName
 
   private def descriptorFor(model: M): Option[ClassDescriptor] =
     modelDescriptor.orElse(Option(model).flatMap { value =>
@@ -166,13 +189,18 @@ trait Formular[M] extends FormController, Editable { self: AbstractComponent =>
     }
   }
 
+  // Back to the value the control was built with, not null. The control property is typed, and a
+  // Property[String] holding null puts the string "null" into the DOM.
   private def clearControlValue(control: Control[?]): Unit =
     control.valueProperty match {
-      case property: Property[Any @unchecked] => property.set(null)
-      case property: ListProperty[?]          => property.clear()
-      case _                                  => ()
+      case property: ListProperty[?] => property.clear()
+      case property: Property[?]     => property.reset()
+      case _                         => ()
     }
 
-  private def warn(message: String): Unit =
-    dom.console.warn(message)
+  private def failBinding(control: Control[?], reason: String): Unit = {
+    val message = s"Form '$name' cannot bind control '${control.name}': $reason."
+    unboundControls.put(control.name, message)
+    FormBinding.fail(message)
+  }
 }

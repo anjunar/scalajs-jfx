@@ -37,6 +37,10 @@ final class Property[T](private var value: T) extends ReadOnlyProperty[T] {
 
   def isDirty: Boolean = value != defaultValue
 
+  /** Back to the value the property was built with, or the one last given to `setDefault`. */
+  def reset(): Unit =
+    set(defaultValue)
+
   def setAlways(newValue: T): Unit = {
     value = newValue
     listeners.toVector.foreach(_(newValue))

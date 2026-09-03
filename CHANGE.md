@@ -741,7 +741,7 @@ zurücklesen, ohne dass `jfx-core` sie kennt.
 
 ---
 
-### [ ] P5-4 · Forms-Bindung: Fehler sichtbar machen
+### [x] P5-4 · Forms-Bindung: Fehler sichtbar machen
 
 **Problem.** `Formular.bindNow` scheitert still: kein passender Accessor →
 `console.warn` und `Disposable.empty`; Typen passen nicht → `console.warn`. Dazu
@@ -764,6 +764,37 @@ Laufzeit in der Browser-Konsole scheitert, die teuerste Fehlerklasse.
    die Infrastruktur dafür existiert in `jfx-json` bereits.
 4. `clearControlValue`: `null` durch einen typkorrekten Leerwert ersetzen
    (`Option`, Default aus dem Deskriptor).
+
+**Ergebnis.** Schritt 1: `dom.console.warn` ist raus. `FormBinding.fail` wirft im
+Entwicklungsmodus eine `FormBindingException` und protokolliert sonst über
+`console.error`. Die Unterscheidung läuft über `LinkingInfo.developmentMode` —
+eine Linker-Konstante, `fullLinkJS` faltet den Zweig weg, der Wurf kostet den
+Produktionsbuild also nichts. Die Meldungen nennen jetzt Formular, Control und
+Grund statt „Skipping form binding".
+
+Schritt 2: `Formular.validateBindings(): Seq[String]` meldet jedes Control, das
+kein Modellfeld gefunden hat, samt verschachtelter Formulare. Der Befund wird
+vor dem Wurf notiert, damit die Liste auch im Produktionsmodus vollständig ist.
+
+Schritt 4: `clearControlValue` schreibt kein `null` mehr. `Property.reset()`
+setzt auf den Wert zurück, mit dem die Property gebaut wurde — für `Input` also
+`""` statt eines `Property[String]`, das `null` hält und „null" ins DOM
+schreibt. Typkorrekt ohne Cast und ohne Deskriptor-Umweg.
+
+Schritt 3 (Compile-Zeit-Prüfung) ist geprüft, nicht gebaut. `scala-reflect` gibt
+genug her: `PropertySupport.makeProperty[T, V](selector)` leitet den
+Property-Namen zur Compile-Zeit aus einer Lambda ab, und `collectPropertySymbols`
+liefert die Namen eines Typs im Makro. Ein `input(_.email)` wäre damit
+compile-geprüft. Der Blocker liegt nicht bei scala-reflect, sondern bei uns:
+Controls registrieren sich über `Form.FormContext`, und das ist ein
+`Context[FormController]` ohne Modelltyp. An der Stelle des `input`-Aufrufs ist
+der Modelltyp deshalb statisch nicht bekannt — bei `subForm[Address]` ist er ein
+anderer als der des umgebenden `Form[M]`. Ohne einen typisierten Formular-Kontext
+läuft die Prüfung ins Leere. Dazu kommt `ArrayForm`, das Namen zur Laufzeit baut
+(`input(s"tag-$index")`) und einen Rückfallpfad bräuchte. Eigene Aufgabe, nicht
+diese.
+
+Belegt durch `jfx-forms/src/test/scala-3/jfx/forms/FormBindingSpec.scala`.
 
 **Fertig wenn.** Ein Tippfehler in einem Feldnamen führt zu einem sichtbaren
 Fehler, nicht zu einem stillen No-Op.
