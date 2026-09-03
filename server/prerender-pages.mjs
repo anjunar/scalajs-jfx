@@ -1,30 +1,37 @@
 // Prerendert alle statischen Routen in ein Verzeichnis mit einer index.html pro
 // Route -- fuer ein Deployment ohne Node-Prozess (GitHub Pages).
 //
-// Deploy-Pfad, Site-URL und Metadaten kommen aus site.config.json, die Routen aus
-// AppRoutes.scala. Diese Datei haelt keine eigene Kopie davon.
+// Das Dokument kommt vollstaendig aus dem SSR-Render: Titel, Beschreibung,
+// canonical, hreflang und `lang` stehen pro Route drin, weil AppHead sie
+// anmeldet. Es gibt keine Vorlage mehr, in die etwas hineinersetzt wird.
+//
+// Deploy-Pfad und Routen kommen aus site.config.json bzw. AppRoutes.scala.
 //
 // Aufruf: npm run prerender (setzt einen Produktionsbuild voraus).
 
 import { existsSync } from "node:fs"
-import { mkdir, readFile, writeFile } from "node:fs/promises"
+import { mkdir, writeFile } from "node:fs/promises"
 import { dirname, resolve } from "node:path"
 import { pathToFileURL } from "node:url"
 
 import { staticAppRoutes } from "../tools/app-routes.mjs"
-import { canonicalUrl, projectRoot, siteConfig } from "../tools/site-config.mjs"
+import { productionAssets } from "../tools/client-assets.mjs"
+import { projectRoot, siteConfig } from "../tools/site-config.mjs"
 
 const outputDir = resolve(projectRoot, "dist", "static")
 const clientDist = resolve(projectRoot, "dist", "client")
-const templatePath = resolve(clientDist, "index.html")
 const serverEntry = resolve(projectRoot, "dist", "server", "entry-server.js")
+
+/** Ein Pfad, den AppRoutes nicht kennt -- die Seite rendert damit ihren eigenen
+ *  Nicht-gefunden-Zustand samt `noindex`. */
+const notFoundPath = "/__not-found"
 
 const languages = siteConfig.localizedLanguages ?? []
 
 assertBuilt()
 
-const template = await readFile(templatePath, "utf8")
 const { render } = await import(pathToFileURL(serverEntry).href)
+const assets = JSON.stringify(await productionAssets(clientDist))
 
 const entries = [
   ...staticAppRoutes().map((path) => ({ path, priority: path === "/" ? "1.0" : "0.8" })),
@@ -37,32 +44,18 @@ const entries = [
 ]
 
 for (const entry of entries) {
-  const rendered = await render(entry.path, "GET", JSON.stringify({}))
-  const html = applyMeta(template, entry).replace("<!--app-html-->", rendered.html)
+  const rendered = await render(entry.path, "GET", JSON.stringify({}), assets)
   const outputPath = outputPathFor(entry.path)
   await mkdir(dirname(outputPath), { recursive: true })
-  await writeFile(outputPath, html, "utf8")
+  await writeFile(outputPath, rendered.html, "utf8")
   console.log(`prerendered ${entry.path}`)
 }
 
-await writeFile(resolve(outputDir, "404.html"), fallback404(template), "utf8")
+const fallback = await render(notFoundPath, "GET", JSON.stringify({}), assets)
+await writeFile(resolve(outputDir, "404.html"), fallback.html, "utf8")
 await writeFile(resolve(outputDir, ".nojekyll"), "", "utf8")
 
 console.log(`${entries.length} Seiten nach ${outputDir} geschrieben`)
-
-function applyMeta(html, entry) {
-  return html.replace(
-    /<link rel="canonical" href="[^"]*" \/>/,
-    `<link rel="canonical" href="${canonicalUrl(entry.path)}" />`
-  )
-}
-
-function fallback404(html) {
-  return html.replace(
-    '<meta name="robots" content="index, follow" />',
-    '<meta name="robots" content="noindex" />'
-  )
-}
 
 function outputPathFor(path) {
   if (path === "/") return resolve(outputDir, "index.html")
@@ -71,7 +64,7 @@ function outputPathFor(path) {
 
 function assertBuilt() {
   const missing = [
-    [templatePath, "dist/client/index.html (npm run build:client)"],
+    [resolve(clientDist, ".vite", "manifest.json"), "dist/client (npm run build:client)"],
     [serverEntry, "dist/server/entry-server.js (npm run build:server)"]
   ].filter(([path]) => !existsSync(path))
 

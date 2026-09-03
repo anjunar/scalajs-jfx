@@ -59,7 +59,10 @@ final class SsrHostElement(val tagName: String) extends HostElement, SsrNode {
     SsrNode.setHint(child, -1)
   }
 
-  def clearChildren(): Unit = children.clear()
+  def clearChildren(): Unit = {
+    children.foreach(SsrNode.setHint(_, -1))
+    children.clear()
+  }
 
   def childCount: Int = children.length
 
@@ -69,8 +72,22 @@ final class SsrHostElement(val tagName: String) extends HostElement, SsrNode {
       else s""" style="${styles.map { case (k, v) => s"$k: $v" }.mkString("; ")}""""
 
     val attrStr = attrs.map { case (k, v) => s""" $k="${escapeAttr(v)}"""" }.mkString
-    val content = children.map(_.renderHtml()).mkString
-    s"<$tagName$attrStr$styleStr>$content</$tagName>"
+    val open    = s"<$tagName$attrStr$styleStr>"
+
+    if (VoidElements.contains(tagName)) {
+      // A void element carries no children: the parser would hoist them out and the client tree
+      // would afterwards hydrate against something else. Dropping them silently is the failure mode
+      // ARCHITECTURE.md §7 forbids, so this reports instead.
+      if (children.nonEmpty) {
+        throw new IllegalStateException(
+          s"<$tagName> is a void element and cannot have children, " +
+            s"but ${children.length} were mounted below it."
+        )
+      }
+      open
+    } else {
+      s"$open${children.map(_.renderHtml()).mkString}</$tagName>"
+    }
   }
 
   private def escapeAttr(value: String): String =

@@ -31,13 +31,22 @@ class AppSsrSpec extends AsyncFlatSpec with Matchers {
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36"
     )
 
+  private def documentFor(request: RequestContext, url: String): AppDocument =
+    new AppDocument(request, url)
+
+  private def mounted(url: String, request: RequestContext = desktopRequest): AppDocument = {
+    val document = documentFor(request, url)
+    Runtime.mount(document, new SsrCursor())
+    document
+  }
+
   "SSR" should "render the start route to the same HTML twice" in {
     for {
       first <- Runtime.renderToStringAsync(cursor =>
-        Runtime.mount(new App(desktopRequest, "/"), cursor)
+        Runtime.mount(documentFor(desktopRequest, "/"), cursor)
       )
       second <- Runtime.renderToStringAsync(cursor =>
-        Runtime.mount(new App(desktopRequest, "/"), cursor)
+        Runtime.mount(documentFor(desktopRequest, "/"), cursor)
       )
     } yield {
       first should include("class=\"app-shell\"")
@@ -46,9 +55,54 @@ class AppSsrSpec extends AsyncFlatSpec with Matchers {
     }
   }
 
+  it should "render route metadata in the document head" in {
+    Runtime
+      .renderToStringAsync(cursor =>
+        Runtime.mount(documentFor(desktopRequest, "/de/router"), cursor)
+      )
+      .map { html =>
+        html should startWith("<html lang=\"de\"><head>")
+        html should include("<div id=\"root\"><app>")
+        html should include("<title data-jfx-head=\"title\">Router | scalajs-jfx</title>")
+        html should include(
+          "<link data-jfx-head=\"link:canonical\" rel=\"canonical\" href=\"https://anjunar.github.io/scalajs-jfx/de/router/\">"
+        )
+        html should include("hreflang=\"de\"")
+        html should include("<html lang=\"de\">")
+        html should not include "%SITE_"
+      }
+  }
+
+  it should "keep document head entries and assets in stable order" in {
+    val assets = Seq(
+      jfx.core.document.HeadEntry(
+        "asset:0",
+        "link",
+        Seq("rel" -> "stylesheet", "href" -> "/assets/app.css")
+      ),
+      jfx.core.document.HeadEntry(
+        "asset:1",
+        "script",
+        Seq("type" -> "module", "src" -> "/assets/app.js")
+      )
+    )
+
+    Runtime
+      .renderToStringAsync(cursor =>
+        Runtime.mount(new AppDocument(desktopRequest, "/en/", assets), cursor)
+      )
+      .map { html =>
+        html.indexOf("data-jfx-head=\"title\"") should be < html.indexOf("data-jfx-head=\"asset:0\"")
+        html should include("<link data-jfx-head=\"asset:0\" rel=\"stylesheet\" href=\"/assets/app.css\">")
+        html should include("<script data-jfx-head=\"asset:1\" type=\"module\" src=\"/assets/app.js\"></script>")
+      }
+  }
+
   it should "render an asynchronous route once its loader completed" in {
     Runtime
-      .renderToStringAsync(cursor => Runtime.mount(new App(desktopRequest, "/rendering"), cursor))
+      .renderToStringAsync(cursor =>
+        Runtime.mount(documentFor(desktopRequest, "/rendering"), cursor)
+      )
       .map { html =>
         html should include("class=\"app-shell\"")
         html should not include "jfx:Route:pending"
@@ -56,21 +110,13 @@ class AppSsrSpec extends AsyncFlatSpec with Matchers {
   }
 
   it should "answer 200 for a known route and 404 for an unknown one" in {
-    val known   = new App(desktopRequest, "/")
-    val unknown = new App(desktopRequest, "/no-such-page")
-
     // The status only exists once the router composed, so the app has to be mounted first.
-    Runtime.mount(known, new SsrCursor())
-    Runtime.mount(unknown, new SsrCursor())
-
-    known.ssrStatus shouldBe 200
-    unknown.ssrStatus shouldBe 404
+    mounted("/").ssrStatus shouldBe 200
+    mounted("/no-such-page").ssrStatus shouldBe 404
   }
 
   "The app" should "publish request, i18n and theme through the component context" in {
-    val app = new App(desktopRequest, "/")
-
-    Runtime.mount(app, new SsrCursor())
+    val app = mounted("/").app
 
     RequestContext.current(using app) should not be empty
     I18nRuntime.current(using app) should not be empty
@@ -80,11 +126,8 @@ class AppSsrSpec extends AsyncFlatSpec with Matchers {
   }
 
   it should "give every instance its own theme, not a shared one" in {
-    val first  = new App(desktopRequest, "/")
-    val second = new App(desktopRequest, "/")
-
-    Runtime.mount(first, new SsrCursor())
-    Runtime.mount(second, new SsrCursor())
+    val first  = mounted("/").app
+    val second = mounted("/").app
 
     val firstTheme  = AppTheme.current(using first).get
     val secondTheme = AppTheme.current(using second).get
@@ -101,31 +144,28 @@ class AppSsrSpec extends AsyncFlatSpec with Matchers {
     val mobile = RequestContext.withUserAgent(
       "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148"
     )
-    val app = new App(mobile, "/")
 
-    Runtime.mount(app, new SsrCursor())
-
-    RequestContext.current(using app).map(_.isMobile) shouldBe Some(true)
+    RequestContext.current(using mounted("/", mobile).app).map(_.isMobile) shouldBe Some(true)
   }
 
   "The router" should "change the rendered tree on navigation" in {
-    val async  = new AsyncRenderContext()
-    val cursor = new SsrCursor(async)
-    val app    = new App(desktopRequest, "/")
+    val async    = new AsyncRenderContext()
+    val cursor   = new SsrCursor(async)
+    val document = documentFor(desktopRequest, "/")
 
-    Runtime.mount(app, cursor)
+    Runtime.mount(document, cursor)
 
     async.drain().flatMap { _ =>
       val before = cursor.collectHtml()
       before should include("Welcome to")
 
-      app.appRouter.navigate("/button")
+      document.app.appRouter.navigate("/button")
 
       async.drain().map { _ =>
         val after = cursor.collectHtml()
         after should not be before
         after should not include "Welcome to"
-        app.ssrStatus shouldBe 200
+        document.ssrStatus shouldBe 200
       }
     }
   }

@@ -18,4 +18,10 @@ final case class NavEntry(
 
   def title(locale: I18nLocale): String =
     AppI18n.resolve(titleMessage, locale)
+
+  /** The sidebar's subtitle, which doubles as the page's meta description. Not named `copy`: that
+    * is the case class's own method.
+    */
+  def description(locale: I18nLocale): String =
+    AppI18n.resolve(copyMessage, locale)
 }

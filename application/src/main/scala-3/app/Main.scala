@@ -2,10 +2,10 @@ package app
 
 import jfx.core.async.AsyncRenderContext
 import jfx.core.component.{AbstractComponent, Runtime}
+import jfx.core.document.ClientAssetsJson
 import jfx.core.render.{Cursor, HydratingCursor}
 import jfx.core.request.{RequestContext, RequestHeaders, RequestHeadersJson}
 import org.scalajs.dom
-import org.scalajs.dom.document
 
 import scala.concurrent.ExecutionContext
 import scala.scalajs.js
@@ -19,7 +19,7 @@ object Main {
       request: RequestContext,
       initialUrl: String
   ): AbstractComponent =
-    Runtime.mount(new App(request, initialUrl), cursor)
+    Runtime.mount(new AppDocument(request, initialUrl), cursor)
 
   @JSExportTopLevel("boot")
   def boot(): js.Promise[Unit] = {
@@ -31,8 +31,11 @@ object Main {
     val request =
       RequestContext.withUserAgent(dom.window.navigator.userAgent)
 
+    // The document itself is hydrated, not a container inside it: `<html>`, `<head>` and `<body>`
+    // are components now. The bundle's own script and stylesheet tags are not re-registered here --
+    // the browser head sink leaves server-rendered entries it never managed alone.
     val hydratingCursor =
-      HydratingCursor.root(document.getElementById("root"), async)
+      HydratingCursor.root(dom.document, async)
 
     render(hydratingCursor, request, url)
 
@@ -44,8 +47,19 @@ object Main {
       .toJSPromise
   }
 
+  /** Renders the complete document for `path`.
+    *
+    * `assetsJson` carries the bundler's script and stylesheet tags -- the only part of the document
+    * that cannot come from Scala, because the file names carry a build-time content hash. See
+    * [[ClientAssetsJson]].
+    */
   @JSExportTopLevel("renderSsr")
-  def render(path: String, method: String, headersJson: String): js.Promise[js.Object] = {
+  def render(
+      path: String,
+      method: String,
+      headersJson: String,
+      assetsJson: String
+  ): js.Promise[js.Object] = {
     given ExecutionContext = ExecutionContext.global
 
     val request =
@@ -53,14 +67,15 @@ object Main {
         RequestHeadersJson.parse(headersJson)
       )
 
-    val app = new App(request, path)
+    val document =
+      new AppDocument(request, path, ClientAssetsJson.parse(assetsJson))
 
     Runtime
       .renderToStringAsync { cursor =>
-        Runtime.mount(app, cursor)
+        Runtime.mount(document, cursor)
       }
       .map { html =>
-        ssrResponse(html, status = app.ssrStatus)
+        ssrResponse(s"<!doctype html>$html", status = document.ssrStatus)
       }
       .toJSPromise
   }

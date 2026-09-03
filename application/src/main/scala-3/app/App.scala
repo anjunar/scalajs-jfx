@@ -3,6 +3,7 @@ package app
 import app.AppTheme.Mode
 import app.pages.*
 import jfx.core.component.AbstractComponent
+import jfx.core.document.DocumentHead
 import jfx.core.dsl.ClassDsl.{classIf, classes}
 import jfx.core.dsl.DslLayer.render
 import jfx.core.dsl.DslLayer.child
@@ -238,9 +239,8 @@ class App(
 
                   image {
                     classes = Seq("app-toolbar__scala-badge")
-                    src =
-                      "https://img.shields.io/badge/Scala.js-1.21.0-DC322F.svg?logo=scala&logoColor=white"
-                    alt = "Scala.js 1.21.0"
+                    src = "https://www.scala-js.org/assets/badges/scalajs-1.22.0.svg"
+                    alt = "Scala.js 1.22.0"
                   }
                 }
 
@@ -249,6 +249,10 @@ class App(
                   href = "https://github.com/anjunar/scalajs-jfx"
                   target = "_blank"
                   rel = "noopener noreferrer"
+
+                  image {
+                    src = "./Octicons-mark-github.svg"
+                  }
                 }
 
                 hbox {
@@ -307,6 +311,16 @@ class App(
         }
       }
     }
+
+    // After the tree composed, so the router already carries the resolved state and the head is
+    // written once with the right values instead of first with the placeholder ones.
+    new AppHead(
+      DocumentHead.requireCurrent(using this),
+      appRouter,
+      i18nRuntime,
+      appTheme,
+      navigationEntries
+    ).install(this)
   }
 
   private def switchLocale(): Unit = {

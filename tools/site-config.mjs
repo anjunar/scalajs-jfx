@@ -1,8 +1,8 @@
 // Einzige Quelle fuer Deploy-Pfad und Site-Metadaten.
 //
 // site.config.json speist:
-//   - index.html          (base href, canonical, og:url, Titel, Beschreibungen)
-//     ueber das Vite-Plugin in vite.config.js
+//   - das aus Scala gerenderte Dokument (base href, canonical, og:url, Titel,
+//     Beschreibungen) ueber den Source-Generator in build.sbt
 //   - sitemap.xml         ueber tools/generate-site-metadata.mjs
 //   - robots.txt          ueber tools/generate-site-metadata.mjs
 //   - app.SiteConfig      ueber den sourceGenerator in build.sbt

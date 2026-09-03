@@ -25,7 +25,7 @@ class ImageSpec extends AnyFlatSpec with Matchers {
     }
 
     html shouldBe
-      "<main><img src=\"/assets/profile.png\" alt=\"Profile &amp; portrait\"></img></main>"
+      "<main><img src=\"/assets/profile.png\" alt=\"Profile &amp; portrait\"></main>"
   }
 
   it should "update reactive source and alternative text without changing its structure" in {
@@ -46,13 +46,13 @@ class ImageSpec extends AnyFlatSpec with Matchers {
     )
 
     cursor.collectHtml() shouldBe
-      "<main><img src=\"/assets/first.png\" alt=\"First image\"></img></main>"
+      "<main><img src=\"/assets/first.png\" alt=\"First image\"></main>"
 
     source.set("   ")
     alternative.set("Second image")
 
     cursor.collectHtml() shouldBe
-      "<main><img alt=\"Second image\"></img></main>"
+      "<main><img alt=\"Second image\"></main>"
 
     val imageHost = rendered.host
     Runtime.unmount(root)

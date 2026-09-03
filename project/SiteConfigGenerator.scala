@@ -2,10 +2,13 @@ import sbt._
 
 /** Generates `app.SiteConfig` from `site.config.json`.
   *
-  * The deployment path must not be maintained twice. `site.config.json` feeds index.html (Vite
-  * plugin), sitemap.xml/robots.txt (tools/), and Scala code through this generator. This is
-  * deliberately a generator rather than runtime detection: SSR has no DOM and therefore cannot read
-  * a `<base href>`, while a differing basePath between server and browser breaks hydration.
+  * The deployment path must not be maintained twice. `site.config.json` feeds sitemap.xml/robots.txt
+  * (tools/) and Scala code through this generator. This is deliberately a generator rather than
+  * runtime detection: SSR has no DOM and therefore cannot read a `<base href>`, while a differing
+  * basePath between server and browser breaks hydration.
+  *
+  * Since the document head is rendered from Scala, every metadata field the head needs comes
+  * through here as well -- there is no longer an index.html that a Vite plugin could fill in.
   */
 object SiteConfigGenerator {
 
@@ -42,8 +45,16 @@ object SiteConfigGenerator {
          |
          |  val description: String = "${escape(required("description"))}"
          |
+         |  val shortDescription: String = "${escape(required("shortDescription"))}"
+         |
+         |  val author: String = "${escape(required("author"))}"
+         |
+         |  val authorUrl: String = "${escape(required("authorUrl"))}"
+         |
+         |  val codeRepository: String = "${escape(required("codeRepository"))}"
+         |
          |  /** localStorage-Schluessel des Themes -- teilt sich den Wert mit dem
-         |    * Inline-Skript in index.html. */
+         |    * Inline-Skript, das AppHead in den Dokumentkopf schreibt. */
          |  val themeStorageKey: String = "${escape(required("themeStorageKey"))}"
          |}
          |""".stripMargin

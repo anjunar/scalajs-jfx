@@ -1,8 +1,10 @@
 import express from "express"
 import { createServer as createViteServer } from "vite"
-import { readFile } from "node:fs/promises"
 import { dirname, resolve } from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
+
+import { developmentAssets, productionAssets } from "../tools/client-assets.mjs"
+import { siteConfig } from "../tools/site-config.mjs"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -11,7 +13,6 @@ const port = Number(process.env.PORT ?? 3000)
 
 const projectRoot = resolve(__dirname, "..")
 
-const clientRoot = resolve(projectRoot, "application/src/main/webapp")
 const clientDist = resolve(projectRoot, "dist/client")
 const serverEntry = resolve(projectRoot, "dist/server/entry-server.js")
 const viteConfig = resolve(projectRoot, "vite.config.js")
@@ -19,6 +20,7 @@ const viteConfig = resolve(projectRoot, "vite.config.js")
 const app = express()
 
 let vite = null
+let builtAssets = null
 
 if (!isProduction) {
     vite = await createViteServer({
@@ -32,7 +34,7 @@ if (!isProduction) {
     app.use(vite.middlewares)
 } else {
     app.use(
-        "/assets",
+        `${siteConfig.basePath}/assets` || "/assets",
         express.static(resolve(clientDist, "assets"), {
             immutable: true,
             maxAge: "1y"
@@ -40,19 +42,24 @@ if (!isProduction) {
     )
 
     app.use(
+        siteConfig.basePath || "/",
         express.static(clientDist, {
             index: false
         })
     )
 }
 
-async function loadTemplate(url) {
-    if (isProduction) {
-        return await readFile(resolve(clientDist, "index.html"), "utf-8")
+// Das ganze Dokument kommt aus dem SSR-Render -- es gibt keine index.html mehr,
+// in die etwas hineinersetzt wird. Uebrig bleiben die Asset-Tags des Bundles,
+// deren Namen erst der Build kennt; die gehen als Argument in den Render.
+async function clientAssets() {
+    if (!isProduction) return developmentAssets()
+
+    if (builtAssets === null) {
+        builtAssets = await productionAssets(clientDist)
     }
 
-    const template = await readFile(resolve(clientRoot, "index.html"), "utf-8")
-    return await vite.transformIndexHtml(url, template)
+    return builtAssets
 }
 
 async function loadServerModule() {
@@ -74,14 +81,20 @@ app.use(async (req, res, next) => {
     }
 
     try {
-        const template = await loadTemplate(url)
         const serverModule = await loadServerModule()
         const rendered = await serverModule.render(
             req.originalUrl,
             req.method,
-            JSON.stringify(req.headers)
+            JSON.stringify(req.headers),
+            JSON.stringify(await clientAssets())
         )
-        const html = template.replace("<!--app-html-->", rendered.html)
+
+        // Im Dev haengt Vite seinen HMR-Client an den Kopf. Die Head-Senke im
+        // Browser fasst nur Knoten mit data-jfx-head an, laesst ihn also stehen.
+        const html = isProduction
+            ? rendered.html
+            : await vite.transformIndexHtml(url, rendered.html)
+
         res
             .status(rendered.status)
             .set(rendered.headers)

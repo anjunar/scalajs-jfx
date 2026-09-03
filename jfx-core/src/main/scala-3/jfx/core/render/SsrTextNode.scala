@@ -10,10 +10,7 @@ final class SsrTextNode(private var value: String) extends TextNode, SsrNode {
   // anchor back into a text node.
   def renderHtml(): String =
     if (value.isEmpty) SsrTextNode.EmptyAnchor
-    else escapeText(value)
-
-  private def escapeText(value: String): String =
-    value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    else SsrTextNode.escape(value)
 }
 
 object SsrTextNode {
@@ -22,4 +19,12 @@ object SsrTextNode {
   val EmptyAnchorLabel: String = "jfx:text"
 
   val EmptyAnchor: String = s"<!--$EmptyAnchorLabel-->"
+
+  /** Escaping for HTML character data.
+    *
+    * Also used by [[jfx.core.document.HeadSink]], which builds its own nodes and therefore has to
+    * escape text itself.
+    */
+  def escape(value: String): String =
+    value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 }

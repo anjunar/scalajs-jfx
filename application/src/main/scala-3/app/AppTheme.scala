@@ -73,15 +73,12 @@ object AppTheme {
       persist(mode)
     }
 
+    // `meta[theme-color]` is not written here: AppHead registers it with the DocumentHead and
+    // keeps it in step with this property. Two writers on one head element would overwrite each
+    // other on the next reconcile.
     private def applyToDocument(mode: Mode): Unit =
-      try {
-        dom.document.documentElement.setAttribute("data-theme", mode.value)
-        Option(dom.document.querySelector("meta[name='theme-color']")).foreach { meta =>
-          meta.setAttribute("content", if (mode == Mode.Dark) "#171918" else "#eee9e1")
-        }
-      } catch {
-        case NonFatal(_) => ()
-      }
+      try dom.document.documentElement.setAttribute("data-theme", mode.value)
+      catch { case NonFatal(_) => () }
 
     private def persist(mode: Mode): Unit =
       try dom.window.localStorage.setItem(SiteConfig.themeStorageKey, mode.value)

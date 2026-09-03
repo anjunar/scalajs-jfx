@@ -446,6 +446,24 @@ object HydratingCursor {
     )
   }
 
+  /** Hydration of the whole document.
+    *
+    * The cursor sits above `<html>`, so the root component claims that element and its children
+    * claim `<head>` and `<body>`. Everything the document carries besides the document element --
+    * the doctype, comments before or after it -- belongs to no component and is skipped: the
+    * component tree starts at `<html>`.
+    */
+  def root(document: dom.Document, asyncContext: AsyncRenderContext): HydratingCursor = {
+    val session = new HydrationSession()
+    new HydratingCursor(
+      parent = document,
+      nextNode = Option(document.documentElement),
+      stopBefore = None,
+      currentAsyncContext = Some(asyncContext),
+      session = session
+    )
+  }
+
   private def firstHydratableChild(parent: dom.Node): Option[dom.Node] = {
     var current = parent.firstChild
 
