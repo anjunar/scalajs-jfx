@@ -43,6 +43,7 @@ final class TableView[S] private (
 
   val columns: ListProperty[TableColumn[S, ?]]                   = ListProperty()
   val showHeaderProperty: Property[Boolean]                      = Property(true)
+  val showFooterProperty: Property[Boolean]                      = Property(true)
   val rowHeightProperty: Property[Double]                        = Property(32.0)
   val prefWidthProperty: Property[Option[Double]]                = Property(None)
   val fixedHeightProperty: Property[Option[Double]]              = Property(None)
@@ -361,7 +362,9 @@ final class TableView[S] private (
         }
       }
 
-      renderPagingFooter("jfx-table")
+      when(showFooterProperty) {
+        renderPagingFooter("jfx-table")
+      }
     }
   }
 
@@ -575,6 +578,10 @@ object TableView {
   def showHeader(using table: TableView[?]): Boolean                = table.showHeaderProperty.get
   def showHeader_=(value: Boolean)(using table: TableView[?]): Unit =
     table.showHeaderProperty.set(value)
+
+  def showFooter(using table: TableView[?]): Boolean                = table.showFooterProperty.get
+  def showFooter_=(value: Boolean)(using table: TableView[?]): Unit =
+    table.showFooterProperty.set(value)
 
   def tablePrefWidth(using table: TableView[?]): Option[Double]        = table.prefWidthProperty.get
   def tablePrefWidth_=(value: Double)(using table: TableView[?]): Unit =

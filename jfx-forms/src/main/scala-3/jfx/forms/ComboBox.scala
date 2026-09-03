@@ -125,7 +125,11 @@ final class ComboBox[T] private (
 
             tableView[T](ComboBox.this.itemsProperty) {
               classes = Seq("jfx-combo-box__table")
+
               TableView.showHeader = false
+              TableView.showFooter = false
+              TableView.scrolling = true
+
               TableView.rowHeight = math.max(1.0, rowHeightProperty.get)
               TableView.tablePrefWidth =
                 Overlay.effectiveWidth.map(width => math.max(0.0, width - 2.0))

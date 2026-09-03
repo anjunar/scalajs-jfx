@@ -118,6 +118,17 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
     html should include("overflow: auto")
   }
 
+  it should "hide the paging footer through the TableView DSL" in {
+    val html = renderTable(Seq("Alice", "Bob")) {
+      scrolling = true
+      showFooter = false
+    }
+
+    html should include("overflow: auto")
+    html should not include "jfx-table-footer"
+    html should not include "jfx-virtualized-footer"
+  }
+
   "TableView list lifecycle" should "track inserts, updates and removals without stale rows" in {
     val items  = ListProperty(js.Array("Alice", "Cara"))
     val cursor = new SsrCursor()
