@@ -899,7 +899,7 @@ Test abgedeckt. (Wird durch **P4-1** ohnehin gebraucht.)
 
 ---
 
-### [ ] P5-7 · Architekturregeln festschreiben
+### [x] P5-7 · Architekturregeln festschreiben
 
 **Abhängig von:** P1, P2-5, P3-1
 
@@ -917,6 +917,22 @@ Regeln, die nirgends stehen. Ohne sie wandert alles zurück.
 - `Future` ist das interne Async-Modell; `js.Promise` nur an JS-Grenzen.
 - Kein requestabhängiger Zustand in `object`s (SSR läuft im geteilten Prozess).
 - Wo Styling herkommt (Ergebnis aus **P5-2**).
+
+**Ergebnis.** Neu: `ARCHITECTURE.md`. `AGENTS.md` verweist darauf, statt die
+Regeln zu duplizieren — dort steht Arbeitsweise, hier Architektur.
+
+Inhalt: Modulgraph mit allen Kanten aus `build.sbt` samt Publish-Status (und
+dem Detail, dass `jfx-controls → jfx-viewport` nur `test->compile` ist), die
+Publish-Regel, Paketwurzel = Modulname (mit der einen dokumentierten Ausnahme
+`jfx-controls` → `jfx.control`), was `jfx-core` nicht enthält, `Future` als
+internes Async-Modell mit den genau drei erlaubten `js.Promise`-Grenzen
+(`Remote`, `WebAuthn`, `Main`s JSExport — nachgezählt, nicht behauptet), die
+Regel gegen requestabhängigen Zustand in `object`s samt Prüfsatz, die
+Styling-Zuständigkeiten als Verweis auf das Ergebnis von P5-2, und die Form,
+in der Fehler gemeldet werden (Ergebnis von P5-4).
+
+Am Ende eine Checkliste in sechs Schritten, mit der sich ein neues Modul
+einordnen lässt.
 
 **Fertig wenn.** Ein neues Modul lässt sich anhand des Dokuments einordnen, ohne
 Rückfrage.

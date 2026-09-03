@@ -17,5 +17,11 @@ Vollständiger Lauf über alle Module:
 sbtn "Test/testOnly *"
 ```
 
-Das ist der Befehl, der vor einem Commit grün sein muss (aktuell 120 Tests).
+Das ist der Befehl, der vor einem Commit grün sein muss (aktuell 211 Tests).
 `sbtn test` ist für die schnelle Schleife während der Arbeit gedacht.
+
+## Architektur
+
+Die Regeln — Modulgraph, Paketwurzeln, Async-Modell, Zustand im SSR-Prozess,
+Styling-Zuständigkeiten — stehen in [`ARCHITECTURE.md`](ARCHITECTURE.md). Vor
+einem neuen Modul oder einer neuen Modulkante dort nachsehen.
