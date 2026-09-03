@@ -27,9 +27,9 @@ import ScalaJsViteSupport.*
 // 4. Slash-Syntax ist Pflicht, 0.13-Syntax ist entfernt. War hier schon so.
 // ---------------------------------------------------------------------------
 
-version := "3.0.0-SNAPSHOT"
-organization := "com.anjunar"
-organizationName := "Anjunar"
+version              := "3.0.0-SNAPSHOT"
+organization         := "com.anjunar"
+organizationName     := "Anjunar"
 organizationHomepage := Some(url("https://github.com/anjunar"))
 
 scalaVersion := "3.3.8"
@@ -59,7 +59,7 @@ developers := List(
 versionScheme := Some("early-semver")
 
 pomIncludeRepository := { _ => false }
-publishMavenStyle := true
+publishMavenStyle    := true
 
 publishTo := {
   val centralSnapshots = "https://central.sonatype.com/repository/maven-snapshots/"
@@ -132,9 +132,9 @@ lazy val commonLibrarySettings = Seq(
   //     val readme = (LocalRootProject / baseDirectory).value / "README.md"
   //     fileConverter.value.toVirtualFile(readme.toPath) -> "README.md"
   //   }
-  Compile / doc / sources := Seq.empty,
-  libraryDependencies += "org.scala-js" %% "scalajs-dom" % "2.8.1",
-  libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.19" % Test
+  Compile / doc / sources                := Seq.empty,
+  libraryDependencies += "org.scala-js"  %% "scalajs-dom" % "2.8.1",
+  libraryDependencies += "org.scalatest" %% "scalatest"   % "3.2.19" % Test
 )
 
 // Publish-Regel: Ein publiziertes Modul darf nur auf publizierte Module und externe
@@ -146,8 +146,8 @@ lazy val commonLibrarySettings = Seq(
 lazy val jfxCore = Project(id = "scalajs-jfx-core", base = file("jfx-core"))
   .enablePlugins(ScalaJSPlugin)
   .settings(
-    name := "scalajs-jfx-core",
-    moduleName := "scalajs-jfx-core",
+    name                                 := "scalajs-jfx-core",
+    moduleName                           := "scalajs-jfx-core",
     libraryDependencies += "com.anjunar" %% "scala-reflect" % "1.1.3"
   )
   .settings(commonLibrarySettings)
@@ -157,7 +157,7 @@ lazy val jfxRouter = Project(id = "scalajs-jfx-router", base = file("jfx-router"
   .enablePlugins(ScalaJSPlugin)
   .dependsOn(jfxCore)
   .settings(
-    name := "scalajs-jfx-router",
+    name       := "scalajs-jfx-router",
     moduleName := "scalajs-jfx-router"
   )
   .settings(commonLibrarySettings)
@@ -167,7 +167,7 @@ lazy val jfxViewport = Project(id = "scalajs-jfx-viewport", base = file("jfx-vie
   .enablePlugins(ScalaJSPlugin)
   .dependsOn(jfxCore)
   .settings(
-    name := "scalajs-jfx-viewport",
+    name       := "scalajs-jfx-viewport",
     moduleName := "scalajs-jfx-viewport"
   )
   .settings(commonLibrarySettings)
@@ -177,8 +177,8 @@ lazy val jfxJson = Project(id = "scalajs-jfx-json", base = file("jfx-json"))
   .enablePlugins(ScalaJSPlugin)
   .dependsOn(jfxCore)
   .settings(
-    name := "scalajs-jfx-json",
-    moduleName := "scalajs-jfx-json",
+    name                                 := "scalajs-jfx-json",
+    moduleName                           := "scalajs-jfx-json",
     libraryDependencies += "com.anjunar" %% "scala-reflect" % "1.1.3"
   )
   .settings(commonLibrarySettings)
@@ -191,7 +191,7 @@ lazy val jfxControls = Project(id = "scalajs-jfx-controls", base = file("jfx-con
   // in seiner compose bereitstellt. Siehe CHANGE.md P1-4.
   .dependsOn(jfxCore, jfxViewport % "test->compile")
   .settings(
-    name := "scalajs-jfx-controls",
+    name       := "scalajs-jfx-controls",
     moduleName := "scalajs-jfx-controls"
   )
   .settings(commonLibrarySettings)
@@ -201,8 +201,8 @@ lazy val jfxForms = Project(id = "scalajs-jfx-forms", base = file("jfx-forms"))
   .enablePlugins(ScalaJSPlugin)
   .dependsOn(jfxCore, jfxControls, jfxViewport)
   .settings(
-    name := "scalajs-jfx-forms",
-    moduleName := "scalajs-jfx-forms",
+    name                                       := "scalajs-jfx-forms",
+    moduleName                                 := "scalajs-jfx-forms",
     libraryDependencies += "io.github.cquiroz" %% "scala-java-time" % "2.6.0"
   )
   .settings(commonLibrarySettings)
@@ -212,10 +212,10 @@ lazy val jfxEditor = Project(id = "scalajs-jfx-editor", base = file("jfx-editor"
   .enablePlugins(ScalaJSPlugin)
   .dependsOn(jfxForms)
   .settings(
-    name := "scalajs-jfx-editor",
-    moduleName := "scalajs-jfx-editor",
+    name                                 := "scalajs-jfx-editor",
+    moduleName                           := "scalajs-jfx-editor",
     libraryDependencies += "com.anjunar" %% "scalajs-lexical" % "1.3.0",
-    publish / skip := true
+    publish / skip                       := true
   )
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
@@ -223,7 +223,7 @@ lazy val jfxEditor = Project(id = "scalajs-jfx-editor", base = file("jfx-editor"
 lazy val jfxWebAuthn = Project(id = "scalajs-jfx-webauthn", base = file("jfx-webAuthn"))
   .enablePlugins(ScalaJSPlugin)
   .settings(
-    name := "scalajs-jfx-webauthn",
+    name       := "scalajs-jfx-webauthn",
     moduleName := "scalajs-jfx-webauthn"
   )
   .settings(commonLibrarySettings)

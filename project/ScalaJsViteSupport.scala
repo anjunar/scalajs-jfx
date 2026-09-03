@@ -33,10 +33,12 @@ object ScalaJsViteSupport {
     val sourceMapFile = outputDirectory / "main.js.map"
 
     if (!sourceMapFile.exists()) {
-      log.warn(s"Skipping sourcemap sanitization because ${sourceMapFile.getAbsolutePath} is missing.")
+      log.warn(
+        s"Skipping sourcemap sanitization because ${sourceMapFile.getAbsolutePath} is missing."
+      )
     } else {
       val scriptFile = repoRoot / "tools" / "sanitize-scalajs-sourcemap.mjs"
-      val exitCode = Process(
+      val exitCode   = Process(
         Seq("node", scriptFile.getAbsolutePath, sourceMapFile.getAbsolutePath),
         repoRoot
       ).!(ProcessLogger(log.info(_), log.warn(_)))

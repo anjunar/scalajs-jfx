@@ -48,8 +48,7 @@ private[remote] final class LoadedRanges[V] {
   def clear(): Unit = ranges.clear()
 
   /** Index of the range containing `absolute`. If no range contains it, returns
-    * `-(insertionPosition) - 1` -- the same convention as
-    * `java.util.Arrays.binarySearch`.
+    * `-(insertionPosition) - 1` -- the same convention as `java.util.Arrays.binarySearch`.
     */
   private def search(absolute: Int): Int = {
     var low  = 0

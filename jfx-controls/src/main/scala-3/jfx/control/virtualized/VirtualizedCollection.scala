@@ -184,8 +184,8 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
     *
     * Separated from [[updateViewportSize]] so applying it is testable without a DOM. The protected
     * bug was here: the base initially applied only height because it came from VirtualListView.
-    * TableView and DataGrid also need width; without it both remained at their initial 800, the grid
-    * showed one column too few, and the table distributed widths over too narrow a surface.
+    * TableView and DataGrid also need width; without it both remained at their initial 800, the
+    * grid showed one column too few, and the table distributed widths over too narrow a surface.
     */
   private[control] def applyViewportSize(width: Double, height: Double): Unit = {
     if (width > 0) onViewportWidthMeasured(width)
@@ -219,8 +219,8 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
     onViewportMeasured()
   }
 
-  /** Hook after a viewport measurement. CrawlableCollection uses it to restore saved scroll position
-    * and release hydration.
+  /** Hook after a viewport measurement. CrawlableCollection uses it to restore saved scroll
+    * position and release hydration.
     */
   protected def onViewportMeasured(): Unit = ()
 
@@ -342,8 +342,9 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
       case _ => ()
     }
 
-  /** A loading Future whose result the control does not need. recover prevents an unhandled failure;
-    * the error itself lives in RemoteListProperty.errorProperty and is rendered from there.
+  /** A loading Future whose result the control does not need. recover prevents an unhandled
+    * failure; the error itself lives in RemoteListProperty.errorProperty and is rendered from
+    * there.
     */
   protected def discardResult(result: Future[?]): Unit = {
     result.recover { case _ => () }(using scala.concurrent.ExecutionContext.global)

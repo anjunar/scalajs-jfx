@@ -15,7 +15,8 @@ import scala.scalajs.js
   *
   * Before P4-3 there were two answers. `Runtime.mountWithCursor` added the child, and
   * `Foreach.mountAt` then rebuilt the list with `syncChildOrder()` from its own bookkeeping. This
-  * went unnoticed while only Foreach mounted children -- everything else vanished at reconciliation.
+  * went unnoticed while only Foreach mounted children -- everything else vanished at
+  * reconciliation.
   *
   * Now only Runtime writes: at the supplied position during mount and removes during unmount.
   */

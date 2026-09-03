@@ -34,8 +34,8 @@ private[control] object CrawlCookieState {
     * every crawlable list a visitor has ever scrolled is then attached to *every* request to this
     * origin, including assets. Over a year, this accumulates permanently.
     *
-    * Path=/ remains: the SSR page reads the state from the cookie header, while the control does not
-    * know its route and therefore cannot narrow the path.
+    * Path=/ remains: the SSR page reads the state from the cookie header, while the control does
+    * not know its route and therefore cannot narrow the path.
     *
     * See CHANGE.md P3-2.
     */

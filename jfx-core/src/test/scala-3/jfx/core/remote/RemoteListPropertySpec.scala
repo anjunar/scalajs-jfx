@@ -99,7 +99,7 @@ class RemoteListPropertySpec extends AnyFlatSpec with Matchers {
   }
 
   it should "keep a known total count when a later range response omits it" in {
-    val total = 10000
+    val total  = 10000
     val remote = RemoteListProperty[String, PageQuery](
       loader = RemoteLoader { query =>
         val from = math.max(0, query.index)
@@ -154,7 +154,7 @@ class RemoteListPropertySpec extends AnyFlatSpec with Matchers {
 
   it should "let a reload redefine a known total count as unknown" in {
     var reportedTotal = Option(1000)
-    val remote = RemoteListProperty[String, PageQuery](
+    val remote        = RemoteListProperty[String, PageQuery](
       loader = RemoteLoader { query =>
         val from = math.max(0, query.index)
         Future.successful(

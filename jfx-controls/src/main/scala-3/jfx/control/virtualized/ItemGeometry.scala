@@ -15,8 +15,8 @@ package jfx.control.virtualized
   *   VirtualListView  measured             1         overscanPx   (Property)
   * }}}
   *
-  * Implementations may keep state -- [[MeasuredRowGeometry]] holds measured heights and their prefix
-  * sums.
+  * Implementations may keep state -- [[MeasuredRowGeometry]] holds measured heights and their
+  * prefix sums.
   *
   * See jfx-controls/VIRTUALIZATION.md and CHANGE.md P3-1.
   */

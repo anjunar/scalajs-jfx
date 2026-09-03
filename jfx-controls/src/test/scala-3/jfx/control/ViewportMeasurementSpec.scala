@@ -15,10 +15,11 @@ import org.scalatest.matchers.should.Matchers
 
 /** The measured viewport size must be applied on both axes.
   *
-  * Regression for P3-1: the shared base initially adopted only height because its updateViewportSize
-  * came from VirtualListView -- the only one of the three controls that is single-column and does
-  * not need width. TableView and DataGrid therefore stayed at their initial value of 800: the grid
-  * showed one column too few and the table distributed column widths over too narrow a surface.
+  * Regression for P3-1: the shared base initially adopted only height because its
+  * updateViewportSize came from VirtualListView -- the only one of the three controls that is
+  * single-column and does not need width. TableView and DataGrid therefore stayed at their initial
+  * value of 800: the grid showed one column too few and the table distributed column widths over
+  * too narrow a surface.
   *
   * The test targets applyViewportSize rather than updateViewportSize so it needs no DOM.
   */

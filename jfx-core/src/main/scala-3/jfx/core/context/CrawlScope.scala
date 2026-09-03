@@ -12,9 +12,9 @@ import jfx.core.di.Context
   * The application decides who provides the scope. Usually it is the router (jfx-router provides
   * itself as a CrawlScope in `compose`); an application without a router may use any other source.
   *
-  * When the scope is missing, [[CrawlScope.path]] returns an empty string -- the controls then render
-  * no crawl link. This is the correct failure mode: without a known path, there is no link a crawler
-  * can meaningfully follow.
+  * When the scope is missing, [[CrawlScope.path]] returns an empty string -- the controls then
+  * render no crawl link. This is the correct failure mode: without a known path, there is no link a
+  * crawler can meaningfully follow.
   */
 trait CrawlScope {
 

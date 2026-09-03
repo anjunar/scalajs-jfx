@@ -13,10 +13,10 @@ import scala.scalajs.js
 
 /** Scaling behavior of [[Foreach]].
   *
-  * Basis for CHANGE.md P4-2. Its first step explicitly required measuring first -- rightly so:
-  * the suspected causes (`domOffset`, `domNodeCount`, `physicalHosts`) were wrong. Nobody called
-  * the first two, and construction did not depend on them. Measurement located the quadratic time
-  * in the linear search for the insertion marker in `SsrHostElement.insertBefore`.
+  * Basis for CHANGE.md P4-2. Its first step explicitly required measuring first -- rightly so: the
+  * suspected causes (`domOffset`, `domNodeCount`, `physicalHosts`) were wrong. Nobody called the
+  * first two, and construction did not depend on them. Measurement located the quadratic time in
+  * the linear search for the insertion marker in `SsrHostElement.insertBefore`.
   *
   * The measurement does not test an absolute time, but the curve's shape: four times as many
   * elements must not cost sixteen times as much time. Absolute thresholds are meaningless on

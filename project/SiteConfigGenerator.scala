@@ -1,13 +1,12 @@
 import sbt._
 
-/**
- * Generates `app.SiteConfig` from `site.config.json`.
- *
- * The deployment path must not be maintained twice. `site.config.json` feeds
- * index.html (Vite plugin), sitemap.xml/robots.txt (tools/), and Scala code through this generator.
- * This is deliberately a generator rather than runtime detection: SSR has no DOM and therefore
- * cannot read a `<base href>`, while a differing basePath between server and browser breaks hydration.
- */
+/** Generates `app.SiteConfig` from `site.config.json`.
+  *
+  * The deployment path must not be maintained twice. `site.config.json` feeds index.html (Vite
+  * plugin), sitemap.xml/robots.txt (tools/), and Scala code through this generator. This is
+  * deliberately a generator rather than runtime detection: SSR has no DOM and therefore cannot read
+  * a `<base href>`, while a differing basePath between server and browser breaks hydration.
+  */
 object SiteConfigGenerator {
 
   def apply(configFile: File, sourceManagedDir: File): Seq[File] = {
@@ -66,11 +65,10 @@ object SiteConfigGenerator {
   private def escape(value: String): String =
     value.replace("\\", "\\\\").replace("\"", "\\\"")
 
-  /**
-   * Minimal parser for the flat string fields in site.config.json. Arrays and nested objects are
-   * ignored -- Scala does not need them, and a JSON library in the build definition would be
-   * disproportionate for this purpose.
-   */
+  /** Minimal parser for the flat string fields in site.config.json. Arrays and nested objects are
+    * ignored -- Scala does not need them, and a JSON library in the build definition would be
+    * disproportionate for this purpose.
+    */
   private def parse(json: String): Map[String, String] = {
     val entry = """"([A-Za-z0-9_]+)"\s*:\s*"((?:[^"\\]|\\.)*)"""".r
     entry

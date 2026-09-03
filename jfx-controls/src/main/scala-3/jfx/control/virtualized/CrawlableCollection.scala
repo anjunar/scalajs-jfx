@@ -16,9 +16,10 @@ import org.scalajs.dom
   * no-longer-equivalent versions.
   *
   * '''Cookie rather than query parameters''' -- decided in P3-2. The state remains in the cookie.
-  * It describes where a visitor was in a list, not what the page displays; it belongs in the URL only
-  * if it should be shareable, which it explicitly should not. Anyone reviving the CHANGE.md proposal
-  * (`?table.offset=…`) must reverse this decision rather than merely restore its implementation.
+  * It describes where a visitor was in a list, not what the page displays; it belongs in the URL
+  * only if it should be shareable, which it explicitly should not. Anyone reviving the CHANGE.md
+  * proposal (`?table.offset=…`) must reverse this decision rather than merely restore its
+  * implementation.
   */
 trait CrawlableCollection[T] { self: VirtualizedCollection[T] =>
 

@@ -16,8 +16,8 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
   * This went unnoticed only because every demo route used Future.successful; the first real data
   * route would have broken hydration. SSR was therefore effectively usable only for static pages.
   *
-  * The router now adopts the server-rendered tree without validation and replaces it when the loader
-  * completes. The cost is a second load -- deliberately chosen instead of an SSR data cache.
+  * The router now adopts the server-rendered tree without validation and replaces it when the
+  * loader completes. The cost is a second load -- deliberately chosen instead of an SSR data cache.
   */
 class AsyncHydrationSpec extends AnyFlatSpec with Matchers {
 

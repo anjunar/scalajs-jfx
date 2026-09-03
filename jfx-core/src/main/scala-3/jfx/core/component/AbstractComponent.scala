@@ -76,9 +76,9 @@ abstract class AbstractComponent
 
   /** This component's first DOM node, without collecting the others.
     *
-    * [[physicalHosts]] builds the complete subtree. Callers that only need its start -- for example,
-    * Foreach to determine an insertion position -- would otherwise pay that cost for every insert.
-    * See CHANGE.md P4-2.
+    * [[physicalHosts]] builds the complete subtree. Callers that only need its start -- for
+    * example, Foreach to determine an insertion position -- would otherwise pay that cost for every
+    * insert. See CHANGE.md P4-2.
     */
   def firstPhysicalHost: Option[HostNode] =
     if (!isVirtual && _host != null) Some(_host)
