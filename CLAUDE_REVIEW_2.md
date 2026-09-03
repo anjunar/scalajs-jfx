@@ -1,6 +1,6 @@
 # REVIEW.md — Architektur-Review scalajs-jfx 3.0
 
-Zweites Review, 2026-09-03, nach Abschluss von `CHANGE.md`. Quellenbasis: alle
+Zweites Review, 2026-09-03, nach Abschluss von `CLAUDE_REVIEW_1.md`. Quellenbasis: alle
 neun Module, `build.sbt`, `server/`, `tools/`, `npm/scalajs-jfx/`.
 
 Anlass ist der nächste Schritt: **JFX3 in `simplicity-blog` einsetzen.** Das
@@ -270,7 +270,7 @@ Ein einziger Durchlauf mit Regex-Ersetzung löst es.
   nicht die zuletzt gestellte Anfrage.
 - `Image` bietet weder `loading`, `srcset` noch `width`/`height` — für einen
   Blog mit Bildern die drei Attribute, die den Layout-Shift bestimmen.
-- Kommentare im Quelltext sind englisch, `CHANGE.md`/`ARCHITECTURE.md`/
+- Kommentare im Quelltext sind englisch, `CLAUDE_REVIEW_1.md`/`ARCHITECTURE.md`/
   `AGENTS.md` deutsch. Beides in Ordnung, aber die Grenze sollte irgendwo
   stehen.
 
@@ -303,7 +303,7 @@ abgeschlossen.
 
 ---
 
-## Offen aus `CHANGE.md`
+## Offen aus `CLAUDE_REVIEW_1.md`
 
 - **P5-2, Schritt 2** — `npm publish` von `@anjunar/scalajs-jfx@3.0.0` steht
   noch aus. Bis dahin bekommt `simplicity-blog` das Paket nur über `file:`, also

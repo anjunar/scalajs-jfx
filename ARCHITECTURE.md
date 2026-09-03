@@ -1,6 +1,6 @@
 # ARCHITECTURE.md — Regeln für scalajs-jfx
 
-Die Befunde aus `CHANGE.md` waren größtenteils Verstöße gegen Regeln, die
+Die Befunde aus `CLAUDE_REVIEW_1.md` waren größtenteils Verstöße gegen Regeln, die
 nirgends standen. Hier stehen sie. Wer ein neues Modul, Paket oder eine neue
 Fähigkeit einordnen muss, sollte das anhand dieses Dokuments ohne Rückfrage
 können.
@@ -157,7 +157,7 @@ hat.
 
 Scala-/JavaScript-Quelltext, Bezeichner, Kommentare und Scaladoc sind Englisch. Die
 projektweiten Arbeits- und Entscheidungsdokumente (`AGENTS.md`, `ARCHITECTURE.md`,
-`CHANGE.md`, `REVIEW.md`) sowie betriebliche Kommentare im Build sind Deutsch.
+`CLAUDE_REVIEW_1.md`, `CLAUDE_REVIEW_2.md`) sowie betriebliche Kommentare im Build sind Deutsch.
 
 Die Grenze folgt dem Publikum: publizierter Quelltext ist Teil der Bibliotheks-API;
 Repository-Prozess und Buildbetrieb richten sich an die Maintainer dieses Projekts.

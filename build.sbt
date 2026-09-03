@@ -77,7 +77,7 @@ publishTo := {
 //   gehoert untersucht statt umschifft (AGENTS.md: keine Workarounds).
 //
 // `Global / concurrentRestrictions += Tags.limitAll(1)`
-//   Serialisierte den kompletten Build ueber neun Module. Siehe CHANGE.md P5-5.
+//   Serialisierte den kompletten Build ueber neun Module. Siehe CLAUDE_REVIEW_1.md P5-5.
 //   Wenn der Build ohne diese Zeile bricht, bitte den echten Fehler notieren.
 // ----------------------------------------------------------------------------
 
@@ -109,7 +109,7 @@ lazy val commonJsSettings = Seq(
     .withSourceMap(true),
   // Die Sourcemap-Basis muss pro Link-Task auf dessen eigenes Ausgabeverzeichnis
   // zeigen. Vorher stand nur ein gemeinsamer Wert da, der auch fuer fullLinkJS
-  // aufs fastopt-Verzeichnis zeigte. Siehe CHANGE.md P5-5, Punkt 3.
+  // aufs fastopt-Verzeichnis zeigte. Siehe CLAUDE_REVIEW_1.md P5-5, Punkt 3.
   Compile / fastLinkJS / scalaJSLinkerConfig := scalaJSLinkerConfig.value
     .withRelativizeSourceMapBase(
       Some((Compile / fastLinkJS / scalaJSLinkerOutputDirectory).value.toURI)
@@ -188,7 +188,7 @@ lazy val jfxControls = Project(id = "scalajs-jfx-controls", base = file("jfx-con
   .enablePlugins(ScalaJSPlugin)
   // Kein jfxRouter: eine generische Tabelle darf nicht wissen, dass es Routing
   // gibt. Den aktuellen Pfad liefert jfx.core.context.CrawlScope, den der Router
-  // in seiner compose bereitstellt. Siehe CHANGE.md P1-4.
+  // in seiner compose bereitstellt. Siehe CLAUDE_REVIEW_1.md P1-4.
   .dependsOn(jfxCore, jfxViewport % "test->compile")
   .settings(
     name       := "scalajs-jfx-controls",
@@ -243,7 +243,7 @@ lazy val app = Project(id = "scalajs-jfx-demo", base = file("application"))
   )
   .settings(
     scalaJSUseMainModuleInitializer := false,
-    // Die Integrationsschicht — SSR, Router, i18n, Theme — hatte keine Tests. Siehe CHANGE.md P5-6.
+    // Die Integrationsschicht — SSR, Router, i18n, Theme — hatte keine Tests. Siehe CLAUDE_REVIEW_1.md P5-6.
     // Nur die Test-Abhaengigkeit, nicht `commonLibrarySettings`: das Demo-Modul wird nicht
     // publiziert und braucht weder Doc-Jar-Regeln noch eine eigene scalajs-dom-Zeile.
     libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.19" % Test,
