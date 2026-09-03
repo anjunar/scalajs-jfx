@@ -1,7 +1,7 @@
 package jfx.core.state
 
 import scala.collection.mutable
-import scala.compiletime.uninitialized
+import scala.util.DynamicVariable
 
 final class Property[T](private var value: T) extends ReadOnlyProperty[T] {
 
@@ -42,8 +42,23 @@ final class Property[T](private var value: T) extends ReadOnlyProperty[T] {
     set(defaultValue)
 
   def setAlways(newValue: T): Unit = {
-    value = newValue
-    listeners.toVector.foreach(_(newValue))
+    Property.withPropagation { propagation =>
+      if (propagation.active.contains(this)) {
+        throw new IllegalStateException(
+          "Property propagation cycle detected while notifying observers."
+        )
+      }
+
+      propagation.active += this
+      try {
+        value = newValue
+        listeners.toVector.foreach(listener =>
+          Property.withPropagation(propagation)(listener(newValue))
+        )
+      } finally {
+        propagation.active -= this
+      }
+    }
   }
 
   override def observe(listener: T => Unit): Disposable = {
@@ -63,6 +78,23 @@ final class Property[T](private var value: T) extends ReadOnlyProperty[T] {
 }
 
 object Property {
+
+  private final class Propagation {
+    val active = mutable.HashSet.empty[Property[?]]
+  }
+
+  // Property notifications are synchronous. The context is only installed while an observer
+  // chain is executing, so independent asynchronous callbacks cannot share a propagation.
+  private val propagationContext = new DynamicVariable[Propagation | Null](null)
+
+  private def withPropagation[T](body: Propagation => T): T = {
+    val propagation = Option(propagationContext.value).getOrElse(new Propagation())
+    withPropagation(propagation)(body(propagation))
+  }
+
+  private def withPropagation[T](propagation: Propagation)(body: => T): T = {
+    propagationContext.withValue(propagation)(body)
+  }
 
   def apply[T](value: T): Property[T] =
     new Property[T](value)

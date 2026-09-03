@@ -6,12 +6,29 @@ import scala.concurrent.{ExecutionContext, Future}
 final class AsyncRenderContext(using ec: ExecutionContext) {
   private val tasks      = ArrayBuffer.empty[Future[Unit]]
   private var collecting = true
+  private var cancelled  = false
 
   private val MaxDrainDepth = 100
 
+  /** Whether async work is still allowed to complete a render. */
+  def isActive: Boolean =
+    collecting && !cancelled
+
   def add(task: Future[Unit]): Unit = {
     if (collecting) tasks += task
-    else task.failed.foreach(ec.reportFailure)(ec)
+    else if (!cancelled) task.failed.foreach(ec.reportFailure)(ec)
+  }
+
+  /** Stops accepting render work after an aborted render.
+    *
+    * The underlying futures cannot be cancelled by Scala's Future API. This closes the render
+    * context, drops its bookkeeping and lets framework-owned continuations guard their mutations
+    * with [[isActive]].
+    */
+  def cancel(): Unit = {
+    cancelled = true
+    collecting = false
+    tasks.clear()
   }
 
   def drain(): Future[Unit] = {

@@ -7,9 +7,17 @@ import jfx.core.render.{Cursor, HostElement, SsrCursor, VirtualHost}
 import jfx.core.render.*
 
 import scala.annotation.tailrec
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.scalajs.js.timers.{clearTimeout, setTimeout}
+
+final class SsrTimeoutException(val timeoutMs: Int)
+    extends RuntimeException(s"SSR render timed out after $timeoutMs ms") {
+  val status: Int = 504
+}
 
 object Runtime {
+
+  val DefaultSsrTimeoutMs: Int = 10_000
 
   /** Mounts `component` below `parent`.
     *
@@ -109,16 +117,41 @@ object Runtime {
 
   def renderToStringAsync(
       build: SsrCursor => AbstractComponent
+  )(using ec: ExecutionContext): Future[String] =
+    renderToStringAsync(build, DefaultSsrTimeoutMs)
+
+  /** Asynchronously renders an SSR tree, failing and disposing it when the deadline expires. */
+  def renderToStringAsync(
+      build: SsrCursor => AbstractComponent,
+      timeoutMs: Int
   )(using ec: ExecutionContext): Future[String] = {
+    require(timeoutMs > 0, "SSR timeout must be greater than zero")
+
     val async  = new AsyncRenderContext()
     val cursor = new SsrCursor(async)
 
-    val root = build(cursor)
+    val root =
+      try build(cursor)
+      catch {
+        case error: Throwable =>
+          async.cancel()
+          return Future.failed(error)
+      }
 
-    async.drain().transform { result =>
-      try result.map(_ => renderMountedRoot(root, cursor))
-      finally root.dispose()
+    val timeout = Promise[Unit]()
+    val timeoutHandle = setTimeout(timeoutMs.toDouble) {
+      timeout.tryFailure(new SsrTimeoutException(timeoutMs))
     }
+
+    Future
+      .firstCompletedOf(Seq(async.drain(), timeout.future))
+      .transform { result =>
+        clearTimeout(timeoutHandle)
+        if (result.isFailure) async.cancel()
+
+        try result.map(_ => renderMountedRoot(root, cursor))
+        finally root.dispose()
+      }
   }
 
   def unmount(component: AbstractComponent): Unit = {

@@ -3,11 +3,12 @@ package app
 import jfx.core.async.AsyncRenderContext
 import jfx.core.component.{AbstractComponent, Runtime}
 import jfx.core.document.ClientAssetsJson
-import jfx.core.render.{Cursor, HydratingCursor}
+import jfx.core.render.{Cursor, DomCursor, HydratingCursor}
 import jfx.core.request.{RequestContext, RequestHeaders, RequestHeadersJson}
 import org.scalajs.dom
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
+import scala.scalajs.LinkingInfo
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.*
 import scala.scalajs.js.annotation.JSExportTopLevel
@@ -34,18 +35,61 @@ object Main {
     // The document itself is hydrated, not a container inside it: `<html>`, `<head>` and `<body>`
     // are components now. The bundle's own script and stylesheet tags are not re-registered here --
     // the browser head sink leaves server-rendered entries it never managed alone.
-    val hydratingCursor =
-      HydratingCursor.root(dom.document, async)
+    var hydratedDocument = Option.empty[AbstractComponent]
 
-    render(hydratingCursor, request, url)
+    val hydration =
+      try {
+        val hydratingCursor = HydratingCursor.root(dom.document, async)
+        hydratedDocument = Some(render(hydratingCursor, request, url))
 
-    async
-      .drain()
-      .map { _ =>
-        hydratingCursor.completeHydration()
+        async
+          .drain()
+          .map { _ =>
+            hydratingCursor.completeHydration()
+          }
+      } catch {
+        case error: Throwable => Future.failed(error)
+      }
+
+    hydration
+      .recoverWith { case error =>
+        // A failed attempt may have installed listeners and async continuations before the
+        // mismatch became visible. Close that tree in every build mode before deciding whether to
+        // rethrow or recover.
+        async.cancel()
+        hydratedDocument.foreach(Runtime.unmount)
+
+        if (LinkingInfo.developmentMode) {
+          Future.failed(error)
+        } else {
+          dom.console.warn(s"Hydration failed; falling back to client rendering: ${error.getMessage}")
+          renderClientSide(request, url)
+        }
       }
       .toJSPromise
   }
+
+  private def renderClientSide(
+      request: RequestContext,
+      url: String
+  )(using ec: ExecutionContext): Future[Unit] =
+    Option(dom.document.getElementById("root")) match {
+      case Some(root) =>
+        while (root.firstChild != null) root.removeChild(root.firstChild)
+
+        val async = new AsyncRenderContext()
+        try {
+          Runtime.mount(new App(request, url), DomCursor.root(root, async))
+          async.drain()
+        } catch {
+          case error: Throwable =>
+            async.cancel()
+            Future.failed(error)
+        }
+
+      case None =>
+        Future.failed(new IllegalStateException("Hydration recovery could not find #root."))
+    }
 
   /** Renders the complete document for `path`.
     *

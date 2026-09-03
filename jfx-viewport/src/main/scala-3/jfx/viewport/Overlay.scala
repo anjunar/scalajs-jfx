@@ -9,6 +9,8 @@ import jfx.core.render.{Cursor, DomHostElement}
 import jfx.core.state.{Disposable, Property, ReadOnlyProperty}
 import org.scalajs.dom
 
+import scala.scalajs.js
+
 final class Overlay private[viewport] (conf: Viewport.OverlayConf) extends AbstractComponent {
   override val tagName: String = "div"
 
@@ -90,14 +92,34 @@ final class Overlay private[viewport] (conf: Viewport.OverlayConf) extends Abstr
         case Some(height) => overlayElement.style.maxHeight = s"${height}px"
         case None         => overlayElement.style.removeProperty("max-height")
       }
-
-      animationFrame = Some(dom.window.requestAnimationFrame(_ => applyPosition()))
     }
 
-    animationFrame = Some(dom.window.requestAnimationFrame(_ => applyPosition()))
+    def schedulePosition(): Unit =
+      if (!disposed && animationFrame.isEmpty) {
+        animationFrame = Some(
+          dom.window.requestAnimationFrame { _ =>
+            animationFrame = None
+            applyPosition()
+          }
+        )
+      }
+
+    val reposition: js.Function1[dom.Event, Unit] = _ => schedulePosition()
+
+    // Position immediately so the initial layout does not wait for a frame. Subsequent changes
+    // are event-driven; scroll is captured on the document because the anchor may live in a
+    // scrollable element rather than in the window itself.
+    applyPosition()
+    dom.window.addEventListener("resize", reposition)
+    dom.window.addEventListener("scroll", reposition)
+    dom.document.addEventListener("scroll", reposition, true)
+
     Disposable {
       disposed = true
       animationFrame.foreach(dom.window.cancelAnimationFrame)
+      dom.window.removeEventListener("resize", reposition)
+      dom.window.removeEventListener("scroll", reposition)
+      dom.document.removeEventListener("scroll", reposition, true)
     }
   }
 }

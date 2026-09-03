@@ -1,6 +1,6 @@
 package jfx.core.async
 
-import jfx.core.component.{AbstractComponent, Runtime}
+import jfx.core.component.{AbstractComponent, Runtime, SsrTimeoutException}
 import jfx.core.layout.TextComponent
 import jfx.core.render.{Cursor, HostNode}
 import jfx.core.state.Disposable
@@ -12,6 +12,9 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 
 class AsyncRenderContextSpec extends AsyncFlatSpec with Matchers {
+
+  override implicit def executionContext: ExecutionContext =
+    scala.scalajs.concurrent.JSExecutionContext.queue
 
   "AsyncRenderContext" should "propagate rendering failures" in {
     val context = new AsyncRenderContext()
@@ -154,6 +157,25 @@ class AsyncRenderContextSpec extends AsyncFlatSpec with Matchers {
       .recover { case _ =>
         disposed shouldBe true
       }
+  }
+
+  it should "time out and dispose a render that never completes" in {
+    var disposed = false
+    val pending  = Promise[Unit]()
+
+    val rendered = Runtime.renderToStringAsync(
+      { cursor =>
+        val root = Runtime.mount(new AsyncRoot(() => disposed = true), cursor)
+        cursor.asyncContext.get.add(pending.future)
+        root
+      },
+      timeoutMs = 10
+    )
+
+    recoverToExceptionIf[SsrTimeoutException](rendered).map { error =>
+      error.timeoutMs shouldBe 10
+      disposed shouldBe true
+    }
   }
 
   private final class AsyncRoot(

@@ -215,7 +215,10 @@ class Router(
 
           val handled =
             loaded.transform { result =>
-              if (renderContext.token == renderToken) {
+              val renderMayContinue =
+                asyncContext.forall(_.isActive) || (browserEnabled && !hydrating)
+
+              if (renderContext.token == renderToken && renderMayContinue) {
                 result match {
                   case Success(component) =>
                     target.set(new RoutedComponent(component, renderContext))

@@ -104,6 +104,11 @@ app.use(async (req, res, next) => {
         if (!isProduction && vite) {
             vite.ssrFixStacktrace(error)
         }
+
+        if (error?.status === 504) {
+            return res.status(504).type("text").end("SSR render timed out")
+        }
+
         next(error)
     }
 })
