@@ -7,8 +7,12 @@ import jfx.viewport.Viewport.viewport
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-/** Viewport state belongs to the Viewport instance, not to a process-wide registry (P3). These
-  * tests hold that line and cover the dispose paths, which is where a registry used to leak.
+/** The lifecycle half of the Viewport contract, next to ViewportStateSpec.
+  *
+  * ViewportStateSpec covers isolation between two viewports, the refusal to move a registered
+  * configuration, and notification stacking. This one covers what happens on the way out:
+  * ownership, the z-stack, deferred removal, and dispose — where the old process-wide registries
+  * used to leak.
   */
 class ViewportLifecycleSpec extends AnyFlatSpec with Matchers {
 
@@ -22,32 +26,6 @@ class ViewportLifecycleSpec extends AnyFlatSpec with Matchers {
     conf.id should startWith("window-")
 
     Runtime.unmount(fixture.root)
-  }
-
-  it should "keep two viewports apart" in {
-    val first  = mountViewport()
-    val second = mountViewport()
-
-    first.viewport.addWindow(Viewport.WindowConf("First") {})
-
-    first.viewport.windows should have size 1
-    second.viewport.windows shouldBe empty
-
-    Runtime.unmount(first.root)
-    Runtime.unmount(second.root)
-  }
-
-  it should "refuse a configuration that already belongs to another viewport" in {
-    val first  = mountViewport()
-    val second = mountViewport()
-    val conf   = Viewport.WindowConf("Shared") {}
-
-    first.viewport.addWindow(conf)
-
-    an[IllegalStateException] should be thrownBy second.viewport.addWindow(conf)
-
-    Runtime.unmount(first.root)
-    Runtime.unmount(second.root)
   }
 
   it should "release its configurations on dispose so they can move to another viewport" in {

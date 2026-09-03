@@ -17,7 +17,7 @@ Vollständiger Lauf über alle Module:
 sbtn "Test/testOnly *"
 ```
 
-Das ist der Befehl, der vor einem Commit grün sein muss (aktuell 211 Tests).
+Das ist der Befehl, der vor einem Commit grün sein muss (aktuell 209 Tests).
 `sbtn test` ist für die schnelle Schleife während der Arbeit gedacht.
 
 ## Architektur

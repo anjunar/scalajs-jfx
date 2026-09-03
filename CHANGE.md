@@ -847,12 +847,11 @@ und Bedingung, unter der er entfallen kann.
 
 ### [~] P5-6 · Testabdeckung an den Rändern
 
-**Problem.** `jfx-viewport` hat keinen `src/test`. `application` hat keinen
-`src/test` — die Integrationsschicht, in der SSR, Hydration, Router, i18n und
-Theme zusammenkommen, ist genau die ungetestete. Die Module haben durchweg
-Tests; die Ränder nicht.
+**Problem.** `application` hat keinen `src/test` — die Integrationsschicht, in der
+SSR, Hydration, Router, i18n und Theme zusammenkommen, ist genau die
+ungetestete. Die Module haben durchweg Tests; die Ränder nicht.
 
-**Dateien.** `jfx-viewport/src/test/` (neu), `application/src/test/` (neu),
+**Dateien.** `jfx-viewport/src/test/` (ergänzt), `application/src/test/` (neu),
 `build.sbt` (Test-Settings für `app`)
 
 **Schritte.**
@@ -875,14 +874,21 @@ Router-Navigation ändert den gerenderten Baum. Die Suite läuft auf
 `JSExecutionContext.queue`, weil ScalaTests serieller Kontext keinen
 `setTimeout` treiben kann — sonst bleibt die verzögerte Route hängen.
 
-Schritt 3: `jfx-viewport/src/test/scala-3/jfx/viewport/ViewportLifecycleSpec.scala`
-deckt genau die Pfade ab, an denen die früheren globalen Registries geleakt
-haben: Besitz einer `WindowConf`, Trennung zweier Viewports, Ablehnung einer
-fremden Registrierung, Freigabe beim Dispose, Z-Stapel, Schließen mit Fade und —
-der eigentliche Punkt — das Abbrechen einer eingeplanten Entfernung, wenn der
-Viewport vorher stirbt. Dazu Notification- und Overlay-Lebenszyklus.
+Schritt 3: **Korrektur zur Problembeschreibung oben** — `jfx-viewport` hatte
+sehr wohl einen `src/test`: `ViewportStateSpec` (3 Tests, aus P3) deckt
+Isolation zweier Viewports, die Ablehnung einer fremden Registrierung und das
+Stapeln von Notifications ab. Die Annahme im Problemtext war stale; nur
+`application` war wirklich ungetestet.
 
-Vorher: 192 Tests in 8 Modulen. Jetzt: 211 in 9.
+Neu dazu kommt `ViewportLifecycleSpec` mit der Lebenszyklus-Hälfte: Besitz und
+ID einer `WindowConf`, Freigabe beim Dispose (damit eine Conf zu einem anderen
+Viewport wandern kann), Z-Stapel über `touchWindow`/`isActive`, Schließen mit
+Fade — sichtbar sofort weg, entfernt erst später — und, der eigentliche Punkt,
+das Abbrechen einer eingeplanten Entfernung, wenn der Viewport vorher stirbt.
+Dazu Notification- und Overlay-Lebenszyklus. Zwei Tests, die `ViewportStateSpec`
+schon abdeckte, sind wieder rausgeflogen.
+
+Vorher: 195 Tests in 9 Modulen (`jfx-viewport` hatte bereits welche). Jetzt: 209.
 
 **Offen: echte Hydration.** `HydratingCursor` arbeitet gegen ein echtes DOM, und
 `scalajs-env-jsdom-nodejs` ist nur für Scala 2.12/2.13 publiziert — sbt 2
