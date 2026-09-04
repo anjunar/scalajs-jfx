@@ -38,7 +38,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 const packageRoot = resolve(process.cwd());
 const repoRoot = resolve(packageRoot, "..", "..");
 const bridgePackage = join(repoRoot, "npm", "scalajs-jfx-bridge");
-const linkedArtifact = join(bridgePackage, "dist", "fastopt", "main.js");
+const linkedArtifact = join(bridgePackage, "dist", "fullopt", "main.js");
 
 let consumer = "";
 
@@ -94,7 +94,7 @@ beforeAll(() => {
   if (!existsSync(linkedArtifact)) {
     throw new Error(
       "The Scala.js bridge is not linked. Run:\n\n" +
-        '    sbtn "scalajs-jfx-bridge/fastLinkJS"\n\n' +
+        '    sbtn "scalajs-jfx-bridge/fullLinkJS"\n\n' +
         "Expected: " +
         linkedArtifact
     );
@@ -153,10 +153,12 @@ describe("a packed install", () => {
     expect(dist).toContain("stub");
   });
 
-  it("ships the bridge's types next to the linked bundle", () => {
+  it("ships the bridge's types next to the linked, optimised bundle", () => {
     const installed = join(consumer, "node_modules", "@anjunar", "scalajs-jfx-bridge");
     expect(readdirSync(installed)).toContain("types");
-    expect(readdirSync(join(installed, "dist", "fastopt"))).toContain("main.js");
+    // fullopt, not fastopt: package.json's main/exports point at the optimised
+    // build, and this is the artifact a real consumer actually gets.
+    expect(readdirSync(join(installed, "dist", "fullopt"))).toContain("main.js");
   });
 });
 

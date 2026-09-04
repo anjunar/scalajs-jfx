@@ -74,7 +74,7 @@ The runnable version of all three paths lives in `npm/jfx-demo`, which consumes
 this package the way a stranger would -- through its package exports, not by
 reaching into the neighbouring directory. `npm run demo` there renders against
 the stub, `npm run demo:bridge` against the real runtime (link it first with
-`sbtn "scalajs-jfx-bridge/fastLinkJS"` from the repo root), and `npm run dev`
+`sbtn "scalajs-jfx-bridge/fullLinkJS"` from the repo root), and `npm run dev`
 serves the same pages over Vite and Express with SSR and hydration.
 
 ## The one rule
@@ -131,7 +131,7 @@ npm run verify   # typecheck + unit tests + the consumer test
 ```
 
 `npm test` runs the unit suite against the stub, plus one smoke test against the
-really linked bridge -- `sbtn "scalajs-jfx-bridge/fastLinkJS"` has to have run,
+really linked bridge -- `sbtn "scalajs-jfx-bridge/fullLinkJS"` has to have run,
 and the test says so loudly rather than skipping if it has not.
 
 `npm run test:consumer` is the one that matters for packaging: it runs `npm pack`

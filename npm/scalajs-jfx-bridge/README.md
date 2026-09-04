@@ -6,13 +6,21 @@ JavaScript, one class per handle, no `@JSExportAll`. See
 [`JAVASCRIPT_API.md`](../../JAVASCRIPT_API.md) for why this package exists and
 what it does and does not cover yet.
 
-This package has no source of its own: `dist/` is the linker's output for the
-`jfx-bridge` sbt module (`jfx.bridge`), built with
+This package has no source of its own: `dist/fullopt/` is the linker's output
+for the `jfx-bridge` sbt module (`jfx.bridge`), built with
 
 ```bash
-sbtn "scalajs-jfx-bridge/fastLinkJS"   # dev: dist/fastopt/main.js
-sbtn "scalajs-jfx-bridge/fullLinkJS"   # dist/fullopt/main.js -- optimised and minified; not yet wired as the published build
+sbtn "scalajs-jfx-bridge/fullLinkJS"   # dist/fullopt/main.js -- optimised and minified
 ```
+
+`package.json`'s `main`/`exports` point at `fullopt`, not `fastopt`: this is a
+one-module artifact (`jfx-core` only, §3), and `fullLinkJS` links it in about the
+same time as `fastLinkJS` does -- roughly a second, measured. There is no
+meaningful dev/prod split to preserve here, so there is only one command to run,
+and every consumer -- the demo, the test harness, a real install -- gets the
+optimised bundle. Compare `application/`'s own `fastLinkJS`/`fullLinkJS` split,
+which exists because that build pulls in the whole component library and the
+difference in link time is real (JAVASCRIPT_API.md §14).
 
 `dist/` is gitignored; it is generated, not checked in. `types/` is not -- it is
 hand-written and versioned, and it is the only part of this package a human

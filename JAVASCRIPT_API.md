@@ -384,9 +384,9 @@ echten Browser verifiziert, siehe "Der Prototyp läuft" unten. Ein reiner
 Node-Check ohne ScalaTest, unabhängig von beidem:
 
 ```bash
-sbtn "scalajs-jfx-bridge/fastLinkJS"
+sbtn "scalajs-jfx-bridge/fullLinkJS"
 node -e '
-  import("file:///…/npm/scalajs-jfx-bridge/dist/fastopt/main.js")
+  import("file:///…/npm/scalajs-jfx-bridge/dist/fullopt/main.js")
     .then(({ bridgeRuntime }) => bridgeRuntime.renderToString(scope => { ... }))
 '
 ```
@@ -408,7 +408,7 @@ davon dieselben Funktionen unverändert:
 - [`src/node-bridge.ts`](npm/jfx-demo/src/node-bridge.ts) -- `installRuntime(bridgeRuntime)`, neu.
 
 ```bash
-sbtn "scalajs-jfx-bridge/fastLinkJS"   # npm/scalajs-jfx-bridge/dist/fastopt/main.js
+sbtn "scalajs-jfx-bridge/fullLinkJS"   # npm/scalajs-jfx-bridge/dist/fullopt/main.js
 cd npm/jfx-demo
 npm run demo:bridge                    # dieselbe StatePage/LibraryPage, echte Bridge
 ```
@@ -545,10 +545,13 @@ eingeschlossen), nicht `jfx-bridge`s `fullLinkJS`-Output isoliert.
 
 ## 12. Was als Nächstes ansteht
 
-- ~~**Schritt 4**~~ -- erledigt, §14. Ein Rest bleibt: `package.json`s `main`
-  zeigt weiterhin fest auf `dist/fastopt/main.js`. Eine `fullopt`-Variante für
-  den produktiven `jfx-demo`-Build fehlt, und jetzt, wo `fullLinkJS` tatsächlich
-  optimiert, ist der Unterschied zwischen beiden erstmals einer, der zählt.
+- ~~**Schritt 4**~~ -- erledigt, §14. Der anfängliche Rest ist mit erledigt:
+  `npm/scalajs-jfx-bridge`s `package.json` zeigt jetzt auf `dist/fullopt/main.js`,
+  nicht mehr auf `fastopt`. Das ist für dieses eine Modul (`jfx-core` allein)
+  folgenlos in der Linkzeit -- gemessen ~1–2 s für beide Stufen -- und damit gibt
+  es keinen Grund mehr, zwei Artefakte zu pflegen; jeder Konsument bekommt das
+  optimierte Bundle. `application`s eigener `fastLinkJS`/`fullLinkJS`-Split
+  bleibt bestehen, weil dort der Zeitunterschied real ist (§14).
 - **Schritt 5** -- Router-Fassade, dann ein Forms-Schema. `jfx-bridge` hängt
   weiterhin nur auf `jfx-core`. Was dafür zu bauen ist, ist konkreter geworden:
   nicht ein Registratureintrag `router-outlet`, sondern der Einstiegspunkt, der

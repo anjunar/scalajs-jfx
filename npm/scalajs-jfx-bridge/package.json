@@ -3,11 +3,11 @@
   "version": "3.0.0-SNAPSHOT",
   "description": "The Scala.js implementation of @anjunar/jfx-core's contract -- the jfx-bridge sbt module, linked to an ES module.",
   "type": "module",
-  "main": "./dist/fastopt/main.js",
+  "main": "./dist/fullopt/main.js",
   "exports": {
     ".": {
       "types": "./types/index.d.ts",
-      "default": "./dist/fastopt/main.js"
+      "default": "./dist/fullopt/main.js"
     },
     "./package.json": "./package.json"
   },

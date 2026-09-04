@@ -18,7 +18,7 @@ Not published; `private: true`. See [`JAVASCRIPT_API.md`](../../JAVASCRIPT_API.m
 
 ```bash
 # from the repo root -- npm workspaces install every package at once
-sbtn "scalajs-jfx-bridge/fastLinkJS"    # or fullLinkJS for the production build
+sbtn "scalajs-jfx-bridge/fullLinkJS"    # the only bridge artifact there is (npm/scalajs-jfx-bridge/README.md)
 npm install
 ```
 

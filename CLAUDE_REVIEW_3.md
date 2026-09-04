@@ -708,13 +708,27 @@ Gate: `npm run verify` in beiden Paketen.
 | 8 Versionsdrift CSS-Paket | unverändert: publiziert 1.1.0, lokal 3.0.0. `jfx-core`s `peerDependency` nennt `^3.0.0`, also die Version, die die Regel verlangt — vor dem ersten Release aufzulösen |
 | 9 Sourcemap-Warnung | unverändert, weiterhin Rauschen |
 
-Neu hinzugekommen:
+Neu hinzugekommen, davon eines gleich wieder behoben:
 
-**10. `main` der Bridge zeigt fest auf `fastopt`.** Solange `fullLinkJS`
-byteidentisch zu `fastLinkJS` war, war das folgenlos. Jetzt ist es das nicht
-mehr: jeder Konsument bekommt das unoptimierte Bundle, 1 705 389 statt
-981 614 B. Eine `fullopt`-Variante für den Produktionspfad zu verdrahten ist
-damit von Kosmetik zu einer echten Aufgabe geworden.
+**10. `main` der Bridge zeigt fest auf `fastopt` — behoben.** Solange
+`fullLinkJS` byteidentisch zu `fastLinkJS` war, war das folgenlos; nach dem Fix
+bekam jeder Konsument das unoptimierte Bundle, 1 705 389 statt 981 614 B.
+Gelöst nicht über eine zweite, produktionsspezifische Variante, sondern durch
+Vereinfachung: gemessen linkt `fullLinkJS` dieses eine Modul (`jfx-core` allein)
+in derselben Zeit wie `fastLinkJS` — rund 1–2 s, zurück-an-zurück verglichen.
+Es gibt also keinen Grund, zwei Artefakte zu pflegen. `package.json`s
+`main`/`exports` zeigen jetzt auf `dist/fullopt/main.js`, Tests und READMEs sind
+entsprechend nachgezogen. `application`s eigener `fastLinkJS`/`fullLinkJS`-Split
+bleibt bestehen — dort ist der Zeitunterschied real, weil dort die ganze
+Komponentenbibliothek mitlinkt.
+
+Am `jfx-demo`-Consumer sichtbar, vor/nach dem Wechsel auf `fullopt` (Vites
+eigene Minifizierung war beide Male aktiv, trägt also die Differenz nicht):
+
+| Bundle | vorher (fastopt) | nachher (fullopt) |
+| --- | ---: | ---: |
+| Client, roh / gzip | 855,23 kB / 143,94 kB | 370,76 kB / 98,16 kB |
+| SSR, roh / gzip | 1 492,93 kB / 199,21 kB | 862,03 kB / 146,69 kB |
 
 **11. Kein CI.** `npm run verify` und `sbtn "Test/testOnly *"` sind grün, aber
 nichts erzwingt das. Schritt 8 aus `JAVASCRIPT_API.md` §9 ist inhaltlich

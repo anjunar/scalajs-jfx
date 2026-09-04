@@ -1,14 +1,15 @@
 /**
  * Renders `pages.ts` -- the exact same `statePage`/`libraryPage` functions
- * `statePage.ts` renders against the stub -- against the real Scala.js bridge
+ * `node-stub.ts` renders against the stub -- against the real Scala.js bridge
  * instead. Only the two lines below `main()`'s `installRuntime` call differ from
- * `statePage.ts`; everything the page functions themselves do is unchanged
+ * `node-stub.ts`; everything the page functions themselves do is unchanged
  * because [[Reactive]], `ScopeHandle` et al. are the same TypeScript contract
  * either way (JAVASCRIPT_API.md §2 -- a facade, not a second implementation).
  *
  * Run with `npm run demo:bridge`. Needs `@anjunar/scalajs-jfx-bridge` linked --
- * `sbtn "scalajs-jfx-bridge/fastLinkJS"` from the repo root, then `npm install`
- * here so the `file:` devDependency picks up the freshly linked package.
+ * `sbtn "scalajs-jfx-bridge/fullLinkJS"` from the repo root. No `npm install`
+ * needed afterwards: npm workspaces already symlink this package by directory,
+ * so a freshly linked `dist/` is picked up without reinstalling.
  */
 import { installRuntime, property, renderToString } from "@anjunar/jfx-core";
 import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";

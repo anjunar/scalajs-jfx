@@ -13,7 +13,7 @@
  *
  * It needs the linked artifact:
  *
- *     sbtn "scalajs-jfx-bridge/fastLinkJS"
+ *     sbtn "scalajs-jfx-bridge/fullLinkJS"
  *
  * If it is missing the test fails loudly rather than skipping. A silently
  * skipped bridge test would leave the harness asserting only that the stub
@@ -38,17 +38,20 @@ import {
 } from "../src/index.js";
 import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";
 
-// vitest runs with npm/jfx as the working directory (vitest.config.ts sits here).
+// vitest runs with npm/jfx-core as the working directory (vitest.config.ts
+// sits here). package.json's main/exports point at fullopt (README.md), not
+// fastopt -- the bridge is a single small module, and fullLinkJS links it in
+// about the same time fastLinkJS would, so there is only the one artifact.
 const linkedArtifact = resolve(
   process.cwd(),
-  "../scalajs-jfx-bridge/dist/fastopt/main.js"
+  "../scalajs-jfx-bridge/dist/fullopt/main.js"
 );
 
 beforeAll(() => {
   if (!existsSync(linkedArtifact)) {
     throw new Error(
       `The Scala.js bridge is not linked. Run:\n\n` +
-        `    sbtn "scalajs-jfx-bridge/fastLinkJS"\n\n` +
+        `    sbtn "scalajs-jfx-bridge/fullLinkJS"\n\n` +
         `Expected: ${linkedArtifact}`
     );
   }
