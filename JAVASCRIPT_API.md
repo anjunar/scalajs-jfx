@@ -268,9 +268,10 @@ verschmutzt.
    `publish / skip := true`. Eine Bridge, die den Editor exportiert, wäre nach §1
    nicht publizierbar. Die in `FINAL.md` offene Entscheidung wird hierdurch
    dringlicher, nicht dringender-nebenbei.
-2. **Bundle-Größe messen, nicht schätzen.** Vor dem Ausbau der Registratur einmal
-   `fullLinkJS` über eine minimale Bridge (core + router) messen und das Ergebnis
-   hier eintragen. Alles andere ist Kaffeesatz.
+2. ~~**Bundle-Größe messen, nicht schätzen.**~~ **Erledigt, siehe §14.** Der Punkt
+   war länger blockiert, als er aussah: `fullLinkJS` lieferte in diesem Build ein
+   zu `fastLinkJS` byteidentisches Bundle, es gab also gar nichts zu messen.
+   Ursache und Behebung stehen in `build.sbt`s `commonJsSettings`.
 3. **Umfang der Registratur.** Alle Controls sofort, oder core/router/forms
    zuerst und die Controls nach Bedarf? Der Prototyp trägt drei Einträge; die
    Kurve dahinter ist flach, aber nicht null.
@@ -286,7 +287,7 @@ verschmutzt.
 1. §4 in ARCHITECTURE.md umformulieren; Editor-Entscheidung treffen        ✅ (§4 erledigt; Editor offen)
 2. jfx-bridge anlegen: nur core (Property, Scope, mount/hydrate/renderToString)  ✅
 3. @anjunar/jfx gegen die echte Bridge laufen lassen (der Prototyp liegt vor)   ✅
-4. Bundle-Größe messen und hier eintragen
+4. Bundle-Größe messen und hier eintragen                                  ✅ (§14)
 5. Router-Fassade, dann Forms-Schema
 6. Komponentenregistratur auffüllen
 7. i18n-Extractor
@@ -552,3 +553,70 @@ eingeschlossen), nicht `jfx-bridge`s `fullLinkJS`-Output isoliert.
   Hydration) kann jetzt auf `jfx-demo` aufbauen, statt ihn neu zu entwerfen:
   `npm run build` dort ist im Kern schon genau dieser Test, nur noch nicht in
   einer Pipeline verdrahtet.
+
+## 14. Bundle-Größe (§9, Schritt 4)
+
+Der Schritt stand nicht deshalb offen, weil ihn niemand angefasst hätte,
+sondern weil er nicht durchführbar war: **`fullLinkJS` war in diesem Build
+wirkungslos.** `commonJsSettings` setzte
+
+```scala
+Compile / fullLinkJS / scalaJSLinkerConfig := scalaJSLinkerConfig.value
+  .withRelativizeSourceMapBase(...)
+```
+
+und las damit den unskopierten Projektwert. sbt-scalajs definiert
+`fullLinkJS / scalaJSLinkerConfig` aber als `(fullOptJS / scalaJSLinkerConfig).value`,
+und *dort* hängt `.withSemantics(_.optimized).withMinify(true).withCheckIR(true)`.
+Die Zuweisung warf das weg. Ergebnis: `fullopt/main.js` war byteidentisch zu
+`fastopt/main.js` — für alle neun Module, inklusive `application`s
+`viteFullLinkJS`, also des Produktionsbuilds der Scala-Demo.
+
+Behoben, indem beide Link-Stufen aus ihrem jeweiligen `*OptJS`-Schlüssel lesen
+statt aus dem blanken. Wer die Stelle anfasst, prüft sie mit einem md5-Vergleich
+der beiden Ausgaben: sind sie gleich, ist der Fehler zurück.
+
+### Die Zahlen
+
+`scalajs-jfx-bridge`, `ModuleKind.ESModule`, ES2021, ein `main.js`:
+
+| Stufe | roh | gzip |
+| --- | ---: | ---: |
+| `fastLinkJS` | 1 705 389 B | 217 700 B |
+| `fullLinkJS` | **981 614 B** | **155 380 B** |
+| | −42 % | −29 % |
+
+Vier Messungen zum Modulschnitt, alle auf `fullLinkJS` (Herleitung und
+Alternativenvergleich in `CLAUDE_REVIEW_3.md` §2):
+
+| Aufbau | roh | gzip |
+| --- | ---: | ---: |
+| `dependsOn(core)` | 981 614 B | 155 380 B |
+| `dependsOn(core, router, viewport, controls, forms)`, keine neuen Referenzen | **981 614 B** | **155 380 B** |
+| dito + registrierte Router-Fassade (`router`, `router-outlet`, `router-link`) | 1 122 273 B | 175 577 B |
+| dito + `ModuleSplitStyle.SmallModulesFor(List("jfx"))`, 144 ES-Module | 1 483 221 B | 203 669 B |
+
+Drei Befunde, die die Reihenfolge ab Schritt 5 bestimmen:
+
+**Eine breitere `dependsOn`-Kante kostet nichts.** Byteidentisch. Die DCE des
+Linkers emittiert nicht Referenziertes gar nicht erst — im gesplitteten Lauf
+tragen `jfx.control`, `jfx.forms` und `jfx.viewport` zusammen **null** Module
+bei. Schritt 5 und 6 dürfen die Bridge also verbreitern, ohne dass ein
+Konsument dafür zahlt.
+
+**Bezahlt wird die Registrierung, nicht die Abhängigkeit.** +140 659 B roh /
++20 197 B gzip, sobald `BridgeRuntime`s Initialisierer eine Router-Factory
+referenziert. Das trifft auch den Konsumenten, der nur den Kern importiert:
+ein `object`-Initialisierer ist ein Erreichbarkeitsanker, den keine DCE
+auflösen kann.
+
+**Modul-Splitting löst das nicht.** Es kostet +361 kB roh, um 144 kB
+`jfx.router` theoretisch abwerfbar zu machen — und abwerfbar wird es nicht,
+solange die Registratur darauf zeigt. Vor allem aber liegen 966 113 B, also
+65 % der Ausgabe, in *einem* unteilbaren `internal-*`-Modul: Scala-Stdlib,
+`scalajs-dom`, Scala.js-Runtime. Dieser Sockel ist der eigentliche
+Kostenpunkt, und kein Paketschnitt bewegt ihn.
+
+Daraus folgt der Modulschnitt der npm-Seite: **npm-Modularität ist Typ- und
+API-Oberfläche; das Laufzeitartefakt bleibt eines.** Begründung samt
+verworfener Alternativen in `CLAUDE_REVIEW_3.md` §2.3.

@@ -110,14 +110,33 @@ lazy val commonJsSettings = Seq(
   // Die Sourcemap-Basis muss pro Link-Task auf dessen eigenes Ausgabeverzeichnis
   // zeigen. Vorher stand nur ein gemeinsamer Wert da, der auch fuer fullLinkJS
   // aufs fastopt-Verzeichnis zeigte. Siehe CLAUDE_REVIEW_1.md P5-5, Punkt 3.
-  Compile / fastLinkJS / scalaJSLinkerConfig := scalaJSLinkerConfig.value
-    .withRelativizeSourceMapBase(
-      Some((Compile / fastLinkJS / scalaJSLinkerOutputDirectory).value.toURI)
-    ),
-  Compile / fullLinkJS / scalaJSLinkerConfig := scalaJSLinkerConfig.value
-    .withRelativizeSourceMapBase(
-      Some((Compile / fullLinkJS / scalaJSLinkerOutputDirectory).value.toURI)
-    )
+  //
+  // Die rechte Seite liest bewusst aus `fastOptJS` bzw. `fullOptJS`, nicht aus
+  // dem blanken `scalaJSLinkerConfig`. Genau das war ein Fehler, der ein halbes
+  // Jahr unbemerkt blieb (CLAUDE_REVIEW_3.md §2.0):
+  //
+  //   sbt-scalajs definiert `<stage>LinkJS / scalaJSLinkerConfig` als
+  //   `(<stage>OptJS / scalaJSLinkerConfig).value` (ScalaJSPluginInternal.scala:208),
+  //   und haengt an `fullOptJS / scalaJSLinkerConfig` ein
+  //   `.withSemantics(_.optimized).withMinify(true).withCheckIR(true)` (ebd. :496).
+  //   `scalaJSLinkerConfig.value` umgeht diese Delegation und liest den
+  //   unskopierten Projektwert -- ohne optimierte Semantik, ohne Minifizierung.
+  //   `fullLinkJS` lieferte dadurch ein zu `fastLinkJS` *byteidentisches* Bundle,
+  //   fuer alle neun Module, inklusive `application`s viteFullLinkJS.
+  //
+  // Gemessen an scalajs-jfx-bridge: 1 705 389 -> 981 614 B roh, 217 700 ->
+  // 155 380 B gzip. Wer diese Zeilen anfasst, prueft das mit einem md5-Vergleich
+  // von fastopt/main.js und fullopt/main.js -- sind sie gleich, ist es wieder da.
+  Compile / fastLinkJS / scalaJSLinkerConfig :=
+    (Compile / fastOptJS / scalaJSLinkerConfig).value
+      .withRelativizeSourceMapBase(
+        Some((Compile / fastLinkJS / scalaJSLinkerOutputDirectory).value.toURI)
+      ),
+  Compile / fullLinkJS / scalaJSLinkerConfig :=
+    (Compile / fullOptJS / scalaJSLinkerConfig).value
+      .withRelativizeSourceMapBase(
+        Some((Compile / fullLinkJS / scalaJSLinkerOutputDirectory).value.toURI)
+      )
 )
 
 lazy val commonLibrarySettings = Seq(
