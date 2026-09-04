@@ -12,6 +12,7 @@ final class RemoteListProperty[V, Query](
     val loader: RemoteLoader[V, Query],
     initialQuery: Query,
     underlying: js.Array[V] = js.Array[V](),
+    initialOffset: Int = 0,
     executionContext: ExecutionContext = ExecutionContext.global,
     sortUpdater: Option[(Query, Seq[RemoteSort]) => Query] = None,
     rangeQueryUpdater: Option[(Query, Int, Int) => Query] = None
@@ -23,7 +24,7 @@ final class RemoteListProperty[V, Query](
   private val initialItems = underlying.slice(0, underlying.length)
   private val loadedItems  = ListProperty[V](initialItems)
   private val loadedRanges = new LoadedRanges[V]
-  if (initialItems.length > 0) loadedRanges.put(0, initialItems.toSeq)
+  if (initialItems.length > 0) loadedRanges.put(math.max(0, initialOffset), initialItems.toSeq)
 
   // One load per request rather than a global lock. Overlapping requests are deduplicated rather
   // than rejected. See loadQuery.
@@ -341,6 +342,7 @@ object RemoteListProperty {
       loader: RemoteLoader[V, Query],
       initialQuery: Query,
       underlying: js.Array[V] = js.Array[V](),
+      initialOffset: Int = 0,
       executionContext: ExecutionContext = ExecutionContext.global,
       sortUpdater: Option[(Query, Seq[RemoteSort]) => Query] = None,
       rangeQueryUpdater: Option[(Query, Int, Int) => Query] = None
@@ -349,6 +351,7 @@ object RemoteListProperty {
       loader,
       initialQuery,
       underlying,
+      initialOffset,
       executionContext,
       sortUpdater,
       rangeQueryUpdater

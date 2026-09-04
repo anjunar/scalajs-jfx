@@ -8,12 +8,29 @@ import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success}
+import scala.scalajs.js
 
 class RemoteListPropertySpec extends AnyFlatSpec with Matchers {
 
   private given ExecutionContext = ExecutionContext.parasitic
 
-  "RemoteListProperty" should "append a page without replacing the materialized prefix" in {
+  "RemoteListProperty" should "index preloaded items at an explicit absolute offset" in {
+    val remote = RemoteListProperty[String, PageQuery](
+      loader = RemoteLoader[String, PageQuery](_ =>
+        Future.successful(RemotePage[String, PageQuery](items = Seq.empty))
+      ),
+      initialQuery = PageQuery(50, 2),
+      underlying = js.Array("Member 50", "Member 51"),
+      initialOffset = 50,
+      executionContext = ExecutionContext.parasitic
+    )
+
+    remote.itemAt(49) shouldBe None
+    remote.itemAt(50) shouldBe Some("Member 50")
+    remote.itemAt(51) shouldBe Some("Member 51")
+  }
+
+  it should "append a page without replacing the materialized prefix" in {
     val remote = pagedMembers(total = 1000, pageSize = 50)
 
     remote.reload()

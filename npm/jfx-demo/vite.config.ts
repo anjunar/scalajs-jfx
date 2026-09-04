@@ -1,5 +1,7 @@
 import { defineConfig } from "vite";
+import tailwindcss from "@tailwindcss/vite";
 import { fileURLToPath } from "node:url";
+import { jfxCode } from "./tools/vite-plugin-jfx-code.js";
 
 // npm workspaces hoist every package in npm/* into the repo root's node_modules,
 // so `@anjunar/jfx-core` resolves through a symlink into the source tree. Vite's
@@ -9,6 +11,7 @@ import { fileURLToPath } from "node:url";
 const monorepoRoot = fileURLToPath(new URL("../..", import.meta.url));
 
 export default defineConfig({
+  plugins: [tailwindcss(), jfxCode()],
   resolve: {
     // The one-runtime invariant, enforced at the bundler.
     //

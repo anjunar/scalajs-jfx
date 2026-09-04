@@ -1,17 +1,17 @@
-a {
+.jfx-link {
     cursor: pointer;
     color: var(--aj-ink);
     text-decoration: none;
 }
 
-a:hover {
+.jfx-link:hover {
     color: var(--aj-accent);
 }
 
-a:visited {
+.jfx-link:visited {
     color: var(--aj-ink);
 }
 
-a:active {
+.jfx-link:active {
     color: var(--aj-accent);
 }

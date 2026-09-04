@@ -1,0 +1,110 @@
+/* Document base: element resets shared by every route. Component styling
+ * itself comes from @anjunar/scalajs-jfx/index.css (imported in style.css);
+ * nothing here restyles a library component.
+ */
+
+html,
+body,
+#root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+* {
+    box-sizing: border-box;
+    scrollbar-width: thin;
+    scrollbar-color: var(--aj-accent-ring) transparent;
+}
+
+html {
+    font-family: var(--font-sans, system-ui, sans-serif);
+    font-size: 16px;
+    background: var(--aj-canvas);
+    color: var(--aj-ink);
+}
+
+body {
+    min-height: 100%;
+    color: var(--aj-ink);
+    line-height: 1.5;
+}
+
+::selection {
+    background: var(--aj-accent-muted);
+    color: var(--aj-ink);
+}
+
+button,
+input,
+select,
+textarea {
+    font: inherit;
+}
+
+/* app/shell.ts's chrome. No dedicated file in CLAUDE_DEMO_PLAN.md §4's tree --
+ * this is document-level chrome shared by every route, same as the rest of
+ * this file. */
+.app-shell__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--aj-line);
+}
+
+.app-shell__header a {
+    color: var(--aj-ink);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.app-shell__theme-toggle {
+    padding: 0.4rem 0.75rem;
+    border-radius: var(--radius-control);
+    border: 1px solid var(--aj-line);
+    background: var(--aj-surface);
+    color: var(--aj-ink-soft);
+    cursor: pointer;
+}
+
+.app-shell__theme-toggle:hover {
+    background: var(--aj-surface-hover);
+}
+
+.app-shell__nav {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1.5rem;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--aj-line);
+}
+
+.app-shell__nav-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 10rem;
+}
+
+.app-shell__nav-group-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--aj-ink-muted);
+    margin-bottom: 0.25rem;
+}
+
+.app-shell__nav-group a {
+    color: var(--aj-ink-soft);
+    text-decoration: none;
+    padding: 0.15rem 0;
+}
+
+.app-shell__nav-group a.app-shell__nav-link--active {
+    color: var(--aj-accent-strong);
+    font-weight: 600;
+}

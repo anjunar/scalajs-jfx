@@ -1,0 +1,44 @@
+/* The only place in this project that sets a design-token *value*, and it
+ * only sets tokens `@anjunar/ui` does not define at all -- everything the
+ * library CSS already reads (--aj-ink, --aj-accent, --aj-surface, ...) keeps
+ * its @anjunar/ui default. See CLAUDE_DEMO_PLAN.md E-1.
+ *
+ * `--aj-code-*` is one such gap: the syntax-highlighted code block
+ * (src/docs/code-block.ts) needs a token per token kind, and neither
+ * @anjunar/ui nor @anjunar/scalajs-jfx defines one. Values below mirror the
+ * pairing application/src/main/webapp/src/theme.css already uses for the
+ * same purpose, adjusted to this project's own accent.
+ */
+
+:root,
+html[data-theme="light"] {
+    --aj-code-keyword: #7c5f22;
+    --aj-code-constant: #8a4a56;
+    --aj-code-number: #9a5c18;
+    --aj-code-string: #2f6f58;
+    --aj-code-comment: #7f867d;
+    --aj-code-type: #315f85;
+    --aj-code-function: #6b4da2;
+    --aj-code-variable: #3a4440;
+    --aj-code-operator: #6e786d;
+    --aj-code-punctuation: var(--aj-ink-soft);
+    --aj-code-bg: var(--aj-surface-muted);
+    --aj-code-gutter-bg: rgb(74 54 31 / 0.04);
+    --aj-code-selection: var(--aj-accent-muted);
+}
+
+html[data-theme="dark"] {
+    --aj-code-keyword: #d8b36d;
+    --aj-code-constant: #f09aa4;
+    --aj-code-number: #e0a960;
+    --aj-code-string: #89c9a8;
+    --aj-code-comment: #7f9184;
+    --aj-code-type: #8fc2e6;
+    --aj-code-function: #c9a8ff;
+    --aj-code-variable: #e6ebe3;
+    --aj-code-operator: #9aa69b;
+    --aj-code-punctuation: var(--aj-ink-soft);
+    --aj-code-bg: rgb(0 0 0 / 0.22);
+    --aj-code-gutter-bg: rgb(255 255 255 / 0.03);
+    --aj-code-selection: var(--aj-accent-muted);
+}

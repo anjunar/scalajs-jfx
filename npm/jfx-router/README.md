@@ -13,8 +13,12 @@ Scala demo mounts -- published as part of the linked runtime
 linked artifact is in [`JAVASCRIPT_API.md` §14](../../JAVASCRIPT_API.md).
 
 ```bash
-npm install @anjunar/jfx-core @anjunar/jfx-router @anjunar/scalajs-jfx-bridge
+npm install @anjunar/jfx-core @anjunar/jfx-router @anjunar/scalajs-jfx @anjunar/scalajs-jfx-bridge
 ```
+
+Import `@anjunar/scalajs-jfx/index.css` from the application stylesheet as
+well. It owns the default `.jfx-*` component styles, including router links;
+`@anjunar/jfx-router` provides the API and runtime registration, not CSS.
 
 ## A route table
 

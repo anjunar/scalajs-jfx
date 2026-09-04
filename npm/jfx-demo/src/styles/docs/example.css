@@ -1,0 +1,23 @@
+.docs-example {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.docs-example h3 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.docs-example__live {
+    padding: 1.25rem;
+    border: 1px solid var(--aj-line);
+    border-radius: var(--radius-panel);
+    background: var(--aj-surface);
+}
+
+.docs-example__note {
+    margin: 0;
+    color: var(--aj-ink-muted);
+    font-size: 0.9rem;
+}

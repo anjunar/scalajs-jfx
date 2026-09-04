@@ -1,16 +1,14 @@
 package jfx.control.virtualized
 
 import jfx.control.CrawlCookieState
-import jfx.core.context.CrawlScope
 import jfx.core.remote.{RemoteListDataSource, RemoteSort}
 import jfx.core.state.{Disposable, Property}
 import org.scalajs.dom
 
 /** Crawlability of a virtualized collection.
   *
-  * A crawler cannot scroll. To make more than the first slice indexable, the control renders a
-  * fixed slice during server rendering with a link to the next one -- the slice comes from a cookie
-  * per control ID, and the link from [[CrawlScope]] (P1-4).
+  * A crawler cannot scroll. The control therefore renders a fixed server-side slice; its position
+  * comes from a cookie per control ID. Paging, when enabled, is exposed by the shared footer pager.
   *
   * Before P3-1, this block existed three times in TableView, DataGrid, and VirtualListView in three
   * no-longer-equivalent versions.
@@ -107,19 +105,6 @@ trait CrawlableCollection[T] { self: VirtualizedCollection[T] =>
       crawlState = crawlState.withSorting(sorting)
       persistCrawlState(crawlState)
     }
-
-  protected def hasMoreCrawlPage: Boolean = {
-    val (offset, limit) = crawlParams
-    crawlableProperty.get && !urlPagingStatePresent && offset + limit < renderableCount
-  }
-
-  /** Crawl-link target: the current path from CrawlScope.
-    *
-    * This previously used Router.current(...), making the entire controls library depend on the
-    * router. See CHANGE.md P1-4.
-    */
-  protected def nextCrawlHref: String =
-    CrawlScope.path(using this)
 
   /** Moves to the position restored from the cookie and releases hydration.
     *

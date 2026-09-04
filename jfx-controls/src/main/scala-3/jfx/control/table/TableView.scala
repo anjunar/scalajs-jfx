@@ -8,7 +8,6 @@ import jfx.core.dsl.ClassDsl.{addClass, classIf, classes}
 import jfx.core.dsl.DslLayer
 import jfx.core.dsl.EventDsl.{on, onClick}
 import jfx.core.dsl.StyleDsl.*
-import jfx.core.layout.Anchor.{anchor, href}
 import jfx.core.layout.Condition.when
 import jfx.core.layout.Div
 import jfx.core.layout.Div.div
@@ -23,7 +22,6 @@ import jfx.core.state.{
   ReadOnlyProperty
 }
 import jfx.core.statement.Foreach.{foreach, foreachIndexed}
-import jfx.core.context.CrawlScope
 import org.scalajs.dom
 
 import scala.concurrent.ExecutionContext
@@ -328,22 +326,6 @@ final class TableView[S] private (
             }
           }
 
-          when(itemStateRevisionProperty.map(_ => hasMoreCrawlPage)) {
-            val (offset, limit) = crawlParams
-            anchor("More items...") {
-              classes = Seq("jfx-table-more-link")
-              href = nextCrawlHref
-              onClick(_ => persistCrawlState(crawlState.copy(offset = offset + limit)))
-              style {
-                display = "block"
-                padding = "20px"
-                textAlign = "center"
-                marginTop =
-                  if (browserRendering) "0px"
-                  else s"${(offset + limit) * rowHeightProperty.get}px"
-              }
-            }
-          }
         }
 
         when(itemStateRevisionProperty.map(_ => renderableCount == 0)) {

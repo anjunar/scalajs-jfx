@@ -8,17 +8,6 @@
   min-width: 100%;
 }
 
-.jfx-data-grid-more-link {
-  color: var(--aj-accent-strong);
-  font-weight: 700;
-  text-decoration: none;
-}
-
-.jfx-data-grid-more-link:hover,
-.jfx-data-grid-more-link:focus-visible {
-  text-decoration: underline;
-}
-
 .jfx-data-grid-placeholder {
   position: absolute;
   inset: 0;

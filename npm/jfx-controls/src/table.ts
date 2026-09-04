@@ -39,9 +39,9 @@ export interface TableViewOptions {
   readonly paging?: boolean;
   readonly pageSize?: number;
   /**
-   * Render a fixed first slice on the server with a "more" link, so a crawler
-   * can reach past the first screen. Needs `crawlId`. Only meaningful for a
-   * table rendered inside a `router()` shell, which provides the current path.
+   * Render a fixed slice on the server with a pager link, so a crawler can reach
+   * past the first screen. Needs `crawlId`. Only meaningful for a table rendered
+   * inside a `router()` shell, which provides the current URL.
    */
   readonly crawlable?: boolean;
   readonly crawlId?: string;

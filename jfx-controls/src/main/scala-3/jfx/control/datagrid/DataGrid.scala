@@ -8,7 +8,6 @@ import jfx.core.dsl.ClassDsl.{addClass, classIf, classes}
 import jfx.core.dsl.DslLayer
 import jfx.core.dsl.EventDsl.{on, onClick}
 import jfx.core.dsl.StyleDsl.*
-import jfx.core.layout.Anchor.{anchor, href}
 import jfx.core.layout.Condition.when
 import jfx.core.layout.Div
 import jfx.core.layout.Div.div
@@ -16,7 +15,6 @@ import jfx.core.layout.TextComponent.text
 import jfx.core.render.{Cursor, DomHostElement}
 import jfx.core.state.*
 import jfx.core.statement.Foreach.foreach
-import jfx.core.context.CrawlScope
 import org.scalajs.dom
 
 import scala.collection.mutable
@@ -210,21 +208,6 @@ final class DataGrid[T] private (
 
             foreach(visibleCellsProperty) { cell =>
               DataGrid.dataGridCell(cell, cellRendererBody)
-            }
-          }
-        }
-
-        when(itemStateRevisionProperty.map(_ => hasMoreCrawlPage)) {
-          val (offset, limit) = crawlParams
-          anchor("More items...") {
-            classes = Seq("jfx-data-grid-more-link")
-            href = nextCrawlHref
-            onClick(_ => persistCrawlState(crawlState.copy(offset = offset + limit)))
-            style {
-              display = "block"
-              padding = "20px"
-              textAlign = "center"
-              marginTop = if (browserRendering) "0px" else px(topForIndex(offset + limit))
             }
           }
         }

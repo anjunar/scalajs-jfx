@@ -1,0 +1,20 @@
+/* Cascade entry. Import order is the ordering of authority:
+ *
+ *   1. Tailwind and the @anjunar/ui grammar -- the vocabulary (the `--aj-*`
+ *      tokens and their Tailwind theme mapping).
+ *   2. The component CSS of the npm/jfx-* family -- what the library modules
+ *      render, reading the tokens from (1).
+ *   3. This project's own tokens, base rules and page styles -- allowed to
+ *      override everything above.
+ *
+ * See CLAUDE_DEMO_PLAN.md E-1 and npm/scalajs-jfx/README.md for which system
+ * owns what.
+ */
+@import "tailwindcss";
+@import "@anjunar/ui";
+@import "@anjunar/scalajs-jfx/index.css";
+
+@import "./theme.css";
+@import "./base.css";
+@import "./docs/index.css";
+@import "./pages/index.css";

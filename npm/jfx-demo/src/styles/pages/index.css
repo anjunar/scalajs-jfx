@@ -1,0 +1,5 @@
+/* Aggregates the CSS for individual doc pages under src/pages/. Filled in as
+ * S-3 through S-7 add index.css, home.css, search.css, controls.css,
+ * forms.css, viewport.css (see CLAUDE_DEMO_PLAN.md §4).
+ */
+@import "./home.css";

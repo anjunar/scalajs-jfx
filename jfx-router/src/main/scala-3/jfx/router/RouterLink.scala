@@ -31,6 +31,7 @@ object RouterLink {
       body: Anchor ?=> Cursor ?=> Unit
   )(using AbstractComponent, Cursor): Anchor = {
     val link = new Anchor()
+    link.addClass("jfx-link")
 
     DslLayer.child(link) {
       body
@@ -45,6 +46,7 @@ object RouterLink {
       body: Anchor ?=> Cursor ?=> Unit
   )(using AbstractComponent, Cursor): Anchor = {
     val link = new Anchor()
+    link.addClass("jfx-link")
 
     DslLayer.child(link) {
       RouterLinkHandler.inject(using link).orElse(routerHandler(using link)) match {

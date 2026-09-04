@@ -38,6 +38,7 @@ import {
   size,
   subForm,
 } from "../src/index.js";
+import { button, onClick } from "@anjunar/jfx-core";
 
 const linkedArtifact = resolve(process.cwd(), "../scalajs-jfx-bridge/dist/fullopt/main.js");
 
@@ -200,6 +201,31 @@ describe("arrayForm", () => {
     model.tags.insert(1, "logic");
     fields = Array.from(root.querySelectorAll("input")) as HTMLInputElement[];
     expect(fields.map((el) => el.value)).toEqual(["math", "logic", "compilers"]);
+
+    app.dispose();
+  });
+
+  it("creates a new item when a consumer button changes the list", () => {
+    const model = { tags: listProperty<string>(["typescript"]) };
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const app = mount(root, () => {
+      form(model, {}, () => {
+        arrayForm("tags", (index) => {
+          input(`tag-${index}`);
+        });
+        button("Add tag", {}, () => {
+          onClick(() => model.tags.add(""));
+        });
+      });
+    });
+
+    expect(root.querySelectorAll("input")).toHaveLength(1);
+    root.querySelector("button")!.dispatchEvent(
+      new MouseEvent("click", { bubbles: true, cancelable: true })
+    );
+    expect(root.querySelectorAll("input")).toHaveLength(2);
 
     app.dispose();
   });

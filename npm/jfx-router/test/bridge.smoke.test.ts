@@ -136,6 +136,7 @@ describe("mount", () => {
     expect(root.textContent).toContain("home page");
 
     const link = root.querySelector("a")!;
+    expect(link.classList.contains("jfx-link")).toBe(true);
     link.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
 
     expect(window.location.pathname).toBe("/other");

@@ -12,7 +12,7 @@ Betroffen sind `TableView` (868 Zeilen), `DataGrid` (785) und `VirtualListView`
 Von 32 gemeinsam benannten Membern sind nur noch **8 zeilengleich**:
 
 ```
-refreshConfiguredCrawlState  persistCrawlState  nextCrawlHref
+refreshConfiguredCrawlState  persistCrawlState
 scheduleViewportMeasure      initialScrollIndex  domElement
 browserRendering             hydrating
 ```
@@ -116,9 +116,9 @@ AbstractComponent
       │     visibleRange (Crawl-Zweig) → delegiert an ItemGeometry
       │
       └─ CrawlableCollection             Trait
-            crawlId, Cookie-Zustand, nextCrawlHref,
+            crawlId, Cookie-Zustand,
             initialScrollIndex, Sortier-Wiederherstellung
-            nutzt CrawlScope aus P1-4
+            nutzt den gemeinsamen Footer-Pager
 
 ItemGeometry                             Strategie
       ├─ FixedRowGeometry      (TableView)

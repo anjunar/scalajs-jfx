@@ -126,14 +126,14 @@ async function devServer() {
     check("dev server responds 200", response.status === 200, `status ${response.status}`);
     check(
       "dev server returns server-rendered markup",
-      html.includes("Current value: 0"),
+      html.includes("A TypeScript facade over JFX3"),
       "the SSR outlet was not filled -- with two runtime slots, renderToString throws instead"
     );
 
-    // /controls pulls in @anjunar/jfx-controls; if that package dragged its own
-    // copy of jfx-core, the runtime marker count above would rise and this route
-    // would fault on the second, uninstalled slot.
-    const controls = await fetch("http://localhost:5179/controls");
+    // /controls/table pulls in @anjunar/jfx-controls; if that package dragged
+    // its own copy of jfx-core, the runtime marker count above would rise and
+    // this route would fault on the second, uninstalled slot.
+    const controls = await fetch("http://localhost:5179/controls/table");
     const controlsHtml = await controls.text();
     check(
       "dev server server-renders the controls route",

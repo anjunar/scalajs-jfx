@@ -1,0 +1,40 @@
+.home-page {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    max-width: 64rem;
+    margin: 0 auto;
+    padding: var(--spacing-shell, 2rem) 1.5rem;
+}
+
+.home-page__intro {
+    color: var(--aj-ink-soft);
+    max-width: 40rem;
+}
+
+.home-page__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+    gap: 1rem;
+}
+
+.home-page__tile {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1.25rem;
+    border: 1px solid var(--aj-line);
+    border-radius: var(--radius-panel);
+    background: var(--aj-surface);
+}
+
+.home-page__tile h2 {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+.home-page__tile p {
+    margin: 0;
+    color: var(--aj-ink-soft);
+    font-size: 0.9rem;
+}

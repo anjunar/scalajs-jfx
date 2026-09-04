@@ -274,9 +274,11 @@ Index, und `src/node/bridge.ts` iteriert für den SSR-Nachweis darüber. Eine ne
 Seite anzulegen heißt danach: zwei Dateien schreiben, einen Katalogeintrag
 hinzufügen. Nichts sonst.
 
-`runsOnBridgeOnly` ist nötig, weil der Stub weder Controls noch Viewport noch
-Forms kennt — heute steht diese Unterscheidung als Auswahl von Hand in
-`node-stub.ts` gegen `node-bridge.ts`.
+Die build-sichere Ergänzung `src/app/page-manifest.ts` hält für jede direkt im
+Node-Runner ausführbare Seite Page-Body, Pfad, Titel, Paket und Runtime fest.
+`node/stub.ts` und `node/bridge.ts` iterieren diese Liste; `catalog.ts` übernimmt
+die Identität daraus und prüft, dass kein Runner-Eintrag ohne Katalogseite
+bleibt. Die Dokumentationsmodule selbst bleiben wegen `?jfx-code` Vite-only.
 
 ### E-5 — Flache Routen mit Namensraum im Pfad, keine Elternrouten
 
@@ -310,13 +312,11 @@ Schreiben. Für diese Seite heißt das, überprüfbar:
   Index aller Katalogeinträge; das Eingabefeld filtert ihn nach der Hydration.
   Kein leeres `<div>`, das auf JavaScript wartet.
 - Der „Kopieren"-Knopf am Codeblock wird erst nach der Hydration eingehängt.
-- Kollektionen mit `crawlable: true` behalten ihren SSR-Pager. Bekannter
-  Vorbehalt: `nextCrawlHref` liefert heute für jede Seite denselben Pfad, der
-  Fortschritt hängt am `onClick` — der Pager sieht ohne JavaScript also aus wie
-  einer, ohne einer zu sein. Das ist Bibliotheksarbeit aus `PROGRESSIVE.md`
-  (adressierbares Paging, `?<crawlId>.page=n`) und **nicht** Teil dieses
-  Auftrags. `/controls/remote` benennt es in einem Fallstrick-Kasten, statt es
-  zu verdecken.
+- Kollektionen mit `crawlable: true` behalten ihren SSR-Pager. Im
+  serverseitigen HTML sind die aktiven Footer-Seiten echte Links mit
+  `<crawlId>.offset` und `<crawlId>.limit`; nach der Hydration werden sie zu den
+  interaktiven Buttons. Remote-Beispiele müssen die angeforderte Initialseite
+  synchron als `initial` plus `initialOffset` bereitstellen.
 
 ### E-7 — Der Themenumschalter darf die Hydration nicht brechen
 
@@ -470,7 +470,7 @@ nennt die API, die belegt sein muss, damit die Seite ihren Zweck erfüllt.
 | `/controls/carousel` | Carousel | `carousel`, `autoAdvanceMs`, `ssrShowAllStates` |
 | `/controls/data-grid` | DataGrid | `dataGrid` über eine lokale `ListProperty`, `itemWidthPx`/`itemHeightPx`/`gapPx`, `emptyPlaceholder` |
 | `/controls/virtual-list` | VirtualListView | `virtualList`, `estimateHeightPx`, `overscanPx`, `header` |
-| `/controls/remote` | RemoteSource | `remoteSource` mit `initial`, `initialQuery`, `rangeQuery`, `sortQuery`, `totalCount`, `nextQuery`; dazu `paging`/`pageSize`/`crawlable` und der SSR-Pager aus E-6 |
+| `/controls/remote` | RemoteSource | `remoteSource` mit `initial`, `initialOffset`, `initialQuery`, `rangeQuery`, `sortQuery`, `totalCount`, `nextQuery`; dazu `paging`/`pageSize`/`crawlable` und der SSR-Pager aus E-6 |
 
 Der Datensatz für `/controls/remote` ist lokal erzeugt (ein Generator über
 mehrere tausend Zeilen, seitenweise mit `setTimeout` beantwortet) — kein echter
@@ -624,9 +624,36 @@ Route aus dem Katalog per HTTP und prüft je Route:
 `package.json`: `"verify:pages": "node scripts/verify-pages.mjs"` und
 `"verify": "npm run typecheck && npm run build && npm run verify:runtime && npm run verify:pages"`.
 
-`src/node/bridge.ts` wird auf den Katalog umgestellt: es rendert jeden Eintrag
-gegen die echte Bridge, `src/node/stub.ts` jeden Eintrag ohne
-`runsOnBridgeOnly`.
+**Befund, während S-8 gebaut wurde.** "`src/node/bridge.ts` wird auf den
+Katalog umgestellt: es rendert jeden Eintrag gegen die echte Bridge" wie oben
+formuliert ist nicht durchführbar, und zwar strukturell, nicht nur mühsam:
+jedes `doc.ts` schließt über einen `?jfx-code`-Import (E-3), und dieser
+Modulspezifizierer löst sich ausschließlich innerhalb von Vites eigenem
+Modulgraphen auf. `node/bridge.ts` und `node/stub.ts` laufen aber über
+`tsc -p tsconfig.node.json` gefolgt von einem nackten `node dist/node/...` --
+kein Vite, keine Plugin-Pipeline. `tsc` selbst compiliert einen Import von
+`entry.doc` anstandslos (die Ambient-Deklaration in `vite-env.d.ts` genügt für
+die Typprüfung), aber der entstandene JavaScript-Import von
+`"./page.ts?jfx-code"` bliebe zur Laufzeit unverändert stehen und liefe beim
+tatsächlichen `node`-Aufruf ins Leere (keine Datei, kein Default-Export).
+Dieselbe Kette gilt für `app/catalog.ts` selbst: es importiert jedes `doc.ts`,
+also zieht schon der bloße Import von `catalog.ts` denselben Fehler nach sich
+-- auch `scripts/verify-pages.mjs` kann `catalog.ts` also nicht direkt
+importieren.
+
+Die gewählte Lösung: `app/catalog.ts` exportiert zusätzlich `routeManifest`
+-- eine reine Datenprojektion (`path`, `title`, erwarteter `status`) ohne
+Bezug zu `doc`. `entry-server.ts` reicht das mit `export { routeManifest }`
+durch, und weil `vite build --ssr` alle `?jfx-code`-Importe schon zur Bauzeit
+zu Literalen einbettet, ist `dist/server/entry-server.js` (nach `npm run
+build`) eine für einfaches `node` sichere Datei, aus der
+`scripts/verify-pages.mjs` `routeManifest` importiert. Für die direkten
+Node-Runner bündelt `app/page-manifest.ts` die build-sicheren `page.ts`-Bodies
+und ihre Runtime-Anforderung; `node/bridge.ts` und `node/stub.ts` iterieren
+diese Liste statt Seiten von Hand aufzuführen. Das ist keine Abkehr vom
+Katalog als Quelle der Wahrheit für Navigation, Startseite und Suche (E-4
+bleibt davon unberührt) -- nur `doc.ts` selbst kann niemals unter reinem
+`node` laufen, mit oder ohne Katalog.
 
 **Abnahme.** `npm run verify` grün, und ein absichtlich eingebauter Fehler
 (eine Route aus `routes.ts` auskommentieren, im Katalog belassen) lässt

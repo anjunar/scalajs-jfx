@@ -550,6 +550,39 @@ Diese Zahlen sind kein Ersatz für Schritt 4 unten: Sie messen `jfx-demo`s
 eigenen Client-Build (Vites Standard-Minifizierung, `statePage`/`libraryPage`
 eingeschlossen), nicht `jfx-bridge`s `fullLinkJS`-Output isoliert.
 
+**Umbau zur Dokumentationsseite (2026-09-04, `CLAUDE_DEMO_PLAN.md`).** Was
+oben steht, beschreibt den Beweis, dass die npm-Modularisierung trägt -- die
+drei Bugs bleiben genau so stehen, sie sind Projektgedächtnis. Was seitdem
+dazukam, macht aus demselben Projekt das Schaufenster der Bibliothek: ein
+Katalog (`src/app/catalog.ts`) ist die einzige Quelle für Navigation,
+Startseite und Suche; jede Seite liegt als `page.ts` (nur `@anjunar/jfx-*`-
+Importe, von `npm run build:node` als eigenes `tsc`-Programm erzwungen) neben
+einem `doc.ts`, das Titel, Prosa und den tatsächlich ausgeführten Quelltext
+zeigt -- letzteres über einen `?jfx-code`-Import, den
+`tools/vite-plugin-jfx-code.ts` zur Bauzeit mit `typescript`s eigenem Scanner
+tokenisiert (keine Highlighting-Bibliothek im Bundle, ein serverseitig
+gerendeter `pre > code > span`-Baum). Design kommt jetzt aus `@anjunar/ui`
+(echte Abhängigkeit, nicht "nicht installiert") in derselben Kaskadenordnung
+wie `application/`. 27 Katalogeinträge plus zwei erreichbare Kindrouten,
+geprüft von `scripts/verify-pages.mjs` gegen den Produktionsbuild.
+
+Zwei weitere reale Befunde dabei, derselben Art wie die drei oben: (1) mehrere
+`text()`-Aufrufe direkt hintereinander ohne dazwischenliegendes Element
+serialisieren als *ein* zusammenhängender Textknoten im HTML, aber Hydration
+beansprucht pro `text()`-Aufruf einen eigenen DOM-Knoten -- derselbe
+"Hydration fault: There is no further DOM node" wie oben, jetzt aus einer ganz
+anderen Ursache; behoben, indem angrenzende Klartext-Läufe vor dem Rendern zu
+einem einzigen `text()`-Aufruf zusammengefasst werden (`src/docs/code-block.ts`).
+(2) `capture()`/`restore()` spielt nur innerhalb desselben Render-Durchlaufs
+korrekt zurück (ein Mikrotask, der vor dem Serialisieren noch abläuft); aus
+einem `onClick` heraus aufgerufen, nachdem Hydration längst abgeschlossen ist,
+trifft es exakt die Cursor-Falle, die Lauf 5 oben für `notify()`/
+`floatingWindow()` schon beschreibt -- dokumentiert als Fallstrick auf
+`/core/lifecycle`, nicht verdeckt.
+
+Die vollständige Bauanleitung, jede Entscheidung mit Begründung und der
+Seitenkatalog stehen in [`npm/jfx-demo/CLAUDE_DEMO_PLAN.md`](npm/jfx-demo/CLAUDE_DEMO_PLAN.md).
+
 ## 12. Was als Nächstes ansteht
 
 - ~~**Schritt 4**~~ -- erledigt, §14. Der anfängliche Rest ist mit erledigt:

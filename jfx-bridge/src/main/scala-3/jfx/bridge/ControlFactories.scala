@@ -49,6 +49,9 @@ private[bridge] trait RemoteSourceFacade extends js.Object {
     */
   val initial: js.UndefOr[js.Array[js.Any]] = js.native
 
+  /** Absolute index represented by `initial[0]`; useful when SSR renders an addressable page. */
+  val initialOffset: js.UndefOr[Int] = js.native
+
   val totalCount: js.UndefOr[Int] = js.native
 
   /** `(query, offset, limit) => query` -- enables range loading while scrolling. */
@@ -121,6 +124,7 @@ private[bridge] object ControlFactories {
       loader = loader,
       initialQuery = facade.initialQuery,
       underlying = facade.initial.getOrElse(js.Array[js.Any]()),
+      initialOffset = facade.initialOffset.toOption.getOrElse(0),
       sortUpdater = facade.sortQuery.toOption.map { fn => (query: js.Any, sorting: Seq[RemoteSort]) =>
         fn(query, sorting.map(sortFacade).toJSArray)
       },

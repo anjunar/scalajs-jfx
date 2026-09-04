@@ -58,7 +58,9 @@ app.use(async (req, res, next) => {
       ({ render } = await vite.ssrLoadModule("/src/entry-server.ts"));
     }
 
-    const { html: appHtml, status } = await render(req.path);
+    // originalUrl is the complete request target. Passing req.path here would
+    // silently discard query parameters before RouterConfig.url reaches SSR.
+    const { html: appHtml, status } = await render(url);
     const html = template.replace("<!--ssr-outlet-->", appHtml);
 
     res.status(status).type("html").end(html);

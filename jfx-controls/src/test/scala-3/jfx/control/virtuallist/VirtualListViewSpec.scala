@@ -69,7 +69,6 @@ class VirtualListViewSpec extends AnyFlatSpec with Matchers {
     val html = Runtime.renderToString { cursor =>
       Runtime.mount(
         new CrawlTestRoot(
-          crawlPath = "/",
           cookieHeader = Some(
             s"jfx-crawl-members-list=${js.URIUtils.encodeURIComponent("5:4:")}"
           )
@@ -94,7 +93,6 @@ class VirtualListViewSpec extends AnyFlatSpec with Matchers {
     html should include("8:Member 8")
     html should not include "9:Member 9"
     html should include("top: 200px")
-    html should include("href=\"/\"")
     html should not include "offset="
     html should not include "limit="
   }

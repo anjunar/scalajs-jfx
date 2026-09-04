@@ -1,0 +1,52 @@
+.docs-code-block {
+    position: relative;
+}
+
+.docs-code {
+    margin: 0;
+    padding: 1rem;
+    background: var(--aj-code-bg);
+    border: 1px solid var(--aj-line);
+    border-radius: var(--radius-control);
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: var(--aj-ink);
+    tab-size: 2;
+}
+
+.docs-code ::selection {
+    background: var(--aj-code-selection);
+}
+
+.docs-code-block__copy {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+}
+
+.tok-kw {
+    color: var(--aj-code-keyword);
+}
+
+.tok-str {
+    color: var(--aj-code-string);
+}
+
+.tok-num {
+    color: var(--aj-code-number);
+}
+
+.tok-com {
+    color: var(--aj-code-comment);
+    font-style: italic;
+}
+
+.tok-id {
+    color: var(--aj-code-variable);
+}
+
+.tok-typ {
+    color: var(--aj-code-type);
+}

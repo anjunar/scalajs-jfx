@@ -16,6 +16,9 @@
     "types",
     "README.md"
   ],
+  "scripts": {
+    "verify": "node scripts/verify.mjs"
+  },
   "sideEffects": true,
   "license": "MIT",
   "author": "Patrick Bittner",

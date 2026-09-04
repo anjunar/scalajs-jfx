@@ -4,7 +4,28 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>@anjunar/jfx demo</title>
-    <link rel="stylesheet" href="/src/demo.css" />
+    <script>
+      // Runs before anything paints so the first frame already carries the
+      // right `data-theme` -- otherwise the page would flash light before a
+      // stored "dark" preference (or the client's own toggle in shell.ts)
+      // caught up. See CLAUDE_DEMO_PLAN.md E-7.
+      (function () {
+        try {
+          var stored = localStorage.getItem("jfx-demo.theme");
+          var mode =
+            stored === "light" || stored === "dark"
+              ? stored
+              : window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+                ? "dark"
+                : "light";
+          document.documentElement.setAttribute("data-theme", mode);
+        } catch (error) {
+          /* localStorage can throw in a locked-down browser context; the CSS
+             default (light) is a fine fallback. */
+        }
+      })();
+    </script>
+    <link rel="stylesheet" href="/src/styles/style.css" />
   </head>
   <body>
     <div id="root"><!--ssr-outlet--></div>

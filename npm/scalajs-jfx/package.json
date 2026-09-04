@@ -18,6 +18,9 @@
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
+  "scripts": {
+    "verify": "node scripts/verify.mjs"
+  },
   "sideEffects": [
     "*.css",
     "index.js"

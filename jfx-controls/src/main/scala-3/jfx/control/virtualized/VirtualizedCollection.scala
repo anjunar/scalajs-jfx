@@ -4,6 +4,7 @@ import jfx.core.component.AbstractComponent
 import jfx.core.context.UrlScope
 import jfx.core.dsl.ClassDsl.classes
 import jfx.core.dsl.EventDsl.onClick
+import jfx.core.layout.Anchor.{anchor, href}
 import jfx.core.layout.Button.*
 import jfx.core.layout.Div
 import jfx.core.layout.Div.div
@@ -229,20 +230,15 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
     div {
       classes = Seq(s"$cssPrefix-footer", "jfx-virtualized-footer")
 
-      button("Previous") {
-        classes = Seq("jfx-virtualized-page-button")
-        disabled = pageStatusProperty.map(_ => !hasPreviousPage)
-        onClick(_ => setPageOffset(pageStart - pageSize))
-      }
+      renderPagingControl("Previous", pageStart - pageSize, hasPreviousPage)
+
       div {
         classes = Seq("jfx-virtualized-page-status")
         text(pageStatusProperty) {}
       }
-      button("Next") {
-        classes = Seq("jfx-virtualized-page-button")
-        disabled = pageStatusProperty.map(_ => !hasNextPage)
-        onClick(_ => setPageOffset(pageStart + pageSize))
-      }
+
+      renderPagingControl("Next", pageStart + pageSize, hasNextPage)
+
       button(
         displayModeProperty.map {
           case CollectionDisplayMode.Paging   => "Switch to scrolling"
@@ -250,8 +246,36 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
         }
       ) {
         classes = Seq("jfx-virtualized-mode-button")
-        onClick(_ => toggleDisplayMode())
+        if (browserRendering) onClick(_ => toggleDisplayMode())
+        else disabled = true
       }
+    }
+
+  /**
+    * Uses the same element during SSR and the first browser render. Hydration cannot replace an
+    * SSR link with a button because it claims the existing DOM tree. An enabled link still gets
+    * the client-side pager behavior after hydration; without JavaScript its href remains usable.
+    */
+  private def renderPagingControl(label: String, offset: Int, enabled: Boolean)(using
+      AbstractComponent,
+      jfx.core.render.Cursor
+  ): Unit =
+    pagingHref(offset, scrolling = false) match {
+      case Some(target) if enabled =>
+        anchor(label) {
+          classes = Seq("jfx-virtualized-page-button")
+          href = target
+          if (browserRendering)
+            onClick { event =>
+              event.preventDefault()
+              setPageOffset(offset)
+            }
+        }
+      case _ =>
+        button(label) {
+          classes = Seq("jfx-virtualized-page-button")
+          disabled = true
+        }
     }
 
   protected def requestPageLoad(start: Int, end: Int): Unit =
@@ -269,13 +293,16 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
 
   private def navigatePagingUrl(offset: Int, scrolling: Boolean): Unit =
     UrlScope.current(using this).foreach { scope =>
+      pagingHref(offset, scrolling).foreach(next => scope.navigate(next, replace = false))
+    }
+
+  private def pagingHref(offset: Int, scrolling: Boolean): Option[String] =
+    UrlScope.current(using this).map { scope =>
       val normalizedOffset = math.max(0, offset / pageSize) * pageSize
       val withOffset = replaceQueryParameter(scope.url, s"$pagingUrlKey.offset", normalizedOffset.toString)
       val withLimit = replaceQueryParameter(withOffset, s"$pagingUrlKey.limit", pageSize.toString)
-      val next =
-        if (scrolling) replaceQueryParameter(withLimit, s"$pagingUrlKey.mode", "scroll")
-        else removeQueryParameter(withLimit, s"$pagingUrlKey.mode")
-      scope.navigate(next, replace = false)
+      if (scrolling) replaceQueryParameter(withLimit, s"$pagingUrlKey.mode", "scroll")
+      else removeQueryParameter(withLimit, s"$pagingUrlKey.mode")
     }
 
   private def queryValue(url: String, name: String): Option[String] =

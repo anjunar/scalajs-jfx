@@ -44,6 +44,8 @@ export interface RemoteSource<T, Q = unknown> {
    * while mounting.
    */
   readonly initial?: readonly T[];
+  /** Absolute index represented by `initial[0]` when SSR starts on a later page. */
+  readonly initialOffset?: number;
   readonly totalCount?: number;
   /** `(query, offset, limit) => query` -- enables range loading while scrolling. */
   readonly rangeQuery?: (query: Q, offset: number, limit: number) => Q;

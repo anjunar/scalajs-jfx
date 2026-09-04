@@ -28,7 +28,6 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
     val html = Runtime.renderToString { cursor =>
       Runtime.mount(
         new CrawlTestRoot(
-          crawlPath = "/",
           cookieHeader = Some(
             s"jfx-crawl-members-table=${js.URIUtils.encodeURIComponent("5:5:")}"
           )
@@ -51,10 +50,9 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
     html should include("Member 5")
     html should include("Member 9")
     html should not include "Member 10"
-    html should include("href=\"/\"")
     html should not include "offset="
     html should not include "limit="
-    html should include("More items...")
+    html should not include "More items..."
   }
 
   it should "compose columns and the scrolling content header in stable initial mount ranges" in {
@@ -103,6 +101,34 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
     html should not include "Member 9"
     html should include("Page 2 of 3")
     html should include("jfx-table-footer")
+  }
+
+  it should "render usable footer links during no-JavaScript SSR" in {
+    val html = Runtime.renderToString { cursor =>
+      Runtime.mount(
+        new AbstractComponent {
+          override val tagName: String = "main"
+
+          override def compose(contentCursor: Cursor): Unit =
+            DslLayer.render(this, contentCursor) {
+              UrlScope.provide(UrlScope(() => "/members") { (_, _) => () })
+              tableView[String](ListProperty(js.Array((0 until 15).map(index => s"Member $index")*))) {
+                crawlId = "members"
+                paging = true
+                pageSize = 5
+                column[String, String]("Name") {
+                  cell { item => text(item) {} }
+                }
+              }
+            }
+        },
+        cursor
+      )
+    }
+
+    html should include("href=\"/members?members.offset=5&amp;members.limit=5\"")
+    html should include("Page 1 of 3")
+    html should not include "<button class=\"jfx-virtualized-page-button\">Next</button>"
   }
 
   it should "apply an exact fixed height and keep the body viewport scrollable" in {
@@ -161,7 +187,6 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
     val html = Runtime.renderToString { cursor =>
       Runtime.mount(
         new CrawlTestRoot(
-          crawlPath = "/",
           cookieHeader = Some(
             s"jfx-crawl-remote-members-table=${js.URIUtils.encodeURIComponent("5:5:")}"
           )
@@ -181,7 +206,7 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
 
     html should include("jfx-table-cell-loading-placeholder")
     html should include("top: 160px")
-    html should include("href=\"/\"")
+    html should not include "More items..."
   }
 
   it should "reflect remote sorting state in the header" in {

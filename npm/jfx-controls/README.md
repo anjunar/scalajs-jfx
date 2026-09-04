@@ -93,6 +93,7 @@ interface Query { offset: number; limit: number; sorting?: readonly { field: str
 const source = remoteSource<Book, Query>({
   initialQuery: { offset: 0, limit: 50 },
   initial: firstPage,                       // shown on the server -- there is no async mount point
+  initialOffset: 0,                         // absolute index represented by initial[0]
   totalCount: 1000,
   rangeQuery: (q, offset, limit) => ({ ...q, offset, limit }),
   sortQuery: (q, sorting) => ({ ...q, offset: 0, sorting }),
@@ -106,9 +107,11 @@ tableView(source, columns, { crawlable: true, crawlId: "books" });
 follow the same shape; their `renderCell` receives `item | null` -- `null` for a
 position that exists but has not loaded yet.
 
-`crawlable` / `crawlId` render a fixed first slice on the server with a "more"
-link so a crawler can reach past the first screen. The link's path comes from the
-surrounding `router()` -- it is only meaningful for a control rendered inside one.
+`crawlable` / `crawlId` render a fixed slice on the server with pager links so a
+crawler can reach past the first screen. `initialOffset` identifies the absolute
+index of `initial[0]` when the route renders an addressable page directly. The
+links use the current URL from the surrounding `router()`; without that URL
+scope, a server-rendered control cannot create a meaningful target.
 
 ### Not in this release
 

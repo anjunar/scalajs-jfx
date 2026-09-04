@@ -1,0 +1,29 @@
+.docs-api-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.docs-api-table th,
+.docs-api-table td {
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--aj-line);
+    vertical-align: top;
+}
+
+.docs-api-table th {
+    color: var(--aj-ink-muted);
+    font-weight: 600;
+}
+
+.docs-api-table__name {
+    font-family: var(--font-mono);
+    white-space: nowrap;
+}
+
+.docs-api-table__type {
+    font-family: var(--font-mono);
+    color: var(--aj-code-type, var(--aj-ink-soft));
+    white-space: nowrap;
+}

@@ -431,7 +431,7 @@ dreimal parallel gepflegt:
 
 | Bereich | Member (Auswahl) |
 |---|---|
-| Crawl-State | `crawlId`, `crawlable`, `crawlState`, `crawlParams`, `initializeCrawlState`, `initializeBrowserCrawlState`, `refreshConfiguredCrawlState`, `persistCrawlState`, `resolvedCrawlId`, `nextCrawlHref`, `hasMoreCrawlPage` |
+| Crawl-State | `crawlId`, `crawlable`, `crawlState`, `crawlParams`, `initializeCrawlState`, `initializeBrowserCrawlState`, `refreshConfiguredCrawlState`, `persistCrawlState`, `resolvedCrawlId` |
 | Scroll & Messung | `scrollTopProperty`, `effectiveScrollTop`, `nextScrollTop`, `updateScrollState`, `scheduleViewportMeasure`, `viewportMeasureScheduled`, `updateViewportSize`, `viewportHeightProperty`, `viewportWidthProperty`, `topForIndex`, `visibleRange`, `applyInitialScrollPosition`, `persistVisibleScrollOffset`, `initialScrollIndex` |
 | Remote-Anbindung | `currentRemoteItems`, `remoteItemsObserver`, `remoteLoading`, `remoteError`, `remoteStateRevisionProperty`, `bumpRemoteState`, `requestLazyLoadIfNecessary`, `pendingRangeLoads`, `prefetchItems` |
 | Item-State | `itemsRefProperty`, `itemsObserver`, `rewireItemsObserver`, `itemAt`, `itemStateRevisionProperty`, `bumpItemState`, `refreshItemState`, `setItems`, `getItems` |
@@ -452,8 +452,8 @@ bestehend: die drei Controls
 2. Schnitt festlegen. Vorschlag:
    - `VirtualizedCollection` — abstrakte Basisklasse: Scroll-State, Messung,
      sichtbarer Bereich, Remote-Anbindung, Item-State-Revision.
-   - `CrawlableCollection` — Trait: Crawl-ID, Cookie-State, `nextCrawlHref`.
-     Nutzt `CrawlScope` aus **P1-4**.
+   - `CrawlableCollection` — Trait: Crawl-ID und Cookie-State.
+     Der gemeinsame Footer-Pager übernimmt die Navigation.
    - `ItemGeometry` — Strategie: `FixedHeight(px)` vs. `MeasuredHeight`.
      Das ist der eigentliche Unterschied zwischen den dreien.
 3. **Ein** Control zuerst umstellen (Vorschlag: `VirtualListView`, das

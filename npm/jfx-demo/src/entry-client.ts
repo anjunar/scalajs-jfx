@@ -9,8 +9,9 @@ import { hydrate, installRuntime } from "@anjunar/jfx-core";
 import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";
 import { router } from "@anjunar/jfx-router";
 import { viewport } from "@anjunar/jfx-viewport";
-import "@anjunar/scalajs-jfx/index.css";
-import { appRoutes, appShell, routerConfig } from "./routes.js";
+import { appRoutes, appShell, routerConfig } from "./app/routes.js";
+import { hydratedProperty } from "./app/hydrated.js";
+import { syncThemeFromDocument } from "./app/theme.js";
 
 installRuntime(bridgeRuntime);
 
@@ -27,3 +28,8 @@ installRuntime(bridgeRuntime);
 await hydrate(document.getElementById("root")!, () =>
   viewport(() => router(appRoutes, routerConfig, appShell))
 );
+
+// Only after hydration has fully settled -- see src/app/hydrated.ts and
+// src/app/theme.ts's own note on why this order matters (E-7).
+hydratedProperty().set(true);
+syncThemeFromDocument();

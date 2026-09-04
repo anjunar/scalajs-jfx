@@ -28,10 +28,12 @@
   },
   "peerDependencies": {
     "@anjunar/jfx-core": "^3.0.0",
-    "@anjunar/scalajs-jfx-bridge": "^3.0.0"
+    "@anjunar/scalajs-jfx-bridge": "^3.0.0",
+    "@anjunar/scalajs-jfx": "^3.0.0"
   },
   "devDependencies": {
     "@anjunar/jfx-core": "*",
+    "@anjunar/scalajs-jfx": "*",
     "@anjunar/scalajs-jfx-bridge": "*",
     "@types/node": "^22.0.0",
     "jsdom": "^30.0.1",
