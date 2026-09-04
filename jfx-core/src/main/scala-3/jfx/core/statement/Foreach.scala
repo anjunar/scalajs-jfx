@@ -11,7 +11,8 @@ import scala.scalajs.js
 class Foreach[V](
     items: ListProperty[V],
     build: (V, Int) => AbstractComponent ?=> Cursor ?=> Unit,
-    reindexOnStructuralChange: Boolean = false
+    reindexOnStructuralChange: Boolean = false,
+    preserveUpdates: Boolean = false
 ) extends AbstractCustomComponent {
   import ListProperty.*
 
@@ -47,7 +48,8 @@ class Foreach[V](
         if (reindexOnStructuralChange) rebuildFrom(index)
         else unmountRange(index, elements.length)
       case UpdateAt(index, _, newElement, _) =>
-        replaceAt(index, newElement)
+        if (preserveUpdates) updateInPlace(index, newElement)
+        else replaceAt(index, newElement)
       case Patch(from, removed, inserted, _) =>
         if (reindexOnStructuralChange) rebuildFrom(from)
         else {
@@ -83,6 +85,10 @@ class Foreach[V](
     } else {
       resetAll()
     }
+
+  private def updateInPlace(index: Int, value: V): Unit =
+    if (index >= 0 && index < mounted.length) mounted(index).updateValue(value)
+    else resetAll()
 
   private def mountAt(index: Int, value: V): Unit = {
     val safeIndex = index.max(0).min(mounted.length)
@@ -150,6 +156,13 @@ object Foreach {
       body: (V, Int) => AbstractComponent ?=> Cursor ?=> Unit
   )(using AbstractComponent, Cursor): Foreach[V] =
     DslLayer.child(new Foreach(items, body, reindexOnStructuralChange = true)) {}
+
+  private[jfx] def foreachIndexedPreservingUpdates[V](items: ListProperty[V])(
+      body: (V, Int) => AbstractComponent ?=> Cursor ?=> Unit
+  )(using AbstractComponent, Cursor): Foreach[V] =
+    DslLayer.child(
+      new Foreach(items, body, reindexOnStructuralChange = true, preserveUpdates = true)
+    ) {}
 
   def foreachIndexed[V](items: ReadOnlyProperty[Seq[V]])(
       body: (V, Int) => AbstractComponent ?=> Cursor ?=> Unit

@@ -5,7 +5,10 @@ import jfx.core.document.DocumentHead
 import jfx.core.dsl.DslLayer
 import jfx.core.layout.{Condition, Head, TextComponent}
 import jfx.core.render.Cursor
-import jfx.core.state.{ReadOnlyProperty => CoreReadOnlyProperty}
+import jfx.core.state.{
+  ListProperty => CoreListProperty,
+  ReadOnlyProperty => CoreReadOnlyProperty
+}
 import jfx.core.statement.Foreach
 
 import scala.concurrent.ExecutionContext
@@ -109,20 +112,26 @@ final class ScopeHandleBridge(
   }
 
   def forEach(
-      items: JsReadOnlyProperty[js.Array[js.Any]],
+      items: js.Any,
       body: js.Function3[js.Any, Int, ScopeHandleBridge, Unit]
   ): Unit = {
     requireActive()
     given AbstractComponent = parent
     given Cursor            = cursor
 
-    val itemsAsSeq: CoreReadOnlyProperty[Seq[js.Any]] =
-      ReactiveBridge.wrap(items).map(_.toSeq)
-
-    Foreach.foreachIndexed(itemsAsSeq) { (value, index) =>
+    val itemBody: (js.Any, Int) => AbstractComponent ?=> Cursor ?=> Unit = (value, index) => {
       val self        = summon[AbstractComponent]
       val childCursor = summon[Cursor]
       body(value, index, new ScopeHandleBridge(self, childCursor))
+    }
+
+    items match {
+      case handle: ListPropertyHandle[?] =>
+        Foreach.foreachIndexed(handle.underlyingList.asInstanceOf[CoreListProperty[js.Any]])(itemBody)
+      case _ =>
+        val itemsAsSeq: CoreReadOnlyProperty[Seq[js.Any]] =
+          ReactiveBridge.wrap(items.asInstanceOf[JsReadOnlyProperty[js.Array[js.Any]]]).map(_.toSeq)
+        Foreach.foreachIndexed(itemsAsSeq)(itemBody)
     }
   }
 

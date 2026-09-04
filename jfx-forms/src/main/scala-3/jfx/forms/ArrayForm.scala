@@ -5,7 +5,7 @@ import jfx.core.dsl.DslLayer
 import jfx.core.dsl.DslLayer.render
 import jfx.core.render.Cursor
 import jfx.core.state.{ListProperty, Property}
-import jfx.core.statement.Foreach.foreachIndexed
+import jfx.core.statement.Foreach
 import jfx.forms.Form.FormContext
 
 import scala.collection.mutable
@@ -26,6 +26,7 @@ class ArrayForm[V](
   override val valueProperty: ListProperty[V] = ListProperty()
 
   private val mountedByIndex             = mutable.Map.empty[Int, Control[?]]
+  private val synchronizingControls      = mutable.Set.empty[Control[?]]
   private var currentIndex               = -1
   private var contextPrefix              = name
   // A renderer supplied here, rather than through `controlRenderer_=`, is visible to `compose`'s
@@ -141,7 +142,7 @@ class ArrayForm[V](
 
       FormContext.provide(this)
 
-      foreachIndexed(valueProperty) { (item, index) =>
+      Foreach.foreachIndexedPreservingUpdates(valueProperty) { (item, index) =>
         renderer.foreach { build =>
           currentIndex = index
           try {
@@ -153,6 +154,16 @@ class ArrayForm[V](
           } finally currentIndex = -1
         }
       }
+
+      addDisposable(valueProperty.observeChanges {
+        case ListProperty.UpdateAt(index, _, value, _) =>
+          mountedByIndex.get(index).foreach { control =>
+            synchronizingControls += control
+            try setControlValue(control, value)
+            finally synchronizingControls -= control
+          }
+        case _ => ()
+      })
     }
 
   private def setControlValue(control: Control[?], value: V): Unit =
@@ -171,12 +182,14 @@ class ArrayForm[V](
     control.valueProperty match {
       case property: Property[Any @unchecked] =>
         control.addDisposable(property.observeWithoutInitial { value =>
-          if (mountedByIndex.get(index).contains(control) && index < valueProperty.length)
+          if (!synchronizingControls.contains(control) &&
+              mountedByIndex.get(index).contains(control) && index < valueProperty.length)
             valueProperty.update(index, value.asInstanceOf[V])
         })
       case property: ListProperty[Any @unchecked] =>
         control.addDisposable(property.observeChanges { _ =>
-          if (mountedByIndex.get(index).contains(control) && index < valueProperty.length)
+          if (!synchronizingControls.contains(control) &&
+              mountedByIndex.get(index).contains(control) && index < valueProperty.length)
             valueProperty.update(index, property.get.asInstanceOf[V])
         })
       case _ => ()

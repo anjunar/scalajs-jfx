@@ -310,7 +310,10 @@ private[bridge] trait DynamicFormular extends FormController { self: AbstractCom
 
     val binding: CoreDisposable =
       if (!hasModel) {
-        clearControlValue(control)
+        control match {
+          case nested: DynamicSubForm => nested.clearModel()
+          case _                      => clearControlValue(control)
+        }
         unboundControls.remove(control.name)
         CoreDisposable.empty
       } else FormFactories.resolveModelProperty(formModel, control.name) match {
@@ -420,6 +423,9 @@ private[bridge] final class DynamicSubForm(
     Option(valueProperty.get).getOrElse(js.Dictionary())
 
   override protected def hasModel: Boolean = valueProperty.get != null
+
+  private[bridge] def clearModel(): Unit =
+    if (valueProperty.get != null) valueProperty.set(null)
 
   override def validate(forceVisible: Boolean = false): Seq[String] =
     super.validate(forceVisible) ++ controls.toSeq.flatMap(_.validate(forceVisible))

@@ -203,6 +203,10 @@ describe("form + input", () => {
     expect(second.name.get).toBe("Katherine");
     model.owner.set(null);
     expect(field.value).toBe("");
+    field.value = "Detached";
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(first.name.get).toBe("Ada");
+    expect(second.name.get).toBe("Katherine");
     app.dispose();
   });
 });
@@ -338,9 +342,12 @@ describe("arrayForm", () => {
     expect(fields.map((el) => el.value)).toEqual(["math", "logic", "compilers"]);
 
     const firstField = fields[0]!;
+    firstField.focus();
     firstField.value = "algebra";
     firstField.dispatchEvent(new Event("input", { bubbles: true }));
     expect(model.tags.get).toEqual(["algebra", "logic", "compilers"]);
+    expect(root.querySelector("input")).toBe(firstField);
+    expect(document.activeElement).toBe(firstField);
 
     app.dispose();
   });
@@ -425,6 +432,32 @@ describe("subForm", () => {
     field.value = "Ada";
     field.dispatchEvent(new Event("input", { bubbles: true }));
     expect(owner.name.get).toBe("Ada");
+
+    app.dispose();
+  });
+
+  it("propagates a null parent model through nested subforms", () => {
+    const contact = { name: property("Ada") };
+    const address = { contact: property(contact) };
+    const model = { address: property<typeof address | null>(address) };
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const app = mount(root, () => {
+      form(model, {}, () => {
+        subForm("address", address, {}, () =>
+          subForm("contact", contact, {}, () => input("name"))
+        );
+      });
+    });
+
+    const field = root.querySelector("input") as HTMLInputElement;
+    expect(field.value).toBe("Ada");
+    model.address.set(null);
+    expect(field.value).toBe("");
+    field.value = "Detached";
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(contact.name.get).toBe("Ada");
 
     app.dispose();
   });

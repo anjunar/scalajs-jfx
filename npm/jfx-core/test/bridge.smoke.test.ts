@@ -25,9 +25,12 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
   capture,
   button,
+  element,
+  forEach,
   hbox,
   hydrate,
   installRuntime,
+  listProperty,
   mount,
   onClick,
   property,
@@ -124,6 +127,27 @@ describe("mount", () => {
 
     element.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     expect(root.textContent).toContain("n=2");
+
+    app.dispose();
+  });
+
+  it("keeps existing forEach controls when a list item is appended", () => {
+    const items = listProperty(["first"]);
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const app = mount(root, () =>
+      forEach(items, () => element("input")())
+    );
+    const field = root.querySelector("input") as HTMLInputElement;
+    field.value = "unsaved draft";
+    field.focus();
+    items.add("second");
+
+    expect(root.querySelectorAll("input")).toHaveLength(2);
+    expect(root.querySelector("input")).toBe(field);
+    expect(field.value).toBe("unsaved draft");
+    expect(document.activeElement).toBe(field);
 
     app.dispose();
   });
