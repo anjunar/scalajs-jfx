@@ -730,6 +730,11 @@ eigene Minifizierung war beide Male aktiv, trägt also die Differenz nicht):
 | Client, roh / gzip | 855,23 kB / 143,94 kB | 370,76 kB / 98,16 kB |
 | SSR, roh / gzip | 1 492,93 kB / 199,21 kB | 862,03 kB / 146,69 kB |
 
-**11. Kein CI.** `npm run verify` und `sbtn "Test/testOnly *"` sind grün, aber
-nichts erzwingt das. Schritt 8 aus `JAVASCRIPT_API.md` §9 ist inhaltlich
-erledigt und in der Pipeline nicht verdrahtet.
+**11. Kein CI — behoben, mit einem Vorbehalt.** `.github/workflows/verify.yml`
+fährt bei jedem Push nach `master` und jedem Pull Request: den vollen
+Scala-Testlauf, das Linken der Bridge, dann `npm run verify` in `jfx-core` und
+in `jfx-demo` — dieselben Kommandos, die lokal grün liefen. Der Vorbehalt: der
+Workflow ist so weit lokal nachvollzogen, wie das ohne einen echten
+GitHub-Actions-Runner geht (Schritte, Kommandos, Reihenfolge, Cache-Pfade
+geprüft), aber **nicht** in einer echten Actions-Umgebung gelaufen. Der erste
+tatsächliche Lauf dort ist der eigentliche Beweis.

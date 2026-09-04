@@ -20,6 +20,14 @@ sbtn "Test/testOnly *"
 Das ist der Befehl, der vor einem Commit grün sein muss (aktuell 285 Tests).
 `sbtn test` ist für die schnelle Schleife während der Arbeit gedacht.
 
+Für die npm-Seite (`npm/jfx-core`, `npm/jfx-demo`) ist `npm run verify` das
+Äquivalent — Typecheck, Testsuite, und je nach Paket der Tarball-Consumer-Test
+bzw. die Client-/SSR-Builds samt Eine-Runtime-Nachweis. Braucht vorher
+`sbtn "scalajs-jfx-bridge/fullLinkJS"`. Details in `JAVASCRIPT_API.md` §15.
+
+`.github/workflows/verify.yml` fährt beide Gates bei jedem Push nach `master`
+und jedem Pull Request.
+
 ## Architektur
 
 Die Regeln — Modulgraph, Paketwurzeln, Async-Modell, Zustand im SSR-Prozess,

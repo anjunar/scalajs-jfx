@@ -1,0 +1,81 @@
+name: verify
+
+# One job, sequential steps, on purpose: the npm side needs the linked bridge
+# artifact from the Scala side (test/consumer and verify-single-runtime both
+# read npm/scalajs-jfx-bridge/dist/fullopt/main.js), so splitting into
+# parallel jobs would mean shipping that artifact between them for no benefit
+# on a repo this size. See CLAUDE_REVIEW_3.md, Risiko 11 -- this workflow is
+# what "npm run verify" and "sbtn Test/testOnly *" being green locally does
+# not by itself guarantee.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          # LTS, well ahead of Scala 3.3.8's minimum. Local development runs a
+          # newer JDK, but nothing in build.sbt requires it.
+          java-version: "21"
+
+      - name: Set up sbt
+        uses: sbt/setup-sbt@v1
+
+      - name: Cache Coursier and sbt
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/coursier
+            ~/.sbt
+            ~/.ivy2/cache
+          key: ${{ runner.os }}-sbt-${{ hashFiles('project/build.properties', 'project/plugins.sbt', 'build.sbt') }}
+          restore-keys: |
+            ${{ runner.os }}-sbt-
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      # AGENTS.md: "Immer sbtn verwenden, niemals sbt." -- `sbt test` delegates
+      # to `testQuick` in sbt 2, which only reruns suites affected since the
+      # last green run; on a fresh checkout that happens to be everything, but
+      # relying on that coincidence is exactly the trap AGENTS.md documents.
+      # `Test/testOnly *` is the one command guaranteed to run all 285 tests.
+      - name: Scala test suite
+        run: sbtn "Test/testOnly *"
+
+      # The one link this workflow needs. npm/scalajs-jfx-bridge/package.json
+      # points main/exports at dist/fullopt/main.js (JAVASCRIPT_API.md §14) --
+      # there is no separate fastLinkJS step to run first.
+      - name: Link the Scala.js bridge
+        run: sbtn "scalajs-jfx-bridge/fullLinkJS"
+
+      - name: Install npm workspace
+        run: npm ci --no-audit --no-fund
+
+      # Typecheck + unit suite (stub and the linked bridge) + the tarball
+      # consumer test. The consumer test is what would have caught every
+      # packaging fault this prototype has had (JAVASCRIPT_API.md §11/§13,
+      # CLAUDE_REVIEW_3.md §9 Risiko 3) -- it is the reason this step, not
+      # `npm test`, is the gate.
+      - name: jfx-core -- typecheck, unit tests, consumer test
+        working-directory: npm/jfx-core
+        run: npm run verify
+
+      # Typecheck, client + SSR build, and the one-runtime proof across dev
+      # server, client bundle and SSR bundle (CLAUDE_REVIEW_3.md §7.2).
+      - name: jfx-demo -- typecheck, build, one-runtime proof
+        working-directory: npm/jfx-demo
+        run: npm run verify
