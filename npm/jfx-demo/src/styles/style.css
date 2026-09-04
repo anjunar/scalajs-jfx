@@ -12,6 +12,7 @@
  */
 @import "tailwindcss";
 @import "@anjunar/ui";
+@import "@anjunar/scalajs-lexical/index.css";
 @import "@anjunar/scalajs-jfx/index.css";
 
 @import "./theme.css";

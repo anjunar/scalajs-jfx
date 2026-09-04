@@ -20,6 +20,7 @@ import { coreDerivedPage } from "../pages/core-derived/page.js";
 import { coreElementsPage } from "../pages/core-elements/page.js";
 import { coreLifecyclePage } from "../pages/core-lifecycle/page.js";
 import { coreStatePage } from "../pages/core-state/page.js";
+import { editorBasicsPage } from "../pages/editor-basics/page.js";
 import { formsBasicsPage } from "../pages/forms-basics/page.js";
 import { formsComboBoxPage } from "../pages/forms-combo-box/page.js";
 import { formsCompositionPage } from "../pages/forms-composition/page.js";
@@ -28,7 +29,7 @@ import { formsValidationPage } from "../pages/forms-validation/page.js";
 import { viewportNotificationPage } from "../pages/viewport-notification/page.js";
 import { viewportOverlayPage } from "../pages/viewport-overlay/page.js";
 import { viewportWindowPage } from "../pages/viewport-window/page.js";
-type LibraryPackageId = "core" | "controls" | "forms" | "viewport" | "router";
+type LibraryPackageId = "core" | "controls" | "forms" | "editor" | "viewport" | "router";
 
 export type PageRuntime = "stub" | "bridge";
 
@@ -62,6 +63,7 @@ export const pageManifest: readonly PageDefinition[] = [
   { id: "forms-combo-box", path: "/forms/combo-box", title: "ComboBox", pkg: "forms", runtime: "bridge", render: formsComboBoxPage, wrap: withViewport },
   { id: "forms-image-cropper", path: "/forms/image-cropper", title: "ImageCropper", pkg: "forms", runtime: "bridge", render: formsImageCropperPage, wrap: withViewport },
   { id: "forms-validation", path: "/forms/validation", title: "Validators", pkg: "forms", runtime: "bridge", render: formsValidationPage, wrap: withViewport },
+  { id: "editor-basics", path: "/editor/basics", title: "Editor", pkg: "editor", runtime: "bridge", render: editorBasicsPage, wrap: withViewport },
   { id: "viewport-notification", path: "/viewport/notification", title: "Notification", pkg: "viewport", runtime: "bridge", render: viewportNotificationPage, wrap: withViewport },
   { id: "viewport-window", path: "/viewport/window", title: "Window", pkg: "viewport", runtime: "bridge", render: viewportWindowPage, wrap: withViewport },
   { id: "viewport-overlay", path: "/viewport/overlay", title: "Overlay", pkg: "viewport", runtime: "bridge", render: viewportOverlayPage, wrap: withViewport },

@@ -63,6 +63,13 @@ object BridgeRuntime {
   ComponentRegistry.register("combo-box", ComboBoxFactory)
   ComponentRegistry.register("image-cropper", ImageCropperFactory)
 
+  // Step 6 of JAVASCRIPT_API.md §9, the editor half -- FINAL.md Priorität 4 ("jfx-editor
+  // veröffentlichen oder bewusst ausklammern") is what gated this one, not the bridge's own
+  // progress (npm-Modularisierung Lauf 7). Same reachability story as the four blocks above --
+  // this entry anchors `jfx.editor` into `bridgeRuntime`'s initializer, so a consumer that imports
+  // only `@anjunar/jfx-core` still links it.
+  ComponentRegistry.register("editor", EditorFactory)
+
   @JSExportTopLevel("bridgeRuntime")
   val bridgeRuntime: JfxRuntimeBridge = new JfxRuntimeBridge()
 }

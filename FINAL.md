@@ -122,13 +122,17 @@ werden.
 
 ## Priorität 4 — Bibliotheksgrenzen
 
-### `jfx-editor` veröffentlichen oder bewusst ausklammern
+### `jfx-editor` veröffentlichen oder bewusst ausklammern -- entschieden
 
-`jfx-editor` ist weiterhin auf `publish / skip := true` gesetzt. Vor dem
-Blog-System muss entschieden werden:
-
-- Editor als reguläres Maven-Artefakt veröffentlichen, oder
-- ihn ausdrücklich als anwendungsnahes Modul dokumentieren.
+Entscheidung (npm-Modularisierung Lauf 7): **veröffentlichen**, wie jedes
+andere Familienmodul. `publish / skip := true` ist aus `jfxEditor`s
+build.sbt-Settings entfernt, `jfx-bridge` hat eine `dependsOn(jfxEditor)`-
+Kante und einen `editor`-Registratureintrag, und `@anjunar/jfx-editor`
+existiert als eigenes npm-Paket (`npm/jfx-editor`, README dort). Details,
+inklusive eines dabei gefundenen und gefixten Hydration-Bugs in
+`Editor.compose` und einer neuen echten Laufzeit-Abhängigkeit von
+`scalajs-jfx-bridge` auf `@anjunar/scalajs-lexical`, stehen in
+JAVASCRIPT_API.md §15 ("Und seit Lauf 7").
 
 ### Upload-Modell des ImageCroppers abstrahieren
 
@@ -156,6 +160,6 @@ Ebenfalls nicht ohne konkreten Befund einführen:
 3. Starterprojekt und Modul-READMEs
 4. Accessibility-Audit der vorhandenen Komponenten
 5. Cancellation sowie Scroll-/Hash-Restoration
-6. Entscheidung über Editor-Publish und MediaLike
+6. MediaLike für ImageCropper (Editor-Publish ist entschieden, siehe Priorität 4)
 7. Blog-System auf dieser Basis
 ```

@@ -159,8 +159,11 @@ lazy val commonLibrarySettings = Seq(
 // Publish-Regel: Ein publiziertes Modul darf nur auf publizierte Module und externe
 // Artefakte haengen. Sonst verweist der erzeugte POM auf ein Artefakt, das in Maven
 // Central nie existiert, und das Modul ist fuer externe Konsumenten unaufloesbar.
-// Publiziert: core, router, viewport, json, controls, forms, webauthn.
-// Nicht publiziert (`publish / skip := true`): editor, demo.
+// Publiziert: core, router, viewport, json, controls, forms, editor, webauthn.
+// Nicht publiziert (`publish / skip := true`): demo.
+// FINAL.md Prioritaet 4 ("jfx-editor veroeffentlichen oder bewusst ausklammern")
+// ist damit entschieden: veroeffentlichen, mit einer @anjunar/jfx-editor-Fassade
+// wie jedes andere npm/jfx-*-Paket (npm-Modularisierung, Lauf 7).
 
 lazy val jfxCore = Project(id = "scalajs-jfx-core", base = file("jfx-core"))
   .enablePlugins(ScalaJSPlugin)
@@ -216,7 +219,7 @@ lazy val jfxJson = Project(id = "scalajs-jfx-json", base = file("jfx-json"))
 // stands in CLAUDE_REVIEW_3.md §5, not a missed dependency here.
 lazy val jfxBridge = Project(id = "scalajs-jfx-bridge", base = file("jfx-bridge"))
   .enablePlugins(ScalaJSPlugin)
-  .dependsOn(jfxCore, jfxRouter, jfxControls, jfxViewport, jfxForms)
+  .dependsOn(jfxCore, jfxRouter, jfxControls, jfxViewport, jfxForms, jfxEditor)
   .settings(
     name       := "scalajs-jfx-bridge",
     moduleName := "scalajs-jfx-bridge",
@@ -262,8 +265,7 @@ lazy val jfxEditor = Project(id = "scalajs-jfx-editor", base = file("jfx-editor"
   .settings(
     name                                 := "scalajs-jfx-editor",
     moduleName                           := "scalajs-jfx-editor",
-    libraryDependencies += "com.anjunar" %% "scalajs-lexical" % "1.3.0",
-    publish / skip                       := true
+    libraryDependencies += "com.anjunar" %% "scalajs-lexical" % "1.3.0"
   )
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)

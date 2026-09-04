@@ -24,6 +24,7 @@ import { controlsRemoteDoc } from "../pages/controls-remote/doc.js";
 import { viewportNotificationDoc } from "../pages/viewport-notification/doc.js";
 import { viewportWindowDoc } from "../pages/viewport-window/doc.js";
 import { viewportOverlayDoc } from "../pages/viewport-overlay/doc.js";
+import { editorBasicsDoc } from "../pages/editor-basics/doc.js";
 import { formsBasicsDoc } from "../pages/forms-basics/doc.js";
 import { formsCompositionDoc } from "../pages/forms-composition/doc.js";
 import { formsComboBoxDoc } from "../pages/forms-combo-box/doc.js";
@@ -43,7 +44,7 @@ import { pageManifest } from "./page-manifest.js";
  * overview, search, the 404 page) -- everything else is one of the five
  * npm/jfx-* family packages this project documents.
  */
-export type PackageId = "frame" | "core" | "controls" | "forms" | "viewport" | "router";
+export type PackageId = "frame" | "core" | "controls" | "forms" | "editor" | "viewport" | "router";
 
 export interface PackageInfo {
   readonly id: PackageId;
@@ -249,6 +250,15 @@ const catalogEntries: readonly DocEntry[] = [
     pkg: "forms",
     keywords: ["validators", "schema", "notBlank", "email", "size", "pattern"],
     doc: formsValidationDoc,
+    runsOnBridgeOnly: true,
+  },
+  {
+    path: "/editor/basics",
+    title: "Editor",
+    summary: "A Lexical-backed rich-text field, bound by name like input.",
+    pkg: "editor",
+    keywords: ["editor", "lexical", "richtext", "plugins"],
+    doc: editorBasicsDoc,
     runsOnBridgeOnly: true,
   },
   {

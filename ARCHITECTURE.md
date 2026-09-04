@@ -41,11 +41,11 @@ Kanten im Klartext:
 | `jfx-router` | core | ja |
 | `jfx-viewport` | core | ja |
 | `jfx-json` | core | ja |
-| `jfx-bridge` | core (Schritt 2 aus JAVASCRIPT_API.md §9 -- router/forms folgen später) | ja |
+| `jfx-bridge` | core, router, controls, viewport, forms, editor (JAVASCRIPT_API.md §9/§15 füllte die Registratur seit Lauf 3) | ja |
 | `jfx-controls` | core (viewport nur `test->compile`) | ja |
 | `jfx-forms` | core, controls, viewport | ja |
 | `jfx-webauthn` | nichts aus diesem Repo | ja |
-| `jfx-editor` | forms | nein |
+| `jfx-editor` | forms | ja (seit npm-Modularisierung Lauf 7 -- FINAL.md Priorität 4 entschieden) |
 | `application` | alle | nein |
 
 `jfx-bridge` (`jfx.bridge`) ist die einzige Kante, die *für* JavaScript existiert,

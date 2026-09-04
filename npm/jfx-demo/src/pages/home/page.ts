@@ -3,7 +3,7 @@ import { classes, div, heading, paragraph, text } from "@anjunar/jfx-core";
 import { routerLink } from "@anjunar/jfx-router";
 
 export interface PackageTile {
-  readonly id: "core" | "controls" | "forms" | "viewport" | "router";
+  readonly id: "core" | "controls" | "forms" | "editor" | "viewport" | "router";
   readonly name: string;
   readonly blurb: string;
   readonly entryPath: string;
@@ -27,6 +27,12 @@ export const packageTiles: readonly PackageTile[] = [
     name: "@anjunar/jfx-forms",
     blurb: "Validated forms, sub-forms, repeating fields, a combo box, an image cropper.",
     entryPath: "/forms/basics",
+  },
+  {
+    id: "editor",
+    name: "@anjunar/jfx-editor",
+    blurb: "A Lexical-backed rich-text field, bound by name like input.",
+    entryPath: "/editor/basics",
   },
   {
     id: "viewport",

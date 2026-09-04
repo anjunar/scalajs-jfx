@@ -61,6 +61,21 @@ final class Editor private[editor] (
     configure(using this)(using cursor)
 
     render(this, cursor) {
+      // Bound *before* the tree below is built: `registerWithForm()` (via `DynamicFormular`/
+      // `Formular.register` -> `bindNow`) sets `valueProperty` from the model as a side effect of
+      // registering, and the preview a few lines down (`dynamic(valueProperty.map(...))`) reads
+      // `valueProperty.get` the moment it is constructed. Registering after building the tree (as
+      // this used to) left that first `dynamic()` mount seeing the constructor's `Property(null)`
+      // instead of the bound value; a live `mount()`/SSR self-heals because the resulting reactive
+      // `replace()` still lands in the same synchronous compose call, but a `HydratingCursor` claims
+      // once per position against the *settled* SSR markup -- so hydration saw a real, non-empty
+      // preview where its own first (pre-bind) pass expected nothing, and failed with "Server-rendered
+      // nodes were not claimed by the client component tree." Same bug shape as Lauf 5's
+      // window/notification fix and Lauf 6's `ArrayForm` renderer fix: a `Property` a `dynamic()`/
+      // `when()` branch depends on must not change *after* that branch has already rendered once.
+      installControlObservers()
+      registerWithForm()
+
       addClass("jfx-editor-host")
       setAttribute("name", name)
       setAttribute("role", "group")
@@ -120,9 +135,6 @@ final class Editor private[editor] (
           }
         }
       }
-
-      installControlObservers()
-      registerWithForm()
     }
   }
 

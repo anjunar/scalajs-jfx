@@ -876,3 +876,95 @@ gegenüber Lauf 4 (jetzt 1 584 562 / 243 967).
 Die begründeten Abweichungen bei `jfx-json` und `jfx-webauthn` und die
 Auslösebedingung für `jfx-forms` stehen in `CLAUDE_REVIEW_3.md` §5 und §6, die
 Ausführungsberichte in den Nachträgen Lauf 3, Lauf 4 und Lauf 5.
+
+### Und seit Lauf 6: `@anjunar/jfx-forms`
+
+`form()`, `input()`, `inputContainer()`, `fieldSet()`, `arrayForm()`,
+`subForm()`, `comboBox()`, `imageCropper()`, plus die 22
+`validators.ts`-Funktionen (`notNull()`, `size()`, `email()`, ...).
+`jfx.forms.Form`/`SubForm` binden ein Control über einen makrogebauten
+`reflect.ClassDescriptor` an eine Modell-Property -- kein TS-Äquivalent, weil
+keine Scala-Case-Class hinter einem TS-Objekt steht. `FormFactories.scala`
+löst das mit einem parallelen Trait `DynamicFormular` (bindet nach Namen in
+einem `Record<string, Property|ListProperty>` statt per Reflection) und
+`schemaFrom` (übersetzt eine TS-native `{name, parameters}`-Schema-Liste in
+echte `Annotation`-Werte für die **unveränderte** `ValidatorFactory`) --
+`Formular.scala` selbst bleibt unangetastet, keins der bestehenden Tests auf
+dem `ClassDescriptor`-Pfad ist betroffen. `ArrayForm`, `FieldSet`, `ComboBox`,
+`ImageCropper`, `Input`, `InputContainer` brauchen nichts davon und sind
+direkte Registratureinträge wie bei Router/Controls/Viewport.
+`ComboBox`s Dropdown ist ein `jfx-controls`-`TableView` in einem
+`jfx-viewport`-Overlay, braucht also einen `viewport(...)`-Vorfahren.
+`ImageCropper`s Wert ist ein `MediaValue`, an der Grenze übersetzt von
+`jfx.forms.Media` (`MediaCodec` in `FormFactories.scala`) -- die einzige
+Stelle in dieser Familie, an der ein Wert statt nur durchgereicht zu werden
+tatsächlich konvertiert wird. Ein echter, hydrationsspezifischer Fund:
+`ArrayForm`s Renderer musste über den Konstruktor (`initialRenderer`) statt
+über das gewöhnliche `controlRenderer_=` nach `compose` geliefert werden --
+sonst rendert der erste `foreachIndexed`-Durchlauf null Items, bevor der
+Setter nachträglich einen zweiten, korrekten Durchlauf erzwingt, was unter
+`HydratingCursor` (ein Claim pro Position gegen die *fertige* SSR-Markup) mit
+"Server-rendered nodes were not claimed by the client component tree."
+fehlschlägt. Gleiche Fundklasse wie Lauf 5s Window/Notification-Fix; Lauf 7
+(unten) findet noch eine dritte Instanz davon in `jfx-editor`. Nicht
+projiziert: `SubForm.newInstance()`/`clearForm()`/`factory`, `ComboBox`s
+`valueRenderer`/`footerRenderer`/`identityBy`/`selectionText`/Sizing-Optionen,
+`ImageCropper`s Size-Limit-/Custom-Validator-Optionen. Details und der
+Bundle-Preis (auf diesem Lauf nicht gemessen/notiert) im Nachtrag Lauf 6.
+
+### Und seit Lauf 7: `@anjunar/jfx-editor`
+
+`editor()` -- ein einziger Registratureintrag, der `jfx.editor.Editor`
+(Lexical-gestütztes Rich-Text-Control) an den Bridge-Vertrag anschließt.
+Ausgelöst nicht durch Bridge-Fortschritt, sondern durch die in FINAL.md
+Priorität 4 offene Entscheidung ("`jfx-editor` veröffentlichen oder bewusst
+ausklammern"), jetzt getroffen: veröffentlichen. `jfx.editor.plugins.
+basePlugin()`/`headingPlugin()`/... sind Scala-*Funktionen*, keine Werte --
+anders als `converter`/`itemRenderer` anderswo in dieser Familie lässt sich
+das nicht als Bridge-Option übergeben. `plugins` ist stattdessen eine
+Namensliste (`EditorPluginName[]`); `EditorFactories.installPlugin` (in
+`jfx-bridge`) ruft die passende nullstellige Plugin-Funktion pro Name auf.
+Jedes der acht Plugins ist mit seinem Default-Body eigenständig --
+`imagePlugin()`s Einfüge-Dialog liest eine lokale Datei selbst in eine
+Data-URL ein, kein Upload-Hook nötig. `link`/`image` öffnen ihre Dialoge als
+`Viewport.WindowConf` (`DefaultDialogService`), brauchen also wie `comboBox`
+einen `viewport(...)`-Vorfahren.
+
+**Ein dritter Fund derselben Klasse wie Lauf 5 und Lauf 6:** `Editor.compose`
+rief `registerWithForm()` (das `valueProperty` als Nebenwirkung der
+Registrierung auf den Modellwert setzt) bisher *nach* dem Baum auf, der
+`dynamic(valueProperty.map(...))` für die SSR-Vorschau enthält -- diese las
+`valueProperty.get` also beim Bau, bevor die Bindung lief, und bekam
+`Property(null)` statt des echten Werts. Ein `mount()`/SSR heilt das
+selbst, weil die reaktive `replace()`-Neurenderung noch im selben
+synchronen `compose()`-Aufruf landet; `HydratingCursor` claimt aber einmal
+pro Position gegen die *fertige* SSR-Markup und scheiterte prompt mit
+"Server-rendered nodes were not claimed by the client component tree." --
+gefunden nicht durch die jsdom-Suite (die bestand, bis testweise
+`hydrate()` gegen einen echten, nicht-leeren Anfangswert lief), sondern
+genau durch diesen Test. Fix: `installControlObservers()`/
+`registerWithForm()` an den Anfang von `render(this, cursor) { ... }`
+vorgezogen, vor den Baum, der von `valueProperty` liest.
+
+**Eine echte, für diese Familie neue Randbedingung:** `jfx-editor` bindet
+extern `com.anjunar::scalajs-lexical`, dessen gelinktes JS direkt `lexical`,
+neun `@lexical/*`-Pakete und den kompletten CodeMirror-Sprachsatz importiert
+(vierzehn `@codemirror/lang-*`- plus `@codemirror/legacy-modes`-Pakete) --
+anders als jedes vorherige Familienmitglied hängt `jfx-bridge` damit zur
+Laufzeit an echten, externen npm-Paketen, nicht nur an sich selbst.
+`npm/scalajs-jfx-bridge/package.json` bekam deshalb sein erstes `dependencies`-Feld
+(`@anjunar/scalajs-lexical`, das Bündel-Paket, das alle diese Pakete selbst
+als `dependencies` trägt) -- ohne das schlägt jede fremde Installation von
+`@anjunar/scalajs-jfx-bridge` mit `ERR_MODULE_NOT_FOUND` fehl, genau der
+Fund, den der Consumer-Test dieses Laufs zuerst lieferte. Anders als jsdoms
+fehlende `ResizeObserver`/`IntersectionObserver` (Controls/Forms) läuft
+Lexical unter jsdom ohne Polyfill vollständig -- die Bridge-Smoke-Suite
+mountet also die echte Lexical-Oberfläche, nicht nur die SSR-Vorschau; nur
+echtes Tippen (Selection/Range) bleibt dem manuellen Browsertest
+vorbehalten.
+
+Gemessener Preis: **2 873 086 B raw / 438 659 B gzip** auf dem einen
+verlinkten Artefakt (nicht als Delta zu Lauf 6 vergleichbar, weil dessen
+Zahl nie gemessen wurde) -- der mit Abstand größte Sprung der Familie,
+getrieben vom vollständigen CodeMirror-Sprachsatz, den `scalajs-lexical`
+transitiv mitzieht, nicht von `jfx-editor`s eigenem Fassadencode.

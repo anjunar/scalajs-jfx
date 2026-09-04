@@ -22,11 +22,13 @@
   "dependencies": {
     "@anjunar/jfx-controls": "*",
     "@anjunar/jfx-core": "*",
+    "@anjunar/jfx-editor": "*",
     "@anjunar/jfx-forms": "*",
     "@anjunar/jfx-router": "*",
     "@anjunar/jfx-viewport": "*",
     "@anjunar/scalajs-jfx": "*",
     "@anjunar/scalajs-jfx-bridge": "*",
+    "@anjunar/scalajs-lexical": "^1.0.9",
     "@anjunar/ui": "^1.0.1",
     "express": "^5.2.1"
   },
