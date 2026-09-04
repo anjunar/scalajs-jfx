@@ -26,7 +26,9 @@
     "typecheck": "npm run build && tsc -p tsconfig.test.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "prepack": "npm run build"
+    "prepack": "npm run build",
+    "test:consumer": "vitest run --config vitest.consumer.config.ts",
+    "verify": "npm run typecheck && npm run test && npm run test:consumer"
   },
   "peerDependencies": {
     "@anjunar/scalajs-jfx": "^3.0.0"

@@ -14,7 +14,9 @@
     "typecheck": "tsc -p tsconfig.json",
     "demo": "npm run build:node && node dist/node/node-stub.js",
     "demo:bridge": "npm run build:node && node dist/node/node-bridge.js",
-    "demo:scope": "npm run build:node && node dist/node/scope-rules.js"
+    "demo:scope": "npm run build:node && node dist/node/scope-rules.js",
+    "verify:runtime": "node scripts/verify-single-runtime.mjs",
+    "verify": "npm run typecheck && npm run build && npm run verify:runtime"
   },
   "dependencies": {
     "@anjunar/jfx-core": "*",
