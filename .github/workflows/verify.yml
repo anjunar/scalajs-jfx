@@ -82,6 +82,15 @@ jobs:
         working-directory: npm/jfx-router
         run: npm run verify
 
+      # The controls facade: typecheck, the bridge smoke test (SSR of all five
+      # controls, mount + hydrate for tabs and carousel), and its own tarball
+      # consumer test over core + bridge + controls. No stub half -- the stub
+      # knows nothing about tables, tabs or virtualization
+      # (JAVASCRIPT_API.md §9, step 6).
+      - name: jfx-controls -- typecheck, bridge smoke test, consumer test
+        working-directory: npm/jfx-controls
+        run: npm run verify
+
       # Typecheck, client + SSR build, and the one-runtime proof across dev
       # server, client bundle and SSR bundle (CLAUDE_REVIEW_3.md §7.2).
       - name: jfx-demo -- typecheck, build, one-runtime proof

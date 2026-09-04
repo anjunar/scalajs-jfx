@@ -13,7 +13,7 @@
  */
 import { installRuntime, property, renderToString } from "@anjunar/jfx-core";
 import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";
-import { format, libraryPage, statePage } from "./pages.js";
+import { controlsPage, format, libraryPage, statePage } from "./pages.js";
 
 async function main(): Promise<void> {
   installRuntime(bridgeRuntime);
@@ -25,6 +25,10 @@ async function main(): Promise<void> {
   const library = await renderToString(libraryPage);
   console.log("\n--- LibraryPage (async loader drained before serialising) ----");
   console.log(format(library.html));
+
+  const controls = await renderToString(controlsPage);
+  console.log("\n--- ControlsPage (tabs + table + carousel, @anjunar/jfx-controls) ---");
+  console.log(format(controls.html));
 
   console.log("\n--- Reactivity check (through PropertyHandle, not the stub) --");
   const counter = property(0);

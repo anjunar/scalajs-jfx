@@ -31,6 +31,7 @@ import {
   when,
 } from "@anjunar/jfx-core";
 import type { ComponentHandle, Disposable, Property, UiEvent } from "@anjunar/jfx-core";
+import { carousel, column, tableView, tab, tabs } from "@anjunar/jfx-controls";
 
 // The navigation bar lives in `routes.ts`'s `appShell`, rendered around every
 // route by `router(appRoutes, config, appShell)` -- `routerLink`s, not plain
@@ -311,6 +312,78 @@ export function todosPage(): void {
         });
       });
     });
+  });
+}
+
+/* ---------------------------------------------------------------- ControlsPage */
+
+/**
+ * `@anjunar/jfx-controls` in one screen: a tab strip, a table over a local
+ * `ListProperty`, and a carousel. All three are registry entries in `jfx-bridge`
+ * (`ControlFactories.scala`); the bodies here are ordinary core DSL, wrapped by
+ * the facade into the `(scope) => void` the bridge runs. Rendered by
+ * `node-bridge.ts` (not the stub -- controls have no stub) and hydrated in the
+ * browser at `/controls`.
+ */
+interface Album {
+  readonly title: string;
+  readonly artist: string;
+  readonly year: number;
+}
+
+const albums: readonly Album[] = [
+  { title: "Kind of Blue", artist: "Miles Davis", year: 1959 },
+  { title: "Blue Train", artist: "John Coltrane", year: 1957 },
+  { title: "The Köln Concert", artist: "Keith Jarrett", year: 1975 },
+  { title: "Head Hunters", artist: "Herbie Hancock", year: 1973 },
+  { title: "Speak No Evil", artist: "Wayne Shorter", year: 1966 },
+];
+
+export function controlsPage(): void {
+  div(() => {
+    classes("controls-page");
+    heading(2, () => text("Controls"));
+
+    tabs([
+      tab("Table", () => {
+        const rows = listProperty<Album>([...albums]);
+        div(() => {
+          classes("controls-page__frame");
+          tableView(
+            rows,
+            [
+              column("Title", (album) => text(album.title), { prefWidth: 260, sortable: true, sortKey: "title" }),
+              column("Artist", (album) => text(album.artist), { prefWidth: 220 }),
+              column("Year", (album) => text(String(album.year)), { prefWidth: 90 }),
+            ],
+            { rowHeight: 40, crawlable: true, crawlId: "albums" }
+          );
+        });
+      }),
+      tab("Carousel", () => {
+        const slides = listProperty<Album>([...albums]);
+        div(() => {
+          classes("controls-page__frame");
+          carousel(
+            slides,
+            (album, index) => {
+              div(() => {
+                classes("controls-page__slide");
+                div(() => {
+                  classes("docs-card__title");
+                  text(`${index + 1}. ${album.title}`);
+                });
+                div(() => {
+                  classes("docs-card__summary");
+                  text(`${album.artist} — ${album.year}`);
+                });
+              });
+            },
+            { autoAdvanceMs: 3200, ssrShowAllStates: true }
+          );
+        });
+      }),
+    ]);
   });
 }
 

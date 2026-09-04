@@ -28,6 +28,17 @@ object BridgeRuntime {
   ComponentRegistry.register("router-outlet", RouterOutletFactory)
   ComponentRegistry.register("router-link", RouterLinkFactory)
 
+  // Step 6 of JAVASCRIPT_API.md §9: the controls facade. Same reachability story as the router
+  // block above -- these entries anchor `jfx.control` into `bridgeRuntime`'s initializer, so a
+  // consumer that imports only `@anjunar/jfx-core` still links them. Measured price on the one
+  // artifact is in §14. The `jfx-controls -> jfx-viewport` edge is `test->compile` and does not
+  // cross into this link (build.sbt).
+  ComponentRegistry.register("tabs", TabsFactory)
+  ComponentRegistry.register("carousel", CarouselFactory)
+  ComponentRegistry.register("table-view", TableViewFactory)
+  ComponentRegistry.register("data-grid", DataGridFactory)
+  ComponentRegistry.register("virtual-list-view", VirtualListFactory)
+
   @JSExportTopLevel("bridgeRuntime")
   val bridgeRuntime: JfxRuntimeBridge = new JfxRuntimeBridge()
 }

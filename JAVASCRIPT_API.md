@@ -294,8 +294,8 @@ verschmutzt.
 2. jfx-bridge anlegen: nur core (Property, Scope, mount/hydrate/renderToString)  ✅
 3. @anjunar/jfx-core gegen die echte Bridge laufen lassen (der Prototyp liegt vor)   ✅
 4. Bundle-Größe messen und hier eintragen                                  ✅ (§14)
-5. Router-Fassade, dann Forms-Schema
-6. Komponentenregistratur auffüllen
+5. Router-Fassade, dann Forms-Schema                                       ✅ (Router; Forms offen)
+6. Komponentenregistratur auffüllen                                        ✅ (tabs/carousel/table-view/data-grid/virtual-list-view)
 7. i18n-Extractor
 8. Consumer-Smoke-Test in CI: leeres TS-Projekt, SSR + Hydration
 ```
@@ -366,8 +366,11 @@ Komponente, deren einziger Zweck ist, dass ein Cursor etwas zum Einhängen hat.
 **Registratur.** Zwei Einträge leben in `jfx.core.layout` selbst und kosten
 deshalb nichts Zusätzliches: `vbox`, `hbox`. Ein dritter, `button`, zeigt, wie
 `dsl.ts`s `{ label, ...options }`-Fusion in der Bridge wieder auseinandergenommen
-wird. `jfx-controls` ist bewusst nicht verlinkt (§3, Schritt 2 heißt "nur
-core") -- Schritt 6 füllt das auf.
+wird. Seit Schritt 6 (`CLAUDE_REVIEW_3.md` Nachtrag Lauf 4) kommen fünf
+Controls-Einträge dazu -- `tabs`, `carousel`, `table-view`, `data-grid`,
+`virtual-list-view` (`ControlFactories.scala`); `jfx-bridge` hängt jetzt auch auf
+`jfx-controls`. Die Kante `jfx-controls -> jfx-viewport` ist `test->compile` und
+kreuzt nicht in diesen Link.
 
 **Was noch fehlt.** `headers` ist immer leer. `SsrResult.status` war bis Schritt
 5 fest `200`; seit `@anjunar/jfx-router` trägt ein mitgemounteter `router` seinen
@@ -564,11 +567,17 @@ eingeschlossen), nicht `jfx-bridge`s `fullLinkJS`-Output isoliert.
   `SsrStatus`). Gemessener Preis auf dem einen Link-Artefakt: **+158 250 B roh /
   +23 350 B gzip** (E1 → mit Router-Registratur, §14). Das Forms-Schema bleibt
   offen (§15, Auslösebedingung `@anjunar/jfx-forms`).
-- **Schritt 6** -- die Registratur über `vbox`/`hbox`/`button` hinaus auffüllen,
-  sobald `jfx-controls` verlinkt wird -- das ist auch der Punkt, an dem die
-  Editor-Entscheidung aus Schritt 1 fällig wird. Die Kante `jfxControls →
-  jfxViewport` ist `test->compile`; sie darf nicht als npm-Abhängigkeit
-  auftauchen.
+- ~~**Schritt 6, Controls**~~ -- erledigt, `CLAUDE_REVIEW_3.md` Nachtrag Lauf 4.
+  `jfx-bridge` hängt jetzt auch auf `jfx-controls` und registriert `tabs`,
+  `carousel`, `table-view`, `data-grid`, `virtual-list-view`
+  (`ControlFactories.scala` übersetzt Datenquelle -- lokal `ListProperty` oder
+  remote --, Zell-/Slide-Renderer, Spaltenmodell). `@anjunar/jfx-controls` ist
+  das dritte Familienpaket. Gemessener Preis auf dem einen Link-Artefakt:
+  **+380 772 B roh / +55 905 B gzip** gegenüber Stand Lauf 3 (§14). Die Kante
+  `jfxControls → jfxViewport` ist `test->compile` und kreuzt nicht in den Link;
+  sie taucht auch nicht als npm-Abhängigkeit auf. Die Editor-Entscheidung aus
+  Schritt 1 bleibt offen -- sie blockiert nur `@anjunar/jfx-editor`, nicht diesen
+  Schritt.
 - ~~**Schritt 8**~~ -- der Consumer-Test existiert:
   `npm/jfx-core/test/consumer/` packt beide Pakete mit `npm pack`, installiert
   sie in ein leeres Verzeichnis und rendert von dort serverseitig, gegen Stub
@@ -579,7 +588,12 @@ eingeschlossen), nicht `jfx-bridge`s `fullLinkJS`-Output isoliert.
   hydriert ihre Routen sauber (die Seiten entscheiden Verzweigungen im
   `fetchInto`-Callback, nicht über ein separates `Condition`). Eine
   Route-**Seite**, die `when()` auf remote-getriebenem State benutzt, bleibt
-  gefährdet.
+  gefährdet. Lauf 4 hat sie ebenfalls nicht ausgelöst -- alle `when()`-Aufrufe in
+  den Controls (`showHeader`, `ssrShowAllStates`, `multipleItems`, …) hängen an
+  *struktureller* Konfiguration, die vor dem ersten Render feststeht, nicht an
+  Zustand, der während desselben Durchlaufs kippt. Geprüft im echten Browser:
+  `/controls` in `npm/jfx-demo` hydriert null Konsolenfehler, Tabs schalten,
+  Carousel advanced.
 - **Nebenbefund in Lauf 3, behoben** -- `SsrCursor` wurzelte auf einem
   Append-Log statt auf einem echten Host. Wurde bei `BridgeRoot` (virtueller
   Wurzel) alles bis nach oben virtuell, konnte `Runtime.detach` einen am obersten
@@ -629,11 +643,17 @@ Alternativenvergleich in `CLAUDE_REVIEW_3.md` §2):
 | dito + Lauf-1-Probe der Router-Fassade (`router`, `router-outlet`, `router-link`) | 1 122 273 B | 175 577 B |
 | dito + `ModuleSplitStyle.SmallModulesFor(List("jfx"))`, 144 ES-Module | 1 483 221 B | 203 669 B |
 | **Stand nach Lauf 3** -- `dependsOn(core, router)` + `RouterFactories` gebaut und registriert (`SsrStatus`, Kontext-Projektion, `Route`-Übersetzung) | **1 139 864 B** | **178 730 B** |
+| **Stand nach Lauf 4** -- dito + `dependsOn(jfxControls)` + `ControlFactories` gebaut und registriert (fünf Controls, Datenquellen-Übersetzung lokal/remote, Spaltenmodell, Zell-/Slide-Renderer) | **1 520 636 B** | **234 635 B** |
 
-Die letzte Zeile ist der reale Stand, nicht die Lauf-1-Probe: **+158 250 B roh /
-+23 350 B gzip** gegenüber `dependsOn(core)`. Etwas über der Probe (E3), weil die
-fertige Fassade mehr trägt als der Registratur-Stub -- Routentabellen-Übersetzung,
-`RouteContext`-Projektion, `RouterConfig`-Projektion, `SsrStatus`. `fastLinkJS`
+Die vorletzte Zeile ist der Stand nach Lauf 3: **+158 250 B roh / +23 350 B
+gzip** gegenüber `dependsOn(core)`. Lauf 4 legt **+380 772 B roh / +55 905 B
+gzip** darauf -- die drei virtualisierten Controls (`VirtualizedCollection`,
+`CrawlableCollection`, Geometrie), `RemoteListProperty` und die
+Übersetzungsschicht. Beide Male gilt: bezahlt wird die Registrierung, nicht die
+`dependsOn`-Kante (E1 == E2, byteidentisch). Etwas über der Router-Probe (E3),
+weil die fertige Fassade mehr trägt als der Registratur-Stub --
+Routentabellen-Übersetzung, `RouteContext`-Projektion, `RouterConfig`-Projektion,
+`SsrStatus`. `fastLinkJS`
 und `fullLinkJS` sind weiterhin **nicht** byteidentisch (Risiko 1 nicht zurück).
 
 Drei Befunde, die die Reihenfolge ab Schritt 5 bestimmen:
@@ -689,8 +709,8 @@ ausgelieferten JavaScript.
                 │ peer                           │ peer
                 ▼                                ▼
         @anjunar/jfx-core  ◄── peer ──  @anjunar/jfx-router
-      Vertrag, Scope, DSL, Stub         (jfx-viewport, jfx-controls,
-                ▲                         jfx-forms — später)
+      Vertrag, Scope, DSL, Stub         @anjunar/jfx-controls
+                ▲                        (jfx-viewport, jfx-forms — später)
                 └──────── peer ──────────┘
 ```
 
@@ -699,7 +719,12 @@ ausgelieferten JavaScript.
 | `@anjunar/jfx-core` | — | `@anjunar/scalajs-jfx` |
 | `@anjunar/scalajs-jfx-bridge` | — | `@anjunar/jfx-core` |
 | `@anjunar/jfx-router` | — | `@anjunar/jfx-core`, `@anjunar/scalajs-jfx-bridge` |
+| `@anjunar/jfx-controls` | — | `@anjunar/jfx-core`, `@anjunar/scalajs-jfx-bridge`, `@anjunar/scalajs-jfx` |
 | jedes spätere Geschwisterpaket | — | `@anjunar/jfx-core`, `@anjunar/scalajs-jfx-bridge` |
+
+`jfx-controls` führt zusätzlich das CSS-Paket als Peer: seine Controls rendern
+mit Klassennamen, die aus den Scala-Modulen kommen (`jfx-table-view`,
+`jfx-tabs__*`, `jfx-carousel__*`).
 
 `dependencies` bleibt überall leer, und das ist die tragende Entscheidung:
 `dependencies` erlaubt npm, bei Versionskonflikt eine zweite, verschachtelte
@@ -730,18 +755,21 @@ Drei Schichten, jede gegen einen anderen Fehler, und für jede ein Test:
 
 Nachgewiesen wird das an drei Stellen, nicht behauptet:
 
-- `npm/jfx-core/test/consumer/` und `npm/jfx-router/test/consumer/` packen ihre
-  Pakete mit `npm pack`, installieren sie in ein leeres Verzeichnis und greifen
-  ausschließlich über die öffentlichen `exports` zu. `tsc --strict` mit
-  `skipLibCheck: false` über alle Pakete, SSR gegen Stub *und* Bridge, für
-  `jfx-core` zusätzlich der Runtime-Slot über zwei unabhängige Importwege.
+- `npm/jfx-core/test/consumer/`, `npm/jfx-router/test/consumer/` und
+  `npm/jfx-controls/test/consumer/` packen ihre Pakete mit `npm pack`,
+  installieren sie in ein leeres Verzeichnis und greifen ausschließlich über die
+  öffentlichen `exports` zu. `tsc --strict` mit `skipLibCheck: false` über alle
+  Pakete, SSR gegen Stub *und* Bridge, für `jfx-core` zusätzlich der Runtime-Slot
+  über zwei unabhängige Importwege.
 - `npm/jfx-demo/scripts/verify-single-runtime.mjs` zählt den Runtime-Modul im
   Client- und im SSR-Bundle (genau einmal) und startet den Dev-Server, der mit
-  zwei Slots gar kein Markup liefern könnte.
+  zwei Slots gar kein Markup liefern könnte -- inklusive `/controls`, das
+  `@anjunar/jfx-controls` mitzieht.
 - `npm/jfx-core/test/runtime.test.ts` deckt die Wache selbst ab.
 
-Gate ist `npm run verify` — in `jfx-core` und `jfx-router` Typecheck, Tests und
-Consumer-Test, in `jfx-demo` Typecheck, Build und der Runtime-Nachweis.
+Gate ist `npm run verify` — in `jfx-core`, `jfx-router` und `jfx-controls`
+Typecheck, Tests und Consumer-Test, in `jfx-demo` Typecheck, Build und der
+Runtime-Nachweis.
 
 ### Was es jetzt gibt: `@anjunar/jfx-router`
 
@@ -764,6 +792,21 @@ auf der Scala-Seite von Hand macht (`Router.provide`, eine Sidebar,
 `child(appRouter)`) -- auf der TS-Seite steckt sie im `router`-Registratureintrag
 (`RouterViewRoot`).
 
+### Und seit Lauf 4: `@anjunar/jfx-controls`
+
+`tabs()`, `carousel()`, `tableView()`, `dataGrid()`, `virtualList()`, plus
+`column()` und `remoteSource()`. Eine Datenquelle ist entweder eine lokale
+`ListProperty<T>` aus `@anjunar/jfx-core` (die *ist* schon eine `ListDataSource`)
+oder ein `RemoteSource<T, Q>` -- dünn geladen, das Control fragt die Bereiche an,
+die es braucht. `jfx-bridge` (`ControlFactories.scala`) übersetzt beides, dazu
+die Zell-/Slide-Renderer und das Spaltenmodell, und montiert die echten
+`jfx.control`-Komponenten. Die Fassade ist **reaktiv-Eingang-only**: reaktive
+`ReadOnlyProperty`-Optionen hinein, kein Handle heraus -- imperative Steuerung
+(`carousel.next()`, `tableView.select(item)`), `onRowDoubleClick`/`selectedItem`
+und `cellValueFactory` sind noch nicht projiziert (`CLAUDE_REVIEW_3.md` Nachtrag
+Lauf 4).
+
 Die begründeten Abweichungen bei `jfx-json` und `jfx-webauthn` und die
-Auslösebedingungen für `jfx-viewport`, `jfx-controls`, `jfx-forms` stehen in
-`CLAUDE_REVIEW_3.md` §5 und §6, der Ausführungsbericht im Nachtrag Lauf 3.
+Auslösebedingungen für `jfx-viewport` und `jfx-forms` stehen in
+`CLAUDE_REVIEW_3.md` §5 und §6, die Ausführungsberichte in den Nachträgen Lauf 3
+und Lauf 4.

@@ -203,6 +203,189 @@ class JfxRuntimeBridgeSpec extends AsyncFlatSpec with Matchers {
     }
   }
 
+  // --- the controls facade (JAVASCRIPT_API.md §9, step 6) --------------------
+
+  private type ScopeBody = js.Function1[ScopeHandleBridge, Unit]
+
+  private def scopeBody(text: String): ScopeBody =
+    ((scope: ScopeHandleBridge) => { scope.text(text); () })
+
+  private def cellRenderer(render: js.Any => String): js.Function2[js.Any, Int, ScopeBody] =
+    ((item: js.Any, _: Int) => scopeBody(render(item)))
+
+  "the tabs facade" should "render only the active panel in active-only mode" in {
+    val tabs = js.Array[js.Any](
+      js.Dictionary[js.Any]("title" -> "Overview", "content" -> scopeBody("overview body")),
+      js.Dictionary[js.Any]("title" -> "Activity", "content" -> scopeBody("activity body"))
+    )
+
+    val build: ScopeBody = { scope =>
+      scope.component("tabs", js.Dictionary("tabs" -> tabs, "selectedIndex" -> 1), (_, _) => ())
+      ()
+    }
+
+    render(build).map { result =>
+      result.html should include("Overview")
+      result.html should include("Activity")
+      result.html should include("activity body")
+      result.html should not include "overview body"
+    }
+  }
+
+  "the carousel facade" should "render every slide when ssrShowAllStates is set" in {
+    val slides = runtime.listProperty[js.Any](js.Array("Atlas", "Signal", "Harbor"))
+
+    val build: ScopeBody = { scope =>
+      scope.component(
+        "carousel",
+        js.Dictionary(
+          "items"            -> slides,
+          "slideRenderer"    -> cellRenderer(item => s"slide: ${item.asInstanceOf[String]}"),
+          "ssrShowAllStates" -> true
+        ),
+        (_, _) => ()
+      )
+      ()
+    }
+
+    render(build).map { result =>
+      result.html should include("slide: Atlas")
+      result.html should include("slide: Signal")
+      result.html should include("slide: Harbor")
+    }
+  }
+
+  private def column(text: String, render: js.Any => String): js.Any =
+    js.Dictionary[js.Any](
+      "text" -> text,
+      "cell" -> (((row: js.Any) => scopeBody(render(row))): js.Function1[js.Any, ScopeBody])
+    )
+
+  "the table-view facade" should "render one row per item of a local source, with cell renderers" in {
+    val books = runtime.listProperty[js.Any](
+      js.Array(
+        js.Dictionary[js.Any]("title" -> "1984", "author" -> "Orwell"),
+        js.Dictionary[js.Any]("title" -> "Siddhartha", "author" -> "Hesse")
+      )
+    )
+
+    val build: ScopeBody = { scope =>
+      scope.component(
+        "table-view",
+        js.Dictionary(
+          "source"    -> books,
+          "crawlable" -> true,
+          "crawlId"   -> "books",
+          "columns" -> js.Array[js.Any](
+            column("Title", row => row.asInstanceOf[js.Dictionary[String]]("title")),
+            column("Author", row => row.asInstanceOf[js.Dictionary[String]]("author"))
+          )
+        ),
+        (_, _) => ()
+      )
+      ()
+    }
+
+    render(build).map { result =>
+      result.html should include("jfx-table-view")
+      result.html should include("Title")
+      result.html should include("Author")
+      result.html should include("1984")
+      result.html should include("Orwell")
+      result.html should include("Siddhartha")
+    }
+  }
+
+  it should "load the first page of a remote source before serialising" in {
+    val page = js.Dictionary[js.Any](
+      "items" -> js.Array[js.Any](
+        js.Dictionary[js.Any]("title" -> "Remote One"),
+        js.Dictionary[js.Any]("title" -> "Remote Two")
+      ),
+      "offset"     -> 0,
+      "totalCount" -> 2
+    )
+
+    val remoteSource = js.Dictionary[js.Any](
+      "load"         -> (((_: js.Any) => js.Promise.resolve[js.Any](page)): js.Function1[js.Any, js.Any]),
+      "initialQuery" -> js.Dictionary[js.Any]("offset" -> 0, "limit" -> 50),
+      "initial" -> js.Array[js.Any](
+        js.Dictionary[js.Any]("title" -> "Remote One"),
+        js.Dictionary[js.Any]("title" -> "Remote Two")
+      ),
+      "totalCount" -> 2
+    )
+
+    val build: ScopeBody = { scope =>
+      scope.component(
+        "table-view",
+        js.Dictionary(
+          "source"    -> remoteSource,
+          "crawlable" -> true,
+          "crawlId"   -> "remote",
+          "columns" -> js.Array[js.Any](
+            column("Title", row => row.asInstanceOf[js.Dictionary[String]]("title"))
+          )
+        ),
+        (_, _) => ()
+      )
+      ()
+    }
+
+    render(build).map { result =>
+      result.html should include("Remote One")
+      result.html should include("Remote Two")
+    }
+  }
+
+  "the data-grid facade" should "render cells of a local source through the renderer" in {
+    val items = runtime.listProperty[js.Any](js.Array("alpha", "beta", "gamma"))
+
+    val build: ScopeBody = { scope =>
+      scope.component(
+        "data-grid",
+        js.Dictionary(
+          "source"       -> items,
+          "cellRenderer" -> cellRenderer(item => s"cell: ${item.asInstanceOf[String]}"),
+          "crawlable"    -> true,
+          "crawlId"      -> "grid"
+        ),
+        (_, _) => ()
+      )
+      ()
+    }
+
+    render(build).map { result =>
+      result.html should include("jfx-data-grid")
+      result.html should include("cell: alpha")
+      result.html should include("cell: gamma")
+    }
+  }
+
+  "the virtual-list-view facade" should "render rows of a local source through the renderer" in {
+    val items = runtime.listProperty[js.Any](js.Array("one", "two", "three"))
+
+    val build: ScopeBody = { scope =>
+      scope.component(
+        "virtual-list-view",
+        js.Dictionary(
+          "source"       -> items,
+          "cellRenderer" -> cellRenderer(item => s"line: ${item.asInstanceOf[String]}"),
+          "crawlable"    -> true,
+          "crawlId"      -> "list"
+        ),
+        (_, _) => ()
+      )
+      ()
+    }
+
+    render(build).map { result =>
+      result.html should include("jfx-virtual-list")
+      result.html should include("line: one")
+      result.html should include("line: three")
+    }
+  }
+
   "the component registry" should "reject an unregistered name" in {
     val build: js.Function1[ScopeHandleBridge, Unit] = { scope =>
       scope.component("does-not-exist", js.Dictionary(), (_, _) => ())

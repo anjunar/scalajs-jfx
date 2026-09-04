@@ -19,6 +19,7 @@
     "verify": "npm run typecheck && npm run build && npm run verify:runtime"
   },
   "dependencies": {
+    "@anjunar/jfx-controls": "*",
     "@anjunar/jfx-core": "*",
     "@anjunar/jfx-router": "*",
     "@anjunar/scalajs-jfx": "*",

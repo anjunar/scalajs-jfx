@@ -853,3 +853,141 @@ Neu:
 `queryParams`, `failure` — die des gelöschten `router.ts`. `state`, `routeMatch`,
 `locale` sind Scala-interne Routing-Typen ohne TS-Bedeutung und bleiben draußen.
 Kein Risiko, nur eine bewusste Grenze, falls ein Konsument mehr erwartet.
+
+---
+
+# Nachtrag: Lauf 4, 2026-09-04 — `@anjunar/jfx-controls`
+
+Die zweite Auslösebedingung aus §5 ist eingelöst: `jfx-bridge` bekommt
+`dependsOn(jfxControls)` und registriert `tabs`, `carousel`, `table-view`,
+`data-grid`, `virtual-list-view`. `@anjunar/jfx-controls` entsteht. Viewport und
+Forms **nicht** — deren Auslösebedingungen stehen unverändert. Umfang für diesen
+Lauf, mit dem Auftraggeber abgestimmt: alle fünf Controls, Datenquelle sowohl
+lokal (`ListProperty`) als auch remote (`RemoteListProperty`).
+
+## Was gebaut wurde
+
+| Bereich | Datei(en) |
+| --- | --- |
+| `dependsOn(jfxCore, jfxRouter, jfxControls)` | `build.sbt` |
+| Datenquellen-Übersetzung (lokal + remote), Zell-/Slide-Renderer, Spaltenmodell, fünf Factories | `jfx-bridge/.../ControlFactories.scala` (neu) |
+| Registratur | `jfx-bridge/.../BridgeRuntime.scala` (+7 Zeilen) |
+| Scala-Abnahme | `JfxRuntimeBridgeSpec` (+7 Fälle: tabs active-only, carousel ssrShowAllStates, table-view lokal + remote, data-grid, virtual-list-view) |
+| TS-Fassade | `npm/jfx-controls/` — `data-source.ts`, `tabs.ts`, `carousel.ts`, `table.ts`, `collections.ts`, `internal.ts`, `bridge.smoke.test.ts` (9 Fälle), `consumer/consumer.test.ts` (3), README |
+| Demo | `npm/jfx-demo/src/pages.ts` (`controlsPage`: Tabs mit Table- und Carousel-Panel), `routes.ts` (`/controls`), `node-bridge.ts`, `demo.css`, `vite.config.ts` (`dedupe` erweitert) |
+| CI | `verify.yml` (+`jfx-controls`-Schritt) |
+
+## Der Entwurf der Datenquelle
+
+`jfx.core.state.ListProperty[V] extends ListDataSource[V]` — eine TS
+`ListProperty` (zur Laufzeit ein `ListPropertyHandle`) ist also bereits eine
+gültige Quelle für `TableView`/`DataGrid`/`VirtualListView`; die Bridge muss sie
+nur auspacken (`.underlyingList`). Für eine dünn geladene Quelle nimmt die
+TS-Fassade ein plain object (`RemoteSource<T, Q>`: `load`, `initialQuery`,
+`initial`, `totalCount`, `rangeQuery`, `sortQuery`) entgegen, dessen Feldnamen
+genau die sind, die `ControlFactories.RemoteSourceFacade` (ein natives
+`js.Object`) liest; die Bridge baut daraus ein
+`jfx.core.remote.RemoteListProperty[js.Any, js.Any]`. Der Query-Typ bleibt für
+das Framework opak — es trägt ihn nur zwischen `rangeQuery`/`sortQuery`/`load`
+hin und her, genau wie `RemoteListProperty[V, Query]` auf der Scala-Seite. Der
+Item-Typ bleibt durchgehend `js.Any`: ein Renderer bekommt exakt das opake
+Objekt zurück, das der TS-Konsument in die Quelle gegeben hat.
+
+**`initial` ist Pflicht für eine sichtbare SSR-Zeile.** Es gibt keinen
+synchronen Mount-Punkt, an dem die Bridge `load` abwarten könnte — anders als
+beim Router (`Route.load` liefert ein `Future`, das `renderToString` erwartet)
+ist der Datenquellen-Konstruktor synchron. Eine `RemoteSource` ohne `initial`
+rendert serverseitig eine leere Quelle; das ist dokumentiert (README), keine
+Überraschung im Betrieb.
+
+## Der Renderer-/Slot-Mechanismus
+
+Jede Callback-Form — Zellen-Renderer `(item, index) => void`, Spalten-Zelle
+`(row) => void`, Slot `() => void` (Tab-Inhalt, Tabellenkopf, Platzhalter) —
+wird auf der TS-Seite in ein `(scope: ScopeHandle) => void` gefaltet
+(`withScope(scope, null, …)`), exakt der Mechanismus, den `jfx-router`s
+`toFacadeRoute` für `RouteLoad` bereits etabliert hat. Die Bridge löst jede
+davon gegen eine frisch gebaute `ScopeHandleBridge` auf. Kein neuer Mechanismus,
+eine vierte Anwendung des bestehenden.
+
+## Reaktiv-Eingang-only — bewusste Verkleinerung des Auftrags
+
+Der Plan sah „reaktive Optionen, wo die Scala-API sie anbietet" vor. Umgesetzt
+wurde das für die Fälle, die eine `ReadOnlyProperty`-Variante besitzen
+(`Tabs.selectedIndex`, `Carousel.activeIndex`/`autoAdvanceMs`/`wrapAround`/
+`ssrShowAllStates`, `TableColumn.prefWidth`) — Größenoptionen wie `rowHeight`,
+`itemWidthPx`, `pageSize` bleiben Konstanten, weil die Scala-Setter dafür keine
+`ReadOnlyProperty`-Überladung haben. Keine Lücke im Plan, sondern eine Grenze,
+die die Scala-API selbst zieht.
+
+**Nicht projiziert, mit Auslösebedingung:**
+
+- Imperative Handles (`carousel.next()`, `tableView.select(item)`,
+  `dataGrid.scrollTo(i)`, `virtualList.refresh()`) und die
+  `onRowDoubleClick`/`selectedItem`-Rückkopplung. Auslösebedingung: eine
+  `ControlHandle`-Projektion ist entworfen, in derselben Bewegung wie
+  `RouteContextHandle` (§9, Risiko 12) auf die wirklich gebrauchten Felder
+  begrenzt.
+- `TableColumn.cellValueFactory` — wirft bereits auf der Scala-Seite
+  (`UnsupportedOperationException`), also nichts zu projizieren.
+- `crawlable`/`crawlId` sind durchgereicht, aber nur innerhalb einer
+  `router()`-Shell nützlich: `CrawlableCollection` liest den aktuellen Pfad aus
+  `CrawlScope`, das nur der Router bereitstellt. Ohne Router ist der
+  Crawl-Link-`href` leer; die Seite selbst rendert trotzdem korrekt (geprüft:
+  `JfxRuntimeBridgeSpec`s Tabellen-Fälle laufen ohne Router).
+
+## Der Preis, gemessen
+
+`scalajs-jfx-bridge/fullLinkJS`: **1 520 636 B roh / 234 635 B gzip**, gegenüber
+Stand Lauf 3 (1 139 864 / 178 730) also **+380 772 B roh / +55 905 B gzip** für
+fünf Controls plus Remote-Datenquelle. Gegenüber `dependsOn(core)` allein
+(981 614 / 155 380): **+539 022 B roh / +79 255 B gzip** über beide
+Registraturen zusammen. `dependsOn(jfxControls)` allein war, wie bei Router,
+folgenlos — bezahlt wird ausschließlich die Registrierung in `BridgeRuntime`.
+
+## Nachgewiesen
+
+| Kriterium | Wie |
+| --- | --- |
+| Tabs: nur das aktive Panel serverseitig, Umschalten per Klick | `JfxRuntimeBridgeSpec` + `jfx-controls/test/bridge.smoke.test.ts` (SSR, Klick, Hydration mit Knotenidentität) |
+| Carousel: `ssrShowAllStates` rendert alle Folien, Autoplay | Spec + Smoke (SSR + Hydration) + echter Browser: `/controls`, Reiter „Carousel“ advanced automatisch |
+| Table-view: eine Zeile pro Element einer lokalen Quelle, Spalten-Renderer | Spec + Smoke, echter Browser: `/controls`, Reiter „Table“ zeigt 5 Zeilen × 3 Spalten |
+| Table-view: erste Seite einer Remote-Quelle vor dem Serialisieren geladen | Spec + Smoke (`initial` + `load` gegen einen generierten 12-Zeilen-Katalog) |
+| Data-grid / virtual-list-view: Zellen einer lokalen Quelle über den Renderer | Spec + Smoke |
+| Kein doppeltes `jfx-core` durch das neue Paket | `npm/jfx-demo/scripts/verify-single-runtime.mjs`, erweitert um `/controls` |
+| Fremder Konsument | `jfx-controls/test/consumer/` — `npm pack` von core+bridge+controls, Installation ins Leere, Import nur über `exports`, `tsc --strict` mit `skipLibCheck:false`, SSR gegen Bridge |
+| Demo als echter Konsument | `npm/jfx-demo` importiert `@anjunar/jfx-controls` über den Paketnamen; `npm run verify` grün |
+| `when()`-Hydration (Risiko 5) nicht ausgelöst | echter Browser: `/controls` frisch geladen, null Konsolenfehler, Tabs schalten, Carousel advanced — alle `when()`-Aufrufe in den Controls hängen an struktureller, nicht remote-getriebener Konfiguration |
+
+Gate: `sbtn "Test/testOnly *"` (287+7 = 294 Scala-Tests) plus `npm run verify` in
+`jfx-core`, `jfx-router`, `jfx-controls`, `jfx-demo`, nach
+`sbtn "scalajs-jfx-bridge/fullLinkJS"`.
+
+## Risiken: Stand nach Lauf 4
+
+| Nr. | Stand |
+| --- | --- |
+| 2 966-kB-Sockel | unverändert |
+| 5 `Condition`/`when`-Hydration | unverändert offen (`task_f55b4fa5`). Lauf 4 hat sie nicht ausgelöst, siehe oben |
+| 6 Hydration dünn abgedeckt | **verbessert**: `jfx-controls`s Smoke-Test deckt Tabs- und Carousel-Hydration mit Knotenidentität ab; die virtualisierte Trias ist per SSR getestet und per echtem Browser hydriert, aber ohne automatisierten Hydrations-Testfall (jsdom fehlt `ResizeObserver`/`IntersectionObserver` nicht vollständig genug, um die Viewport-Messung zuverlässig zu simulieren) |
+| 7 Editor-Entscheidung | unverändert offen (blockiert `@anjunar/jfx-editor`, nicht diesen Lauf) |
+| 8 Versionsdrift CSS-Paket | unverändert |
+| 9 Sourcemap-Warnung | unverändert (jetzt auch im `jfx-controls`-Smoke-Test sichtbar) |
+| 11 CI | `jfx-controls`-Schritt ergänzt; erster echter Actions-Lauf weiterhin der Beweis |
+
+Neu:
+
+**13. Die Fassade ist reaktiv-Eingang-only.** Kein Control gibt ein Handle an
+TypeScript zurück; `carousel.next()`, `tableView.select(item)` und Ähnliches
+sind nicht erreichbar. Auslösebedingung oben.
+
+**14. `RemoteSource` ohne `initial` rendert serverseitig leer.** Dokumentiertes
+Verhalten (README), kein Fehler — aber ein Konsument, der das übersieht, bekommt
+eine leere erste Seite statt eines Ladezustands. Ein künftiger Lauf könnte
+`initial` optional machen und stattdessen synchron auf das erste `load()`
+warten, wenn `renderToString`s Timeout das erlaubt; nicht Teil dieses Laufs.
+
+**15. `crawlable` ohne `router()`-Shell hat einen leeren Crawl-Link.** Korrekt
+nach `CrawlScope`s eigener Ausfallregel (leerer Pfad ⇒ kein Link), aber ein
+Konsument, der `crawlable` außerhalb eines Routers erwartet vollständig nutzbar
+zu sein, muss das wissen. Dokumentiert (README), keine Änderung am Verhalten.

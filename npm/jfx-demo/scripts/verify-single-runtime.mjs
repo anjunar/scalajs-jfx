@@ -129,6 +129,17 @@ async function devServer() {
       html.includes("Current value: 0"),
       "the SSR outlet was not filled -- with two runtime slots, renderToString throws instead"
     );
+
+    // /controls pulls in @anjunar/jfx-controls; if that package dragged its own
+    // copy of jfx-core, the runtime marker count above would rise and this route
+    // would fault on the second, uninstalled slot.
+    const controls = await fetch("http://localhost:5179/controls");
+    const controlsHtml = await controls.text();
+    check(
+      "dev server server-renders the controls route",
+      controls.status === 200 && controlsHtml.includes("jfx-table-view"),
+      `status ${controls.status}, table markup ${controlsHtml.includes("jfx-table-view")}`
+    );
     check(
       "dev server did not log a runtime-installation fault",
       !stderr.join("").includes("No JFX runtime installed"),

@@ -26,7 +26,12 @@ export default defineConfig({
     // copies of the linked Scala.js bundle would be two component trees.
     // jfx-router holds no module-level state, but deduping it too keeps every
     // package of the family on one instance and one set of types.
-    dedupe: ["@anjunar/jfx-core", "@anjunar/jfx-router", "@anjunar/scalajs-jfx-bridge"],
+    dedupe: [
+      "@anjunar/jfx-core",
+      "@anjunar/jfx-router",
+      "@anjunar/jfx-controls",
+      "@anjunar/scalajs-jfx-bridge",
+    ],
   },
   server: {
     fs: {
