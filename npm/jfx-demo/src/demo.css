@@ -194,3 +194,38 @@ body {
 .controls-page__slide {
   padding: 2rem;
 }
+
+/* ViewportPage -- the window/overlay/notification chrome itself
+   (jfx-window, jfx-viewport-overlay, jfx-viewport-notification) is styled by
+   @anjunar/scalajs-jfx/index.css, imported in entry-client.ts. */
+.viewport-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.viewport-page__row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.viewport-page__menu {
+  position: relative;
+}
+
+.viewport-page__menu-item {
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+}
+
+.viewport-page__menu-item:hover {
+  background: #f0f0f0;
+}
+
+.viewport-page__window-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}

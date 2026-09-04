@@ -8,6 +8,7 @@
 import { hydrate, installRuntime } from "@anjunar/jfx-core";
 import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";
 import { router } from "@anjunar/jfx-router";
+import { viewport } from "@anjunar/jfx-viewport";
 import "@anjunar/scalajs-jfx/index.css";
 import { appRoutes, appShell, routerConfig } from "./routes.js";
 
@@ -18,4 +19,11 @@ installRuntime(bridgeRuntime);
 // reads `window.location` through the hydrating cursor. A hydration fault throws
 // here with HydratingCursor's diagnostic (JAVASCRIPT_API.md §11) if server and
 // client ever disagree on the matched route.
-await hydrate(document.getElementById("root")!, () => router(appRoutes, routerConfig, appShell));
+//
+// `viewport(...)` wraps the whole app, exactly the shape `Viewport.notify`'s own
+// doc comment recommends on the Scala side (`viewport { router(routes) }`, see
+// `WindowPage.scala`) -- one host for windows, overlays and notifications any
+// routed page can reach through `@anjunar/jfx-viewport`.
+await hydrate(document.getElementById("root")!, () =>
+  viewport(() => router(appRoutes, routerConfig, appShell))
+);

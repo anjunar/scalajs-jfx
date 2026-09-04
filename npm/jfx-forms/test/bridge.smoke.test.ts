@@ -1,0 +1,320 @@
+/**
+ * Smoke test against the real bridge.
+ *
+ * Model binding needs the real bridge's `Property`/`ListProperty` handles
+ * (`PropertyHandle`/`ListPropertyHandle`) to find the underlying Scala
+ * `Property`, which the stub runtime does not build -- so, like the controls
+ * and viewport facades, there is no stub half here.
+ *
+ * It needs the linked artifact:
+ *
+ *     sbtn "scalajs-jfx-bridge/fullLinkJS"
+ *
+ * Missing, it fails loudly rather than skipping.
+ */
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
+import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import {
+  hydrate,
+  installRuntime,
+  listProperty,
+  mount,
+  property,
+  renderToString,
+  resetRuntime,
+  runtime,
+} from "@anjunar/jfx-core";
+import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";
+import { viewport } from "@anjunar/jfx-viewport";
+import {
+  arrayForm,
+  comboBox,
+  fieldSet,
+  form,
+  input,
+  inputContainer,
+  notBlank,
+  size,
+  subForm,
+} from "../src/index.js";
+
+const linkedArtifact = resolve(process.cwd(), "../scalajs-jfx-bridge/dist/fullopt/main.js");
+
+beforeAll(() => {
+  if (!existsSync(linkedArtifact)) {
+    throw new Error(
+      `The Scala.js bridge is not linked. Run:\n\n` +
+        `    sbtn "scalajs-jfx-bridge/fullLinkJS"\n\n` +
+        `Expected: ${linkedArtifact}`
+    );
+  }
+  // comboBox's dropdown is a jfx-controls TableView, which observes its
+  // viewport size in the browser; jsdom ships neither observer. A no-op pair
+  // is enough for mount/hydrate to run -- same polyfill jfx-controls' own
+  // smoke test uses.
+  const noop = class {
+    observe(): void {}
+    unobserve(): void {}
+    disconnect(): void {}
+  };
+  (globalThis as { ResizeObserver?: unknown }).ResizeObserver ??= noop;
+  (globalThis as { IntersectionObserver?: unknown }).IntersectionObserver ??= noop;
+});
+
+beforeEach(() => {
+  resetRuntime();
+  installRuntime(bridgeRuntime);
+});
+
+describe("the linked runtime", () => {
+  it("is the bridge", () => {
+    expect(runtime().name).toBe("jfx-bridge");
+  });
+});
+
+describe("form + input", () => {
+  it("binds a control to a model property bidirectionally", () => {
+    const model = { name: property("Ada") };
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const app = mount(root, () => {
+      form(model, {}, () => {
+        input("name");
+      });
+    });
+
+    const field = root.querySelector("input") as HTMLInputElement;
+    expect(field.value).toBe("Ada");
+
+    model.name.set("Grace");
+    expect(field.value).toBe("Grace");
+
+    field.value = "Katherine";
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(model.name.get).toBe("Katherine");
+
+    app.dispose();
+  });
+
+  it("attaches schema validators and reports errors through inputContainer", () => {
+    const model = { name: property("") };
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const app = mount(root, () => {
+      form(model, { schema: { name: [notBlank(), size(2, 10)] } }, () => {
+        inputContainer({ label: "Name" }, () => {
+          input("name");
+        });
+      });
+    });
+
+    // Errors surface once the control is dirty (or force-validated) -- a
+    // focus/blur with no edit in between leaves it pristine, and `validate()`
+    // deliberately clears errors for a pristine control (`Control.validate`).
+    const field = root.querySelector("input") as HTMLInputElement;
+    field.value = "";
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+    field.dispatchEvent(new Event("blur"));
+
+    expect(root.querySelector(".jfx-input-container__errors")?.textContent ?? "").not.toBe("");
+
+    field.value = "Al";
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+    field.dispatchEvent(new Event("blur"));
+
+    expect(root.querySelector(".jfx-input-container__errors")?.textContent ?? "").toBe("");
+
+    app.dispose();
+  });
+
+  it("renders and hydrates, and reacts to input after hydration with no reactive gate", async () => {
+    const model = { name: property("Ada") };
+    const build = (): void => {
+      form(model, {}, () => {
+        input("name");
+      });
+    };
+
+    const rendered = await renderToString(build);
+    const root = document.createElement("div");
+    root.innerHTML = rendered.html;
+    document.body.appendChild(root);
+
+    const app = await hydrate(root, build);
+    const field = root.querySelector("input") as HTMLInputElement;
+    expect(field.value).toBe("Ada");
+
+    field.value = "Grace";
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(model.name.get).toBe("Grace");
+
+    app.dispose();
+  });
+});
+
+describe("fieldSet", () => {
+  it("groups controls without binding them to the model", () => {
+    const model = { name: property("Ada") };
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const app = mount(root, () => {
+      form(model, {}, () => {
+        fieldSet({ name: "group" }, () => {
+          input("name", { standalone: true });
+        });
+      });
+    });
+
+    expect(root.querySelector("fieldset")).not.toBeNull();
+    const field = root.querySelector("input") as HTMLInputElement;
+    expect(field.value).toBe("");
+
+    app.dispose();
+  });
+});
+
+describe("arrayForm", () => {
+  it("renders one control per item and follows structural changes", () => {
+    const model = { tags: listProperty<string>(["math", "compilers"]) };
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const app = mount(root, () => {
+      form(model, {}, () => {
+        // Not standalone: an item control must self-register with the
+        // arrayForm (the ambient form context here) for `itemControlAt` to
+        // find it -- see `FormFactories.arrayFormRenderer`.
+        arrayForm("tags", (index) => {
+          input(`tag-${index}`);
+        });
+      });
+    });
+
+    let fields = Array.from(root.querySelectorAll("input")) as HTMLInputElement[];
+    expect(fields.map((el) => el.value)).toEqual(["math", "compilers"]);
+
+    model.tags.insert(1, "logic");
+    fields = Array.from(root.querySelectorAll("input")) as HTMLInputElement[];
+    expect(fields.map((el) => el.value)).toEqual(["math", "logic", "compilers"]);
+
+    app.dispose();
+  });
+
+  // Regression: with the renderer supplied only through `controlRenderer_=`
+  // (the plain DSL path), `ArrayForm.compose`'s first `foreachIndexed` pass
+  // ran before that setter fired, rendering zero items -- fine for a live
+  // `mount()` (the setter's own `valueProperty.notified()` forces a second,
+  // correct pass), but wrong for hydration: `HydratingCursor` had already
+  // walked past an empty range by the time the second pass tried to claim the
+  // server-rendered item nodes, and threw "Server-rendered nodes were not
+  // claimed by the client." `ArrayFormFactory` now supplies the renderer via
+  // `ArrayForm`'s constructor instead, so the very first pass already renders
+  // every item. Only reproducible with a real claim-walking cursor, not a
+  // fresh `mount()` -- see the memory note this session left on Lauf 5's own
+  // hydration-only bug for why a plain `mount()` test does not cover this.
+  it("hydrates a non-empty list without a claim mismatch", async () => {
+    const model = { tags: listProperty<string>(["math", "compilers"]) };
+    const build = (): void => {
+      form(model, {}, () => {
+        arrayForm("tags", (index) => {
+          input(`tag-${index}`);
+        });
+      });
+    };
+
+    const rendered = await renderToString(build);
+    const root = document.createElement("div");
+    root.innerHTML = rendered.html;
+    document.body.appendChild(root);
+
+    const app = await hydrate(root, build);
+
+    const fields = Array.from(root.querySelectorAll("input")) as HTMLInputElement[];
+    expect(fields.map((el) => el.value)).toEqual(["math", "compilers"]);
+
+    app.dispose();
+  });
+});
+
+describe("subForm", () => {
+  it("binds a nested model bidirectionally, as a control of its parent", () => {
+    const owner = { name: property("") };
+    const model = { owner: property(owner) };
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const app = mount(root, () => {
+      form(model, {}, () => {
+        subForm("owner", owner, {}, () => {
+          input("name");
+        });
+      });
+    });
+
+    const field = root.querySelector("input") as HTMLInputElement;
+    field.value = "Ada";
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(owner.name.get).toBe("Ada");
+
+    app.dispose();
+  });
+});
+
+describe("comboBox", () => {
+  it("selects an item and updates the bound model property", () => {
+    const model = { color: property<string | null>(null) };
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const app = mount(root, () => {
+      // ComboBox's dropdown is an `overlay`, which needs a `viewport` ancestor
+      // -- same requirement as the Scala demo's own combo-box usage.
+      viewport(() => {
+        form(model, {}, () => {
+          comboBox("color", { items: ["red", "green", "blue"] });
+        });
+      });
+    });
+
+    const trigger = root.querySelector(".jfx-combo-box") as HTMLElement;
+    trigger.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+
+    const option = root.querySelector(".jfx-combo-box__item") as HTMLElement;
+    option.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+
+    expect(model.color.get).toBe("red");
+
+    app.dispose();
+  });
+
+  // Regression shape from the viewport/controls facades: an interaction that
+  // opens an overlay-backed control, exercised after hydration rather than a
+  // plain mount, since that is where a stale captured cursor would surface.
+  it("opens its dropdown from a bare click after hydration", async () => {
+    const model = { color: property<string | null>(null) };
+    const build = (): void => {
+      viewport(() => {
+        form(model, {}, () => {
+          comboBox("color", { items: ["red", "green", "blue"] });
+        });
+      });
+    };
+
+    const rendered = await renderToString(build);
+    const root = document.createElement("div");
+    root.innerHTML = rendered.html;
+    document.body.appendChild(root);
+
+    const app = await hydrate(root, build);
+
+    const trigger = root.querySelector(".jfx-combo-box") as HTMLElement;
+    trigger.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+
+    expect(root.querySelector(".jfx-combo-box__item")).not.toBeNull();
+    app.dispose();
+  });
+});

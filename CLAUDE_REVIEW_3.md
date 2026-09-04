@@ -991,3 +991,100 @@ warten, wenn `renderToString`s Timeout das erlaubt; nicht Teil dieses Laufs.
 nach `CrawlScope`s eigener Ausfallregel (leerer Pfad ⇒ kein Link), aber ein
 Konsument, der `crawlable` außerhalb eines Routers erwartet vollständig nutzbar
 zu sein, muss das wissen. Dokumentiert (README), keine Änderung am Verhalten.
+
+# Nachtrag: Lauf 5, 2026-09-04 — `@anjunar/jfx-viewport`
+
+Die erste (und einzige) Auslösebedingung aus §5 ist eingelöst: `jfx-bridge`
+bekommt `dependsOn(jfxViewport)` und registriert `viewport`, `window`,
+`overlay`, `notification` aus `jfx.viewport` (`ViewportFactories.scala`).
+
+## Was gebaut wurde
+
+`viewport()`, `floatingWindow()`, `overlay()`, `notify()` in
+`@anjunar/jfx-viewport`. `window` heißt auf der TS-Seite `floatingWindow` --
+`window` ist das Browser-Global; der Registratureintrag selbst bleibt
+`"window"`. Reaktive Titel/Nachrichten (`TextValue[T]`) sind nicht projiziert:
+`WindowPage.scala`/`ViewportPage.scala`, die einzigen bestehenden Aufrufer,
+übergeben beiden nie etwas anderes als einen bereits aufgelösten `String`.
+
+## Ein Fehler, der ohne echten Browser nicht aufgefallen wäre
+
+`notify()`/`floatingWindow()`, direkt aus einem `onClick` heraus aufgerufen --
+ohne `when()` dazwischen --, warfen nach abgeschlossener Hydration bei jedem
+Klick "Hydration fault: There is no further DOM node." Ursache:
+`ScopeHandleBridge.cursor` ist der `Cursor`, der ambient war, als `on(...)` den
+Handler *registrierte* (zur Hydrationszeit); `capture()`/`withScope()`
+(`scope.ts`) stellen genau diesen bei jedem späteren Klick wieder her, egal wie
+lange die Hydration schon vorbei ist. Ein `DslLayer.child` gegen einen längst
+verbrauchten `HydratingCursor` schlägt fehl. `Condition.when` hat dieses
+Problem nicht -- jede Aktivierung bekommt einen frischen, echten Cursor von
+`Condition` selbst; deshalb funktionierte `when(open) { floatingWindow(...) }`
+von Anfang an, sowohl im deterministischen `jsdom`-Testlauf als auch im
+Browser. Der deterministische Test allein hätte den Fehler nicht gefunden --
+er prüfte Hydration und Klick nie in derselben Zusicherung. Erst der echte
+Browser (`/viewport`, `Notify` anklicken, leerer Antwort-Host) legte ihn offen;
+danach ließ er sich mit `hydrate()` + `dispatchEvent("click")` in `jsdom`
+exakt reproduzieren.
+
+Fix: `WindowFactory`/`NotificationFactory` fassen den Cursor am Aufrufort gar
+nicht mehr an. Sie rufen `Viewport.addWindow`/`Viewport.notify` direkt gegen
+`parent` auf (keine der beiden Signaturen braucht einen `Cursor`) und hängen
+die "früh schließen, wenn entfernt"-Disposable an `parent` selbst -- keine
+eigens gebaute Wrapper-Komponente nötig. Die sichtbare Montage passiert später
+und anderswo, in `Viewport.compose`s eigenem `Foreach.foreach(windows)` /
+`Foreach.foreach(notifications)`, der seit `todosPage`s reaktivem `forEach`
+über neu hinzugefügte Einträge ohnehin schon korrekt in einen bereits
+hydrierten Baum einfügt. `overlay()` hat dieses Problem nicht und muss es auch
+nicht lösen: es montiert ein echtes, sichtbares `div` am Aufrufort und steht
+deshalb -- wie `jfx.forms.ComboBox`s eigenes Dropdown -- immer hinter einem
+`when()`; beide Regressionsfälle (`notify`, `floatingWindow`, je ohne
+reaktives Gate) sind jetzt feste Tests in `jfx-viewport/test/bridge.smoke.test.ts`.
+
+## Der Preis, gemessen
+
+`scalajs-jfx-bridge/fullLinkJS`: **1 584 562 B roh / 243 967 B gzip**, gegenüber
+Stand Lauf 4 (1 520 636 / 234 635) also **+63 926 B roh / +9 332 B gzip** für
+vier Registratureinträge. `dependsOn(jfxViewport)` allein war wieder
+folgenlos -- bezahlt wird ausschließlich die Registrierung in `BridgeRuntime`.
+
+## Nachgewiesen
+
+| Kriterium | Wie |
+| --- | --- |
+| `viewport` mountet als Host, rendert seinen Body | `JfxRuntimeBridgeSpec` + `jfx-viewport/test/bridge.smoke.test.ts` (SSR) |
+| `notification` unter ihrer Kind-Klasse, dismisst per Timer | Spec + Smoke (SSR) |
+| `window` bleibt offen, solange gemountet, `onClose` feuert | Smoke (echter Browser-Mount, Klick auf Schließen-Button) |
+| Regression: `notify`/`floatingWindow` aus bloßem `onClick`, ohne `when()`, nach Hydration | Smoke (`hydrate()` + `dispatchEvent`), siehe oben |
+| `overlay` verankert unter dem Viewport, hydriert sauber | Spec + Smoke |
+| Kein doppeltes `jfx-core` durch das neue Paket | `npm/jfx-demo/scripts/verify-single-runtime.mjs` |
+| Fremder Konsument | `jfx-viewport/test/consumer/` -- `npm pack` von core+bridge+viewport, Installation ins Leere, Import nur über `exports`, `tsc --strict` mit `skipLibCheck:false`, SSR gegen Bridge |
+| Demo als echter Konsument | `npm/jfx-demo`s `/viewport` -- `entry-client.ts`/`entry-server.ts` wickeln die ganze App jetzt in `viewport(...)`; Notify, Fenster öffnen/schließen, Menü-Overlay öffnen/wählen/schließen im echten Browser durchgeklickt, null Konsolenfehler; `npm run verify` grün |
+
+Gate: `sbtn "Test/testOnly *"` (296 Scala-Tests) plus `npm run verify`
+in `jfx-core`, `jfx-router`, `jfx-controls`, `jfx-viewport`, `jfx-demo`, nach
+`sbtn "scalajs-jfx-bridge/fullLinkJS"`.
+
+## Risiken: Stand nach Lauf 5
+
+| Nr. | Stand |
+| --- | --- |
+| 2 966-kB-Sockel | unverändert |
+| 5 `Condition`/`when`-Hydration | unverändert offen (`task_f55b4fa5`) |
+| 6 Hydration dünn abgedeckt | unverändert (siehe Lauf 4) |
+| 7 Editor-Entscheidung | unverändert offen |
+| 8 Versionsdrift CSS-Paket | unverändert |
+| 9 Sourcemap-Warnung | unverändert |
+| 11 CI | `jfx-viewport`-Schritt noch nicht in `verify.yml` ergänzt |
+
+Neu:
+
+**16. Ein aufgelöster `Cursor`, den ein Event-Handler über die Hydration hinweg
+festhält, ist stale.** Gefunden und behoben bei `notify`/`floatingWindow` (oben);
+der Mechanismus (`capture()`/`withScope()` reaktiviert den zur Registrierzeit
+ambienten `ScopeHandle`) ist generisch in `jfx-core`, nicht spezifisch für
+`jfx-viewport`. Jede künftige Fassade, die `component(...)`/`child(...)` von
+innerhalb eines wiederhergestellten Event-Handler-Scopes aufruft -- statt nur
+reaktiv über `when`/`forEach` --, muss denselben Umweg nehmen (Cursor am
+Aufrufort nicht anfassen) oder `jfx-core` bräuchte einen Weg, einen
+`ScopeHandle` nach Hydrationsende auf einen echten Cursor umzustellen. Letzteres
+ist nicht Teil dieses Laufs.

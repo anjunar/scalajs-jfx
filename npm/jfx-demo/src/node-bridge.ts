@@ -13,7 +13,8 @@
  */
 import { installRuntime, property, renderToString } from "@anjunar/jfx-core";
 import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";
-import { controlsPage, format, libraryPage, statePage } from "./pages.js";
+import { viewport } from "@anjunar/jfx-viewport";
+import { controlsPage, format, formsPage, libraryPage, statePage, viewportPage } from "./pages.js";
 
 async function main(): Promise<void> {
   installRuntime(bridgeRuntime);
@@ -29,6 +30,18 @@ async function main(): Promise<void> {
   const controls = await renderToString(controlsPage);
   console.log("\n--- ControlsPage (tabs + table + carousel, @anjunar/jfx-controls) ---");
   console.log(format(controls.html));
+
+  // `viewportPage` needs a `viewport` ancestor to reach `Viewport.requireCurrent`
+  // through `notify`/`floatingWindow`/`overlay` -- see entry-client.ts's note.
+  const viewportResult = await renderToString(() => viewport(viewportPage));
+  console.log("\n--- ViewportPage (notification + window + overlay, @anjunar/jfx-viewport) ---");
+  console.log(format(viewportResult.html));
+
+  // `formsPage` also needs a `viewport` ancestor -- its combo box's dropdown
+  // is an `@anjunar/jfx-viewport` overlay.
+  const formsResult = await renderToString(() => viewport(formsPage));
+  console.log("\n--- FormsPage (validated inputs + array/sub-form + combo box + image cropper, @anjunar/jfx-forms) ---");
+  console.log(format(formsResult.html));
 
   console.log("\n--- Reactivity check (through PropertyHandle, not the stub) --");
   const counter = property(0);

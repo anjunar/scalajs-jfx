@@ -294,8 +294,8 @@ verschmutzt.
 2. jfx-bridge anlegen: nur core (Property, Scope, mount/hydrate/renderToString)  ✅
 3. @anjunar/jfx-core gegen die echte Bridge laufen lassen (der Prototyp liegt vor)   ✅
 4. Bundle-Größe messen und hier eintragen                                  ✅ (§14)
-5. Router-Fassade, dann Forms-Schema                                       ✅ (Router; Forms offen)
-6. Komponentenregistratur auffüllen                                        ✅ (tabs/carousel/table-view/data-grid/virtual-list-view)
+5. Router-Fassade, dann Forms-Schema                                       ✅ (Router; Forms: CLAUDE_REVIEW_3.md Lauf 6)
+6. Komponentenregistratur auffüllen                                        ✅ (controls: tabs/carousel/table-view/data-grid/virtual-list-view; viewport: viewport/window/overlay/notification; forms: form/sub-form/input/input-container/field-set/array-form/combo-box/image-cropper)
 7. i18n-Extractor
 8. Consumer-Smoke-Test in CI: leeres TS-Projekt, SSR + Hydration
 ```
@@ -806,7 +806,40 @@ die Zell-/Slide-Renderer und das Spaltenmodell, und montiert die echten
 und `cellValueFactory` sind noch nicht projiziert (`CLAUDE_REVIEW_3.md` Nachtrag
 Lauf 4).
 
+### Und seit Lauf 5: `@anjunar/jfx-viewport`
+
+`viewport()`, `floatingWindow()`, `overlay()`, `notify()`. Alle vier sind
+Registratureinträge in `jfx-bridge` (`ViewportFactories.scala`), genau wie bei
+Router und Controls -- keine separate imperative API. `window` heißt auf der
+TS-Seite `floatingWindow`, weil `window` das Browser-Global ist; der
+Registraturname bleibt `"window"`.
+
+Eine Falle, die es so vorher nicht gab: `notify()`/`floatingWindow()` direkt aus
+einem `onClick` heraus aufgerufen -- ohne ein `when()` dazwischen --, nachdem
+die Seite bereits hydriert war, warf "Hydration fault: There is no further DOM
+node." Der `Cursor`, den `ScopeHandleBridge` trägt, ist der, der beim
+*Registrieren* des Handlers ambient war (zur Hydrationszeit); `capture()`/
+`withScope()` in `scope.ts` stellen genau diesen bei jedem Klick wieder her,
+beliebig lange nachdem die Hydration fertig ist. Ein `DslLayer.child` gegen
+einen längst verbrauchten `HydratingCursor` schlägt fehl. `Condition.when` hat
+dieses Problem nicht -- jede Aktivierung bekommt einen frischen, echten Cursor
+von `Condition` selbst, deshalb funktioniert `when(open) { floatingWindow(...) }`
+anstandslos. Die Lösung: `WindowFactory`/`NotificationFactory` fassen den Cursor
+am Aufrufort gar nicht erst an. Sie rufen `Viewport.addWindow`/`Viewport.notify`
+direkt gegen `parent` auf (beide brauchen laut Signatur keinen `Cursor`) und
+hängen die "früh schließen, wenn entfernt"-Disposable an `parent` selbst --
+nicht an eine eigens gebaute Wrapper-Komponente. Die eigentliche sichtbare
+Montage passiert später und anderswo, in `Viewport.compose`s eigenem
+`Foreach.foreach(windows)` / `Foreach.foreach(notifications)`, der seit
+`todosPage`s reaktivem `forEach` über neu hinzugefügte Einträge ohnehin schon
+korrekt in einen bereits hydrierten Baum einfügt. `overlay()` hat dieses Problem
+nicht und braucht es auch nicht zu lösen: es montiert ein echtes, sichtbares
+`div` am Aufrufort und steht deshalb -- wie `jfx.forms.ComboBox`s eigenes
+Dropdown -- immer hinter einem `when()`.
+
+Gemessener Preis auf dem einen Artefakt: **+63 926 B raw / +9 332 B gzip**
+gegenüber Lauf 4 (jetzt 1 584 562 / 243 967).
+
 Die begründeten Abweichungen bei `jfx-json` und `jfx-webauthn` und die
-Auslösebedingungen für `jfx-viewport` und `jfx-forms` stehen in
-`CLAUDE_REVIEW_3.md` §5 und §6, die Ausführungsberichte in den Nachträgen Lauf 3
-und Lauf 4.
+Auslösebedingung für `jfx-forms` stehen in `CLAUDE_REVIEW_3.md` §5 und §6, die
+Ausführungsberichte in den Nachträgen Lauf 3, Lauf 4 und Lauf 5.

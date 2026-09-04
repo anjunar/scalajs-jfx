@@ -203,20 +203,20 @@ lazy val jfxJson = Project(id = "scalajs-jfx-json", base = file("jfx-json"))
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
 
-// The JavaScript boundary described in JAVASCRIPT_API.md. Depends on jfx-core, jfx-router and
-// jfx-controls: step 5 of §9 there wires the router facade (`router`, `router-outlet`,
+// The JavaScript boundary described in JAVASCRIPT_API.md. Depends on jfx-core, jfx-router,
+// jfx-controls and jfx-viewport: step 5 of §9 there wires the router facade (`router`, `router-outlet`,
 // `router-link`) into the registry, step 6 the controls facade (`tabs`, `carousel`, `table-view`,
-// `data-grid`, `virtual-list-view`). A wider `dependsOn` edge costs zero bytes on its own
-// (CLAUDE_REVIEW_3.md §2.1, E1==E2); what the linked bundle pays for is the *registration* in
-// BridgeRuntime, measured in §14.
+// `data-grid`, `virtual-list-view`), step 7 the viewport facade (`viewport`, `window`, `overlay`,
+// `notification`). A wider `dependsOn` edge costs zero bytes on its own (CLAUDE_REVIEW_3.md §2.1,
+// E1==E2); what the linked bundle pays for is the *registration* in BridgeRuntime, measured in §14.
 //
 // `jfxControls` compile-depends on `jfxCore` alone -- its edge to `jfxViewport` is `test->compile`
-// (see `lazy val jfxControls`), so this `dependsOn` pulls no viewport code into the link. The
-// viewport and forms facades are later steps; their triggers stand in CLAUDE_REVIEW_3.md §5, not
-// missed dependencies here.
+// (see `lazy val jfxControls`), so this `dependsOn` on `jfxViewport` is the first one that actually
+// pulls `jfx.viewport` into the link. The forms facade is the remaining later step; its trigger
+// stands in CLAUDE_REVIEW_3.md §5, not a missed dependency here.
 lazy val jfxBridge = Project(id = "scalajs-jfx-bridge", base = file("jfx-bridge"))
   .enablePlugins(ScalaJSPlugin)
-  .dependsOn(jfxCore, jfxRouter, jfxControls)
+  .dependsOn(jfxCore, jfxRouter, jfxControls, jfxViewport, jfxForms)
   .settings(
     name       := "scalajs-jfx-bridge",
     moduleName := "scalajs-jfx-bridge",

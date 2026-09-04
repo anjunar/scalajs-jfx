@@ -11,8 +11,11 @@ import jfx.forms.Form.FormContext
 import scala.collection.mutable
 import scala.scalajs.js
 
-class ArrayForm[V](val name: String, val standalone: Boolean = false)
-    extends AbstractComponent,
+class ArrayForm[V](
+    val name: String,
+    val standalone: Boolean = false,
+    initialRenderer: Option[ArrayForm.Renderer] = None
+) extends AbstractComponent,
       Control[js.Array[V]],
       FormController {
 
@@ -25,7 +28,16 @@ class ArrayForm[V](val name: String, val standalone: Boolean = false)
   private val mountedByIndex             = mutable.Map.empty[Int, Control[?]]
   private var currentIndex               = -1
   private var contextPrefix              = name
-  private var renderer: Option[Renderer] = None
+  // A renderer supplied here, rather than through `controlRenderer_=`, is visible to `compose`'s
+  // very first `foreachIndexed` pass -- no `valueProperty.notified()` retrigger needed. That
+  // retrigger is exactly right for a live, already-mounted form (the `controlRenderer_=` setter
+  // below), but wrong during SSR/hydration: `compose` always runs to completion *before*
+  // `DslLayer.child`'s trailing body block (where `controlRenderer_=` is normally called) does, so a
+  // renderer set that way renders zero items on the first pass and a second, later pass has to
+  // insert them into a `HydratingCursor` that already walked past an empty range -- a real hydration
+  // fault, not hypothetical (found through `jfx-bridge`'s `ArrayFormFactory`, which needs the
+  // renderer available from construction).
+  private var renderer: Option[Renderer] = initialRenderer
 
   override def prefix: String = contextPrefix
 
@@ -38,6 +50,13 @@ class ArrayForm[V](val name: String, val standalone: Boolean = false)
 
   def itemControls: Seq[Control[?]] =
     mountedByIndex.toSeq.sortBy(_._1).map(_._2)
+
+  /** The control mounted for `index`, if the renderer has run for it. A bridge-facing renderer
+    * (`jfx-bridge`'s `ArrayFormFactory`) mounts its item through the DSL rather than building and
+    * returning a `Control[?]` value directly -- self-registration during that mount already
+    * populates `mountedByIndex`, so this is how the renderer function recovers what it just built.
+    */
+  def itemControlAt(index: Int): Option[Control[?]] = mountedByIndex.get(index)
 
   override def register(control: Control[?]): Unit =
     if (currentIndex >= 0) mountedByIndex.put(currentIndex, control)

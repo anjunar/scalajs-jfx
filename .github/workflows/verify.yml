@@ -91,6 +91,17 @@ jobs:
         working-directory: npm/jfx-controls
         run: npm run verify
 
+      # The viewport facade: typecheck, the bridge smoke test (SSR + hydrate
+      # for viewport/notification/overlay, a real browser-shaped mount +
+      # hydrate for window, and the regression test for notify/floatingWindow
+      # fired from a bare onClick after hydration -- CLAUDE_REVIEW_3.md,
+      # Nachtrag Lauf 5), and its own tarball consumer test. No stub half --
+      # the stub knows nothing about a global UI layer (JAVASCRIPT_API.md §9,
+      # step 7).
+      - name: jfx-viewport -- typecheck, bridge smoke test, consumer test
+        working-directory: npm/jfx-viewport
+        run: npm run verify
+
       # Typecheck, client + SSR build, and the one-runtime proof across dev
       # server, client bundle and SSR bundle (CLAUDE_REVIEW_3.md §7.2).
       - name: jfx-demo -- typecheck, build, one-runtime proof

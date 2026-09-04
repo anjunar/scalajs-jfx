@@ -21,7 +21,9 @@
   "dependencies": {
     "@anjunar/jfx-controls": "*",
     "@anjunar/jfx-core": "*",
+    "@anjunar/jfx-forms": "*",
     "@anjunar/jfx-router": "*",
+    "@anjunar/jfx-viewport": "*",
     "@anjunar/scalajs-jfx": "*",
     "@anjunar/scalajs-jfx-bridge": "*",
     "express": "^5.2.1"

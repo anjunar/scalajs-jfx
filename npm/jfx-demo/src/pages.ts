@@ -32,6 +32,20 @@ import {
 } from "@anjunar/jfx-core";
 import type { ComponentHandle, Disposable, Property, UiEvent } from "@anjunar/jfx-core";
 import { carousel, column, tableView, tab, tabs } from "@anjunar/jfx-controls";
+import { floatingWindow, notify, overlay } from "@anjunar/jfx-viewport";
+import {
+  arrayForm,
+  comboBox,
+  form,
+  imageCropper,
+  input as formInput,
+  inputContainer,
+  notBlank,
+  email as emailValidator,
+  size as sizeValidator,
+  subForm,
+} from "@anjunar/jfx-forms";
+import type { MediaValue } from "@anjunar/jfx-forms";
 
 // The navigation bar lives in `routes.ts`'s `appShell`, rendered around every
 // route by `router(appRoutes, config, appShell)` -- `routerLink`s, not plain
@@ -384,6 +398,174 @@ export function controlsPage(): void {
         });
       }),
     ]);
+  });
+}
+
+/* ---------------------------------------------------------------- ViewportPage */
+
+/**
+ * `@anjunar/jfx-viewport` in one screen: a notification, a window, and a
+ * menu-style overlay. All four registry entries it uses (`viewport`, `window`,
+ * `overlay`, `notification`) live in `jfx-bridge` (`ViewportFactories.scala`).
+ * Rendered by `node-bridge.ts` (not the stub -- the viewport has no stub) and
+ * hydrated in the browser at `/viewport`. Needs a `viewport` ancestor -- the
+ * one `entry-client.ts`/`entry-server.ts` wrap the whole app in.
+ */
+export function viewportPage(): void {
+  const windowOpen = property(false);
+  const menuOpen = property(false);
+
+  div(() => {
+    classes("viewport-page");
+    heading(2, () => text("Viewport"));
+
+    div(() => {
+      classes("viewport-page__row");
+      button("Notify", {}, () => {
+        classes("calm-action", "calm-action--primary");
+        onClick(() => notify("Saved.", { kind: "success" }));
+      });
+
+      button("Open window", {}, () => {
+        classes("calm-action", "calm-action--secondary");
+        onClick(() => windowOpen.set(true));
+      });
+
+      div(() => {
+        classes("viewport-page__menu");
+        button("Menu", {}, () => {
+          classes("calm-action", "calm-action--secondary");
+          onClick(() => menuOpen.set(!menuOpen.get));
+        });
+        when(menuOpen, () => {
+          overlay({ widthPx: 200 }, () => {
+            div(() => {
+              classes("viewport-page__menu-item");
+              onClick(() => {
+                notify("Menu item chosen.");
+                menuOpen.set(false);
+              });
+              text("Choose me");
+            });
+          });
+        });
+      });
+    });
+
+    when(windowOpen, () => {
+      floatingWindow(
+        { title: "A room for thoughts", widthPx: 400, heightPx: 260, onClose: () => windowOpen.set(false) },
+        () => {
+          div(() => {
+            classes("viewport-page__window-body");
+            text("This content is mounted into the shared viewport layer, not into the route subtree.");
+            button("Confirm note", {}, () => {
+              onClick(() => notify("The note in the window was confirmed.", { kind: "success" }));
+            });
+          });
+        }
+      );
+    });
+  });
+}
+
+/* ------------------------------------------------------------------- FormsPage */
+
+/**
+ * `@anjunar/jfx-forms` in one screen: a validated `name`/`email`, a repeating
+ * `tags` field, a nested `address` sub-form, a `color` combo box, and an
+ * `avatar` image cropper. All eight registry entries `jfx-forms` needs
+ * (`form`, `sub-form`, `input`, `input-container`, `field-set`, `array-form`,
+ * `combo-box`, `image-cropper`) live in `jfx-bridge` (`FormFactories.scala`).
+ * Rendered by `node-bridge.ts` (not the stub -- forms has no stub) and
+ * hydrated in the browser at `/forms`. `comboBox`'s dropdown needs a
+ * `viewport` ancestor, which `entry-client.ts`/`entry-server.ts` already wrap
+ * the whole app in.
+ */
+export function formsPage(): void {
+  const address = { city: property("") };
+  const model = {
+    name: property(""),
+    email: property(""),
+    tags: listProperty<string>(["typescript"]),
+    address: property(address),
+    color: property<string | null>(null),
+    avatar: property<MediaValue | null>(null),
+  };
+
+  div(() => {
+    classes("forms-page");
+    heading(2, () => text("Forms"));
+
+    form(
+      model,
+      {
+        schema: {
+          name: [notBlank()],
+          email: [notBlank(), emailValidator()],
+        },
+      },
+      () => {
+        div(() => {
+          classes("forms-page__frame");
+
+          inputContainer({ label: "Name" }, () => {
+            formInput("name");
+          });
+
+          inputContainer({ label: "Email" }, () => {
+            formInput("email", { type: "email" });
+          });
+
+          div(() => {
+            classes("forms-page__field-label");
+            text("Tags");
+          });
+          arrayForm("tags", (index) => {
+            formInput(`tags-${index}`);
+          });
+          button("Add tag", {}, () => {
+            classes("calm-action", "calm-action--secondary");
+            onClick(() => model.tags.add(""));
+          });
+
+          div(() => {
+            classes("forms-page__field-label");
+            text("Address");
+          });
+          subForm("address", address, { schema: { city: [sizeValidator(1, 60)] } }, () => {
+            inputContainer({ label: "City" }, () => {
+              formInput("city");
+            });
+          });
+
+          div(() => {
+            classes("forms-page__field-label");
+            text("Favorite color");
+          });
+          comboBox("color", { items: ["Red", "Green", "Blue"], placeholder: "Choose one" });
+
+          div(() => {
+            classes("forms-page__field-label");
+            text("Avatar");
+          });
+          imageCropper("avatar", { aspectRatio: 1, windowTitle: "Crop avatar" });
+        });
+
+        div(() => {
+          classes("clarity-action-row");
+          button("Log model", {}, () => {
+            classes("calm-action", "calm-action--primary");
+            onClick(() =>
+              notify(
+                `name=${model.name.get} email=${model.email.get} tags=${model.tags.get.join(",")} city=${address.city.get} color=${model.color.get ?? ""}`,
+                { kind: "info", durationMs: 4000 }
+              )
+            );
+          });
+        });
+      }
+    );
   });
 }
 

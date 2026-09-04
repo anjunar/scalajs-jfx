@@ -1,0 +1,61 @@
+{
+  "name": "@anjunar/jfx-forms",
+  "version": "3.0.0-SNAPSHOT",
+  "description": "The TypeScript forms API of JFX3: model-bound inputs, validators, field groups, repeating and nested sub-forms, a combo box, and an image cropper, projected onto the jfx.forms components that run in the Scala.js runtime published as @anjunar/scalajs-jfx-bridge.",
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "npm run build && tsc -p tsconfig.test.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepack": "npm run build",
+    "test:consumer": "vitest run --config vitest.consumer.config.ts",
+    "verify": "npm run typecheck && npm run test && npm run test:consumer"
+  },
+  "peerDependencies": {
+    "@anjunar/jfx-core": "^3.0.0",
+    "@anjunar/jfx-controls": "^3.0.0",
+    "@anjunar/jfx-viewport": "^3.0.0",
+    "@anjunar/scalajs-jfx": "^3.0.0",
+    "@anjunar/scalajs-jfx-bridge": "^3.0.0"
+  },
+  "devDependencies": {
+    "@anjunar/jfx-core": "*",
+    "@anjunar/jfx-controls": "*",
+    "@anjunar/jfx-viewport": "*",
+    "@anjunar/scalajs-jfx": "*",
+    "@anjunar/scalajs-jfx-bridge": "*",
+    "@types/node": "^22.0.0",
+    "jsdom": "^30.0.1",
+    "typescript": "^5.6.0",
+    "vitest": "^3.2.7"
+  },
+  "license": "MIT",
+  "author": "Patrick Bittner",
+  "homepage": "https://github.com/anjunar/scalajs-jfx#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anjunar/scalajs-jfx.git",
+    "directory": "npm/jfx-forms"
+  },
+  "bugs": {
+    "url": "https://github.com/anjunar/scalajs-jfx/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

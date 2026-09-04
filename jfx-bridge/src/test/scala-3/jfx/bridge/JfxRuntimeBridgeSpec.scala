@@ -386,6 +386,78 @@ class JfxRuntimeBridgeSpec extends AsyncFlatSpec with Matchers {
     }
   }
 
+  // --- the viewport facade (JAVASCRIPT_API.md §9, step 7) --------------------
+
+  "the viewport facade" should "mount a window that stays open while present in the tree" in {
+    val build: ScopeBody = { scope =>
+      scope.component(
+        "viewport",
+        js.Dictionary(),
+        (_, viewportScope) => {
+          viewportScope.component(
+            "window",
+            js.Dictionary[js.Any]("title" -> "A room for thoughts", "widthPx" -> 400, "heightPx" -> 300),
+            (_, windowScope) => { windowScope.text("window body"); () }
+          )
+          ()
+        }
+      )
+      ()
+    }
+
+    render(build).map { result =>
+      result.html should include("jfx-window")
+      result.html should include("A room for thoughts")
+      result.html should include("window body")
+    }
+  }
+
+  it should "render a notification's message under its kind class" in {
+    val build: ScopeBody = { scope =>
+      scope.component(
+        "viewport",
+        js.Dictionary(),
+        (_, viewportScope) => {
+          viewportScope.component(
+            "notification",
+            js.Dictionary[js.Any]("message" -> "Saved", "kind" -> "success"),
+            (_, _) => ()
+          )
+          ()
+        }
+      )
+      ()
+    }
+
+    render(build).map { result =>
+      result.html should include("jfx-viewport-notification--success")
+      result.html should include("Saved")
+    }
+  }
+
+  it should "render an overlay anchored under the viewport" in {
+    val build: ScopeBody = { scope =>
+      scope.component(
+        "viewport",
+        js.Dictionary(),
+        (_, viewportScope) => {
+          viewportScope.component(
+            "overlay",
+            js.Dictionary[js.Any]("widthPx" -> 240),
+            (_, overlayScope) => { overlayScope.text("overlay body"); () }
+          )
+          ()
+        }
+      )
+      ()
+    }
+
+    render(build).map { result =>
+      result.html should include("jfx-viewport-overlay")
+      result.html should include("overlay body")
+    }
+  }
+
   "the component registry" should "reject an unregistered name" in {
     val build: js.Function1[ScopeHandleBridge, Unit] = { scope =>
       scope.component("does-not-exist", js.Dictionary(), (_, _) => ())

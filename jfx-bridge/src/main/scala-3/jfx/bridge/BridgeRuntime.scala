@@ -39,6 +39,30 @@ object BridgeRuntime {
   ComponentRegistry.register("data-grid", DataGridFactory)
   ComponentRegistry.register("virtual-list-view", VirtualListFactory)
 
+  // Step 7 of JAVASCRIPT_API.md §9: the viewport facade. Same reachability story as the two blocks
+  // above -- these entries anchor `jfx.viewport` into `bridgeRuntime`'s initializer, so a consumer
+  // that imports only `@anjunar/jfx-core` still links them. Measured price on the one artifact is in
+  // §14.
+  ComponentRegistry.register("viewport", ViewportFactory)
+  ComponentRegistry.register("window", WindowFactory)
+  ComponentRegistry.register("overlay", OverlayFactory)
+  ComponentRegistry.register("notification", NotificationFactory)
+
+  // Step 6 of JAVASCRIPT_API.md §9 ("Komponentenregistratur auffüllen"), the forms half -- the
+  // schema decision itself was step 5. Same reachability story as the three blocks
+  // above -- these entries anchor `jfx.forms` into `bridgeRuntime`'s initializer, so a consumer that
+  // imports only `@anjunar/jfx-core` still links them. `FormFactories.scala` carries the design note
+  // for why `form`/`sub-form` cannot just be `jfx.forms.Form`/`SubForm` registered directly, the way
+  // the other nine entries are.
+  ComponentRegistry.register("form", FormFactory)
+  ComponentRegistry.register("sub-form", SubFormFactory)
+  ComponentRegistry.register("input", InputFactory)
+  ComponentRegistry.register("input-container", InputContainerFactory)
+  ComponentRegistry.register("field-set", FieldSetFactory)
+  ComponentRegistry.register("array-form", ArrayFormFactory)
+  ComponentRegistry.register("combo-box", ComboBoxFactory)
+  ComponentRegistry.register("image-cropper", ImageCropperFactory)
+
   @JSExportTopLevel("bridgeRuntime")
   val bridgeRuntime: JfxRuntimeBridge = new JfxRuntimeBridge()
 }

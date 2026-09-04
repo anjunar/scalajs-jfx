@@ -15,7 +15,7 @@ import {
   type RouteDefinition,
   type RouterConfig,
 } from "@anjunar/jfx-router";
-import { controlsPage, libraryPage, statePage, todosPage } from "./pages.js";
+import { controlsPage, formsPage, libraryPage, statePage, todosPage, viewportPage } from "./pages.js";
 
 /** The chrome around every routed page: a nav bar of client-side links. */
 export function appShell(): void {
@@ -26,6 +26,8 @@ export function appShell(): void {
     routerLink("/todos", "Todos", { activeClass: "page-nav__link--active" });
     routerLink("/controls", "Controls", { activeClass: "page-nav__link--active" });
     routerLink("/router", "Router", { activeClass: "page-nav__link--active" });
+    routerLink("/viewport", "Viewport", { activeClass: "page-nav__link--active" });
+    routerLink("/forms", "Forms", { activeClass: "page-nav__link--active" });
   });
 }
 
@@ -86,6 +88,8 @@ export const appRoutes: readonly RouteDefinition[] = [
   view("/router", () => () => routerShellPage(), {
     children: [view("detail", () => () => nestedPanelPage())],
   }),
+  view("/viewport", () => () => viewportPage()),
+  view("/forms", () => () => formsPage()),
   errorRoute("/404", 404, () => () => notFoundPage()),
 ];
 
