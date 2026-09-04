@@ -94,6 +94,12 @@ class ArrayForm[V](
     }
   }
 
+  def validateBindings(): Seq[String] =
+    itemControls.flatMap {
+      case nested: FormController => nested.validateBindings()
+      case _                      => Seq.empty
+    }
+
   def setErrorResponses(responses: Seq[ErrorResponse]): Unit =
     responses
       .filter(_.path.nonEmpty)
@@ -103,9 +109,7 @@ class ArrayForm[V](
           mountedByIndex.get(index).foreach { control =>
             val nestedErrors = itemErrors.map(_.withoutHead)
             control match {
-              case nested: Formular[?] => nested.setErrorResponses(nestedErrors)
-              case array: ArrayForm[?] => array.setErrorResponses(nestedErrors)
-              case group: FieldSet     => group.setErrorResponses(nestedErrors)
+              case nested: FormController => nested.setErrorResponses(nestedErrors)
               case _                   => control.setErrors(nestedErrors.map(_.message))
             }
           }

@@ -14,7 +14,7 @@
  */
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   hydrate,
   installRuntime,
@@ -34,9 +34,11 @@ import {
   form,
   input,
   inputContainer,
+  imageCropper,
   notBlank,
   size,
   subForm,
+  type MediaValue,
 } from "../src/index.js";
 import { button, onClick } from "@anjunar/jfx-core";
 
@@ -203,7 +205,64 @@ describe("form + input", () => {
   });
 });
 
+describe("imageCropper", () => {
+  it.each(["mount", "hydrate"])("preserves an existing image during %s and binds both directions", async (mode) => {
+    const initial: MediaValue = {
+      id: "11111111-1111-4111-8111-111111111111",
+      name: "existing.png", contentType: "image/png", data: "data:image/png;base64,aGVsbG8=",
+    };
+    const replacement: MediaValue = { ...initial, name: "replacement.png", data: "data:image/png;base64,d29ybGQ=" };
+    const photo = property<MediaValue | null>(initial);
+    const build = (): void => { form({ photo }, {}, () => imageCropper("photo")); };
+    const root = document.createElement("div");
+    if (mode === "hydrate") {
+      root.innerHTML = (await renderToString(build)).html;
+      expect(photo.get).toBe(initial);
+    }
+    const serverImage = root.querySelector("img");
+    const app = mode === "hydrate" ? await hydrate(root, build) : mount(root, build);
+    const preview = root.querySelector("img")!;
+    expect(photo.get).toBe(initial);
+    expect(preview.getAttribute("src")).toBe(initial.data);
+    if (mode === "hydrate") expect(preview).toBe(serverImage);
+    photo.set(replacement);
+    expect(photo.get).toBe(replacement);
+    expect(preview.getAttribute("src")).toBe(replacement.data);
+    const clear = Array.from(root.querySelectorAll("button")).find((el) => el.textContent === "Clear")!;
+    clear.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(photo.get).toBeNull();
+    photo.set(initial);
+    app.dispose();
+    photo.set(replacement);
+    expect(preview.getAttribute("src")).toBe(initial.data);
+  });
+});
+
 describe("fieldSet", () => {
+  it("forwards errors and binding diagnostics through a nested dynamic form", () => {
+    const row = { name: property("Ada") };
+    const root = document.createElement("div");
+    let handle!: import("@anjunar/jfx-core").FormHandle;
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const app = mount(root, () => {
+        handle = form({ group: property(undefined) }, {}, () => {
+          fieldSet({ name: "group" }, () => subForm("row", row, {}, () => {
+            inputContainer({ label: "Name" }, () => input("name"));
+            input("typo");
+          }));
+        });
+      });
+      expect(handle.validateBindings()).toHaveLength(1);
+      expect(handle.validateBindings()[0]).toContain("cannot bind control 'typo'");
+      handle.setErrorResponses([{ message: "Grouped error", path: ["group", "row", "name"] }]);
+      expect(root.querySelector(".jfx-input-container__errors")?.textContent).toContain("Grouped error");
+      handle.clearErrors();
+      expect(root.querySelector(".jfx-input-container__errors")?.textContent ?? "").toBe("");
+      app.dispose();
+    } finally { log.mockRestore(); }
+  });
+
   it("groups controls without binding them to the model", () => {
     const model = { name: property("Ada") };
     const root = document.createElement("div");
@@ -226,6 +285,33 @@ describe("fieldSet", () => {
 });
 
 describe("arrayForm", () => {
+  it("propagates nested server errors and binding diagnostics through array items", () => {
+    const row = { name: property("Ada") };
+    const model = { rows: listProperty([row]) };
+    const root = document.createElement("div");
+    let handle!: import("@anjunar/jfx-core").FormHandle;
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const app = mount(root, () => {
+        handle = form(model, {}, () => arrayForm("rows", (index) => {
+          subForm(`row-${index}`, row, {}, () => {
+            inputContainer({ label: "Name" }, () => input("name"));
+            input("typo");
+          });
+        }));
+      });
+      expect(handle.validateBindings()).toHaveLength(1);
+      expect(handle.validateBindings()[0]).toContain("cannot bind control 'typo'");
+      handle.setErrorResponses([{ message: "Nested server error", path: ["rows", "0", "name"] }]);
+      expect(root.querySelector(".jfx-input-container__errors")?.textContent).toContain("Nested server error");
+      handle.clearErrors();
+      expect(root.querySelector(".jfx-input-container__errors")?.textContent ?? "").toBe("");
+      model.rows.clear();
+      expect(handle.validateBindings()).toEqual([]);
+      app.dispose();
+    } finally { log.mockRestore(); }
+  });
+
   it("renders one control per item and follows structural changes", () => {
     const model = { tags: listProperty<string>(["math", "compilers"]) };
     const root = document.createElement("div");

@@ -39,6 +39,7 @@ abstract class AbstractComponent
 
   private val baseClasses = mutable.ArrayBuffer.empty[String]
   private val userClasses = mutable.ArrayBuffer.empty[String]
+  private var disposed = false
 
   def host: HostElement = _host match {
     case h: HostElement => h
@@ -54,6 +55,7 @@ abstract class AbstractComponent
   def isVirtual: Boolean                = tagName.isEmpty
   def isText: Boolean                   = tagName == "#text"
   def isBound: Boolean                  = _host != null
+  def isDisposed: Boolean               = disposed
 
   def physicalHosts: Seq[HostNode] =
     if (!isVirtual && _host != null) Seq(_host)
@@ -138,6 +140,8 @@ abstract class AbstractComponent
   def addDisposable(d: Disposable): Unit = disposables.add(d)
 
   def dispose(): Unit = {
+    if (disposed) return
+    disposed = true
     _children.foreach(_.dispose())
     _children.clear()
     disposables.dispose()

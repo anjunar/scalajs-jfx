@@ -62,6 +62,13 @@ final class DomCursor private (
 
 object DomCursor {
 
+  private[render] def append(
+      parent: dom.Node,
+      beforeNode: Option[dom.Node],
+      asyncContext: Option[AsyncRenderContext]
+  ): DomCursor =
+    new DomCursor(parent, beforeNode, asyncContext)
+
   def root(parent: dom.Element): DomCursor =
     new DomCursor(parent, None, None)
 

@@ -5,7 +5,7 @@ import jfx.core.dsl.DslLayer.render
 import jfx.core.render.{Cursor, SsrCursor}
 import jfx.editor.Editor.*
 import jfx.editor.plugins.*
-import jfx.forms.{Control, Form, FormController}
+import jfx.forms.{Control, ErrorResponse, Form, FormController}
 import jfx.viewport.Viewport
 import jfx.viewport.Viewport.viewport
 import org.scalajs.dom.HTMLElement
@@ -266,6 +266,8 @@ private final class RecordingFormController extends FormController {
 
   override def register(field: Control[?]): Unit   = controls += field
   override def unregister(field: Control[?]): Unit = controls -= field
+  override def validateBindings(): Seq[String] = Seq.empty
+  override def setErrorResponses(responses: Seq[ErrorResponse]): Unit = ()
   override def clearErrors(): Unit                 = ()
   override def resetInteractionState(): Unit       = ()
 }

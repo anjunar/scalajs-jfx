@@ -187,14 +187,8 @@ final class HydratingCursor private (
   }
 
   override def fresh: Cursor =
-    parent match {
-      case element: dom.Element =>
-        stopBefore match {
-          case Some(before) => DomCursor.before(element, before, currentAsyncContext)
-          case None         => DomCursor.root(element)
-        }
-      case _                    => DomCursor.detached()
-    }
+    if (!session.isCompleted) this
+    else DomCursor.append(parent, stopBefore, currentAsyncContext)
 
   override def before(node: HostNode): Cursor =
     DomCursor.before(parent, DomNodes.raw(node), currentAsyncContext)
@@ -418,6 +412,8 @@ object HydratingCursor {
   private final class HydrationSession {
     private val cursors   = scala.collection.mutable.ArrayBuffer.empty[HydratingCursor]
     private var completed = false
+
+    def isCompleted: Boolean = completed
 
     def register(cursor: HydratingCursor): Unit =
       if (completed) {

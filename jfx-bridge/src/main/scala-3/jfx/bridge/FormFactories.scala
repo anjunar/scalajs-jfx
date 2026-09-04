@@ -155,16 +155,19 @@ private[bridge] object MediaCodec {
     else {
       val dict = value.asInstanceOf[js.Dictionary[js.Any]]
       new Media(
+        id = CoreProperty(java.util.UUID.fromString(stringField(dict, "id"))),
         name = CoreProperty(stringField(dict, "name")),
         contentType = CoreProperty(stringField(dict, "contentType")),
         data = CoreProperty(stringField(dict, "data")),
-        thumbnail = CoreProperty(dict.get("thumbnail").map(thumbnailFromJs).orNull)
+        thumbnail = CoreProperty(dict.get("thumbnail")
+          .filter(value => value != null && !js.isUndefined(value)).map(thumbnailFromJs).orNull)
       )
     }
 
   private def thumbnailFromJs(value: js.Any): Thumbnail = {
     val dict = value.asInstanceOf[js.Dictionary[js.Any]]
     new Thumbnail(
+      id = CoreProperty(java.util.UUID.fromString(stringField(dict, "id"))),
       name = CoreProperty(stringField(dict, "name")),
       contentType = CoreProperty(stringField(dict, "contentType")),
       data = CoreProperty(stringField(dict, "data"))
@@ -180,14 +183,18 @@ private[bridge] object MediaCodec {
   def subscribeBidirectional(jsProperty: CoreProperty[js.Any], media: CoreProperty[Media]): CoreDisposable = {
     var syncing = false
 
-    val fromMedia = media.observe { value =>
+    // The model is authoritative on initial binding. Neither conversion may
+    // echo back into it, otherwise an empty control erases an existing image.
+    media.set(fromJs(jsProperty.get))
+
+    val fromMedia = media.observeWithoutInitial { value =>
       if (!syncing) {
         syncing = true
         try jsProperty.set(toJs(value))
         finally syncing = false
       }
     }
-    val fromJsProp = jsProperty.observe { value =>
+    val fromJsProp = jsProperty.observeWithoutInitial { value =>
       if (!syncing) {
         syncing = true
         try media.set(fromJs(value))
@@ -246,7 +253,7 @@ private[bridge] trait DynamicFormular extends FormController { self: AbstractCom
     */
   def validateBindings(): Seq[String] =
     unboundControls.values.toSeq ++ controls.toSeq.flatMap {
-      case nested: DynamicFormular => nested.validateBindings()
+      case nested: FormController => nested.validateBindings()
       case _                        => Seq.empty
     }
 
@@ -287,10 +294,7 @@ private[bridge] trait DynamicFormular extends FormController { self: AbstractCom
       .groupBy(_.path.head)
       .foreach { case (fieldName, errors) =>
         fieldsByName.get(fieldName).foreach {
-          case nested: Formular[?]      => nested.setErrorResponses(errors.map(_.withoutHead))
-          case nested: DynamicFormular  => nested.setErrorResponses(errors.map(_.withoutHead))
-          case array: ArrayForm[?]      => array.setErrorResponses(errors.map(_.withoutHead))
-          case group: FieldSet          => group.setErrorResponses(errors.map(_.withoutHead))
+          case nested: FormController => nested.setErrorResponses(errors.map(_.withoutHead))
           case control                  => control.setErrors(errors.map(_.message))
         }
       }

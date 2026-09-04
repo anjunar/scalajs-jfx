@@ -95,24 +95,18 @@ export function withScope<T>(
 
 /**
  * Freezes the current component stack so a later callback can run inside it.
- * Each scope is refreshed first, because hydration cursors are one-shot.
+ * Each scope is refreshed on invocation: it claims nodes while hydration is
+ * running and appends after hydration completes. Disposed scopes reject reuse.
  *
  * Use this at every boundary the runtime does not own: a `setTimeout`, a
  * `then` you wrote yourself, an event handler from a third-party library. The
  * DSL's own asynchronous helpers already do it.
  */
 export function capture(): <T>(body: () => T) => T {
-  // Keep the component position, but replace every cursor with a fresh append
-  // cursor. Hydration cursors are one-shot claim walkers; retaining one here
-  // makes a later event handler try to claim nodes from an already completed
-  // hydration pass.
-  const frozen = stack.map((frame) => ({
-    self: frame.self,
-    scope: frame.scope.fresh(),
-  }));
+  const frozen = [...stack];
   return <T>(body: () => T): T => {
     const previous = stack;
-    stack = frozen;
+    stack = frozen.map((frame) => ({ self: frame.self, scope: frame.scope.fresh() }));
     try {
       return body();
     } finally {

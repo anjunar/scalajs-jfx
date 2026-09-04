@@ -114,9 +114,9 @@ export interface ScopeHandle {
   readonly isHydrating: boolean;
 
   /**
-   * Returns a scope for later callbacks. Browser cursors are recreated from the
-   * component's host, so this remains valid after hydration has consumed the
-   * original claim cursor.
+   * Resolves a scope when a callback resumes: claim existing nodes while
+   * hydration runs, then insert within the same host/range after completion.
+   * Throws if the owning component has been disposed.
    */
   fresh(): ScopeHandle;
 

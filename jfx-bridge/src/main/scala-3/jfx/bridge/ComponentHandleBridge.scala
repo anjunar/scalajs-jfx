@@ -39,8 +39,8 @@ final class ComponentHandleBridge(private[bridge] final val underlying: Abstract
   def on(eventName: String, handler: js.Function1[UiEventHandle, Unit]): Unit =
     underlying.onHandler(eventName)(event => handler(new UiEventHandle(event)))
 
-  def addDisposable(disposable: DisposableHandle): Unit =
-    underlying.addDisposable(disposableFrom(disposable))
+  def addDisposable(disposable: JsDisposable): Unit =
+    underlying.addDisposable(CoreDisposable(disposable.dispose()))
 
   /** Form operations are exposed on the generic handle so the TypeScript form
     * facade can return a typed view without introducing a second component
@@ -83,5 +83,4 @@ final class ComponentHandleBridge(private[bridge] final val underlying: Abstract
         throw new IllegalStateException("clearErrors() is only available on a form handle.")
     }
 
-  private def disposableFrom(handle: DisposableHandle): CoreDisposable = handle.underlying
 }

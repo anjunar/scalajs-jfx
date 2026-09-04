@@ -30,14 +30,21 @@ final class ScopeHandleBridge(
 
   def isHydrating: Boolean = cursor.isHydrating
 
-  /** Replaces a one-shot hydration cursor with a fresh append cursor. */
-  def fresh(): ScopeHandleBridge =
+  private def requireActive(): Unit =
+    if (parent.isDisposed)
+      throw new IllegalStateException("Cannot use a render scope after its component was disposed.")
+
+  /** Resolves the cursor at callback time, while retaining its owner's lifetime. */
+  def fresh(): ScopeHandleBridge = {
+    requireActive()
     new ScopeHandleBridge(parent, cursor.fresh)
+  }
 
   def child(
       tagName: String,
       body: js.Function2[ComponentHandleBridge, ScopeHandleBridge, Unit]
   ): ComponentHandleBridge = {
+    requireActive()
     given AbstractComponent = parent
     given Cursor            = cursor
 
@@ -51,6 +58,7 @@ final class ScopeHandleBridge(
   }
 
   def text(value: js.Any): ComponentHandleBridge = {
+    requireActive()
     given AbstractComponent = parent
     given Cursor            = cursor
 
@@ -65,6 +73,7 @@ final class ScopeHandleBridge(
   def head(
       body: js.Function2[ComponentHandleBridge, ScopeHandleBridge, Unit]
   ): ComponentHandleBridge = {
+    requireActive()
     given AbstractComponent = parent
     given Cursor            = cursor
 
@@ -81,12 +90,14 @@ final class ScopeHandleBridge(
     * element. Mirrors `contract.ts`'s `ScopeHandle.documentHead`.
     */
   def documentHead(): DocumentHeadHandleBridge = {
+    requireActive()
     given AbstractComponent = parent
 
     DocumentHead.current.map(new DocumentHeadHandleBridge(_)).orNull
   }
 
   def when(active: JsReadOnlyProperty[Boolean], body: js.Function1[ScopeHandleBridge, Unit]): Unit = {
+    requireActive()
     given AbstractComponent = parent
     given Cursor            = cursor
 
@@ -101,6 +112,7 @@ final class ScopeHandleBridge(
       items: JsReadOnlyProperty[js.Array[js.Any]],
       body: js.Function3[js.Any, Int, ScopeHandleBridge, Unit]
   ): Unit = {
+    requireActive()
     given AbstractComponent = parent
     given Cursor            = cursor
 
@@ -119,6 +131,7 @@ final class ScopeHandleBridge(
       onLoaded: js.Function2[js.Any, ScopeHandleBridge, Unit],
       onFailed: js.Function2[js.Any, ScopeHandleBridge, Unit]
   ): Unit = {
+    requireActive()
     given AbstractComponent = parent
     given Cursor            = cursor
     given ExecutionContext  = ExecutionContext.global
@@ -139,6 +152,7 @@ final class ScopeHandleBridge(
       options: js.Dictionary[js.Any],
       body: js.Function2[ComponentHandleBridge, ScopeHandleBridge, Unit]
   ): ComponentHandleBridge = {
+    requireActive()
     given AbstractComponent = parent
     given Cursor            = cursor
 

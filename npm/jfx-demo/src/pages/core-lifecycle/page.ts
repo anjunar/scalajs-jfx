@@ -21,8 +21,8 @@ export function coreLifecyclePage(): void {
 
       // capture() bookmarks this position so composition can resume here
       // from a later, disconnected turn -- safe here because the microtask
-      // still resolves within the *same* render: `renderToString` waits for
-      // it before serialising, and the client's hydration pass reaches it
+      // runs before this render is serialised (capture itself registers no
+      // async work), and the client's hydration pass reaches it
       // the same way, so server and client agree on the result. This is the
       // exact shape node/scope-rules.ts's third demo uses (`npm run
       // demo:scope`), and it is how onClick() itself is built internally

@@ -99,8 +99,9 @@ fetchInto(loadBooks, (books) => {
 ```
 
 For a deferral you write yourself -- a `setTimeout`, a callback from a third
-party -- `capture()` keeps the component position and recreates a live append
-cursor so the callback can compose into it, including after hydration:
+party -- `capture()` keeps the component position. On each callback it claims
+nodes while hydration is running and appends after hydration completes.
+Reusing a scope after its component is disposed throws before the callback runs:
 
 ```ts
 const restore = capture();

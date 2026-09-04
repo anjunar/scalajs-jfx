@@ -193,9 +193,11 @@ Asynchrone Daten kommen über `fetchInto` herein. Das ist die TS-Entsprechung vo
 noch laufenden Loader (CHANGE.md P4-1).
 
 Für selbstgebaute Verzögerungen — ein `setTimeout`, ein Callback aus einer
-Fremdbibliothek — hält `capture()` die Komponentenposition fest und erzeugt für
-den späteren Aufruf einen frischen Append-Cursor. Dadurch bleibt der Callback
-auch nach abgeschlossener Hydration gültig. `capture()` lässt SSR aber
+Fremdbibliothek — hält `capture()` die Komponentenposition fest. Erst beim
+Aufruf wird der Cursor bestimmt: während der Hydration der gemeinsame
+Claim-Cursor, nach deren Abschluss ein Append-Cursor im selben Host/Bereich.
+Nach Disposal der Komponente wird der Aufruf vor Ausführung des Callbacks
+abgewiesen. `capture()` lässt SSR aber
 **nicht** warten; wer das Ergebnis im HTML braucht, nimmt `fetchInto`.
 
 ### Das einzige Modulfeld
@@ -573,10 +575,10 @@ beansprucht pro `text()`-Aufruf einen eigenen DOM-Knoten -- derselbe
 "Hydration fault: There is no further DOM node" wie oben, jetzt aus einer ganz
 anderen Ursache; behoben, indem angrenzende Klartext-Läufe vor dem Rendern zu
 einem einzigen `text()`-Aufruf zusammengefasst werden (`src/docs/code-block.ts`).
-(2) `capture()`/`restore()` erzeugt für spätere Aufrufe einen frischen
-Append-Cursor. Damit funktioniert auch ein `onClick` nach abgeschlossener
-Hydration; die Position bleibt erhalten, ohne einen verbrauchten
-`HydratingCursor` wiederzuverwenden.
+(2) `capture()`/`restore()` bestimmt den Cursor bei jedem Aufruf: während der
+Hydration wird weiter geclaimt, danach im selben Bereich eingefügt. Damit
+funktionieren sowohl synchrone/Microtask-Aufrufe während der Hydration als
+auch spätere Events. Nach Disposal der Komponente ist der Kontext ungültig.
 
 Die vollständige Bauanleitung, jede Entscheidung mit Begründung und der
 Seitenkatalog stehen in [`npm/jfx-demo/CLAUDE_DEMO_PLAN.md`](npm/jfx-demo/CLAUDE_DEMO_PLAN.md).

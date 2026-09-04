@@ -85,6 +85,17 @@ class StubComponent implements ComponentHandle {
   private readonly baseClasses: string[] = [];
   private userClasses: readonly string[] = [];
   private readonly disposables: Disposable[] = [];
+  private disposed = false;
+
+  get isDisposed(): boolean {
+    return this.disposed;
+  }
+
+  requireActive(): void {
+    if (this.disposed) {
+      throw new Error("Cannot use a render scope after its component was disposed.");
+    }
+  }
 
   constructor(
     readonly tagName: string,
@@ -147,9 +158,12 @@ class StubComponent implements ComponentHandle {
     this.addDisposable({ dispose: off });
   }
   addDisposable(disposable: Disposable): void {
-    this.disposables.push(disposable);
+    if (this.disposed) disposable.dispose();
+    else this.disposables.push(disposable);
   }
   dispose(): void {
+    if (this.disposed) return;
+    this.disposed = true;
     for (const disposable of this.disposables.splice(0)) disposable.dispose();
   }
 }
@@ -201,12 +215,10 @@ class StubScope implements ScopeHandle {
   }
 
   fresh(): ScopeHandle {
-    // A deferred callback appends to the same host. Reusing the original
-    // insertion cursor would retain a stale `before` position after a block was
-    // reconciled.
+    this.owner.requireActive();
     return new StubScope(
       this.doc,
-      { parent: this.cursor.parent, before: null },
+      this.cursor,
       this.owner,
       this.async,
       this.trackers
@@ -214,6 +226,7 @@ class StubScope implements ScopeHandle {
   }
 
   private insert(node: HostNode): void {
+    this.owner.requireActive();
     this.cursor.parent.insertBefore(node, this.cursor.before);
     for (const tracker of this.trackers) tracker.push(node);
   }
@@ -284,12 +297,12 @@ class StubScope implements ScopeHandle {
     const nodes: HostNode[] = [];
     const trackers = [...this.trackers, nodes];
 
-    const owner = new StubComponent(`#${label}`, null);
+    let owner = new StubComponent(`#${label}`, null);
     this.owner.addDisposable({ dispose: () => owner.dispose() });
+    let scope = new StubScope(this.doc, { parent, before: end }, owner, this.async, trackers);
 
     const clear = (): void => {
-      // dispose() drains the list rather than sealing the component, so the
-      // same owner serves every pass of the block.
+      this.owner.requireActive();
       owner.dispose();
       for (const node of nodes.splice(0)) {
         parent.removeChild(node);
@@ -298,22 +311,24 @@ class StubScope implements ScopeHandle {
           if (index >= 0) tracker.splice(index, 1);
         }
       }
+      owner = new StubComponent(`#${label}`, null);
+      scope = new StubScope(this.doc, { parent, before: end }, owner, this.async, trackers);
     };
 
     return {
       clear,
-      scope: new StubScope(this.doc, { parent, before: end }, owner, this.async, trackers),
+      get scope() { return scope; },
     };
   }
 
   when(active: ReadOnlyProperty<boolean>, body: (scope: ScopeHandle) => void): void {
-    const { scope, clear } = this.range("Condition");
+    const block = this.range("Condition");
     // On the outer owner, not the block's: this subscription outlives every
     // pass of the block and is what starts the next one.
     this.owner.addDisposable(
       active.observe((enabled) => {
-        clear();
-        if (enabled) body(scope);
+        block.clear();
+        if (enabled) body(block.scope);
       })
     );
   }
@@ -322,11 +337,11 @@ class StubScope implements ScopeHandle {
     items: ReadOnlyProperty<readonly T[]>,
     body: (item: T, index: number, scope: ScopeHandle) => void
   ): void {
-    const { scope, clear } = this.range("Foreach");
+    const block = this.range("Foreach");
     this.owner.addDisposable(
       items.observe((values) => {
-        clear();
-        values.forEach((value, index) => body(value, index, scope));
+        block.clear();
+        values.forEach((value, index) => body(value, index, block.scope));
       })
     );
   }
@@ -340,8 +355,8 @@ class StubScope implements ScopeHandle {
     const task = Promise.resolve()
       .then(load)
       .then(
-        (value) => onLoaded(value, scope),
-        (error: unknown) => onFailed(error, scope)
+        (value) => { if (!this.owner.isDisposed) onLoaded(value, scope); },
+        (error: unknown) => { if (!this.owner.isDisposed) onFailed(error, scope); }
       );
     this.async.add(task);
   }
@@ -351,6 +366,7 @@ class StubScope implements ScopeHandle {
     options: Record<string, unknown>,
     body: (self: ComponentHandle, scope: ScopeHandle) => void
   ): ComponentHandle {
+    this.owner.requireActive();
     const factory = registry[name];
     if (factory === undefined) {
       throw new Error(

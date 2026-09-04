@@ -48,9 +48,9 @@ trait Cursor {
   def sub(host: HostElement): Cursor
 
   /**
-    * Returns a cursor suitable for appending later browser-side work. A
-    * hydration cursor is a one-shot claim walker and must never be retained by
-    * an event handler after hydration completes.
+    * Resolves a cursor for resumed work. During hydration this retains the
+    * shared claim position; after completion it inserts into the same host and
+    * virtual range without claiming server nodes again.
     */
   def fresh: Cursor = this
 
