@@ -142,13 +142,27 @@ abstract class AbstractComponent
   def dispose(): Unit = {
     if (disposed) return
     disposed = true
-    _children.foreach(_.dispose())
+    var firstFailure: Throwable | Null = null
+    _children.foreach { child =>
+      try child.dispose()
+      catch {
+        case error: Throwable =>
+          if (firstFailure == null) firstFailure = error
+      }
+    }
     _children.clear()
-    disposables.dispose()
-    _host = null
-    _parent = None
-    _mountParentHost = None
-    _contentCursor = null
+    try disposables.dispose()
+    catch {
+      case error: Throwable =>
+        if (firstFailure == null) firstFailure = error
+    }
+    finally {
+      _host = null
+      _parent = None
+      _mountParentHost = None
+      _contentCursor = null
+    }
+    if (firstFailure != null) throw firstFailure
   }
 
   def classCondition(name: String, condition: ReadOnlyProperty[Boolean]): Unit =

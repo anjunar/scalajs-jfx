@@ -85,6 +85,18 @@ class RuntimeLifecycleSpec extends AnyFlatSpec with Matchers {
     disposed shouldBe true
   }
 
+  it should "finish every cleanup and detach its state when one disposable fails" in {
+    var laterCleanup = false
+    val root = Runtime.mount(new FailingDisposeRoot(() => laterCleanup = true), new SsrCursor())
+
+    val error = intercept[IllegalStateException](root.dispose())
+
+    error.getMessage shouldBe "cleanup failed"
+    laterCleanup shouldBe true
+    root.isDisposed shouldBe true
+    root.isBound shouldBe false
+  }
+
   it should "dispose the component tree when HTML serialization fails" in {
     var disposed = false
 
@@ -164,6 +176,15 @@ class RuntimeLifecycleSpec extends AnyFlatSpec with Matchers {
     override def compose(cursor: Cursor): Unit = {
       addDisposable(Disposable(onDispose()))
       Runtime.mount(new Label("span", "rendered"), cursor, Some(this))
+    }
+  }
+
+  private final class FailingDisposeRoot(afterFailure: () => Unit) extends AbstractComponent {
+    override val tagName: String = "main"
+
+    override def compose(cursor: Cursor): Unit = {
+      addDisposable(Disposable(throw new IllegalStateException("cleanup failed")))
+      addDisposable(Disposable(afterFailure()))
     }
   }
 

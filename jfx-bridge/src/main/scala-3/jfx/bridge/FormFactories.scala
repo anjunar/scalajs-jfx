@@ -218,6 +218,9 @@ private[bridge] object MediaCodec {
 private[bridge] trait DynamicFormular extends FormController { self: AbstractComponent & Editable =>
 
   def formModel: js.Dictionary[js.Any]
+
+  /** A sub-form can remain mounted while its parent model value is null. */
+  protected def hasModel: Boolean = true
   def formSchema: Map[String, Array[Annotation]]
 
   val controls: CoreListProperty[Control[?]] = CoreListProperty()
@@ -306,7 +309,11 @@ private[bridge] trait DynamicFormular extends FormController { self: AbstractCom
     addedValidators.foreach(rawValidators += _)
 
     val binding: CoreDisposable =
-      FormFactories.resolveModelProperty(formModel, control.name) match {
+      if (!hasModel) {
+        clearControlValue(control)
+        unboundControls.remove(control.name)
+        CoreDisposable.empty
+      } else FormFactories.resolveModelProperty(formModel, control.name) match {
         case Some(source) =>
           (control, source, control.valueProperty) match {
             case (_: ImageCropper, s: CoreProperty[Any @unchecked], t: CoreProperty[Any @unchecked]) =>
@@ -350,6 +357,13 @@ private[bridge] trait DynamicFormular extends FormController { self: AbstractCom
     unboundControls.put(control.name, message)
     dom.console.error(message)
   }
+
+  private def clearControlValue(control: Control[?]): Unit =
+    control.valueProperty match {
+      case property: CoreListProperty[?] => property.clear()
+      case property: CoreProperty[?]     => property.reset()
+      case _                             => ()
+    }
 }
 
 /** `form` -- the root of a dynamically bound form. Mirrors `jfx.forms.Form`, minus the
@@ -404,6 +418,8 @@ private[bridge] final class DynamicSubForm(
 
   override def formModel: js.Dictionary[js.Any] =
     Option(valueProperty.get).getOrElse(js.Dictionary())
+
+  override protected def hasModel: Boolean = valueProperty.get != null
 
   override def validate(forceVisible: Boolean = false): Seq[String] =
     super.validate(forceVisible) ++ controls.toSeq.flatMap(_.validate(forceVisible))

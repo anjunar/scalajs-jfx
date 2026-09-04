@@ -103,13 +103,11 @@ final class JfxRuntimeBridge extends js.Object {
 
     val status = new SsrStatus()
 
-    SsrStatus
-      .capture(status) {
-        Runtime.renderToStringAsync(
-          cursor => Runtime.mount(new BridgeRoot(build, tagName), cursor),
-          timeoutMs
-        )
-      }
+    Runtime
+      .renderToStringAsync(
+        cursor => Runtime.mount(new BridgeRoot(build, tagName, Some(status)), cursor),
+        timeoutMs
+      )
       .map(html => new SsrResultHandle(html, status.get, js.Dictionary()))
       .toJSPromise
   }

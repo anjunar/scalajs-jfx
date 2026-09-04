@@ -99,6 +99,9 @@ class FormSpec extends AnyFlatSpec with Matchers {
     person.tags.insert(1, "logic")
     tagsForm.itemControls.map(_.valueProperty.get) shouldBe Seq("math", "logic", "compilers")
 
+    tagsForm.itemControls.head.asInstanceOf[Input].valueProperty.set("algebra")
+    person.tags.get.toSeq shouldBe Seq("algebra", "logic", "compilers")
+
     Runtime.unmount(root)
   }
 

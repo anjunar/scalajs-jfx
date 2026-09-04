@@ -17,6 +17,14 @@ final class CompositeDisposable extends Disposable {
       disposed = true
       val current = items.toSeq
       items.clear()
-      current.foreach(_.dispose())
+      var firstFailure: Throwable | Null = null
+      current.foreach { disposable =>
+        try disposable.dispose()
+        catch {
+          case error: Throwable =>
+            if (firstFailure == null) firstFailure = error
+        }
+      }
+      if (firstFailure != null) throw firstFailure
     }
 }

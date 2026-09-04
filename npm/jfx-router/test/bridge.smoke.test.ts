@@ -19,6 +19,7 @@ import { resolve } from "node:path";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
   hydrate,
+  fetchInto,
   installRuntime,
   mount,
   renderToString,
@@ -98,6 +99,21 @@ describe("renderToString", () => {
           onFailure: () => "/404",
           renderErrorsOnServer: true,
         }
+      )
+    );
+
+    expect(result.status).toBe(404);
+    expect(withoutAnchors(result.html)).toContain("nothing here");
+  });
+
+  it("keeps an error route's status when the router is mounted by async work", async () => {
+    const result = await renderToString(() =>
+      fetchInto(
+        () => Promise.resolve(),
+        () => router(
+          [errorRoute("/404", 404, () => () => text("nothing here"))],
+          { url: "/404" }
+        )
       )
     );
 

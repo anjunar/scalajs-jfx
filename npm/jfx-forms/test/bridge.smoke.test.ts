@@ -183,7 +183,7 @@ describe("form + input", () => {
   it("rebinds a nested form when its parent model object changes", () => {
     const first = { name: property("Ada") };
     const second = { name: property("Grace") };
-    const model = { owner: property(first) };
+    const model = { owner: property<typeof first | null>(first) };
     const root = document.createElement("div");
     document.body.appendChild(root);
 
@@ -201,6 +201,8 @@ describe("form + input", () => {
     field.dispatchEvent(new Event("input", { bubbles: true }));
     expect(first.name.get).toBe("Ada");
     expect(second.name.get).toBe("Katherine");
+    model.owner.set(null);
+    expect(field.value).toBe("");
     app.dispose();
   });
 });
@@ -334,6 +336,11 @@ describe("arrayForm", () => {
     model.tags.insert(1, "logic");
     fields = Array.from(root.querySelectorAll("input")) as HTMLInputElement[];
     expect(fields.map((el) => el.value)).toEqual(["math", "logic", "compilers"]);
+
+    const firstField = fields[0]!;
+    firstField.value = "algebra";
+    firstField.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(model.tags.get).toEqual(["algebra", "logic", "compilers"]);
 
     app.dispose();
   });

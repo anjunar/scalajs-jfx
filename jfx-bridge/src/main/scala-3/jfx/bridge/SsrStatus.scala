@@ -1,16 +1,13 @@
 package jfx.bridge
 
-import scala.util.DynamicVariable
+import jfx.core.component.AbstractComponent
+import jfx.core.di.Context
 
 /** Per-render SSR status slot.
   *
-  * [[JfxRuntimeBridge.renderToString]] opens one for the duration of the synchronous mount;
-  * [[RouterFactory]] binds the mounted router's `responseStatus` into it, so the serialized response
-  * can carry a route's own `404`/`500` instead of the blanket `200` the bridge fixed before it knew
-  * about routing (see the doc comment on `renderToString`).
-  *
-  * Client-side `mount` and `hydrate` never open one -- there is no HTTP response there to carry a
-  * status. A render with no router leaves the reader at its `200` default.
+  * [[BridgeRoot]] provides it through the component context. A [[RouterFactory]] mounted after
+  * asynchronous work can therefore still bind its `responseStatus` to the response being rendered.
+  * Client-side mounts do not provide a slot, and a render with no router stays at its `200` default.
   */
 private[bridge] final class SsrStatus {
   private var reader: () => Int = () => 200
@@ -25,14 +22,11 @@ private[bridge] final class SsrStatus {
 }
 
 private[bridge] object SsrStatus {
-  private val slot = new DynamicVariable[Option[SsrStatus]](None)
+  private val context = Context.create[SsrStatus]("SsrStatus")
 
-  /** Holds `holder` current for the synchronous execution of `body` -- long enough for
-    * `Runtime.mount` to run every component's `compose`, which is where [[RouterFactory]] binds.
-    */
-  def capture[A](holder: SsrStatus)(body: => A): A =
-    slot.withValue(Some(holder))(body)
+  def provide(value: SsrStatus)(using component: AbstractComponent): Unit =
+    context.provide(value)
 
-  def current: Option[SsrStatus] =
-    slot.value
+  def current(using component: AbstractComponent): Option[SsrStatus] =
+    context.inject
 }

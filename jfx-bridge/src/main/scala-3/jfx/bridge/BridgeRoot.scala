@@ -35,11 +35,13 @@ import scala.scalajs.js
  */
 private[bridge] final class BridgeRoot(
     build: js.Function1[ScopeHandleBridge, Unit],
-    val tagName: String = ""
+    val tagName: String = "",
+    status: Option[SsrStatus] = None
 ) extends AbstractComponent {
 
   override def compose(cursor: Cursor): Unit = {
     DocumentHead.provide(new DocumentHead())(using this)
+    status.foreach(SsrStatus.provide(_)(using this))
     build(new ScopeHandleBridge(this, cursor))
   }
 }

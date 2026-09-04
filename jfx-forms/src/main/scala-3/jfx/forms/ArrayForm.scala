@@ -149,6 +149,7 @@ class ArrayForm[V](
             mountedByIndex.put(index, control)
             control.editableProperty.set(editableProperty.get)
             setControlValue(control, item)
+            bindControlValue(control, index)
           } finally currentIndex = -1
         }
       }
@@ -162,6 +163,22 @@ class ArrayForm[V](
           case values: js.Array[?] => property.setAll(values.asInstanceOf[js.Array[Any]].toSeq)
           case _                   => ()
         }
+      case _ => ()
+    }
+
+  /** An array item is a real form value, not just an initial value for its control. */
+  private def bindControlValue(control: Control[?], index: Int): Unit =
+    control.valueProperty match {
+      case property: Property[Any @unchecked] =>
+        control.addDisposable(property.observeWithoutInitial { value =>
+          if (mountedByIndex.get(index).contains(control) && index < valueProperty.length)
+            valueProperty.update(index, value.asInstanceOf[V])
+        })
+      case property: ListProperty[Any @unchecked] =>
+        control.addDisposable(property.observeChanges { _ =>
+          if (mountedByIndex.get(index).contains(control) && index < valueProperty.length)
+            valueProperty.update(index, property.get.asInstanceOf[V])
+        })
       case _ => ()
     }
 }
