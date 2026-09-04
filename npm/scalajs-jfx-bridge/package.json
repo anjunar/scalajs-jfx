@@ -1,15 +1,19 @@
 {
   "name": "@anjunar/scalajs-jfx-bridge",
   "version": "3.0.0-SNAPSHOT",
-  "description": "The Scala.js implementation of @anjunar/jfx's contract -- jfx-bridge, linked to an ES module.",
+  "description": "The Scala.js implementation of @anjunar/jfx-core's contract -- the jfx-bridge sbt module, linked to an ES module.",
   "type": "module",
   "main": "./dist/fastopt/main.js",
   "exports": {
-    ".": "./dist/fastopt/main.js",
+    ".": {
+      "types": "./types/index.d.ts",
+      "default": "./dist/fastopt/main.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
     "dist",
+    "types",
     "README.md"
   ],
   "sideEffects": true,
@@ -23,5 +27,9 @@
   },
   "bugs": {
     "url": "https://github.com/anjunar/scalajs-jfx/issues"
+  },
+  "types": "./types/index.d.ts",
+  "peerDependencies": {
+    "@anjunar/jfx-core": "^3.0.0-SNAPSHOT"
   }
 }

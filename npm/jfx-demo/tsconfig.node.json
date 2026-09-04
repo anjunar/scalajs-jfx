@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "dist/node",
+    "rootDir": "src",
+    "module": "ES2022",
+    "types": ["node"]
+  },
+  "include": ["src/pages.ts", "src/node-stub.ts", "src/node-bridge.ts", "src/scope-rules.ts"]
+}

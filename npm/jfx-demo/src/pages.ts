@@ -21,7 +21,7 @@ import {
   property,
   text,
   vbox,
-} from "../src/index.js";
+} from "@anjunar/jfx-core";
 
 /* ---------------------------------------------------------------------- nav */
 

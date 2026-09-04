@@ -10,7 +10,7 @@
  * `sbtn "scalajs-jfx-bridge/fastLinkJS"` from the repo root, then `npm install`
  * here so the `file:` devDependency picks up the freshly linked package.
  */
-import { installRuntime, property, renderToString } from "../src/index.js";
+import { installRuntime, property, renderToString } from "@anjunar/jfx-core";
 import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";
 import { format, libraryPage, statePage } from "./pages.js";
 

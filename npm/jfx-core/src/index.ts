@@ -28,4 +28,3 @@ export {
 export { capture, currentComponent, currentScope, hasScope, withScope } from "./scope.js";
 
 export * from "./dsl.js";
-export * as router from "./router.js";

@@ -1,12 +1,11 @@
-// Imported by the same relative path pages.ts itself uses to reach "@anjunar/jfx"
-// (../src/index.js from npm/jfx/demo/), not through the node_modules symlink:
-// installRuntime()'s "installed" state lives in one module-level variable, and
-// Vite's SSR module runner does not always dedupe a symlinked package specifier
-// against a direct relative import of the exact same file into the same module
-// instance. Two instances means two "installed" slots -- statePage() would see
-// this file's installRuntime() call as having never happened. Same real path,
-// every time, sidesteps the question entirely.
-import { hydrate, installRuntime } from "../../jfx/src/index.js";
+// Imported by package specifier, like any other consumer would. That this is
+// possible at all is the point of the npm modularisation: the relative path
+// that used to stand here (`../../jfx/src/index.js`) existed because Vite's SSR
+// module runner did not reliably dedupe a `file:` symlink against a direct path
+// to the same file, and installRuntime()'s "installed" state lives in one
+// module-level variable -- two module instances meant two slots. The fix is in
+// vite.config.ts's `resolve.dedupe`, at the cause; see CLAUDE_REVIEW_3.md §7.1.
+import { hydrate, installRuntime } from "@anjunar/jfx-core";
 import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";
 import "@anjunar/scalajs-jfx/index.css";
 import { pageFor } from "./routes.js";

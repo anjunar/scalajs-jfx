@@ -5,7 +5,7 @@
 // `<a href>`s, so every navigation is a full page load, and the server and
 // the client have to agree on the same page for the same path or hydration
 // faults (server rendered X, client tries to claim it as Y).
-import { libraryPage, statePage } from "../../jfx/demo/pages";
+import { libraryPage, statePage } from "./pages.js";
 
 export function pageFor(path: string): () => void {
   return path === "/library" ? libraryPage : statePage;

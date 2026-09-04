@@ -2,6 +2,9 @@
   "name": "scalajs-jfx",
   "version": "1.0.0",
   "private": true,
+  "workspaces": [
+    "npm/*"
+  ],
   "type": "module",
   "scripts": {
     "dev": "node server/server.mjs",
@@ -12,7 +15,7 @@
     "prerender": "node server/prerender-pages.mjs"
   },
   "dependencies": {
-    "@anjunar/scalajs-jfx": "file:./npm/scalajs-jfx",
+    "@anjunar/scalajs-jfx": "*",
     "@anjunar/scalajs-lexical": "^1.0.9",
     "@anjunar/ui": "^1.0.1",
     "express": "^5.2.1"

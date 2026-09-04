@@ -23,8 +23,8 @@ import {
   installRuntime,
   renderToString,
   text,
-} from "../src/index.js";
-import { stubRuntime } from "../src/stub/index.js";
+} from "@anjunar/jfx-core";
+import { stubRuntime } from "@anjunar/jfx-core/stub";
 
 async function main(): Promise<void> {
   installRuntime(stubRuntime);

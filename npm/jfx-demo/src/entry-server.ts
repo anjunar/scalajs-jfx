@@ -1,6 +1,6 @@
-// Same-real-path note as entry-client.ts: imported the way pages.ts itself
-// imports "@anjunar/jfx", not through the node_modules symlink.
-import { installRuntime, renderToString } from "../../jfx/src/index.js";
+// By package specifier, like entry-client.ts -- see the note there and
+// vite.config.ts's `resolve.dedupe`, which is what makes it safe.
+import { installRuntime, renderToString } from "@anjunar/jfx-core";
 import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";
 import { pageFor } from "./routes.js";
 

@@ -6,8 +6,8 @@
  * against the real Scala.js bridge instead -- see that file for what changes
  * and, more to the point, what does not.
  */
-import { installRuntime, property, renderToString } from "../src/index.js";
-import { stubRuntime } from "../src/stub/index.js";
+import { installRuntime, property, renderToString } from "@anjunar/jfx-core";
+import { stubRuntime } from "@anjunar/jfx-core/stub";
 import { format, libraryPage, statePage } from "./pages.js";
 
 async function main(): Promise<void> {
