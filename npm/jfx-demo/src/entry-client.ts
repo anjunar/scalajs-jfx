@@ -5,6 +5,7 @@
 // to the same file, and installRuntime()'s "installed" state lives in one
 // module-level variable -- two module instances meant two slots. The fix is in
 // vite.config.ts's `resolve.dedupe`, at the cause; see CLAUDE_REVIEW_3.md §7.1.
+import "./styles/style.css";
 import { hydrate, installRuntime } from "@anjunar/jfx-core";
 import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";
 import { router } from "@anjunar/jfx-router";

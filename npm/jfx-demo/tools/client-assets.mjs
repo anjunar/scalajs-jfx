@@ -19,14 +19,6 @@ const entryId = "src/entry-client.ts";
 export function developmentAssets() {
   return [
     {
-      key: "asset:stylesheet",
-      tagName: "link",
-      attributes: [
-        ["rel", "stylesheet"],
-        ["href", "/src/styles/style.css"],
-      ],
-    },
-    {
       key: "asset:script",
       tagName: "script",
       attributes: [
