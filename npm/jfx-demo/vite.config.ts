@@ -24,7 +24,9 @@ export default defineConfig({
     // points may import by package specifier again; without it the old relative
     // import would still be load-bearing. Same argument for the bridge: two
     // copies of the linked Scala.js bundle would be two component trees.
-    dedupe: ["@anjunar/jfx-core", "@anjunar/scalajs-jfx-bridge"],
+    // jfx-router holds no module-level state, but deduping it too keeps every
+    // package of the family on one instance and one set of types.
+    dedupe: ["@anjunar/jfx-core", "@anjunar/jfx-router", "@anjunar/scalajs-jfx-bridge"],
   },
   server: {
     fs: {

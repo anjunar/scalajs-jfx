@@ -369,10 +369,10 @@ deshalb nichts Zusätzliches: `vbox`, `hbox`. Ein dritter, `button`, zeigt, wie
 wird. `jfx-controls` ist bewusst nicht verlinkt (§3, Schritt 2 heißt "nur
 core") -- Schritt 6 füllt das auf.
 
-**Was noch fehlt.** `SsrResult.status` steht fest auf `200`, `headers` ist
-immer leer: einen Statuscode wie `AppDocument.ssrStatus` trägt eine Komponente
-in der Anwendung, nicht das Kernmodul. `router`, `forms` und der i18n-Extractor
-sind unverändert offen (Schritte 5 und 7).
+**Was noch fehlt.** `headers` ist immer leer. `SsrResult.status` war bis Schritt
+5 fest `200`; seit `@anjunar/jfx-router` trägt ein mitgemounteter `router` seinen
+`Router.responseStatus` hinein (`SsrStatus`), ein core-only Render bleibt `200`.
+`forms` und der i18n-Extractor sind unverändert offen (Schritte 6 und 7).
 
 **Verifiziert, nicht nur kompiliert.** [`JfxRuntimeBridgeSpec`](jfx-bridge/src/test/scala-3/jfx/bridge/JfxRuntimeBridgeSpec.scala)
 treibt `renderToString` über genau diese Oberfläche -- `child`, `component`,
@@ -487,13 +487,17 @@ Build schreibt die gehashten Asset-Tags direkt ins gebaute `index.html`.
 **Wiederverwendet, nicht neu geschrieben.** `src/entry-client.ts` und
 `src/entry-server.ts` rendern `npm/jfx-demo/src/pages.ts`s Seiten -- dieselben
 Funktionen, die `npm run demo`/`demo:bridge` von Node aus rendern.
-`src/routes.ts` ist die einzige Stellvertretung für einen Router: `pageFor(path)`
-wählt zwischen `statePage` (`/`) und `libraryPage` (`/library`) nach reinem
-Pfad-String, keine Client-Navigation, kein Router-Component -- `jfx-router`
-hängt nicht an der Bridge (§9, Schritt 5 steht noch aus). `pageNav()` in
-`pages.ts` verlinkt beide mit gewöhnlichen `<a href>`s (`anchor` ist dafür neu
-in `dsl.ts`, mirrort `jfx.core.layout.Anchor.anchor`); jede Navigation ist ein
-vollständiger Seitenaufruf, kein SPA-Übergang.
+`src/routes.ts` war bis Schritt 5 die einzige Stellvertretung für einen Router
+(`pageFor(path)` nach reinem Pfad-String). Seit `@anjunar/jfx-router` ist es ein
+echtes `RouteDefinition[]`: `view("/")`, `view("/library")`, `view("/todos")`,
+eine verschachtelte Route unter `/router` mit `routerOutlet()` und eine
+`errorRoute("/404", 404)`. Der Server reicht den Pfad als `RouterConfig.url`
+herein, der Client hydriert dieselbe Tabelle. Die Navigationsleiste ist der
+Shell-Parameter von `router(appRoutes, config, appShell)` -- `routerLink`s statt
+`<a href>`, also ein clientseitiger Routenwechsel: Express rendert nur den ersten
+Request und liefert die Assets, es routet nicht. Die `pages.ts`-Seiten sind
+nacktes Seitenmaterial ohne Navigation; die Node-Runner rendern sie so, ohne
+Shell und ohne Router.
 
 **Ein zweiter Bug, gefunden beim ersten echten Start.** Beide Entry-Points
 importieren `@anjunar/jfx-core` über denselben relativen Pfad, den `pages.ts`
@@ -552,12 +556,14 @@ eingeschlossen), nicht `jfx-bridge`s `fullLinkJS`-Output isoliert.
   es keinen Grund mehr, zwei Artefakte zu pflegen; jeder Konsument bekommt das
   optimierte Bundle. `application`s eigener `fastLinkJS`/`fullLinkJS`-Split
   bleibt bestehen, weil dort der Zeitunterschied real ist (§14).
-- **Schritt 5** -- Router-Fassade, dann ein Forms-Schema. `jfx-bridge` hängt
-  weiterhin nur auf `jfx-core`. Was dafür zu bauen ist, ist konkreter geworden:
-  nicht ein Registratureintrag `router-outlet`, sondern der Einstiegspunkt, der
-  einen `jfx.router.Router` mit einer aus JavaScript übersetzten Routentabelle
-  montiert (§15). Gemessener Preis auf dem einen Link-Artefakt: +140 659 B roh /
-  +20 197 B gzip.
+- ~~**Schritt 5, Router**~~ -- erledigt, `CLAUDE_REVIEW_3.md` Nachtrag Lauf 3.
+  `jfx-bridge` hängt jetzt auf `jfx-core` **und** `jfx-router` und registriert
+  `router`, `router-outlet`, `router-link`; `RouterFactories.scala` übersetzt die
+  Routentabelle, `router()` in `@anjunar/jfx-router` montiert einen echten
+  `jfx.router.Router`. SSR-Status kommt aus `Router.responseStatus` (neu:
+  `SsrStatus`). Gemessener Preis auf dem einen Link-Artefakt: **+158 250 B roh /
+  +23 350 B gzip** (E1 → mit Router-Registratur, §14). Das Forms-Schema bleibt
+  offen (§15, Auslösebedingung `@anjunar/jfx-forms`).
 - **Schritt 6** -- die Registratur über `vbox`/`hbox`/`button` hinaus auffüllen,
   sobald `jfx-controls` verlinkt wird -- das ist auch der Punkt, an dem die
   Editor-Entscheidung aus Schritt 1 fällig wird. Die Kante `jfxControls →
@@ -569,9 +575,17 @@ eingeschlossen), nicht `jfx-bridge`s `fullLinkJS`-Output isoliert.
   und gegen Bridge (§15). Was fehlt, ist nur noch die Pipeline, die ihn und
   `npm run verify` bei jedem Commit ausführt.
 - **Neu** -- die Hydration-Lücke in `Condition`/`when` (§13, Session-Aufgabe
-  `task_f55b4fa5`) ist mit Schritt 5 verschränkt: Routen-Umschaltung ist genau
-  der Fall „Zustand kippt während desselben Render-Durchlaufs", an dem sie
-  auffällt.
+  `task_f55b4fa5`) bleibt offen. Lauf 3 hat sie nicht ausgelöst: die Router-Demo
+  hydriert ihre Routen sauber (die Seiten entscheiden Verzweigungen im
+  `fetchInto`-Callback, nicht über ein separates `Condition`). Eine
+  Route-**Seite**, die `when()` auf remote-getriebenem State benutzt, bleibt
+  gefährdet.
+- **Nebenbefund in Lauf 3, behoben** -- `SsrCursor` wurzelte auf einem
+  Append-Log statt auf einem echten Host. Wurde bei `BridgeRoot` (virtueller
+  Wurzel) alles bis nach oben virtuell, konnte `Runtime.detach` einen am obersten
+  Rand wegrekonzilierten Knoten -- den Loading-Platzhalter eines Route-Outlets --
+  nicht mehr entfernen; die verwaisten Anker landeten im SSR-String und faulteten
+  die Hydration. `SsrCursor` wurzelt jetzt auf einer namenlosen `SsrHostElement`.
 
 ## 14. Bundle-Größe (§9, Schritt 4)
 
@@ -612,8 +626,15 @@ Alternativenvergleich in `CLAUDE_REVIEW_3.md` §2):
 | --- | ---: | ---: |
 | `dependsOn(core)` | 981 614 B | 155 380 B |
 | `dependsOn(core, router, viewport, controls, forms)`, keine neuen Referenzen | **981 614 B** | **155 380 B** |
-| dito + registrierte Router-Fassade (`router`, `router-outlet`, `router-link`) | 1 122 273 B | 175 577 B |
+| dito + Lauf-1-Probe der Router-Fassade (`router`, `router-outlet`, `router-link`) | 1 122 273 B | 175 577 B |
 | dito + `ModuleSplitStyle.SmallModulesFor(List("jfx"))`, 144 ES-Module | 1 483 221 B | 203 669 B |
+| **Stand nach Lauf 3** -- `dependsOn(core, router)` + `RouterFactories` gebaut und registriert (`SsrStatus`, Kontext-Projektion, `Route`-Übersetzung) | **1 139 864 B** | **178 730 B** |
+
+Die letzte Zeile ist der reale Stand, nicht die Lauf-1-Probe: **+158 250 B roh /
++23 350 B gzip** gegenüber `dependsOn(core)`. Etwas über der Probe (E3), weil die
+fertige Fassade mehr trägt als der Registratur-Stub -- Routentabellen-Übersetzung,
+`RouteContext`-Projektion, `RouterConfig`-Projektion, `SsrStatus`. `fastLinkJS`
+und `fullLinkJS` sind weiterhin **nicht** byteidentisch (Risiko 1 nicht zurück).
 
 Drei Befunde, die die Reihenfolge ab Schritt 5 bestimmen:
 
@@ -667,14 +688,17 @@ ausgelieferten JavaScript.
      (gelinktes Scala.js-ESM)                  (CSS)
                 │ peer                           │ peer
                 ▼                                ▼
-        @anjunar/jfx-core  ◄── peer ──  (jfx-router, jfx-viewport,
-      Vertrag, Scope, DSL, Stub          jfx-controls, jfx-forms — später)
+        @anjunar/jfx-core  ◄── peer ──  @anjunar/jfx-router
+      Vertrag, Scope, DSL, Stub         (jfx-viewport, jfx-controls,
+                ▲                         jfx-forms — später)
+                └──────── peer ──────────┘
 ```
 
 | Paket | `dependencies` | `peerDependencies` |
 | --- | --- | --- |
 | `@anjunar/jfx-core` | — | `@anjunar/scalajs-jfx` |
 | `@anjunar/scalajs-jfx-bridge` | — | `@anjunar/jfx-core` |
+| `@anjunar/jfx-router` | — | `@anjunar/jfx-core`, `@anjunar/scalajs-jfx-bridge` |
 | jedes spätere Geschwisterpaket | — | `@anjunar/jfx-core`, `@anjunar/scalajs-jfx-bridge` |
 
 `dependencies` bleibt überall leer, und das ist die tragende Entscheidung:
@@ -706,29 +730,40 @@ Drei Schichten, jede gegen einen anderen Fehler, und für jede ein Test:
 
 Nachgewiesen wird das an drei Stellen, nicht behauptet:
 
-- `npm/jfx-core/test/consumer/` packt beide Pakete mit `npm pack`, installiert
-  sie in ein leeres Verzeichnis und greift ausschließlich über die öffentlichen
-  `exports` zu. Dort wird der Runtime-Slot über zwei unabhängige Importwege
-  verglichen, `tsc --strict` mit `skipLibCheck: false` über beide Pakete
-  gefahren, und SSR gegen Stub *und* Bridge gerendert.
+- `npm/jfx-core/test/consumer/` und `npm/jfx-router/test/consumer/` packen ihre
+  Pakete mit `npm pack`, installieren sie in ein leeres Verzeichnis und greifen
+  ausschließlich über die öffentlichen `exports` zu. `tsc --strict` mit
+  `skipLibCheck: false` über alle Pakete, SSR gegen Stub *und* Bridge, für
+  `jfx-core` zusätzlich der Runtime-Slot über zwei unabhängige Importwege.
 - `npm/jfx-demo/scripts/verify-single-runtime.mjs` zählt den Runtime-Modul im
   Client- und im SSR-Bundle (genau einmal) und startet den Dev-Server, der mit
   zwei Slots gar kein Markup liefern könnte.
 - `npm/jfx-core/test/runtime.test.ts` deckt die Wache selbst ab.
 
-Gate ist `npm run verify` — in `jfx-core` Typecheck, Tests und Consumer-Test, in
-`jfx-demo` Typecheck, Build und der Runtime-Nachweis.
+Gate ist `npm run verify` — in `jfx-core` und `jfx-router` Typecheck, Tests und
+Consumer-Test, in `jfx-demo` Typecheck, Build und der Runtime-Nachweis.
 
-### Was es noch nicht gibt
+### Was es jetzt gibt: `@anjunar/jfx-router`
 
-`@anjunar/jfx-router` entsteht **nicht** mit. `src/router.ts` war eine Typhülle:
-`routerOutlet()` und `routerLink()` riefen Registratureinträge auf, die es nicht
-gibt. Sie sind entfernt statt mitgeliefert — ein Paket, dessen Hauptfunktion beim
-ersten Aufruf wirft, behauptet eine Fähigkeit, die es nicht hat.
+`router()`, `view()`, `errorRoute()`, `routerOutlet()`, `routerLink()`. Die
+Routentabelle ist ein `RouteDefinition[]`; `jfx-bridge` (`RouterFactories.scala`)
+übersetzt sie in `jfx.router.Route` und montiert einen echten
+`jfx.router.Router` -- die Klasse, die auch `app.App` benutzt. Ein Loader gibt
+den Seitenkörper direkt zurück (synchron, ein Render-Durchlauf) oder als
+`Promise` (Loading-Boundary bis er auflöst; SSR wartet). `RouterConfig.url` trägt
+serverseitig den Request-Pfad herein; im Browser liest `jfx.router` die
+`window.location`. Der SSR-Status kommt aus `Router.responseStatus`: eine per
+`onFailure` erreichte `errorRoute` antwortet mit ihrem eigenen `Route.status` an
+ihrer ursprünglichen URL.
 
-Was ihm fehlt, ist nicht ein Registratureintrag, sondern der Einstiegspunkt, der
-einen `jfx.router.Router` mit Routentabelle montiert: `Router` nimmt seine Routen
-im Konstruktor, und `RouterOutlet` wirft ohne ein gematchtes Route-Component über
-sich. Das ist Schritt 5 in §9. Die Auslösebedingungen der übrigen Pakete stehen
-in `CLAUDE_REVIEW_3.md` §5, die begründeten Abweichungen bei `jfx-json` und
-`jfx-webauthn` in §6 dort.
+`router(routes, config, shell)` nimmt als drittes Argument die Anwendungs-Shell
+-- die Navigationsleiste, Kopf, Fuß --, die um jede Seite herum rendert. Sie
+läuft mit dem Router im Kontext, ihre `routerLink`s lösen also auf; die
+gematchte Seite rendert direkt danach. Das ist die Montage, die `app.App.compose`
+auf der Scala-Seite von Hand macht (`Router.provide`, eine Sidebar,
+`child(appRouter)`) -- auf der TS-Seite steckt sie im `router`-Registratureintrag
+(`RouterViewRoot`).
+
+Die begründeten Abweichungen bei `jfx-json` und `jfx-webauthn` und die
+Auslösebedingungen für `jfx-viewport`, `jfx-controls`, `jfx-forms` stehen in
+`CLAUDE_REVIEW_3.md` §5 und §6, der Ausführungsbericht im Nachtrag Lauf 3.

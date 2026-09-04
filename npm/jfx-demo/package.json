@@ -2,7 +2,7 @@
   "name": "jfx-demo",
   "private": true,
   "version": "0.0.0",
-  "description": "A real consumer of @anjunar/jfx-core + @anjunar/scalajs-jfx-bridge -- Vite dev server, Express SSR, hydration, plus two Node runners that render the same pages against the stub and against the linked Scala.js runtime. The Vite-side counterpart to the repo root's own application/ setup.",
+  "description": "A real consumer of @anjunar/jfx-core + @anjunar/jfx-router + @anjunar/scalajs-jfx-bridge -- Vite dev server, Express SSR, hydration, client-side routing, plus Node runners that render the page bodies against the stub and against the linked Scala.js runtime. The Vite-side counterpart to the repo root's own application/ setup.",
   "type": "module",
   "scripts": {
     "dev": "node server.mjs",
@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@anjunar/jfx-core": "*",
+    "@anjunar/jfx-router": "*",
     "@anjunar/scalajs-jfx": "*",
     "@anjunar/scalajs-jfx-bridge": "*",
     "express": "^5.2.1"

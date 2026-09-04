@@ -203,12 +203,15 @@ lazy val jfxJson = Project(id = "scalajs-jfx-json", base = file("jfx-json"))
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
 
-// The JavaScript boundary described in JAVASCRIPT_API.md. Depends on jfx-core alone for now --
-// step 2 of §9 there ("nur core: Property, Scope, mount/hydrate/renderToString"). Router and forms
-// facades are later steps in that same section, not missed dependencies here.
+// The JavaScript boundary described in JAVASCRIPT_API.md. Depends on jfx-core and jfx-router:
+// step 5 of §9 there wires the router facade (`router`, `router-outlet`, `router-link`) into the
+// registry. A wider `dependsOn` edge costs zero bytes on its own (CLAUDE_REVIEW_3.md §2.1, E1==E2);
+// what the linked bundle pays for is the *registration* in BridgeRuntime, measured in §14. The
+// viewport, controls and forms facades are later steps -- their triggers stand in
+// CLAUDE_REVIEW_3.md §5, not missed dependencies here.
 lazy val jfxBridge = Project(id = "scalajs-jfx-bridge", base = file("jfx-bridge"))
   .enablePlugins(ScalaJSPlugin)
-  .dependsOn(jfxCore)
+  .dependsOn(jfxCore, jfxRouter)
   .settings(
     name       := "scalajs-jfx-bridge",
     moduleName := "scalajs-jfx-bridge",

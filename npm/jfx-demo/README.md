@@ -1,8 +1,9 @@
 # jfx-demo
 
-A real consumer app for `@anjunar/jfx-core` + `@anjunar/scalajs-jfx-bridge`: Vite
-dev server, Express SSR, hydration -- the same shape as the repo root's own
-`application/` + `server/server.mjs`, minus the Scala.js linker.
+A real consumer app for `@anjunar/jfx-core` + `@anjunar/jfx-router` +
+`@anjunar/scalajs-jfx-bridge`: Vite dev server, Express SSR, hydration, and
+client-side routing -- the same shape as the repo root's own `application/` +
+`server/server.mjs`, minus the Scala.js linker.
 
 **Real means real.** Every import here goes through the packages' public
 `exports`; nothing reaches into a neighbouring directory. That was not true
@@ -57,9 +58,12 @@ middleware that a real HTTP server owns -- Express here, exactly as in
   tokens from, isn't installed here (it isn't part of this repo), so
   `@anjunar/scalajs-jfx/index.css` still loads but its custom properties fall
   back to browser defaults.
-- No real router, no i18n, no document head management -- `src/routes.ts`
-  picks `/` vs. `/library` by a plain path string, not a Router component
-  (`jfx-router` isn't wired into the bridge yet), and both are fragments
-  mounted into a hand-written `index.html`, not a full JFX3 document the way
+- `src/routes.ts` is a real `RouteDefinition[]` fed to `router(appRoutes,
+  config, appShell)` -- `view()`, a nested route through `routerOutlet()`, an
+  `errorRoute("/404", 404)`. Navigation is client-side through `routerLink`;
+  Express renders the first request and serves assets, it does not route. The
+  Node runners render the page bodies bare, with no shell and no router.
+- No i18n, no document head management, and the pages are fragments mounted
+  into a hand-written `index.html`, not a full JFX3 document the way
   `AppDocument` renders one in the Scala app. See JAVASCRIPT_API.md §6 for
   what a full document boundary would need.

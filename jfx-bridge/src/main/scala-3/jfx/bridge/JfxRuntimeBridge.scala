@@ -77,11 +77,10 @@ final class JfxRuntimeBridge extends js.Object {
       .toJSPromise
   }
 
-  /** Server-side render. `status` and `headers` are fixed at `200` / empty: a route's status --
-    * `AppDocument.ssrStatus` in the demo application -- is domain state this core-only prototype
-    * does not have. A consumer that needs it mounts a component that carries its own status the same
-    * way `AppDocument` does, and reads it back the way `app.Main.render` does, once the bridge grows
-    * past step 2 of JAVASCRIPT_API.md §9.
+  /** Server-side render. `headers` is still fixed empty. `status` is `200` unless a `@anjunar/jfx-router`
+    * `router` was mounted: then it carries that router's `responseStatus` -- an error route reached
+    * by `RouterConfig.onFailure` answers with its own `Route.status` (step 5 of JAVASCRIPT_API.md §9).
+    * See [[SsrStatus]] for the mechanism.
     */
   def renderToString(
       build: js.Function1[ScopeHandleBridge, Unit],
@@ -95,12 +94,16 @@ final class JfxRuntimeBridge extends js.Object {
         .map(_.toInt)
         .getOrElse(Runtime.DefaultSsrTimeoutMs)
 
-    Runtime
-      .renderToStringAsync(
-        cursor => Runtime.mount(new BridgeRoot(build), cursor),
-        timeoutMs
-      )
-      .map(html => new SsrResultHandle(html, 200, js.Dictionary()))
+    val status = new SsrStatus()
+
+    SsrStatus
+      .capture(status) {
+        Runtime.renderToStringAsync(
+          cursor => Runtime.mount(new BridgeRoot(build), cursor),
+          timeoutMs
+        )
+      }
+      .map(html => new SsrResultHandle(html, status.get, js.Dictionary()))
       .toJSPromise
   }
 }

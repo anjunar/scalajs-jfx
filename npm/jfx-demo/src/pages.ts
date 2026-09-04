@@ -10,8 +10,6 @@
  * pointer and a keyboard attached, not printed to a console.
  */
 import {
-  addClass,
-  anchor,
   attr,
   button,
   classes,
@@ -23,7 +21,6 @@ import {
   forEach,
   heading,
   listProperty,
-  nav,
   on,
   onClick,
   onInput,
@@ -35,36 +32,11 @@ import {
 } from "@anjunar/jfx-core";
 import type { ComponentHandle, Disposable, Property, UiEvent } from "@anjunar/jfx-core";
 
-/* ---------------------------------------------------------------------- nav */
-
-/**
- * The only thing standing in for a router here: two plain `<a href>` links.
- * `jfx-bridge` doesn't wire up `jfx-router` yet (JAVASCRIPT_API.md §9, step 5),
- * so this is ordinary browser navigation between two SSR'd pages, not a
- * client-side route change -- `jfx-demo/src/entry-server.ts` and
- * `entry-client.ts` pick the page to render by request path, not by a Router
- * component.
- */
-function pageNav(current: "state" | "library" | "todos"): void {
-  nav(() => {
-    classes("page-nav");
-    anchor(() => {
-      attr("href", "/");
-      if (current === "state") addClass("page-nav__link--active");
-      text("Counter");
-    });
-    anchor(() => {
-      attr("href", "/library");
-      if (current === "library") addClass("page-nav__link--active");
-      text("Library");
-    });
-    anchor(() => {
-      attr("href", "/todos");
-      if (current === "todos") addClass("page-nav__link--active");
-      text("Todos");
-    });
-  });
-}
+// The navigation bar lives in `routes.ts`'s `appShell`, rendered around every
+// route by `router(appRoutes, config, appShell)` -- `routerLink`s, not plain
+// anchors, so moving between pages is a client-side route change. These page
+// bodies are just the page content; the Node runners (`node-stub.ts` /
+// `node-bridge.ts`) render them bare, with no shell and no router.
 
 /* --------------------------------------------------------------- StatePage */
 
@@ -74,8 +46,6 @@ export function statePage(): void {
 
   vbox(() => {
     classes("clarity-grid");
-
-    pageNav("state");
 
     div(() => {
       classes("docs-card");
@@ -130,7 +100,6 @@ export function libraryPage(): void {
 
   div(() => {
     classes("library");
-    pageNav("library");
     heading(2, () => text("Library"));
 
     // NOT `when(books.map(v => v.length === 0), ...)` next to fetchInto, on
@@ -266,7 +235,6 @@ export function todosPage(): void {
     // every other DSL call that touches the current element.
     disposeWith(todos.observe(subscribeToItems));
 
-    pageNav("todos");
     heading(2, () => text("Todos"));
 
     div(() => {

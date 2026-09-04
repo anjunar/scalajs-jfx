@@ -118,6 +118,91 @@ class JfxRuntimeBridgeSpec extends AsyncFlatSpec with Matchers {
     }
   }
 
+  private def jsRoute(
+      path: String,
+      body: js.Function1[ScopeHandleBridge, Unit],
+      children: js.Array[js.Any] = js.Array()
+  ): js.Dictionary[js.Any] =
+    js.Dictionary(
+      "path"     -> path,
+      "load"     -> (((_: js.Any) => body): js.Function1[js.Any, js.Any]),
+      "children" -> children,
+      "status"   -> 200
+    )
+
+  "the router facade" should "mount a route table and render the matched nested route through an outlet" in {
+    val child: js.Function1[ScopeHandleBridge, Unit] = { scope =>
+      scope.text("leaf: 42"); ()
+    }
+    val parent: js.Function1[ScopeHandleBridge, Unit] = { scope =>
+      scope.child("h1", (_, heading) => heading.text("router shell"))
+      scope.component("router-outlet", js.Dictionary(), (_, _) => ())
+      ()
+    }
+
+    val routes = js.Array[js.Any](
+      jsRoute("/shell", parent, js.Array[js.Any](jsRoute("detail/:id", child)))
+    )
+
+    val build: js.Function1[ScopeHandleBridge, Unit] = { scope =>
+      scope.component(
+        "router",
+        js.Dictionary(
+          "routes" -> routes,
+          "config" -> js.Dictionary[js.Any]("initialUrl" -> "/shell/detail/42")
+        ),
+        (_, _) => ()
+      )
+      ()
+    }
+
+    render(build).map { result =>
+      result.html should include("router shell")
+      result.html should include("leaf: 42")
+    }
+  }
+
+  it should "forward to the onFailure route for an unmatched path" in {
+    val notFound: js.Function1[ScopeHandleBridge, Unit] = { scope =>
+      scope.text("not found"); ()
+    }
+    val home: js.Function1[ScopeHandleBridge, Unit] = { scope =>
+      scope.text("home"); ()
+    }
+
+    val routes = js.Array[js.Any](
+      jsRoute("/", home),
+      {
+        val route = jsRoute("/404", notFound)
+        route("status") = 404
+        route
+      }
+    )
+
+    val onFailure: js.Function1[js.Object, js.Any] = _ => "/404"
+
+    val build: js.Function1[ScopeHandleBridge, Unit] = { scope =>
+      scope.component(
+        "router",
+        js.Dictionary(
+          "routes" -> routes,
+          "config" -> js.Dictionary[js.Any](
+            "initialUrl"           -> "/nope",
+            "onFailure"            -> onFailure,
+            "renderErrorsOnServer" -> true
+          )
+        ),
+        (_, _) => ()
+      )
+      ()
+    }
+
+    render(build).map { result =>
+      result.status shouldBe 404
+      result.html should include("not found")
+    }
+  }
+
   "the component registry" should "reject an unregistered name" in {
     val build: js.Function1[ScopeHandleBridge, Unit] = { scope =>
       scope.component("does-not-exist", js.Dictionary(), (_, _) => ())

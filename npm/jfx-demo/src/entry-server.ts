@@ -2,11 +2,16 @@
 // vite.config.ts's `resolve.dedupe`, which is what makes it safe.
 import { installRuntime, renderToString } from "@anjunar/jfx-core";
 import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";
-import { pageFor } from "./routes.js";
+import { router } from "@anjunar/jfx-router";
+import { appRoutes, appShell, routerConfig } from "./routes.js";
 
 installRuntime(bridgeRuntime);
 
 export async function render(path: string): Promise<{ html: string; status: number }> {
-  const result = await renderToString(pageFor(path));
+  // `url: path` is how the request path reaches `jfx.router.Router` on the
+  // server -- there is no browser `location` here. The client omits it.
+  const result = await renderToString(() =>
+    router(appRoutes, { ...routerConfig, url: path }, appShell)
+  );
   return { html: result.html, status: result.status };
 }

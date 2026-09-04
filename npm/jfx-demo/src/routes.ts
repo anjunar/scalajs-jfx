@@ -1,14 +1,94 @@
-// The only thing standing in for a router: pick a page function by request
-// path. There is no client-side navigation here, no Router component, no
-// route table -- jfx-bridge doesn't wire up jfx-router yet (JAVASCRIPT_API.md
-// §9, step 5). `pageNav()` in pages.ts links between these with plain
-// `<a href>`s, so every navigation is a full page load, and the server and
-// the client have to agree on the same page for the same path or hydration
-// faults (server rendered X, client tries to claim it as Y).
+// The demo's route table and its application shell.
+//
+// This replaces the `pageFor(path)` stand-in that stood here until `jfx-bridge`
+// wired up `jfx-router` (JAVASCRIPT_API.md §9, step 5). Navigation between the
+// pages is now a client-side route change through `router()` + `routerLink()` --
+// Express only renders the first request and serves the assets, it does not
+// route. `/router` shows a nested route rendering through `routerOutlet()`, and
+// `/404` is a real error route: an unknown path answers 404 at its own URL.
+import { classes, div, heading, nav, text } from "@anjunar/jfx-core";
+import {
+  errorRoute,
+  routerLink,
+  routerOutlet,
+  view,
+  type RouteDefinition,
+  type RouterConfig,
+} from "@anjunar/jfx-router";
 import { libraryPage, statePage, todosPage } from "./pages.js";
 
-export function pageFor(path: string): () => void {
-  if (path === "/library") return libraryPage;
-  if (path === "/todos") return todosPage;
-  return statePage;
+/** The chrome around every routed page: a nav bar of client-side links. */
+export function appShell(): void {
+  nav(() => {
+    classes("page-nav");
+    routerLink("/", "Counter", { activeClass: "page-nav__link--active" });
+    routerLink("/library", "Library", { activeClass: "page-nav__link--active" });
+    routerLink("/todos", "Todos", { activeClass: "page-nav__link--active" });
+    routerLink("/router", "Router", { activeClass: "page-nav__link--active" });
+  });
 }
+
+function routerShellPage(): void {
+  div(() => {
+    classes("clarity-grid");
+    heading(2, () => text("Nested routes"));
+    div(() => {
+      classes("docs-card");
+      div(() => {
+        classes("docs-card__summary");
+        text("The panel below is rendered by a child route through routerOutlet().");
+      });
+      routerLink("/router/detail", "Open the nested panel");
+    });
+    routerOutlet();
+  });
+}
+
+function nestedPanelPage(): void {
+  div(() => {
+    classes("docs-card");
+    div(() => {
+      classes("docs-card__title");
+      text("Nested panel");
+    });
+    div(() => {
+      classes("docs-card__summary");
+      text("Reached at /router/detail. The parent frame around it did not reload.");
+    });
+    routerLink("/router", "Back");
+  });
+}
+
+function notFoundPage(): void {
+  div(() => {
+    classes("clarity-grid");
+    div(() => {
+      classes("docs-card");
+      div(() => {
+        classes("docs-card__title");
+        text("404 -- no such page");
+      });
+      div(() => {
+        classes("docs-card__summary");
+        text("This route is not in the table. The response carries status 404.");
+      });
+      routerLink("/", "Back to the counter");
+    });
+  });
+}
+
+export const appRoutes: readonly RouteDefinition[] = [
+  view("/", () => () => statePage()),
+  view("/library", () => () => libraryPage()),
+  view("/todos", () => () => todosPage()),
+  view("/router", () => () => routerShellPage(), {
+    children: [view("detail", () => () => nestedPanelPage())],
+  }),
+  errorRoute("/404", 404, () => () => notFoundPage()),
+];
+
+/** Shared by both entry points; the server adds `url` per request. */
+export const routerConfig: RouterConfig = {
+  onFailure: () => "/404",
+  renderErrorsOnServer: true,
+};

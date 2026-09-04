@@ -17,7 +17,7 @@ Vollständiger Lauf über alle Module:
 sbtn "Test/testOnly *"
 ```
 
-Das ist der Befehl, der vor einem Commit grün sein muss (aktuell 285 Tests).
+Das ist der Befehl, der vor einem Commit grün sein muss (aktuell 287 Tests).
 `sbtn test` ist für die schnelle Schleife während der Arbeit gedacht.
 
 Für die npm-Seite (`npm/jfx-core`, `npm/jfx-demo`) ist `npm run verify` das

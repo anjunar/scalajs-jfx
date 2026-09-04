@@ -738,3 +738,118 @@ Workflow ist so weit lokal nachvollzogen, wie das ohne einen echten
 GitHub-Actions-Runner geht (Schritte, Kommandos, Reihenfolge, Cache-Pfade
 geprüft), aber **nicht** in einer echten Actions-Umgebung gelaufen. Der erste
 tatsächliche Lauf dort ist der eigentliche Beweis.
+
+---
+
+# Nachtrag: Lauf 3, 2026-09-04 — `@anjunar/jfx-router`
+
+Die erste Auslösebedingung aus §5 ist eingelöst: `jfx-bridge` bekommt
+`dependsOn(jfxRouter)` und registriert `router`, `router-outlet`, `router-link`.
+`@anjunar/jfx-router` entsteht. Viewport, Controls, Forms, WebAuthn **nicht** —
+deren Auslösebedingungen stehen unverändert.
+
+## Was gebaut wurde
+
+| Bereich | Datei(en) |
+| --- | --- |
+| `dependsOn(jfxCore, jfxRouter)` | `build.sbt` |
+| JS↔Scala-Übersetzung der Routentabelle, `RouteContext`/`RouterConfig`-Projektion, `RouterViewRoot` (Shell), die drei Factories | `jfx-bridge/.../RouterFactories.scala` (neu) |
+| Registratur | `jfx-bridge/.../BridgeRuntime.scala` (+3 Zeilen) |
+| SSR-Status aus `Router.responseStatus` | `jfx-bridge/.../SsrStatus.scala` (neu), `JfxRuntimeBridge.renderToString` |
+| Scala-Abnahme | `JfxRuntimeBridgeSpec` (+2 Fälle: nested outlet SSR, `onFailure`→404) |
+| TS-Fassade | `npm/jfx-router/` — `router.ts` (inkl. `shell`-Parameter), `bridge.smoke.test.ts` (7), `consumer/consumer.test.ts` (3), README |
+| Demo als echte SPA | `npm/jfx-demo/src/{routes,entry-server,entry-client,pages}.ts`, `vite.config.ts`, `package.json` — Navigation client-seitig über `router(appRoutes, config, appShell)`, Express routet nicht mehr |
+| CI | `verify.yml` (+`jfx-router`-Schritt) |
+
+## Abweichungen vom Entwurf im Plan
+
+**Die Demo ist jetzt eine echte SPA, nicht Express-Routing.** Der ursprüngliche
+Plan behielt `pageNav()` bei gewöhnlichen `<a href>`s — jede Navigation ein
+Full-Load durch Express. Auf Nachfrage umgestellt: `router()` bekam ein drittes
+Argument, die **Shell** (`router(routes, config, shell)`). Der `router`-Eintrag
+mountet jetzt `RouterViewRoot`, das den Router in den Kontext stellt
+(`Router.provide`), die Shell-Body rendert (Navigationsleiste aus `routerLink`s)
+und die gematchte Seite direkt danach. Das ist dieselbe Montage wie
+`app.App.compose` von Hand (`Router.provide` → Sidebar → `child(appRouter)`), nur
+im Registratureintrag statt im Anwendungscode. `pageNav()` ist gelöscht, die
+`pages.ts`-Seiten tragen keine Navigation mehr; die Node-Runner rendern sie
+nackt. Express rendert nur noch den ersten Request und liefert Assets.
+
+**`initialUrl` explizit, nicht über den Cursor.** `app.Main.render(path)` reicht
+den Pfad in den Komponenten-Konstruktor, nicht über den Cursor; `SsrCursor`
+kennt keine URL. `router(routes, { url })` auf der TS-Seite → `initialUrl` in den
+`router`-Optionen → `Router.router(routes, initial = …)`. Client unberührt
+(`DomCursor`/`HydratingCursor` lesen `window.location`).
+
+**Loader synchron *oder* asynchron.** Der gelöschte `router.ts` hatte
+`load: … => Promise<PageBody>`. Erzwungenes `Promise` macht jeden Loader
+asynchron, und `Future.successful(x).map(f)` ist auf dem globalen EC nie
+sofort-fertig → `Router` blitzt die Loading-Boundary, und bei Hydration weicht
+der Client-Baum vom SSR-Baum ab. `RouteLoad = (ctx) => PageBody | Promise<PageBody>`;
+die Bridge verzweigt auf `js.typeOf` — eine Funktion geht über
+`Future.successful` (ein Render-Durchlauf), ein Promise über `.map`. Das spiegelt
+`jfx.router.Route`, das zwischen `Future.successful` und echtem `Future` wählt.
+
+**SSR-Status ist neu.** `renderToString` stand fest auf `200`. Mit dem Router
+kann eine `errorRoute` einen echten `404`/`500` an ihrer URL beantworten;
+`SsrStatus` (DynamicVariable, nur für die Dauer des synchronen Mounts offen)
+bindet `Router.responseStatus` in die `SsrResultHandle`.
+
+## Zwei Fehler in `jfx-core`/`jfx-router`, unterwegs gefunden und behoben
+
+**`SsrCursor` wurzelte auf einem Append-Log.** Root-Level war
+`rootNodes: ArrayBuffer` ohne Entfernen; `parentHost` gab `None`. Wurde die
+Ahnenkette bis zur Wurzel komplett virtuell — `BridgeRoot` (virtuell) → `Router`
+→ `DynamicComponentRenderer` → Loading-Platzhalter —, fand `Runtime.detach` kein
+`_mountParentHost` und die verwaisten Anker des wegrekonzilierten Platzhalters
+blieben im SSR-String. Hydration faultete („Comment anchor does not match.
+Expected `RoutedComponent`, Found `anon$2`"). Die Scala-App traf das nie, weil
+`AppDocument` ein echtes `<html>` claimt. Fix: `SsrCursor` wurzelt jetzt auf
+einer namenlosen `SsrHostElement`; `collectHtml` rendert deren Kinder. Alle 287
+Scala-Tests grün.
+
+**`RouterUrlResolver` zwang ohne i18n-Runtime `/en`.** `resolve(path, i18n=None,
+preferredLocale=Some(En))` prefixte `/en`, und `extractLocale` ohne Locale-
+Registry konnte es nicht wieder abziehen → `/en/en/other` bei jeder Navigation.
+Fix: kein i18n-Runtime ⇒ kein Locale-Segment in URLs, unabhängig von
+`preferredLocale`.
+
+## Der Preis, gemessen
+
+`scalajs-jfx-bridge/fullLinkJS`: **1 139 864 B roh / 178 730 B gzip**, gegenüber
+`dependsOn(core)` (981 614 / 155 380) also **+158 250 B roh / +23 350 B gzip**.
+Etwas über der Lauf-1-Probe E3 (+140 659 / +20 197), weil die fertige Fassade
+mehr trägt als der Registratur-Stub. `fast`/`full` weiterhin nicht byteidentisch.
+Am `jfx-demo`-Client: 428,09 kB (gzip 114,80), SSR 1 010,56 kB (gzip 171,52).
+
+## Nachgewiesen
+
+| Kriterium | Wie |
+| --- | --- |
+| Routentabelle mountet, nested `routerOutlet()` rendert | `JfxRuntimeBridgeSpec`, `jfx-router/test/bridge.smoke.test.ts`, `curl /router/detail` |
+| SSR-Status einer `errorRoute` | Spec + Smoke + `curl -w %{http_code} /nope` → 404 |
+| Hydration ohne Fault | Smoke-Test (Knotenidentität) + echter Browser: `/`, `/router`, `/nope` frisch geladen, null Konsolenfehler, Counter interaktiv |
+| `routerLink` SPA-Übergang | Smoke-Test + echter Browser: `/router` → `/router/detail`, Elternrahmen bleibt, kein Reload |
+| Shell um die Route, Links darin navigieren | Smoke-Test (Shell-Link ist Geschwister des Outlets, nicht Nachfahre) + echter Browser: Navigationsleiste über allen Seiten, Aktiv-Klasse folgt der Route, Zurück-Button |
+| Alle Routen als SPA, kein Express-Routing | echter Browser: `/` → `/library` → `/todos` → `/router` → `/router/detail` und zurück, alles ohne Full-Load; Deep-Links (`/todos`, `/nope`) hydrieren; `curl -w %{http_code}` → 200/200/200/200/200/404 |
+| Fremder Konsument | `jfx-router/test/consumer/` — `npm pack` von core+bridge+router, Installation ins Leere, Import nur über `exports`, `tsc --strict` mit `skipLibCheck:false`, SSR gegen Bridge |
+| Demo als echter Konsument | `npm/jfx-demo` importiert alles über Paketnamen; `npm run verify` grün (Typecheck, Client+SSR-Build, Ein-Runtime-Nachweis über den Router) |
+
+## Risiken: Stand nach Lauf 3
+
+| Nr. | Stand |
+| --- | --- |
+| 2 966-kB-Sockel | unverändert |
+| 5 `Condition`/`when`-Hydration | **unverändert offen** (`task_f55b4fa5`). Lauf 3 hat sie nicht ausgelöst — die Router selbst behandelt asynchrone Loader bei Hydration (`adoptingServerRender`), und die Demo-Seiten benutzen kein `when()` auf Remote-State. Eine Route-Seite, die das täte, bliebe gefährdet |
+| 6 Hydration dünn abgedeckt | **verbessert**: `jfx-router`s Smoke-Test deckt Router-Hydration mit Knotenidentität ab, zusätzlich echter Browser. Immer noch kein `jsdom` in der Scala-Suite |
+| 7 Editor-Entscheidung | unverändert offen (blockiert `@anjunar/jfx-editor`, nicht diesen Lauf) |
+| 8 Versionsdrift CSS-Paket | unverändert |
+| 9 Sourcemap-Warnung | unverändert (jetzt auch im `jfx-router`-Smoke-Test sichtbar) |
+| 11 CI | `jfx-router`-Schritt ergänzt; erster echter Actions-Lauf weiterhin der Beweis |
+
+Neu:
+
+**12. `RouteContextHandle` projiziert nur vier Felder.** `path`, `params`,
+`queryParams`, `failure` — die des gelöschten `router.ts`. `state`, `routeMatch`,
+`locale` sind Scala-interne Routing-Typen ohne TS-Bedeutung und bleiben draußen.
+Kein Risiko, nur eine bewusste Grenze, falls ein Konsument mehr erwartet.

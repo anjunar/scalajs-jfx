@@ -2,21 +2,19 @@ package jfx.core.render
 
 import jfx.core.async.AsyncRenderContext
 
-import scala.collection.mutable
-
 final class SsrCursor private (
     parent: Option[SsrHostElement],
     beforeNode: Option[HostNode],
     emitAnchors: Boolean,
-    rootNodes: mutable.ArrayBuffer[HostNode],
+    root: SsrHostElement,
     currentAsyncContext: Option[AsyncRenderContext]
 ) extends Cursor {
 
   def this() =
-    this(None, None, true, mutable.ArrayBuffer.empty[HostNode], None)
+    this(None, None, true, new SsrHostElement(""), None)
 
   def this(asyncContext: AsyncRenderContext) =
-    this(None, None, true, mutable.ArrayBuffer.empty[HostNode], Some(asyncContext))
+    this(None, None, true, new SsrHostElement(""), Some(asyncContext))
 
   override def supportsAnchors: Boolean =
     emitAnchors
@@ -24,8 +22,14 @@ final class SsrCursor private (
   override def asyncContext: Option[AsyncRenderContext] =
     currentAsyncContext
 
+  /** Always a real host now -- the nameless [[root]] when nothing else is in scope. That is what lets
+    * `Runtime.detach` remove a node reconciled away at the very top of the tree: before, a
+    * component whose whole ancestry to the root was virtual (a bridge `BridgeRoot` wrapping a
+    * `Router` wrapping a route outlet) had no `_mountParentHost`, so its stale anchors survived
+    * into the SSR string and faulted hydration.
+    */
   override def parentHost: Option[HostElement] =
-    parent
+    Some(parent.getOrElse(root))
 
   def claimElement(tag: String): HostElement = {
     val element = new SsrHostElement(tag)
@@ -50,7 +54,7 @@ final class SsrCursor private (
       Some(host.asInstanceOf[SsrHostElement]),
       None,
       emitAnchors,
-      rootNodes,
+      root,
       currentAsyncContext
     )
 
@@ -59,30 +63,13 @@ final class SsrCursor private (
       parent,
       Some(node),
       emitAnchors,
-      rootNodes,
+      root,
       currentAsyncContext
     )
 
   def collectHtml(): String =
-    rootNodes.map(_.renderHtml()).mkString
+    root.renderChildrenHtml()
 
   private def insert(node: HostNode): Unit =
-    parent match {
-      case Some(element) =>
-        element.insertBefore(node, beforeNode)
-
-      case None =>
-        // Root level: the same shortcut as in SsrHostElement; otherwise a Foreach mounted directly
-        // at the root would be equally quadratic.
-        beforeNode match {
-          case Some(existing) =>
-            SsrNode.indexIn(rootNodes, existing) match {
-              case index if index >= 0 => SsrNode.insertInto(rootNodes, index, node)
-              case _                   => SsrNode.appendTo(rootNodes, node)
-            }
-
-          case None =>
-            SsrNode.appendTo(rootNodes, node)
-        }
-    }
+    parent.getOrElse(root).insertBefore(node, beforeNode)
 }

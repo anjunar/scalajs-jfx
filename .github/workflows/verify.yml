@@ -74,6 +74,14 @@ jobs:
         working-directory: npm/jfx-core
         run: npm run verify
 
+      # The router facade: typecheck, the bridge smoke test (mount / SSR /
+      # hydrate / routerLink navigation / 404 forward), and its own tarball
+      # consumer test over all three packages. No stub half -- the stub knows
+      # nothing about routing (JAVASCRIPT_API.md §9, step 5).
+      - name: jfx-router -- typecheck, bridge smoke test, consumer test
+        working-directory: npm/jfx-router
+        run: npm run verify
+
       # Typecheck, client + SSR build, and the one-runtime proof across dev
       # server, client bundle and SSR bundle (CLAUDE_REVIEW_3.md §7.2).
       - name: jfx-demo -- typecheck, build, one-runtime proof

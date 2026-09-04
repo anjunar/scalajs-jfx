@@ -19,6 +19,15 @@ object BridgeRuntime {
   ComponentRegistry.register("hbox", HBoxFactory)
   ComponentRegistry.register("button", ButtonFactory)
 
+  // Step 5 of JAVASCRIPT_API.md §9. Registering these here is the point at which `jfx.router`
+  // becomes reachable from `bridgeRuntime`'s initializer -- a reachability anchor no DCE can
+  // resolve, so it lands in the bundle of every consumer, including one that imports only
+  // `@anjunar/jfx-core`. The measured price is in §14; it is the accepted consequence of
+  // "one linked runtime artifact" (CLAUDE_REVIEW_3.md §2.2), not a regression.
+  ComponentRegistry.register("router", RouterFactory)
+  ComponentRegistry.register("router-outlet", RouterOutletFactory)
+  ComponentRegistry.register("router-link", RouterLinkFactory)
+
   @JSExportTopLevel("bridgeRuntime")
   val bridgeRuntime: JfxRuntimeBridge = new JfxRuntimeBridge()
 }

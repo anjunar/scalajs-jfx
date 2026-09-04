@@ -49,10 +49,15 @@ private[router] object RouterUrlResolver {
     val extractedLocale =
       extractLocale(appRelativePath, i18n)
 
+    // No i18n runtime means no locale segment in URLs at all. Without a locale registry
+    // `extractLocale` cannot strip a prefix `buildBrowserPath` would add, so honoring a
+    // `preferredLocale` here would compound `/en` on every navigation.
     val locale =
-      extractedLocale.locale
-        .orElse(preferredLocale)
-        .orElse(i18n.map(_.defaultLocale))
+      if (i18n.isEmpty) None
+      else
+        extractedLocale.locale
+          .orElse(preferredLocale)
+          .orElse(i18n.map(_.defaultLocale))
 
     val normalizedPath =
       normalizePath(extractedLocale.remainingPath)

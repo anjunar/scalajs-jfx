@@ -7,13 +7,15 @@
 // vite.config.ts's `resolve.dedupe`, at the cause; see CLAUDE_REVIEW_3.md §7.1.
 import { hydrate, installRuntime } from "@anjunar/jfx-core";
 import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";
+import { router } from "@anjunar/jfx-router";
 import "@anjunar/scalajs-jfx/index.css";
-import { pageFor } from "./routes.js";
+import { appRoutes, appShell, routerConfig } from "./routes.js";
 
 installRuntime(bridgeRuntime);
 
-// Claims the server-rendered tree under #root -- built by src/entry-server.ts,
-// for the same path, through the same page function (routes.ts's pageFor). A
-// hydration fault throws here with the diagnostic HydratingCursor prints (see
-// JAVASCRIPT_API.md §11) if the two ever pick different pages for one path.
-await hydrate(document.getElementById("root")!, pageFor(location.pathname));
+// Claims the server-rendered tree under #root -- built by src/entry-server.ts
+// for the same path through the same route table. No `url` here: `jfx.router`
+// reads `window.location` through the hydrating cursor. A hydration fault throws
+// here with HydratingCursor's diagnostic (JAVASCRIPT_API.md §11) if server and
+// client ever disagree on the matched route.
+await hydrate(document.getElementById("root")!, () => router(appRoutes, routerConfig, appShell));
