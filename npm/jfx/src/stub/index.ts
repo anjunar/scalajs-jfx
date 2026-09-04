@@ -178,7 +178,16 @@ class StubScope implements ScopeHandle {
     private readonly cursor: Cursor,
     private readonly owner: StubComponent,
     private readonly async: AsyncRenderContext,
-    private readonly tracker: HostNode[] | null = null
+    /**
+     * Every enclosing block's node list, outermost first.
+     *
+     * A block (`when`, `forEach`, `fetch`) has to be able to take back exactly
+     * what was mounted inside it -- including what a *nested* block mounted.
+     * One tracker per scope was not enough for that: a `forEach` inside a
+     * `when` inserted its items into the shared parent through its own tracker
+     * only, so `when(false)` left them standing.
+     */
+    private readonly trackers: readonly HostNode[][] = []
   ) {}
 
   get isBrowser(): boolean {
@@ -190,7 +199,7 @@ class StubScope implements ScopeHandle {
 
   private insert(node: HostNode): void {
     this.cursor.parent.insertBefore(node, this.cursor.before);
-    this.tracker?.push(node);
+    for (const tracker of this.trackers) tracker.push(node);
   }
 
   child(
@@ -231,30 +240,52 @@ class StubScope implements ScopeHandle {
     return component;
   }
 
-  /** Opens a virtual range and returns a scope that inserts into it. */
-  private range(label: string): { scope: StubScope; nodes: HostNode[] } {
+  /**
+   * Opens a virtual range and returns a scope that composes into it, plus the
+   * `clear` that takes the whole block back.
+   *
+   * The block gets an owner of its own. Everything composed inside it -- child
+   * components, their subscriptions, nested blocks -- hangs off that owner, so
+   * `clear()` both removes the nodes and lets go of what was watching them.
+   * Without it, a `when` that flipped to `false` left its children's observers
+   * subscribed, writing into nodes that were no longer in the document.
+   */
+  private range(label: string): { scope: StubScope; clear: () => void } {
     const start = this.doc.createComment(`jfx:${label}:start`);
     const end = this.doc.createComment(`jfx:${label}:end`);
     this.insert(start);
     this.insert(end);
+
+    const parent = this.cursor.parent;
     const nodes: HostNode[] = [];
+    const trackers = [...this.trackers, nodes];
+
+    const owner = new StubComponent(`#${label}`, null);
+    this.owner.addDisposable({ dispose: () => owner.dispose() });
+
+    const clear = (): void => {
+      // dispose() drains the list rather than sealing the component, so the
+      // same owner serves every pass of the block.
+      owner.dispose();
+      for (const node of nodes.splice(0)) {
+        parent.removeChild(node);
+        for (const tracker of trackers) {
+          const index = tracker.indexOf(node);
+          if (index >= 0) tracker.splice(index, 1);
+        }
+      }
+    };
+
     return {
-      nodes,
-      scope: new StubScope(
-        this.doc,
-        { parent: this.cursor.parent, before: end },
-        this.owner,
-        this.async,
-        nodes
-      ),
+      clear,
+      scope: new StubScope(this.doc, { parent, before: end }, owner, this.async, trackers),
     };
   }
 
   when(active: ReadOnlyProperty<boolean>, body: (scope: ScopeHandle) => void): void {
-    const { scope, nodes } = this.range("Condition");
-    const clear = (): void => {
-      for (const node of nodes.splice(0)) this.cursor.parent.removeChild(node);
-    };
+    const { scope, clear } = this.range("Condition");
+    // On the outer owner, not the block's: this subscription outlives every
+    // pass of the block and is what starts the next one.
     this.owner.addDisposable(
       active.observe((enabled) => {
         clear();
@@ -267,10 +298,10 @@ class StubScope implements ScopeHandle {
     items: ReadOnlyProperty<readonly T[]>,
     body: (item: T, index: number, scope: ScopeHandle) => void
   ): void {
-    const { scope, nodes } = this.range("Foreach");
+    const { scope, clear } = this.range("Foreach");
     this.owner.addDisposable(
       items.observe((values) => {
-        for (const node of nodes.splice(0)) this.cursor.parent.removeChild(node);
+        clear();
         values.forEach((value, index) => body(value, index, scope));
       })
     );

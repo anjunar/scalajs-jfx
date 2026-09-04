@@ -6,12 +6,24 @@
   "types": "./dist/src/index.d.ts",
   "main": "./dist/src/index.js",
   "exports": {
-    ".": { "types": "./dist/src/index.d.ts", "default": "./dist/src/index.js" },
-    "./stub": { "types": "./dist/src/stub/index.d.ts", "default": "./dist/src/stub/index.js" }
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
+    },
+    "./stub": {
+      "types": "./dist/src/stub/index.d.ts",
+      "default": "./dist/src/stub/index.js"
+    }
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.test.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "demo": "tsc -p tsconfig.json && node dist/demo/statePage.js",
     "demo:scope": "tsc -p tsconfig.json && node dist/demo/scopeRules.js",
     "demo:bridge": "tsc -p tsconfig.json && node dist/demo/bridgeDemo.js"
@@ -22,7 +34,10 @@
   "devDependencies": {
     "@anjunar/scalajs-jfx": "file:../scalajs-jfx",
     "@anjunar/scalajs-jfx-bridge": "file:../scalajs-jfx-bridge",
-    "typescript": "^5.6.0"
+    "@types/node": "^26.4.1",
+    "jsdom": "^30.0.1",
+    "typescript": "^5.6.0",
+    "vitest": "^3.2.7"
   },
   "license": "MIT"
 }
