@@ -2,6 +2,9 @@ export type {
   Build,
   ComponentHandle,
   Disposable,
+  DocumentHeadHandle,
+  HeadEntry,
+  HeadGroupHandle,
   JfxRuntime,
   ListProperty,
   MountedApp,
@@ -28,3 +31,4 @@ export {
 export { capture, currentComponent, currentScope, hasScope, withScope } from "./scope.js";
 
 export * from "./dsl.js";
+export * from "./document.js";

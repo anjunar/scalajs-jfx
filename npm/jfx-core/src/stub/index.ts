@@ -7,7 +7,9 @@
  *
  *  - `forEach` re-renders its whole block instead of reconciling by key.
  *  - `hydrate` clears and re-renders instead of claiming server nodes.
- *  - There is no `HeadSink`, no i18n, no router, no form binding.
+ *  - There is no `HeadSink`, no i18n, no router, no form binding. `head()` mounts
+ *    a plain `<head>` element; `documentHead()` is always `null`, so a page's
+ *    `documentHead()?.push(...)` calls harmlessly no-op under this runtime.
  *
  * Those are exactly the parts where the Scala runtime earns its keep. Anything
  * this stub gets away with, the real bridge must still do properly.
@@ -16,6 +18,7 @@ import type {
   Build,
   ComponentHandle,
   Disposable,
+  DocumentHeadHandle,
   JfxRuntime,
   ListProperty,
   MountedApp,
@@ -240,6 +243,14 @@ class StubScope implements ScopeHandle {
     return component;
   }
 
+  head(body: (self: ComponentHandle, scope: ScopeHandle) => void): ComponentHandle {
+    return this.child("head", body);
+  }
+
+  documentHead(): DocumentHeadHandle | null {
+    return null;
+  }
+
   /**
    * Opens a virtual range and returns a scope that composes into it, plus the
    * `clear` that takes the whole block back.
@@ -413,15 +424,20 @@ export class StubRuntime implements JfxRuntime {
 
   async renderToString(build: Build, options?: SsrOptions): Promise<SsrResult> {
     const doc = new SsrDocument();
-    const fragment = new SsrElement("jfx:fragment");
-    const owner = new StubComponent("#root", fragment);
+    // A real `<html>` root for `options.document` -- `build` composes `head()`/a
+    // body element directly, no enclosing `html(...)` -- otherwise an invisible
+    // container whose own tag never reaches the output.
+    const container = options?.document
+      ? new SsrElement("html")
+      : new SsrElement("jfx:fragment");
+    const owner = new StubComponent("#root", container);
     const async = new AsyncRenderContext();
 
     try {
-      build(new StubScope(doc, { parent: fragment, before: null }, owner, async));
+      build(new StubScope(doc, { parent: container, before: null }, owner, async));
       await withTimeout(async.drain(), options?.timeoutMs ?? 10_000, async);
       return {
-        html: renderChildren(fragment.children),
+        html: options?.document ? container.renderHtml() : renderChildren(container.children),
         status: 200,
         headers: {},
       };

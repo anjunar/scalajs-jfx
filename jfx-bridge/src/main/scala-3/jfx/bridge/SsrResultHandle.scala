@@ -17,5 +17,6 @@ final class SsrResultHandle(
   */
 @js.native
 trait SsrOptionsFacade extends js.Object {
-  val timeoutMs: js.UndefOr[Double] = js.native
+  val timeoutMs: js.UndefOr[Double]  = js.native
+  val document: js.UndefOr[Boolean] = js.native
 }

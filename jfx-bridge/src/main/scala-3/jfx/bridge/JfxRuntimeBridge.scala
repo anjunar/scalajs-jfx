@@ -48,9 +48,11 @@ final class JfxRuntimeBridge extends js.Object {
 
     val async = new AsyncRenderContext()
 
-    val cursor: HydratingCursor = root match {
-      case document: dom.Document => HydratingCursor.root(document, async)
-      case element: dom.Element   => HydratingCursor.root(element, async)
+    // A whole document claims a real "html" root, not the ordinary virtual one -- see
+    // BridgeRoot's own doc comment for why a virtual root cannot stand for `<html>`.
+    val (cursor, rootTagName): (HydratingCursor, String) = root match {
+      case document: dom.Document => (HydratingCursor.root(document, async), "html")
+      case element: dom.Element   => (HydratingCursor.root(element, async), "")
       case _                      =>
         throw new IllegalArgumentException("hydrate() expects a Document or an Element.")
     }
@@ -59,7 +61,7 @@ final class JfxRuntimeBridge extends js.Object {
 
     val hydration =
       try {
-        mountedRoot = Some(Runtime.mount(new BridgeRoot(build), cursor))
+        mountedRoot = Some(Runtime.mount(new BridgeRoot(build, rootTagName), cursor))
         async.drain().map { _ =>
           cursor.completeHydration()
           new MountedAppHandle(mountedRoot.get)
@@ -94,12 +96,17 @@ final class JfxRuntimeBridge extends js.Object {
         .map(_.toInt)
         .getOrElse(Runtime.DefaultSsrTimeoutMs)
 
+    // See BridgeRoot's own doc comment: a whole document needs a real "html" root, not the
+    // ordinary virtual one, for `hydrate(document, ...)` to later claim it node-for-node.
+    val asDocument = options.toOption.flatMap(_.document.toOption).getOrElse(false)
+    val tagName    = if (asDocument) "html" else ""
+
     val status = new SsrStatus()
 
     SsrStatus
       .capture(status) {
         Runtime.renderToStringAsync(
-          cursor => Runtime.mount(new BridgeRoot(build), cursor),
+          cursor => Runtime.mount(new BridgeRoot(build, tagName), cursor),
           timeoutMs
         )
       }

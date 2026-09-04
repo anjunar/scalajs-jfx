@@ -1,6 +1,7 @@
 import type {
   ComponentHandle,
   Disposable,
+  DocumentHeadHandle,
   Reactive,
   ReadOnlyProperty,
   UiEvent,
@@ -47,6 +48,28 @@ export function heading(level: 1 | 2 | 3 | 4 | 5 | 6, body?: Body): ComponentHan
 /** Mounts a text node. Accepts a constant or a property. */
 export function text(value: Reactive<string>): ComponentHandle {
   return currentScope().text(value);
+}
+
+/**
+ * Mounts the `<head>` element. `TypeScript`'s spelling of `head { ... }` in
+ * `jfx.core.layout.Head`. What goes into it -- title, meta, links -- is
+ * registered from anywhere in the tree via `documentHead()`, not composed as
+ * children here; see that function's doc comment.
+ */
+export function head(body: Body = noBody): ComponentHandle {
+  return currentScope().head((self, scope) => withScope(scope, self, body));
+}
+
+/**
+ * The request-scoped head registry, or `null` outside a document tree that
+ * mounted a `head()` element. Mirrors `jfx.core.document.DocumentHead.current`.
+ *
+ * Components register entries through it from wherever they compose, not
+ * necessarily inside `head()` itself -- the same registry-not-a-tree design
+ * as the Scala side, since a page far below `<head>` is what knows its title.
+ */
+export function documentHead(): DocumentHeadHandle | null {
+  return currentScope().documentHead();
 }
 
 /* -------------------------------------------------------- library components */

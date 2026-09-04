@@ -4,17 +4,17 @@
 // the request and call into the render function. Express is that server here,
 // exactly as it is there.
 //
-// Simpler than server/server.mjs in one respect: this app has a real
-// index.html (`<!--ssr-outlet-->` placeholder), so there is no manifest to
-// read for asset tags -- Vite's own build already puts hashed script/link
-// tags into the built index.html, and `vite.transformIndexHtml` does the dev
-// equivalent. The Scala app has neither because its document is rendered
-// entirely by Scala; see vite.config.js's comment on `scalajs:main.js` for why.
+// There is no index.html any more -- the whole document comes out of
+// `render()` (src/app/document.ts), the same as the Scala app's own
+// server/server.mjs, whose comment on `scalajs:main.js` explains why. What's
+// left is the bundle's own asset tags, whose names only the build knows;
+// `clientAssets()` supplies those as an argument, mirroring
+// `tools/client-assets.mjs` at the repo root.
 import express from "express";
 import { createServer as createViteServer } from "vite";
-import { readFile } from "node:fs/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { dirname, resolve } from "node:path";
+import { developmentAssets, productionAssets } from "./tools/client-assets.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === "production";
@@ -23,7 +23,7 @@ const port = Number(process.env.PORT ?? 5174);
 const app = express();
 
 let vite = null;
-let productionTemplate = "";
+let builtAssets = null;
 
 if (!isProduction) {
   vite = await createViteServer({
@@ -33,11 +33,18 @@ if (!isProduction) {
   });
   app.use(vite.middlewares);
 } else {
-  productionTemplate = await readFile(resolve(__dirname, "dist/client/index.html"), "utf-8");
   app.use(
     "/assets",
     express.static(resolve(__dirname, "dist/client/assets"), { immutable: true, maxAge: "1y" })
   );
+}
+
+async function clientAssets() {
+  if (!isProduction) return developmentAssets();
+  if (builtAssets === null) {
+    builtAssets = await productionAssets(resolve(__dirname, "dist/client"));
+  }
+  return builtAssets;
 }
 
 app.use(async (req, res, next) => {
@@ -46,22 +53,22 @@ app.use(async (req, res, next) => {
   if (isFileRequest && !url.endsWith(".html")) return next();
 
   try {
-    let template;
     let render;
 
     if (isProduction) {
-      template = productionTemplate;
       ({ render } = await import(pathToFileURL(resolve(__dirname, "dist/server/entry-server.js")).href));
     } else {
-      template = await readFile(resolve(__dirname, "index.html"), "utf-8");
-      template = await vite.transformIndexHtml(url, template);
       ({ render } = await vite.ssrLoadModule("/src/entry-server.ts"));
     }
 
     // originalUrl is the complete request target. Passing req.path here would
     // silently discard query parameters before RouterConfig.url reaches SSR.
-    const { html: appHtml, status } = await render(url);
-    const html = template.replace("<!--ssr-outlet-->", appHtml);
+    const { html: rendered, status } = await render(url, await clientAssets());
+
+    // In dev, Vite hangs its own HMR client off the head. The browser head
+    // sink only touches nodes carrying its own marker, so it leaves that one
+    // alone -- same reasoning as server/server.mjs at the repo root.
+    const html = isProduction ? rendered : await vite.transformIndexHtml(url, rendered);
 
     res.status(status).type("html").end(html);
   } catch (error) {

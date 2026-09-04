@@ -3,6 +3,8 @@ import tailwindcss from "@tailwindcss/vite";
 import { fileURLToPath } from "node:url";
 import { jfxCode } from "./tools/vite-plugin-jfx-code.js";
 
+const clientEntry = fileURLToPath(new URL("./src/entry-client.ts", import.meta.url));
+
 // npm workspaces hoist every package in npm/* into the repo root's node_modules,
 // so `@anjunar/jfx-core` resolves through a symlink into the source tree. Vite's
 // default server.fs.allow stops at the workspace root it auto-detects, which
@@ -10,7 +12,7 @@ import { jfxCode } from "./tools/vite-plugin-jfx-code.js";
 // vite.config.js opens the same door for the same reason.
 const monorepoRoot = fileURLToPath(new URL("../..", import.meta.url));
 
-export default defineConfig({
+export default defineConfig(({ isSsrBuild }) => ({
   plugins: [tailwindcss(), jfxCode()],
   resolve: {
     // The one-runtime invariant, enforced at the bundler.
@@ -43,5 +45,11 @@ export default defineConfig({
   },
   build: {
     sourcemap: true,
+    // No index.html to infer an entry from any more -- the document is
+    // rendered entirely by src/app/document.ts. The manifest is how
+    // server.mjs's clientAssets() finds the client build's hashed file names
+    // in production (mirrors the repo root's vite.config.js).
+    manifest: !isSsrBuild,
+    ...(isSsrBuild ? {} : { rollupOptions: { input: clientEntry } }),
   },
-});
+}));

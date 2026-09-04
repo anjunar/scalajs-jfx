@@ -1,8 +1,8 @@
 /**
- * The light/dark toggle in the shell. `index.html`'s inline script already
- * set `data-theme` on `<html>` before anything rendered (from `localStorage`,
- * key `jfx-demo.theme`, else `prefers-color-scheme`) -- this module is only
- * the reactive side the shell's button binds to.
+ * The light/dark toggle in the shell. `app/head.ts`'s inline theme-init
+ * script already set `data-theme` on `<html>` before anything rendered (from
+ * `localStorage`, key `jfx-demo.theme`, else `prefers-color-scheme`) -- this
+ * module is only the reactive side the shell's button binds to.
  *
  * The property is created with the *same* default ("light") on the server
  * and on the client's first render pass, so the button's label can never
@@ -25,7 +25,7 @@ export function themeProperty(): Property<ThemeMode> {
   return (instance ??= property<ThemeMode>("light"));
 }
 
-/** Reads the value entry-server.ts's/index.html's inline script already applied. */
+/** Reads the value app/head.ts's inline theme-init script already applied. */
 export function syncThemeFromDocument(): void {
   try {
     const attribute = document.documentElement.getAttribute("data-theme");

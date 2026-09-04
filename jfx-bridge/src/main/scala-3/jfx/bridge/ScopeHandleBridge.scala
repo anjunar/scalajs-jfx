@@ -1,8 +1,9 @@
 package jfx.bridge
 
 import jfx.core.component.AbstractComponent
+import jfx.core.document.DocumentHead
 import jfx.core.dsl.DslLayer
-import jfx.core.layout.{Condition, TextComponent}
+import jfx.core.layout.{Condition, Head, TextComponent}
 import jfx.core.render.Cursor
 import jfx.core.state.{ReadOnlyProperty => CoreReadOnlyProperty}
 import jfx.core.statement.Foreach
@@ -51,6 +52,34 @@ final class ScopeHandleBridge(
 
     val mounted = DslLayer.child(TextComponent.bind(ReactiveBridge.asProperty[String](value))) {}
     new ComponentHandleBridge(mounted)
+  }
+
+  /** Mounts `jfx.core.layout.Head`, not a `GenericElement("head")` -- the one element that wires
+    * itself up to the surrounding [[DocumentHead]] once mounted (`Head.afterCompose`), which is
+    * what `documentHead()` calls elsewhere in the tree rely on.
+    */
+  def head(
+      body: js.Function2[ComponentHandleBridge, ScopeHandleBridge, Unit]
+  ): ComponentHandleBridge = {
+    given AbstractComponent = parent
+    given Cursor            = cursor
+
+    val mounted = Head.head {
+      val self        = summon[Head]
+      val childCursor = summon[Cursor]
+      body(new ComponentHandleBridge(self), new ScopeHandleBridge(self, childCursor))
+    }
+
+    new ComponentHandleBridge(mounted)
+  }
+
+  /** The request-scoped head registry, or `null` outside a document tree that mounted a [[head]]
+    * element. Mirrors `contract.ts`'s `ScopeHandle.documentHead`.
+    */
+  def documentHead(): DocumentHeadHandleBridge = {
+    given AbstractComponent = parent
+
+    DocumentHead.current.map(new DocumentHeadHandleBridge(_)).orNull
   }
 
   def when(active: JsReadOnlyProperty[Boolean], body: js.Function1[ScopeHandleBridge, Unit]): Unit = {

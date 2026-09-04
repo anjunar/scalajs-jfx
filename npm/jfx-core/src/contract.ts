@@ -110,6 +110,21 @@ export interface ScopeHandle {
   /** Mounts a text node, optionally bound to a property. */
   text(value: Reactive<string>): ComponentHandle;
 
+  /**
+   * Mounts the `<head>` element. Mirrors `jfx.core.layout.Head.head`.
+   *
+   * Not just `child("head", ...)`: this is the one element that wires itself
+   * up to the surrounding `DocumentHead` once mounted, which is what lets
+   * `documentHead()` calls anywhere in the tree actually reach the page.
+   */
+  head(body: (self: ComponentHandle, scope: ScopeHandle) => void): ComponentHandle;
+
+  /**
+   * The request-scoped head registry, or `null` outside a document tree.
+   * Mirrors `jfx.core.document.DocumentHead.current`.
+   */
+  documentHead(): DocumentHeadHandle | null;
+
   /** Mirrors `jfx.core.layout.Condition.when`. */
   when(
     active: ReadOnlyProperty<boolean>,
@@ -147,6 +162,47 @@ export interface ScopeHandle {
   ): ComponentHandle;
 }
 
+/**
+ * One element in the document head. Mirrors `jfx.core.document.HeadEntry`.
+ *
+ * `key` decides identity, not position: pushing the same key again replaces the
+ * entry instead of adding a second one. `document.ts`'s factories build these;
+ * nothing outside that file needs to construct one by hand.
+ */
+export interface HeadEntry {
+  readonly key: string;
+  readonly tagName: string;
+  readonly attributes?: readonly (readonly [string, string])[];
+  readonly text?: string;
+  readonly rawText?: boolean;
+}
+
+/**
+ * A group of head entries that is replaced as a whole. Mirrors
+ * `DocumentHead.Handle` -- for an entry that changes without its owning
+ * component going away (a title after a client-side navigation, a
+ * theme-reactive tag), so registering again does not pile up the stack.
+ */
+export interface HeadGroupHandle extends Disposable {
+  set(...entries: readonly HeadEntry[]): void;
+  clear(): void;
+}
+
+/**
+ * The request-scoped head registry. Mirrors `jfx.core.document.DocumentHead`.
+ * Obtained through `ScopeHandle.documentHead()`; absent (`null`) outside a
+ * document tree that mounted a `head()` element.
+ */
+export interface DocumentHeadHandle {
+  /** Registers `entry`; disposing the result removes it again. */
+  push(entry: HeadEntry): Disposable;
+  /** An attribute on `<html>`, `lang` and `dir` above all. Last write wins. */
+  htmlAttribute(name: string, value: string): void;
+  removeHtmlAttribute(name: string): void;
+  /** A group of entries replaced as a whole on every `set()`. */
+  handle(): HeadGroupHandle;
+}
+
 /** A build function: everything it does happens inside the given scope. */
 export type Build = (scope: ScopeHandle) => void;
 
@@ -164,6 +220,19 @@ export interface SsrResult {
 export interface SsrOptions {
   /** Milliseconds before the render is abandoned. Mirrors `Runtime.DefaultSsrTimeoutMs`. */
   readonly timeoutMs?: number;
+  /**
+   * `build` composes a whole document -- `head()`/a `body` element as its own
+   * top-level calls, with no enclosing `html(...)`. Mounts a real, non-virtual
+   * `<html>` root for it instead of the invisible wrapper an ordinary
+   * (fragment) render uses, so the result is a complete, self-contained
+   * document `hydrate(document, ...)` can later claim node-for-node -- that
+   * hydration path expects to claim `document.documentElement` itself, not a
+   * comment marking an invisible wrapper's boundary.
+   *
+   * Off by default: most `renderToString` calls render a fragment meant to be
+   * spliced into an existing container, not served as a page on its own.
+   */
+  readonly document?: boolean;
 }
 
 /**
