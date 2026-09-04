@@ -82,6 +82,24 @@ export interface ComponentHandle {
   addDisposable(disposable: Disposable): void;
 }
 
+/** A mounted form, including the operations needed by submit handlers. */
+export interface FormHandle extends ComponentHandle {
+  /** Validates all registered controls and returns their messages. */
+  validate(): readonly string[];
+  /** Returns binding failures collected while controls were registered. */
+  validateBindings(): readonly string[];
+  /** Applies server-side errors to the matching controls. */
+  setErrorResponses(errors: readonly FormErrorResponse[]): void;
+  /** Clears visible validation errors recursively. */
+  clearErrors(): void;
+}
+
+/** A server validation error addressed by a field path. */
+export interface FormErrorResponse {
+  readonly message: string;
+  readonly path: readonly string[];
+}
+
 /**
  * A position in the tree under construction: a parent component and a cursor.
  *
@@ -94,6 +112,13 @@ export interface ScopeHandle {
   readonly isBrowser: boolean;
   /** True while claiming server-rendered nodes. Mirrors `Cursor.isHydrating`. */
   readonly isHydrating: boolean;
+
+  /**
+   * Returns a scope for later callbacks. Browser cursors are recreated from the
+   * component's host, so this remains valid after hydration has consumed the
+   * original claim cursor.
+   */
+  fresh(): ScopeHandle;
 
   /**
    * Mounts an element below this scope and composes `body` inside it.

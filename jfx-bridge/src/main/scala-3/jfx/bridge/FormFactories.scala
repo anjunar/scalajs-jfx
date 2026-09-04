@@ -244,9 +244,22 @@ private[bridge] trait DynamicFormular extends FormController { self: AbstractCom
   /** Every control that could not find a model property, by name -> reason. Mirrors
     * `Formular.validateBindings`.
     */
-  def validateBindings(): Seq[String] = unboundControls.values.toSeq
+  def validateBindings(): Seq[String] =
+    unboundControls.values.toSeq ++ controls.toSeq.flatMap {
+      case nested: DynamicFormular => nested.validateBindings()
+      case _                        => Seq.empty
+    }
 
   def validate(): Seq[String] = controls.toSeq.flatMap(_.validate(forceVisible = true))
+
+  /** Rebinds every child against the current model dictionary. This matters for
+    * nested forms whose parent Property replaces the whole model object.
+    */
+  protected def rebindModel(): Unit =
+    controls.toSeq.foreach { control =>
+      bindingsByControl.remove(control).foreach(_.dispose())
+      bindNow(control)
+    }
 
   override def clearErrors(): Unit =
     controls.foreach { control =>
@@ -407,6 +420,11 @@ private[bridge] final class DynamicSubForm(
         setProperty("disabled", !editable)
         controls.foreach(_.editableProperty.set(editable))
       })
+
+      // The parent form's bidirectional binding can replace valueProperty with
+      // a completely new dictionary. Re-resolve child fields on each change so
+      // controls never remain attached to the old nested model.
+      addDisposable(valueProperty.observeWithoutInitial { _ => rebindModel() })
 
       FormContext.provide(this)
     }

@@ -11,12 +11,13 @@
  * `subForm`, ...) is bound bidirectionally to whichever entry shares its name.
  */
 import { component } from "@anjunar/jfx-core";
-import type { ListProperty, Property } from "@anjunar/jfx-core";
+import type { FormHandle, ListProperty, Property } from "@anjunar/jfx-core";
 import { defined } from "./internal.js";
 import type { FormSchema } from "./validators.js";
 
 /** A form model: one bridge `Property`/`ListProperty` per bindable field name. */
 export type FormModel = Record<string, Property<unknown> | ListProperty<unknown>>;
+export type { FormHandle };
 
 export interface FormOptions {
   /** Distinguishes multiple forms in error responses / debugging. Defaults to `"default"`. */
@@ -29,6 +30,6 @@ export function form<M extends FormModel>(
   model: M,
   options: FormOptions,
   content: () => void
-): void {
-  component("form", defined({ model, ...options }), content);
+): FormHandle {
+  return component("form", defined({ model, ...options }), content) as FormHandle;
 }

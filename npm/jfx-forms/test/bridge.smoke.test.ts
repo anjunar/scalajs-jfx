@@ -75,6 +75,29 @@ describe("the linked runtime", () => {
 });
 
 describe("form + input", () => {
+  it("returns a handle for validation and binding diagnostics", () => {
+    const model = { name: property("") };
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+    let handle: import("@anjunar/jfx-core").FormHandle;
+
+    const app = mount(root, () => {
+      handle = form(model, { schema: { name: [notBlank()] } }, () => {
+        inputContainer({ label: "Name" }, () => input("name"));
+      });
+    });
+
+    expect(handle!.validateBindings()).toEqual([]);
+    expect(handle!.validate()).toContain("Must not be blank");
+    handle!.setErrorResponses([{ message: "Rejected by server", path: ["name"] }]);
+    expect(root.querySelector(".jfx-input-container__errors")?.textContent).toContain(
+      "Rejected by server"
+    );
+    handle!.clearErrors();
+    expect(root.querySelector(".jfx-input-container__errors")?.textContent ?? "").toBe("");
+    app.dispose();
+  });
+
   it("binds a control to a model property bidirectionally", () => {
     const model = { name: property("Ada") };
     const root = document.createElement("div");
@@ -152,6 +175,30 @@ describe("form + input", () => {
     field.dispatchEvent(new Event("input", { bubbles: true }));
     expect(model.name.get).toBe("Grace");
 
+    app.dispose();
+  });
+
+  it("rebinds a nested form when its parent model object changes", () => {
+    const first = { name: property("Ada") };
+    const second = { name: property("Grace") };
+    const model = { owner: property(first) };
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const app = mount(root, () => {
+      form(model, {}, () => {
+        subForm("owner", first, {}, () => input("name"));
+      });
+    });
+
+    const field = root.querySelector("input") as HTMLInputElement;
+    expect(field.value).toBe("Ada");
+    model.owner.set(second);
+    expect(field.value).toBe("Grace");
+    field.value = "Katherine";
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(first.name.get).toBe("Ada");
+    expect(second.name.get).toBe("Katherine");
     app.dispose();
   });
 });

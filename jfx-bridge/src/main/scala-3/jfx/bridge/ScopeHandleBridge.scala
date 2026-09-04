@@ -30,6 +30,10 @@ final class ScopeHandleBridge(
 
   def isHydrating: Boolean = cursor.isHydrating
 
+  /** Replaces a one-shot hydration cursor with a fresh append cursor. */
+  def fresh(): ScopeHandleBridge =
+    new ScopeHandleBridge(parent, cursor.fresh)
+
   def child(
       tagName: String,
       body: js.Function2[ComponentHandleBridge, ScopeHandleBridge, Unit]

@@ -200,6 +200,19 @@ class StubScope implements ScopeHandle {
     return false;
   }
 
+  fresh(): ScopeHandle {
+    // A deferred callback appends to the same host. Reusing the original
+    // insertion cursor would retain a stale `before` position after a block was
+    // reconciled.
+    return new StubScope(
+      this.doc,
+      { parent: this.cursor.parent, before: null },
+      this.owner,
+      this.async,
+      this.trackers
+    );
+  }
+
   private insert(node: HostNode): void {
     this.cursor.parent.insertBefore(node, this.cursor.before);
     for (const tracker of this.trackers) tracker.push(node);

@@ -1,6 +1,8 @@
 export type {
   Build,
   ComponentHandle,
+  FormHandle,
+  FormErrorResponse,
   Disposable,
   DocumentHeadHandle,
   HeadEntry,

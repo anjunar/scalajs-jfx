@@ -51,6 +51,10 @@ form(
 );
 ```
 
+`form(...)` returns a `FormHandle`. Keep it when a submit action needs to call
+`validate()`, inspect `validateBindings()`, apply `setErrorResponses(...)`, or
+clear errors with `clearErrors()`.
+
 `notNull()`/`size(...)`/`email()` build the exact `{ name, parameters }` shape
 `reflect.Annotation` already has -- `FormFactories.schemaFrom` (in
 `jfx-bridge`) turns them into real `Annotation`s that the same, unmodified

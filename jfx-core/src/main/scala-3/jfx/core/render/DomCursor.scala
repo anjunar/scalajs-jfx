@@ -48,6 +48,11 @@ final class DomCursor private (
   def sub(host: HostElement): Cursor =
     new DomCursor(DomNodes.raw(host), None, currentAsyncContext)
 
+  override def fresh: Cursor =
+    // Preserve a block's end anchor when this cursor belongs to a virtual
+    // range; ordinary element cursors have no before node and simply append.
+    new DomCursor(parent, beforeNode, currentAsyncContext)
+
   override def before(node: HostNode): Cursor =
     new DomCursor(parent, Some(DomNodes.raw(node)), currentAsyncContext)
 

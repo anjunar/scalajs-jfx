@@ -193,10 +193,10 @@ Asynchrone Daten kommen über `fetchInto` herein. Das ist die TS-Entsprechung vo
 noch laufenden Loader (CHANGE.md P4-1).
 
 Für selbstgebaute Verzögerungen — ein `setTimeout`, ein Callback aus einer
-Fremdbibliothek — friert `capture()` die aktuelle Position ein. Wichtig und im
-README ausdrücklich vermerkt: `capture()` stellt die Position wieder her, es
-lässt SSR aber **nicht** warten. Wer das Ergebnis im HTML braucht, nimmt
-`fetchInto`.
+Fremdbibliothek — hält `capture()` die Komponentenposition fest und erzeugt für
+den späteren Aufruf einen frischen Append-Cursor. Dadurch bleibt der Callback
+auch nach abgeschlossener Hydration gültig. `capture()` lässt SSR aber
+**nicht** warten; wer das Ergebnis im HTML braucht, nimmt `fetchInto`.
 
 ### Das einzige Modulfeld
 
@@ -573,12 +573,10 @@ beansprucht pro `text()`-Aufruf einen eigenen DOM-Knoten -- derselbe
 "Hydration fault: There is no further DOM node" wie oben, jetzt aus einer ganz
 anderen Ursache; behoben, indem angrenzende Klartext-Läufe vor dem Rendern zu
 einem einzigen `text()`-Aufruf zusammengefasst werden (`src/docs/code-block.ts`).
-(2) `capture()`/`restore()` spielt nur innerhalb desselben Render-Durchlaufs
-korrekt zurück (ein Mikrotask, der vor dem Serialisieren noch abläuft); aus
-einem `onClick` heraus aufgerufen, nachdem Hydration längst abgeschlossen ist,
-trifft es exakt die Cursor-Falle, die Lauf 5 oben für `notify()`/
-`floatingWindow()` schon beschreibt -- dokumentiert als Fallstrick auf
-`/core/lifecycle`, nicht verdeckt.
+(2) `capture()`/`restore()` erzeugt für spätere Aufrufe einen frischen
+Append-Cursor. Damit funktioniert auch ein `onClick` nach abgeschlossener
+Hydration; die Position bleibt erhalten, ohne einen verbrauchten
+`HydratingCursor` wiederzuverwenden.
 
 Die vollständige Bauanleitung, jede Entscheidung mit Begründung und der
 Seitenkatalog stehen in [`npm/jfx-demo/CLAUDE_DEMO_PLAN.md`](npm/jfx-demo/CLAUDE_DEMO_PLAN.md).
@@ -847,15 +845,13 @@ Router und Controls -- keine separate imperative API. `window` heißt auf der
 TS-Seite `floatingWindow`, weil `window` das Browser-Global ist; der
 Registraturname bleibt `"window"`.
 
-Eine Falle, die es so vorher nicht gab: `notify()`/`floatingWindow()` direkt aus
+Eine Falle, die es so vorher gab: `notify()`/`floatingWindow()` direkt aus
 einem `onClick` heraus aufgerufen -- ohne ein `when()` dazwischen --, nachdem
-die Seite bereits hydriert war, warf "Hydration fault: There is no further DOM
-node." Der `Cursor`, den `ScopeHandleBridge` trägt, ist der, der beim
-*Registrieren* des Handlers ambient war (zur Hydrationszeit); `capture()`/
-`withScope()` in `scope.ts` stellen genau diesen bei jedem Klick wieder her,
-beliebig lange nachdem die Hydration fertig ist. Ein `DslLayer.child` gegen
-einen längst verbrauchten `HydratingCursor` schlägt fehl. `Condition.when` hat
-dieses Problem nicht -- jede Aktivierung bekommt einen frischen, echten Cursor
+die Seite bereits hydriert war, konnte einen verbrauchten Hydration-Cursor
+verwenden. `capture()`/`withScope()` in `scope.ts` stellt jetzt bei jedem Klick
+die Position mit einem frischen Cursor wieder her, beliebig lange nachdem die
+Hydration fertig ist. `Condition.when` hat dieses Problem nicht -- jede
+Aktivierung bekommt einen frischen, echten Cursor
 von `Condition` selbst, deshalb funktioniert `when(open) { floatingWindow(...) }`
 anstandslos. Die Lösung: `WindowFactory`/`NotificationFactory` fassen den Cursor
 am Aufrufort gar nicht erst an. Sie rufen `Viewport.addWindow`/`Viewport.notify`
@@ -895,6 +891,10 @@ dem `ClassDescriptor`-Pfad ist betroffen. `ArrayForm`, `FieldSet`, `ComboBox`,
 direkte Registratureinträge wie bei Router/Controls/Viewport.
 `ComboBox`s Dropdown ist ein `jfx-controls`-`TableView` in einem
 `jfx-viewport`-Overlay, braucht also einen `viewport(...)`-Vorfahren.
+`form(...)` liefert einen `FormHandle` mit `validate()`,
+`validateBindings()`, `setErrorResponses(...)` und `clearErrors()`. Ein
+`subForm` bindet seine Kinder neu, wenn das übergeordnete Modellobjekt ersetzt
+wird; dadurch bleiben verschachtelte Formulare nicht am alten Objekt hängen.
 `ImageCropper`s Wert ist ein `MediaValue`, an der Grenze übersetzt von
 `jfx.forms.Media` (`MediaCodec` in `FormFactories.scala`) -- die einzige
 Stelle in dieser Familie, an der ein Wert statt nur durchgereicht zu werden

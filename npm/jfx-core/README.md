@@ -99,8 +99,8 @@ fetchInto(loadBooks, (books) => {
 ```
 
 For a deferral you write yourself -- a `setTimeout`, a callback from a third
-party -- `capture()` freezes the current position so the callback can compose
-into it:
+party -- `capture()` keeps the component position and recreates a live append
+cursor so the callback can compose into it, including after hydration:
 
 ```ts
 const restore = capture();

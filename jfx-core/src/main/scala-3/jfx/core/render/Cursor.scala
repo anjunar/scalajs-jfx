@@ -47,6 +47,13 @@ trait Cursor {
 
   def sub(host: HostElement): Cursor
 
+  /**
+    * Returns a cursor suitable for appending later browser-side work. A
+    * hydration cursor is a one-shot claim walker and must never be retained by
+    * an event handler after hydration completes.
+    */
+  def fresh: Cursor = this
+
   def before(node: HostNode): Cursor =
     throw new UnsupportedOperationException(
       "This cursor does not support inserting before an existing node."

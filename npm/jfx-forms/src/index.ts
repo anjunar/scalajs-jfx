@@ -1,4 +1,5 @@
-export type { FormModel, FormOptions } from "./form.js";
+export type { FormHandle, FormModel, FormOptions } from "./form.js";
+export type { FormErrorResponse } from "@anjunar/jfx-core";
 export { form } from "./form.js";
 
 export type { InputOptions } from "./input.js";

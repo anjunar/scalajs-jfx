@@ -23,6 +23,7 @@ import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
+  capture,
   button,
   hbox,
   hydrate,
@@ -176,6 +177,25 @@ describe("hydrate", () => {
     root.querySelector("button")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     expect(root.textContent).toContain("n=1");
 
+    app.dispose();
+  });
+
+  it("re-enters with a fresh browser cursor after hydration", async () => {
+    let restore: (<T>(body: () => T) => T) | null = null;
+    const page = (): void => {
+      vbox(() => {
+        restore = capture();
+      });
+    };
+
+    const rendered = await renderToString(page);
+    const root = document.createElement("div");
+    root.innerHTML = rendered.html;
+    document.body.appendChild(root);
+    const app = await hydrate(root, page);
+
+    expect(() => restore!(() => text("after hydration"))).not.toThrow();
+    expect(root.textContent).toContain("after hydration");
     app.dispose();
   });
 });
