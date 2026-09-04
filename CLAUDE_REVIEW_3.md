@@ -613,3 +613,109 @@ Fehler, aber Rauschen in einem Gate, das rauschfrei sein sollte.
 `build.sbt`, `jfx-bridge/` und alle Scala-Module sind unverändert; die für §2
 nötigen Eingriffe wurden zurückgenommen und der Zustand mit `git status`
 verifiziert.
+
+---
+
+# Nachtrag: Lauf 2, 2026-09-04
+
+Lauf 2 ist ausgeführt. Der Umfang ist der aus §5: **genau ein Paket entsteht**,
+`@anjunar/jfx-core`. Router, Viewport, Controls und Forms nicht — keine ihrer
+Auslösebedingungen ist erfüllt.
+
+Was oben steht, bleibt als Befund von Lauf 1 stehen. Hier nur, was die
+Ausführung daran korrigiert hat.
+
+## Eine Abweichung von §4, weil §4 nachweislich nicht trägt
+
+§4 sah vor, dass `@anjunar/jfx-core` die Ambient-Deklaration seines
+Laufzeitpartners besitzt (`src/bridge.d.ts`) und die Bridge `peerDependency` des
+Kerns ist. **Beides ist geändert.**
+
+Der Mechanismus funktioniert nicht, und das ist ausprobiert, nicht vermutet:
+
+1. `tsc` kopiert eine Eingabe-`.d.ts` nicht nach `outDir` — bekannt, war Risiko 3.
+2. Ein Kopierschritt allein reicht nicht: die Deklaration muss auch im *Programm*
+   des Konsumenten landen. Der übliche Weg dafür ist eine
+   `/// <reference path>` in der Entry-`.d.ts`.
+3. **`tsc` streicht diese Direktive beim Emit.** Getestet mit und ohne
+   `bridge.d.ts` in `include`; in beiden Fällen enthält `dist/index.d.ts` keine
+   `reference`-Zeile.
+
+Damit ist der ambiente Weg tot. Stattdessen liefert **`@anjunar/scalajs-jfx-bridge`
+seine Typen selbst** (`types/index.d.ts`) und *importiert* `JfxRuntime` aus
+`@anjunar/jfx-core`, statt den Vertrag ein zweites Mal zu behaupten. Das ist
+sogar die bessere Lösung, nicht nur die funktionierende:
+
+- Der Vertrag hat weiter genau eine Definition — §4s eigentliches Ziel.
+- Die Kante `bridge → core` deckt sich exakt mit `jfxBridge.dependsOn(jfxCore)`
+  (ARCHITECTURE.md §1). Die Paketgraphen von Scala und npm sind damit
+  deckungsgleich, was §1 dieses Auftrags verlangt.
+- Der Zyklus verschwindet. `@anjunar/jfx-core` braucht **keine**
+  `peerDependency` auf die Bridge, denn es importiert sie nie — das tut die
+  Anwendung. §4 hatte hier eine Abhängigkeit angenommen, die es nicht gibt.
+
+Endstand der Kanten:
+
+| Paket | `dependencies` | `peerDependencies` |
+| --- | --- | --- |
+| `@anjunar/jfx-core` | — | `@anjunar/scalajs-jfx` |
+| `@anjunar/scalajs-jfx-bridge` | — | `@anjunar/jfx-core` |
+| jedes spätere Geschwisterpaket | — | `@anjunar/jfx-core`, `@anjunar/scalajs-jfx-bridge` |
+
+## Was sonst anders kam als geplant
+
+**`router.ts` ist gelöscht, nicht geparkt.** §5 sagte „kein
+`@anjunar/jfx-router`"; offen blieb, was mit der Datei geschieht. Sie im Kern zu
+belassen hätte `@anjunar/jfx-core` einen `router`-Namespace mitgeben, dessen
+beide Funktionen beim ersten Aufruf werfen. Der Entwurf steht in der Historie
+und in §1.3.
+
+**`demo/` ist mit umgezogen**, nach `npm/jfx-demo/src/`. Das war in §5 nicht
+vorgesehen, folgt aber aus dem Abnahmekriterium: `npm/jfx-demo/src/routes.ts`
+importierte `../../jfx/demo/pages`, also quer in ein Nachbarpaket. Die Seiten
+gehören zum Konsumenten. Nebeneffekt: die drei Node-Runner beziehen die
+Bibliothek jetzt ebenfalls über ihren Paketnamen und testen damit denselben
+Importpfad wie ein fremdes Projekt.
+
+**`rootDir` ist `src` statt `.`.** Weil `demo/` das Paket verlassen hat, liegt
+der Emit unter `dist/` statt `dist/src/`. Die krumme Pfadstruktur, die
+`JAVASCRIPT_API.md` §11 als gefundenen Fehler beschreibt, entfällt damit an der
+Ursache statt korrigiert zu werden.
+
+## Der Eine-Runtime-Nachweis, wie er jetzt tatsächlich geführt wird
+
+§7.2 forderte drei Nachweise. Alle drei existieren:
+
+| Nachweis | Wo | Was er zeigt |
+| --- | --- | --- |
+| Identität über zwei Importwege | `npm/jfx-core/test/consumer/consumer.test.ts` | Paketspezifizierer und aufgelöster Realpfad liefern dieselbe Modulinstanz und denselben `installed`-Slot; die Wache greift auch über den zweiten Weg |
+| Consumer-Test über Tarballs | ebenda | `npm pack` beider Pakete, Installation ins Leere, Zugriff nur über `exports`; `tsc --strict` mit `skipLibCheck: false`; SSR gegen Stub und gegen Bridge |
+| Drei Umgebungen | `npm/jfx-demo/scripts/verify-single-runtime.mjs` | Client- und SSR-Bundle enthalten den Runtime-Modul genau einmal; der Dev-Server liefert SSR-Markup, was er mit zwei Slots nicht könnte |
+
+Gate: `npm run verify` in beiden Paketen.
+
+## Risiken: Stand nach Lauf 2
+
+| Nr. | Stand |
+| --- | --- |
+| 1 `fullLinkJS` wirkungslos | **behoben**, eigener Commit; Zahlen in `JAVASCRIPT_API.md` §14 |
+| 2 966-kB-Sockel | unverändert. Kein Paketschnitt bewegt ihn; wer Bundle-Größe will, muss dort ansetzen |
+| 3 `bridge.d.ts` wird nicht ausgeliefert | **behoben**, siehe oben, und durch den Consumer-Test abgesichert |
+| 4 relativer Import in der Demo | **behoben** über `resolve.dedupe`, und nachgewiesen statt behauptet |
+| 5 `Condition`/`when`-Hydration | unverändert offen (`task_f55b4fa5`). Bleibt der Hauptrisikofaktor für Schritt 5, weil Routenwechsel genau dieser Fall ist |
+| 6 Hydration hängt an einem Test | unverändert. Der Consumer-Test hat SSR ergänzt, nicht Hydration — dafür fehlt im gepackten Konsumenten ein DOM |
+| 7 Editor-Entscheidung | unverändert offen |
+| 8 Versionsdrift CSS-Paket | unverändert: publiziert 1.1.0, lokal 3.0.0. `jfx-core`s `peerDependency` nennt `^3.0.0`, also die Version, die die Regel verlangt — vor dem ersten Release aufzulösen |
+| 9 Sourcemap-Warnung | unverändert, weiterhin Rauschen |
+
+Neu hinzugekommen:
+
+**10. `main` der Bridge zeigt fest auf `fastopt`.** Solange `fullLinkJS`
+byteidentisch zu `fastLinkJS` war, war das folgenlos. Jetzt ist es das nicht
+mehr: jeder Konsument bekommt das unoptimierte Bundle, 1 705 389 statt
+981 614 B. Eine `fullopt`-Variante für den Produktionspfad zu verdrahten ist
+damit von Kosmetik zu einer echten Aufgabe geworden.
+
+**11. Kein CI.** `npm run verify` und `sbtn "Test/testOnly *"` sind grün, aber
+nichts erzwingt das. Schritt 8 aus `JAVASCRIPT_API.md` §9 ist inhaltlich
+erledigt und in der Pipeline nicht verdrahtet.

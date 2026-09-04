@@ -1,6 +1,6 @@
-# @anjunar/jfx
+# @anjunar/jfx-core
 
-The declarative TypeScript API for JFX3.
+The declarative TypeScript API for JFX3 -- the core of it.
 
 This package is **types and ergonomics, not a framework**. Rendering, hydration,
 state propagation, routing, forms and every component live in the Scala.js
@@ -8,14 +8,21 @@ runtime published as `com.anjunar::scalajs-jfx-bridge`. What you get here is the
 boundary of that runtime expressed in TypeScript, and a DSL that reads like the
 Scala one.
 
+It is the first package of a family that mirrors the sbt modules: `-router`,
+`-viewport`, `-controls` and `-forms` follow as `jfx-bridge` grows to serve
+them. What does *not* follow is a second runtime -- every package in the family
+shares the one linked Scala.js artifact, as a `peerDependency`. See
+[`JAVASCRIPT_API.md` §15](../../JAVASCRIPT_API.md) for the module graph and the
+measurements behind that decision.
+
 ```bash
-npm install @anjunar/jfx @anjunar/scalajs-jfx-bridge @anjunar/scalajs-jfx @anjunar/ui
+npm install @anjunar/jfx-core @anjunar/scalajs-jfx-bridge @anjunar/scalajs-jfx @anjunar/ui
 ```
 
 ## The shape of a page
 
 ```ts
-import { button, classes, div, onClick, property, text, vbox } from "@anjunar/jfx";
+import { button, classes, div, onClick, property, text, vbox } from "@anjunar/jfx-core";
 
 export function statePage(): void {
   const counter = property(0);
@@ -45,7 +52,7 @@ the same pair travels in an ambient scope that the builders push and pop.
 ## Booting
 
 ```ts
-import { hydrate, installRuntime, mount, renderToString } from "@anjunar/jfx";
+import { hydrate, installRuntime, mount, renderToString } from "@anjunar/jfx-core";
 import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";
 
 installRuntime(bridgeRuntime);
@@ -63,11 +70,12 @@ const { html, status } = await renderToString(() => statePage());
 `installRuntime` is called once per process. It is the only module-level state in
 this package, and it is constant after boot.
 
-`npm run demo:bridge` runs exactly the code above's `renderToString` path
-against `bridgeRuntime` -- `demo/pages.ts`'s `statePage`/`libraryPage`, the same
-functions `npm run demo` renders against the stub. It needs
-`@anjunar/scalajs-jfx-bridge` linked first: `sbtn "scalajs-jfx-bridge/fastLinkJS"`
-from the repo root, then `npm install` here.
+The runnable version of all three paths lives in `npm/jfx-demo`, which consumes
+this package the way a stranger would -- through its package exports, not by
+reaching into the neighbouring directory. `npm run demo` there renders against
+the stub, `npm run demo:bridge` against the real runtime (link it first with
+`sbtn "scalajs-jfx-bridge/fastLinkJS"` from the repo root), and `npm run dev`
+serves the same pages over Vite and Express with SSR and hydration.
 
 ## The one rule
 
@@ -111,12 +119,33 @@ boundaries.
 
 ## The stub runtime
 
-`@anjunar/jfx/stub` implements the same contract on a small host abstraction, for
+`@anjunar/jfx-core/stub` implements the same contract on a small host abstraction, for
 unit tests and for developing this package without an sbt build. It reconciles
 lists by re-rendering, does not hydrate, and knows nothing about i18n, routing or
 forms. It is a test double, not a second implementation.
+
+## Tests
+
+```bash
+npm run verify   # typecheck + unit tests + the consumer test
+```
+
+`npm test` runs the unit suite against the stub, plus one smoke test against the
+really linked bridge -- `sbtn "scalajs-jfx-bridge/fastLinkJS"` has to have run,
+and the test says so loudly rather than skipping if it has not.
+
+`npm run test:consumer` is the one that matters for packaging: it runs `npm pack`
+on this package and on the bridge, installs both into an empty directory, and
+reaches them only through their public `exports`. Every packaging fault this
+prototype has had was invisible to a test that imported by relative path, so
+this is the test that is allowed to be slow.
 
 ## Versioning
 
 The npm major matches the Maven major, exactly as `@anjunar/scalajs-jfx` does.
 The three artifacts are released together.
+
+One drift to be aware of until the next release: `@anjunar/scalajs-jfx` is
+published as `1.1.0`, while this repository carries it at `3.0.0`. The
+`peerDependency` here names `^3.0.0` -- the version the rule asks for, not the
+one currently on the registry.

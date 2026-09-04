@@ -1,7 +1,7 @@
 # JAVASCRIPT_API.md — JFX3 als TypeScript-Projekt
 
 Entwurf, Stand 2026-09-03. Begleitet vom lauffähigen Prototyp unter
-[`npm/jfx/`](npm/jfx/), von der echten Fassade unter [`jfx-bridge/`](jfx-bridge/)
+[`npm/jfx-core/`](npm/jfx-core/), von der echten Fassade unter [`jfx-bridge/`](jfx-bridge/)
 (§9, Schritt 2 -- Details in §10), von beiden zusammen gegen einen echten
 Browser verifiziert (§9, Schritt 3 -- §11), und von einem echten
 Vite+Express-Konsumenten unter [`npm/jfx-demo/`](npm/jfx-demo/) (§13).
@@ -54,7 +54,7 @@ Zwei neue Artefakte:
       └─────┬──────┘
             │  implementiert
             ▼
-     ┌───────────────┐      npm: @anjunar/jfx
+     ┌───────────────┐      npm: @anjunar/jfx-core
      │  Vertrag (TS) │      Typen + deklarative Schicht
      └───────────────┘
 ```
@@ -62,8 +62,14 @@ Zwei neue Artefakte:
 | Artefakt | Sprache | Inhalt |
 | --- | --- | --- |
 | `jfx-bridge` (`jfx.bridge`) | Scala | Die JS-Grenze: `@JSExport`-Fassade über core/router/viewport/controls/forms, Übersetzung `Future`↔`Promise`, `Option`↔`null`, `Seq`↔`Array`, plus die Namensregistratur der Bibliothekskomponenten. |
-| `@anjunar/jfx` | TypeScript | Der Vertrag als Typen, die deklarative Schicht (Ambient-Scope), typisierte Wrapper je Komponente, Router-Fassade, Stub-Runtime für Tests. |
+| `@anjunar/jfx-core` | TypeScript | Der Vertrag als Typen, die deklarative Schicht (Ambient-Scope), typisierte Wrapper je Komponente, Stub-Runtime für Tests. Die Router-Fassade gehört **nicht** hierher — siehe §15. |
 | `@anjunar/scalajs-jfx` | CSS | Unverändert. Ein TS-Konsument braucht es genauso — die Klassennamen kommen weiterhin aus den Scala-Modulen (ARCHITECTURE.md §6). |
+
+**Die npm-Seite ist eine Familie, keine Einzelperson.** `@anjunar/jfx-core` ist
+das erste Paket von mehreren; `-router`, `-viewport`, `-controls` und `-forms`
+folgen, sobald `jfx-bridge` sie bedienen kann. Was das für den Modulschnitt
+bedeutet und warum das Laufzeitartefakt dabei trotzdem eines bleibt, steht in
+§15.
 
 **Paketwurzel.** `jfx-bridge` → `jfx.bridge` (ARCHITECTURE.md §2). Nicht
 `jfx.js`: `js` kollidiert im Scala.js-Quelltext mit `scala.scalajs.js`.
@@ -79,7 +85,7 @@ sein, das Vite direkt konsumiert — kein Wrapper, kein UMD.
 
 ## 4. Der Vertrag
 
-Die Grenze steht in [`npm/jfx/src/contract.ts`](npm/jfx/src/contract.ts) und ist
+Die Grenze steht in [`npm/jfx-core/src/contract.ts`](npm/jfx-core/src/contract.ts) und ist
 absichtlich klein. Drei Regeln:
 
 **Nichts Scala-spezifisches geht hinüber.** Kein `Seq`, kein `Option`, kein
@@ -179,7 +185,7 @@ Diese Regel wird nicht dokumentiert, sondern erzwungen (§7 — laut scheitern):
    nie still an falscher Stelle.
 
 Beide Fälle sind im Prototyp als lauffähige Demonstration hinterlegt
-(`npm/jfx/demo/scopeRules.ts`), nicht als Behauptung im Kommentar.
+(`npm/jfx-demo/src/scope-rules.ts`), nicht als Behauptung im Kommentar.
 
 Asynchrone Daten kommen über `fetchInto` herein. Das ist die TS-Entsprechung von
 `FetchComponent.fetch`: die Bridge meldet das Promise beim
@@ -250,7 +256,7 @@ verschmutzt.
 ## 7. Auslieferung
 
 - **Ein Release, drei Artefakte.** Maven (`scalajs-jfx-*` inkl. `-bridge`), npm
-  (`@anjunar/scalajs-jfx-bridge` als geliktes ES-Modul, `@anjunar/jfx` als
+  (`@anjunar/scalajs-jfx-bridge` als geliktes ES-Modul, `@anjunar/jfx-core` als
   Typen/DSL) und `@anjunar/scalajs-jfx` (CSS) tragen dieselbe Major-Version. Das
   ist die Regel, die für die CSS schon gilt, erweitert um zwei Pakete.
 - **SSR.** Der TS-Konsument rendert serverseitig genauso wie die heutige
@@ -286,7 +292,7 @@ verschmutzt.
 ```text
 1. §4 in ARCHITECTURE.md umformulieren; Editor-Entscheidung treffen        ✅ (§4 erledigt; Editor offen)
 2. jfx-bridge anlegen: nur core (Property, Scope, mount/hydrate/renderToString)  ✅
-3. @anjunar/jfx gegen die echte Bridge laufen lassen (der Prototyp liegt vor)   ✅
+3. @anjunar/jfx-core gegen die echte Bridge laufen lassen (der Prototyp liegt vor)   ✅
 4. Bundle-Größe messen und hier eintragen                                  ✅ (§14)
 5. Router-Fassade, dann Forms-Schema
 6. Komponentenregistratur auffüllen
@@ -300,26 +306,26 @@ weiterhin aus. Sie blockiert `jfx-bridge` nicht, weil die Bridge bislang nur auf
 `jfx-core` hängt (§3) -- sie wird erst dringlich, wenn Schritt 5 oder 6 den
 Editor in die Registratur aufnehmen soll.
 
-Schritt 3 ist erledigt: `npm/jfx` läuft jetzt gegen `bridgeRuntime`, nicht nur
+Schritt 3 ist erledigt: `npm/jfx-core` läuft jetzt gegen `bridgeRuntime`, nicht nur
 gegen die Stub-Runtime -- über die neue npm-Kante `@anjunar/scalajs-jfx-bridge`
 (§10).
 
 ## 10. Der Prototyp
 
-Unter [`npm/jfx/`](npm/jfx/) liegt die vollständige TypeScript-Seite: Vertrag,
+Unter [`npm/jfx-core/`](npm/jfx-core/) liegt die vollständige TypeScript-Seite: Vertrag,
 Ambient-Scope, DSL, Router-Fassade und eine **Stub-Runtime**, die denselben
 Vertrag auf eine kleine Host-Abstraktion legt. Damit läuft alles ohne sbt.
 
 ```bash
-cd npm/jfx
-npm install
-npm run demo          # dist/demo/statePage.js
-node dist/demo/scopeRules.js
+npm install                 # workspace-weit, aus der Repo-Wurzel
+cd npm/jfx-demo
+npm run demo                # dist/node/node-stub.js
+npm run demo:scope          # dist/node/scope-rules.js
 ```
 
-`demo/statePage.ts` baut `app.pages.StatePage` in der neuen API nach und rendert
+`src/node-stub.ts` baut `app.pages.StatePage` in der neuen API nach und rendert
 sie serverseitig; die zweite Seite übt `forEach`, `when` und einen asynchronen
-Loader. `demo/scopeRules.ts` führt die beiden Scheiterfälle der Scope-Regel vor.
+Loader. `src/scope-rules.ts` führt die beiden Scheiterfälle der Scope-Regel vor.
 
 Die Stub-Runtime ist ausdrücklich **kein** zweites Framework: sie rendert
 `forEach` neu statt zu rekonzilieren, hydriert nicht, und kennt weder
@@ -392,18 +398,18 @@ verlangt, und `renderToString` die vollständige HTML-Ausgabe über Registratur,
 
 ## 11. Der Prototyp läuft (§9, Schritt 3)
 
-`npm/jfx` rendert dieselben Seiten jetzt gegen zwei Runtimes, ohne dass die
-Seiten selbst wissen, welche es ist. [`demo/pages.ts`](npm/jfx/demo/pages.ts)
+`npm/jfx-core` rendert dieselben Seiten jetzt gegen zwei Runtimes, ohne dass die
+Seiten selbst wissen, welche es ist. [`src/pages.ts`](npm/jfx-demo/src/pages.ts)
 trägt `statePage()` und `libraryPage()` -- alles, was vorher in
-`demo/statePage.ts` stand, minus `installRuntime`. Zwei Runner importieren
+`src/node-stub.ts` stand, minus `installRuntime`. Zwei Runner importieren
 davon dieselben Funktionen unverändert:
 
-- [`demo/statePage.ts`](npm/jfx/demo/statePage.ts) -- `installRuntime(stubRuntime)`, wie bisher.
-- [`demo/bridgeDemo.ts`](npm/jfx/demo/bridgeDemo.ts) -- `installRuntime(bridgeRuntime)`, neu.
+- [`src/node-stub.ts`](npm/jfx-demo/src/node-stub.ts) -- `installRuntime(stubRuntime)`, wie bisher.
+- [`src/node-bridge.ts`](npm/jfx-demo/src/node-bridge.ts) -- `installRuntime(bridgeRuntime)`, neu.
 
 ```bash
 sbtn "scalajs-jfx-bridge/fastLinkJS"   # npm/scalajs-jfx-bridge/dist/fastopt/main.js
-cd npm/jfx && npm install              # zieht den file:-Devlink auf ../scalajs-jfx-bridge
+cd npm/jfx-demo
 npm run demo:bridge                    # dieselbe StatePage/LibraryPage, echte Bridge
 ```
 
@@ -422,12 +428,12 @@ kleinere, erwartete Abweichungen vom Stub-Output, keine Bugs:
   trotzdem hinzu. Der Stub ist hier großzügiger als das reale System, nicht
   umgekehrt.
 
-**Ein echter Bug unterwegs gefunden und behoben.** `npm/jfx/package.json`
+**Ein echter Bug unterwegs gefunden und behoben.** `npm/jfx-core/package.json`
 zeigte mit `main`/`types`/`exports` auf `./dist/index.js`, aber
 `tsconfig.json`s `rootDir: "."` (nötig, damit `demo/**/*.ts` im selben Lauf
 mitkompiliert) spiegelt `src/index.ts` nach `dist/src/index.js`, nicht nach
-`dist/index.js`. Jeder echte Konsument, der `@anjunar/jfx` installiert und
-`import ... from "@anjunar/jfx"` schreibt, wäre auf ein nicht existierendes
+`dist/index.js`. Jeder echte Konsument, der `@anjunar/jfx-core` installiert und
+`import ... from "@anjunar/jfx-core"` schreibt, wäre auf ein nicht existierendes
 Modul gelaufen -- unbemerkt, weil bislang niemand das Paket von außen
 importiert hatte. `package.json` zeigt jetzt auf `./dist/src/...`; die
 `demo/*.ts`-Skripte waren nie betroffen, weil ihre relativen Importe
@@ -479,7 +485,7 @@ Manifest-Auslesen aus `tools/client-assets.mjs` komplett -- Vites eigener
 Build schreibt die gehashten Asset-Tags direkt ins gebaute `index.html`.
 
 **Wiederverwendet, nicht neu geschrieben.** `src/entry-client.ts` und
-`src/entry-server.ts` rendern `npm/jfx/demo/pages.ts`s Seiten -- dieselben
+`src/entry-server.ts` rendern `npm/jfx-demo/src/pages.ts`s Seiten -- dieselben
 Funktionen, die `npm run demo`/`demo:bridge` von Node aus rendern.
 `src/routes.ts` ist die einzige Stellvertretung für einen Router: `pageFor(path)`
 wählt zwischen `statePage` (`/`) und `libraryPage` (`/library`) nach reinem
@@ -490,10 +496,10 @@ in `dsl.ts`, mirrort `jfx.core.layout.Anchor.anchor`); jede Navigation ist ein
 vollständiger Seitenaufruf, kein SPA-Übergang.
 
 **Ein zweiter Bug, gefunden beim ersten echten Start.** Beide Entry-Points
-importieren `@anjunar/jfx` über denselben relativen Pfad, den `pages.ts`
+importieren `@anjunar/jfx-core` über denselben relativen Pfad, den `pages.ts`
 selbst benutzt (`../../jfx/src/index.js`), nicht über den Paketnamen
-`"@anjunar/jfx"`. Grund: `pages.ts` erreicht die Bibliothek per relativem Pfad
-direkt unter `npm/jfx/src/`, `entry-server.ts` hätte sie über den
+`"@anjunar/jfx-core"`. Grund: `pages.ts` erreicht die Bibliothek per relativem Pfad
+direkt unter `npm/jfx-core/src/`, `entry-server.ts` hätte sie über den
 `node_modules`-Symlink (den `file:`-Devlink) erreicht -- und Vites
 SSR-Modul-Runner dedupliziert diese beiden Zugriffe auf dieselbe Datei nicht
 zuverlässig zu *einer* Modulinstanz. Zwei Instanzen heißen zwei
@@ -539,20 +545,30 @@ eingeschlossen), nicht `jfx-bridge`s `fullLinkJS`-Output isoliert.
 
 ## 12. Was als Nächstes ansteht
 
-- **Schritt 4** -- `fullLinkJS`-Bundle-Größe für `jfx-bridge` *isoliert*
-  messen und hier eintragen -- §13s Zahlen sind ein erster Anhaltspunkt, kein
-  Ersatz. Bislang existiert nur der `fastLinkJS`-Pfad in `npm/scalajs-jfx-bridge`;
-  `package.json`s `main` zeigt fest auf `dist/fastopt/main.js`, eine
-  `fullopt`-Variante für den produktiven `jfx-demo`-Build fehlt noch.
+- ~~**Schritt 4**~~ -- erledigt, §14. Ein Rest bleibt: `package.json`s `main`
+  zeigt weiterhin fest auf `dist/fastopt/main.js`. Eine `fullopt`-Variante für
+  den produktiven `jfx-demo`-Build fehlt, und jetzt, wo `fullLinkJS` tatsächlich
+  optimiert, ist der Unterschied zwischen beiden erstmals einer, der zählt.
 - **Schritt 5** -- Router-Fassade, dann ein Forms-Schema. `jfx-bridge` hängt
-  weiterhin nur auf `jfx-core`.
+  weiterhin nur auf `jfx-core`. Was dafür zu bauen ist, ist konkreter geworden:
+  nicht ein Registratureintrag `router-outlet`, sondern der Einstiegspunkt, der
+  einen `jfx.router.Router` mit einer aus JavaScript übersetzten Routentabelle
+  montiert (§15). Gemessener Preis auf dem einen Link-Artefakt: +140 659 B roh /
+  +20 197 B gzip.
 - **Schritt 6** -- die Registratur über `vbox`/`hbox`/`button` hinaus auffüllen,
   sobald `jfx-controls` verlinkt wird -- das ist auch der Punkt, an dem die
-  Editor-Entscheidung aus Schritt 1 fällig wird.
-- **Schritt 8** -- ein Consumer-Smoke-Test in CI (leeres TS-Projekt, SSR +
-  Hydration) kann jetzt auf `jfx-demo` aufbauen, statt ihn neu zu entwerfen:
-  `npm run build` dort ist im Kern schon genau dieser Test, nur noch nicht in
-  einer Pipeline verdrahtet.
+  Editor-Entscheidung aus Schritt 1 fällig wird. Die Kante `jfxControls →
+  jfxViewport` ist `test->compile`; sie darf nicht als npm-Abhängigkeit
+  auftauchen.
+- ~~**Schritt 8**~~ -- der Consumer-Test existiert:
+  `npm/jfx-core/test/consumer/` packt beide Pakete mit `npm pack`, installiert
+  sie in ein leeres Verzeichnis und rendert von dort serverseitig, gegen Stub
+  und gegen Bridge (§15). Was fehlt, ist nur noch die Pipeline, die ihn und
+  `npm run verify` bei jedem Commit ausführt.
+- **Neu** -- die Hydration-Lücke in `Condition`/`when` (§13, Session-Aufgabe
+  `task_f55b4fa5`) ist mit Schritt 5 verschränkt: Routen-Umschaltung ist genau
+  der Fall „Zustand kippt während desselben Render-Durchlaufs", an dem sie
+  auffällt.
 
 ## 14. Bundle-Größe (§9, Schritt 4)
 
@@ -620,3 +636,96 @@ Kostenpunkt, und kein Paketschnitt bewegt ihn.
 Daraus folgt der Modulschnitt der npm-Seite: **npm-Modularität ist Typ- und
 API-Oberfläche; das Laufzeitartefakt bleibt eines.** Begründung samt
 verworfener Alternativen in `CLAUDE_REVIEW_3.md` §2.3.
+
+## 15. Die npm-Seite als Modulfamilie
+
+JFX3 setzt sich aus TypeScript genauso zusammen wie aus Scala: ein Konsument
+installiert die Module, die er benutzt. Der Entwurf und die Messungen dahinter
+stehen in `CLAUDE_REVIEW_3.md`; hier nur, was gilt.
+
+### Das Laufzeitartefakt bleibt eines
+
+Die npm-Modularität ist **Typ- und API-Oberfläche**. Es gibt genau ein
+gelinktes Scala.js-Modul, `@anjunar/scalajs-jfx-bridge`, und jedes Paket der
+Familie führt es als `peerDependency`, nie als `dependency`. Das ist gemessen
+begründet (§14): eine breitere `dependsOn`-Kante kostet null Byte, ein zweites
+Link-Artefakt kostete den 966-kB-Sockel ein zweites Mal, und Modul-Splitting
+kostet mehr, als es einspart.
+
+Das entspricht der Scala-Seite: `application` linkt auch *ein* Artefakt aus
+neun Maven-Modulen. Die Modularität liegt dort in den Koordinaten und im
+Compile-Classpath, hier in den npm-Paketen und im Typgraphen — nicht im
+ausgelieferten JavaScript.
+
+### Der Graph
+
+```
+   @anjunar/scalajs-jfx-bridge          @anjunar/scalajs-jfx
+     (gelinktes Scala.js-ESM)                  (CSS)
+                │ peer                           │ peer
+                ▼                                ▼
+        @anjunar/jfx-core  ◄── peer ──  (jfx-router, jfx-viewport,
+      Vertrag, Scope, DSL, Stub          jfx-controls, jfx-forms — später)
+```
+
+| Paket | `dependencies` | `peerDependencies` |
+| --- | --- | --- |
+| `@anjunar/jfx-core` | — | `@anjunar/scalajs-jfx` |
+| `@anjunar/scalajs-jfx-bridge` | — | `@anjunar/jfx-core` |
+| jedes spätere Geschwisterpaket | — | `@anjunar/jfx-core`, `@anjunar/scalajs-jfx-bridge` |
+
+`dependencies` bleibt überall leer, und das ist die tragende Entscheidung:
+`dependencies` erlaubt npm, bei Versionskonflikt eine zweite, verschachtelte
+Kopie zu installieren. Bei `jfx-core` wäre eine zweite Kopie ein zweiter
+`installed`-Slot in `runtime.ts` — der Fehler liest sich als „No JFX runtime
+installed", obwohl der Aufruf sichtbar darüber steht (§13). Als Peer wird ein
+Konflikt ein Installationsfehler statt eines stillen Laufzeitschadens.
+
+Die Kante `scalajs-jfx-bridge → jfx-core` trägt nur Typen: `types/index.d.ts`
+importiert `JfxRuntime` aus dem Kern, statt den Vertrag ein zweites Mal zu
+behaupten. Die Richtung deckt sich mit `jfxBridge.dependsOn(jfxCore)`
+(ARCHITECTURE.md §1), und §4s Regel „der Vertrag liegt an genau einer Stelle"
+bleibt damit wörtlich wahr.
+
+### Eine Runtime, nachgewiesen
+
+Drei Schichten, jede gegen einen anderen Fehler, und für jede ein Test:
+
+1. **npm workspaces über `npm/*`** plus die Peer-Kanten oben. Verhindert zwei
+   Kopien im Paketbaum.
+2. **`resolve.dedupe`** in jeder Vite-Konfiguration. Verhindert *eine* Kopie mit
+   *zwei* Modulinstanzen, weil derselbe Realpfad einmal über einen Symlink und
+   einmal direkt erreicht wird. Das ist die Ursachenbehebung für den in §13
+   beschriebenen Fehler — und der Grund, warum `npm/jfx-demo` seine Bibliothek
+   wieder über den Paketnamen importieren darf.
+3. **`installRuntime`s Wache**, die eine zweite, andere Runtime im selben Slot
+   ablehnt.
+
+Nachgewiesen wird das an drei Stellen, nicht behauptet:
+
+- `npm/jfx-core/test/consumer/` packt beide Pakete mit `npm pack`, installiert
+  sie in ein leeres Verzeichnis und greift ausschließlich über die öffentlichen
+  `exports` zu. Dort wird der Runtime-Slot über zwei unabhängige Importwege
+  verglichen, `tsc --strict` mit `skipLibCheck: false` über beide Pakete
+  gefahren, und SSR gegen Stub *und* Bridge gerendert.
+- `npm/jfx-demo/scripts/verify-single-runtime.mjs` zählt den Runtime-Modul im
+  Client- und im SSR-Bundle (genau einmal) und startet den Dev-Server, der mit
+  zwei Slots gar kein Markup liefern könnte.
+- `npm/jfx-core/test/runtime.test.ts` deckt die Wache selbst ab.
+
+Gate ist `npm run verify` — in `jfx-core` Typecheck, Tests und Consumer-Test, in
+`jfx-demo` Typecheck, Build und der Runtime-Nachweis.
+
+### Was es noch nicht gibt
+
+`@anjunar/jfx-router` entsteht **nicht** mit. `src/router.ts` war eine Typhülle:
+`routerOutlet()` und `routerLink()` riefen Registratureinträge auf, die es nicht
+gibt. Sie sind entfernt statt mitgeliefert — ein Paket, dessen Hauptfunktion beim
+ersten Aufruf wirft, behauptet eine Fähigkeit, die es nicht hat.
+
+Was ihm fehlt, ist nicht ein Registratureintrag, sondern der Einstiegspunkt, der
+einen `jfx.router.Router` mit Routentabelle montiert: `Router` nimmt seine Routen
+im Konstruktor, und `RouterOutlet` wirft ohne ein gematchtes Route-Component über
+sich. Das ist Schritt 5 in §9. Die Auslösebedingungen der übrigen Pakete stehen
+in `CLAUDE_REVIEW_3.md` §5, die begründeten Abweichungen bei `jfx-json` und
+`jfx-webauthn` in §6 dort.
