@@ -1,20 +1,18 @@
 # @anjunar/scalajs-jfx
 
-Default component CSS for the Scala.js modules published as
-`com.anjunar::scalajs-jfx-*`.
+Default CSS for the classes emitted by the Scala.js JFX modules. It supplies component rules and consumes design tokens from `@anjunar/ui`; it does not contain rendering or component logic.
 
-The Scala modules render class names; this package renders those class names
-visible. Both halves are versioned together — the npm major matches the Maven
-major.
+## Overview
 
-## Install
+The Scala modules render `jfx-*` class names. This package makes those classes visible and keeps the styling contract in one versioned package shared by Scala and TypeScript consumers.
+
+## Installation
 
 ```bash
 npm install @anjunar/scalajs-jfx @anjunar/ui
 ```
 
-Import the shared Anjunar UI grammar and this package from your application
-stylesheet:
+Import the stylesheet from the application's CSS entry point:
 
 ```css
 @import "tailwindcss";
@@ -22,59 +20,31 @@ stylesheet:
 @import "@anjunar/scalajs-jfx/index.css";
 ```
 
-Or import the package root for the same effect as a side effect:
+Alternatively, import `@anjunar/scalajs-jfx` as a JavaScript side effect when your bundler handles CSS side effects.
 
-```javascript
-import '@anjunar/scalajs-jfx'
-```
+## Styling ownership
 
-## Requirements
+`@anjunar/ui` owns the `--aj-*` design tokens. This package owns the `.jfx-*` component rules and shared component state classes. Tailwind utilities and application CSS own application layout and application-specific class names. Inline styles from the JFX style DSL are for runtime values such as measured dimensions or transforms.
 
-- **A modern element reset.** This package styles class names only, never bare
-  elements, so it never touches `fieldset`, `button` or `input` defaults. If you
-  do not use Tailwind Preflight, bring an equivalent reset.
-- **Design tokens.** Colours, surfaces, lines and shadows are read from the
-  `--aj-*` custom properties defined by `@anjunar/ui`. Override them to theme
-  the components; do not override the component rules.
-- **An icon font**, if you want glyphs. The components render
-  `.material-icons`, and this package sets the typography for that class but
-  ships no font binary. Provide a font family named `Material Icons` — via
-  Google Fonts, the `material-symbols` package or your own `@font-face`.
-  Without one, the components lay out correctly and show the ligature text.
-
-## Which styling system owns what
-
-Four systems can style a JFX application. The boundaries:
-
-| System | Owns | Never |
-| --- | --- | --- |
-| `@anjunar/ui` | Design tokens (`--aj-*`), the shared grammar | Component rules |
-| This package | Every `.jfx-*` class a published module renders, plus the shared state classes (`.is-active`, `.is-open`, …) scoped to a component | Bare element selectors, application layout, page-specific looks |
-| Tailwind utilities | Application layout and one-off spacing in *application* markup | Anything a library component renders — a utility cannot reach into it |
-| Application CSS | The application's own class names, and deliberate overrides of component classes | Redefining tokens per component instead of theming `--aj-*` |
-
-Two consequences worth stating outright:
-
-- A rule for a class that a Scala module renders belongs **here**, not in the
-  application. If it lives only in the application, every other consumer of the
-  Maven artifact gets an unstyled component.
-- An application override of a `.jfx-*` class is legitimate, but it is an
-  override: keep it in one place, and prefer moving the change into a token.
-
-Inline styles from `jfx.core.dsl.StyleDsl` are the fourth path. They are for
-values only known at runtime (a measured width, a computed transform), not for
-appearance.
+The package styles class names rather than bare elements, so applications should provide an element reset such as Tailwind Preflight. It includes Material Icons typography rules but no font binary.
 
 ## Contents
 
-```
-base/     rules shared by every component (icon typography)
-action/   Button
-control/  Carousel, DataGrid, Link, TableCell, TableView, Tabs, VirtualListView
-form/     ComboBox, Editor, ImageCropper, Input, InputContainer
-layout/   Drawer, HBox, HorizontalLine, VBox, Viewport, Window
+```text
+base/     shared icon rules
+action/   buttons
+control/  carousel, data grid, links, tables, tabs, virtual lists
+form/     combo boxes, editor, image cropper, inputs
+layout/   drawer, boxes, viewport, windows
 ```
 
-`form/Editor.css` covers `scalajs-jfx-editor`, which is not published to Maven
-Central yet. The CSS ships anyway so the module can be published without a
-second release here.
+`form/Editor.css` is included for the editor package even when the Scala editor artifact is released separately.
+
+## API overview
+
+This is a CSS-only package. Its public surface is the stylesheet entry point `index.css` and the class names rendered by the JFX components.
+
+## Related modules
+
+- [`@anjunar/jfx-core`](../jfx-core/README.md) emits core elements and state.
+- [`@anjunar/jfx-controls`](../jfx-controls/README.md), [`@anjunar/jfx-forms`](../jfx-forms/README.md), and [`@anjunar/jfx-viewport`](../jfx-viewport/README.md) emit feature classes.

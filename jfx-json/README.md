@@ -1,73 +1,65 @@
 # scalajs-jfx-json
 
-`scalajs-jfx-json` maps reflected Scala models to native JavaScript JSON values
-and back. The mapper is stateless and does not use `ReflectClassLoader` or the
-global `ClassDescriptor` registry.
+Schema-driven JSON mapping for reflected Scala models and JFX properties. The mapper converts models to native JavaScript JSON values and back without a global descriptor registry.
 
-## Supported values
+## Overview
 
-- plain reflected model properties
-- `Property[T]` and `ListProperty[T]`
-- `Option`, maps, Scala collections, Scala arrays, and `js.Array`
-- strings, booleans, numeric values, chars, UUIDs, and raw `js.Any`
-- parameterized models and polymorphic models marked with `JsonType`
-- field names and mapping directions controlled through `JsonProperty` and
-  `JsonIgnore`
-- dirty payload serialization with stable identifiers marked by `JsonId`
+`jfx-json` uses an explicit `JsonSchema` for factories, reflected accessors, dependencies, and polymorphic subtypes. `JsonMapper` is stateless; schema resolution is local to the mapper and the schema graph. It supports plain fields, `Property`, `ListProperty`, options, maps, Scala collections, arrays, `js.Array`, primitives, parameterized models, and polymorphic models.
 
-## API
+## Installation
 
 ```scala
-given JsonSchema[Account] = JsonSchema(() => Account())
-
-val mapper = JsonMapper()
-
-val json = mapper.serialize(account)
-val restored = mapper.deserialize[Account](json)
+libraryDependencies += "com.anjunar" %% "scalajs-jfx-json" % "3.0.0-SNAPSHOT"
 ```
 
-The companion object exposes the same inline operations:
+## Quick start
 
 ```scala
+import jfx.core.state.Property
+import jfx.json.{JsonMapper, JsonSchema}
+
+final case class Account(
+    id: Property[String] = Property(""),
+    name: Property[String] = Property("")
+)
+
+given JsonSchema[Account] = JsonSchema(() => Account())
+
+val account = Account()
+account.id.set("a-1")
+account.name.set("Ada")
+
 val json = JsonMapper.serialize(account)
 val restored = JsonMapper.deserialize[Account](json)
 ```
 
-`JsonSchema` contains the reflected accessors, runtime class, and instance
-factory. Nested schemas are attached explicitly:
+## Usage
+
+Attach nested schemas explicitly and declare polymorphic subtype sets locally:
 
 ```scala
 val addressSchema = JsonSchema(() => Address())
-
 given JsonSchema[Account] =
   JsonSchema(() => Account()).withDependencies(addressSchema)
-```
 
-Polymorphic subtype sets are local as well:
-
-```scala
 val circleSchema = JsonSchema(() => Circle())
-
-given JsonSchema[Shape] =
-  JsonSchema.abstractType[Shape](circleSchema)
+given JsonSchema[Shape] = JsonSchema.abstractType[Shape](circleSchema)
 ```
 
-No global registration order is involved. Callers that already hold a fully
-bound `TypeDescriptor` can still pass it explicitly:
+`JsonProperty` changes the JSON field name. `JsonIgnore` controls serialization and deserialization independently. `JsonId` retains a stable identifier when dirty-payload serialization omits unchanged properties. `JsonType` supplies the `@type` discriminator for polymorphic models.
 
-```scala
-val json = mapper.serialize(account, accountDescriptor)
-val restored = mapper.deserialize[Account](json, accountDescriptor)
-```
+## Core concepts
 
-## Internal structure
+The mapper treats `Property` and `ListProperty` values as state-bearing fields. Unchanged properties are omitted from a dirty payload, while identifiers remain available. Plain fields are mapped normally. A fully bound `TypeDescriptor` can be supplied explicitly when the caller already has one.
 
-- `JsonMapper` is the public facade.
-- `JsonSchema` owns factories, accessors, dependencies, and explicit subtypes.
-- `JsonSchemaCatalog` provides mapper-local schema resolution.
-- `JsonMappingContext` carries expected types and generic bindings.
-- `JsonTypeModel` classifies and resolves reflected types.
-- `JsonMetadata` handles annotations, fields, runtime descriptors, and
-  polymorphism.
-- `JsonValueCodec` validates JSON shapes and converts primitive values.
-- `JsonSerializer` and `JsonDeserializer` implement the two mapping directions.
+## API overview
+
+- `JsonMapper` — serialize and deserialize models and arrays.
+- `JsonSchema` — factories, field metadata, dependencies, and subtypes.
+- `JsonProperty`, `JsonIgnore`, `JsonId`, `JsonType` — mapping annotations.
+- `JsonSerializer`, `JsonDeserializer`, `JsonValueCodec` — mapping internals used by the facade.
+
+## Related modules
+
+- [`jfx-core`](../jfx-core/README.md) provides `Property` and `ListProperty`.
+- [`@anjunar/jfx-json`](../npm/jfx-json/README.md) exposes the same mapping concepts to TypeScript.

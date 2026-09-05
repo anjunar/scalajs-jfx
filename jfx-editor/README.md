@@ -1,85 +1,56 @@
 # scalajs-jfx-editor
 
-Rich-text editing for JFX3, backed by Lexical in the browser and exposed as a
-regular `Control[String]`. Markdown is the public value in SSR and in the
-browser; Lexical `EditorState` JSON is an internal implementation detail.
+Rich-text editing for JFX3, backed by Lexical in the browser and exposed as a regular `Control[String]`. Markdown is the public value in SSR and in the browser; Lexical editor state is an implementation detail.
+
+## Overview
+
+`jfx-editor` builds on `jfx-forms` and `jfx-viewport`. The public `Editor` component owns the Markdown value, form/control state, rendering mode, and browser adapter. Readonly SSR uses a deterministic semantic Markdown renderer; editable SSR uses a textarea that the browser progressively enhances to Lexical.
+
+## Installation
 
 ```scala
-import jfx.editor.Editor.*
+libraryDependencies += "com.anjunar" %% "scalajs-jfx-editor" % "3.0.0-SNAPSHOT"
+```
+
+The module also uses the repository's `scalajs-lexical` dependency and the viewport for default plugin dialogs.
+
+## Quick start
+
+```scala
+import jfx.editor.Editor.editor
 import jfx.editor.plugins.*
 
 editor("body") {
-  value = markdown
+  value = "## Article\n\nStart writing here."
   placeholder = "Write the article..."
   ribbonToolbar()
-
   basePlugin()
   headingPlugin()
   listPlugin()
   linkPlugin()
   imagePlugin()
-  tablePlugin()
-  codePlugin()
-  horizontalRulePlugin()
 }
 ```
-
-Readonly SSR renders a deterministic semantic Markdown preview. With
-`editable = true`, SSR renders a textarea containing the Markdown source; the
-browser claims that fallback during hydration and then progressively enhances
-it to Lexical. Assign `editUrl` and `readonlyUrl` to render ordinary,
-JavaScript-independent mode links in both directions.
-
-```scala
-val editorName = "body"
-editor(editorName, standalone = true) {
-  value = markdown
-  editable = routeContext.queryParams.get(s"$editorName.editor").contains("editable")
-}
-```
-
-The SSR mode links are generated from the editor name automatically: an editor
-named `body` sets `body.editor=editable` and, in editable SSR mode,
-`body.editor=readonly`. Inside a `UrlScope` the current path, locale, base path,
-other query parameters and fragment are retained; without one the links fall
-back to `?body.editor=...`. `editUrl` and `readonlyUrl` remain available for
-application-specific destinations.
-
-All editor/plugin registrations are tied to the component lifecycle.
-
-Internally, `Editor` owns the Markdown value, form/control state and rendering-mode orchestration.
-`MarkdownRenderer` is the Lexical-free semantic SSR/no-JavaScript projection, while
-`LexicalEditorAdapter` owns the complete browser-side Lexical lifecycle. Both helpers are
-package-internal; `Editor` remains the only public component.
-
-Link and image plugins use `DefaultDialogService` unless a service is assigned
-to the editor or provided through `Editor.DialogServiceContext`. The default
-service bridges Lexical's foreign `HTMLElement` dialog content into a JFX3
-`Viewport.WindowConf`; window presentation and lifecycle remain owned by the
-global JFX3 viewport.
 
 ## Markdown contract
 
-The public value is CommonMark-shaped Markdown with the following GFM/project
-extensions:
+The public value is CommonMark-shaped Markdown with the implemented project extensions: headings, paragraphs, block quotes, ordered and unordered lists, emphasis, strong, strike-through, highlight (`==text==`), inline code, links with optional titles, underline (`++text++`), fenced code blocks, images, horizontal rules, and basic GFM pipe tables. Image width can use `![alt](url){width=320}`.
 
-- headings (`#`), paragraphs, block quotes, ordered and unordered lists;
-- emphasis, strong, strike-through, highlight (`==text==`), inline code and
-  links with optional titles;
-- underline via the explicit project extension `++text++`;
-- fenced code blocks with an optional language identifier;
-- images as `![alt](url)` and the documented project extension
-  `![alt](url){width=320}`;
-- horizontal rules (`---` and the equivalent `***`/`___` forms);
-- basic GFM pipe tables. The first row is the header and the second row must
-  contain `---` separators. Cell alignment, captions, multiline cells and
-  nested tables are not represented.
+Raw HTML is rendered as text. Links and images apply the same URL policy in SSR and the browser: HTTP(S), mailto, tel, and relative URLs are allowed; executable and unknown schemes are rejected. Table alignment, captions, multiline cells, nested tables, and arbitrary HTML are not represented.
 
-Raw HTML is text, never injected markup. Links and images reject executable or
-unknown URI schemes. The server preview and the hydrated Lexical surface use
-the same URL policy. Lexical state and node JSON are implementation details;
-no private JSON fragments are written to the Markdown value.
+## SSR and non-JavaScript behavior
 
-Plugin names control toolbar commands and insertion UI. They do not change the
-Markdown value contract: imported images, tables, code blocks and rules remain
-supported even when their optional toolbar plugin is not selected.
+With `editable = false`, SSR renders semantic readonly HTML. With `editable = true`, SSR renders the Markdown source in a textarea. `editUrl` and `readonlyUrl` create ordinary links for switching modes without JavaScript; their defaults use `<editor-name>.editor=editable|readonly` while retaining the current URL scope. Hydration claims the fallback and enhances it to Lexical.
+
+## API overview
+
+- `Editor.editor` — the public editor component.
+- `Editor.value`, `placeholder`, `editable`, `standalone` — value and binding settings.
+- `Editor.ribbonToolbar`, `menuToolbar`, `floatingToolbar` — toolbar modes.
+- `jfx.editor.plugins` — base, heading, list, link, image, table, code, and horizontal-rule plugins.
+- `MarkdownRenderer` and `LexicalEditorAdapter` are internal implementation helpers.
+
+## Related modules
+
+- [`jfx-forms`](../jfx-forms/README.md) provides the `Control[String]` binding.
+- [`jfx-viewport`](../jfx-viewport/README.md) hosts link and image dialogs.

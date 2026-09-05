@@ -1,20 +1,18 @@
 # scalajs-jfx-webauthn
 
-`scalajs-jfx-webauthn` is the browser-side WebAuthn and passkey API for Scala.js. It
-converts the JSON options returned by a relying-party backend, starts registration or
-authentication in the browser, and returns a JSON-safe payload for backend verification.
+The browser-side WebAuthn and passkey API for Scala.js. It decodes relying-party JSON options, starts registration or authentication in the browser, and returns JSON-safe credential payloads for backend verification.
 
-The module is independent of `scalajs-jfx-core` and can be used on its own.
+## Overview
+
+This module is independent of the JFX component runtime. It handles the browser ceremony boundary only. Challenge creation and single-use rules, origin and RP-ID validation, attestation policy, signature verification, sign-count handling, credential storage, and session establishment remain backend responsibilities.
 
 ## Installation
 
 ```scala
-libraryDependencies += "com.anjunar" %%% "scalajs-jfx-webauthn" % "1.0.0"
+libraryDependencies += "com.anjunar" %% "scalajs-jfx-webauthn" % "3.0.0-SNAPSHOT"
 ```
 
-## Registration
-
-The simplest path accepts the standard JSON object returned by the backend:
+## Quick start
 
 ```scala
 import jfx.webauthn.WebAuthn
@@ -25,114 +23,33 @@ import scala.scalajs.js
 val optionsFromServer: js.Dynamic = ???
 
 WebAuthn.register(optionsFromServer).map { credential =>
-  val jsonPayload: js.Object = credential.toJsObject
-  val jsonText: String       = credential.toJson
-  // POST either representation to the backend for verification.
+  val payload = credential.toJson
+  // POST payload to the backend for verification.
 }
 ```
 
-String JSON and explicit ceremony settings are available when cancellation or conditional
-registration is needed:
+## Authentication and capabilities
+
+Use `authenticate` for decoded browser dictionaries or `registerJson` / `authenticateJson` for JSON returned by a backend. Every Future-based operation has a Promise counterpart. `isSupported` checks for the browser APIs; `isAvailable` also requires a secure context.
 
 ```scala
-import jfx.webauthn.*
-import org.scalajs.dom.AbortController
-
-val abortController = new AbortController()
-
-WebAuthn.registerJson(
-  jsonFromServer,
-  CredentialCreationSettings(
-    signal = Some(abortController.signal),
-    mediation = Some(CredentialMediationRequirement.Conditional)
-  )
-)
-```
-
-## Authentication and conditional UI
-
-```scala
-import jfx.webauthn.*
-
 WebAuthn.isConditionalMediationAvailable().flatMap {
-  case true =>
-    WebAuthn.authenticateJson(
-      optionsFromServer,
-      CredentialRequestSettings(
-        mediation = Some(CredentialMediationRequirement.Conditional)
-      )
-    )
-  case false =>
-    WebAuthn.authenticate(optionsFromServer)
+  case true => WebAuthn.authenticateJson(optionsFromServer)
+  case false => WebAuthn.authenticate(optionsFromServer)
 }
 ```
 
-For conditional UI, the relevant username input also needs
-`autocomplete="username webauthn"`.
+The module exposes capability queries, credential synchronization signals, typed public-key option facades, credential settings for abort signals and mediation, and `Base64Url` for application-specific binary payloads.
 
-Every `Future` operation has a `Promise` counterpart, such as `registerPromise` and
-`authenticatePromise`. Already decoded browser dictionaries can be built with
-`PublicKeyCredentialCreationOptions` and `PublicKeyCredentialRequestOptions` and passed
-directly.
+## Non-browser behavior and security
 
-## Capabilities
+Capability checks are safe to inspect outside a browser and report unavailable features. Ceremony calls fail asynchronously when the browser API is absent. Use HTTPS or another secure context in production. The module does not verify credentials; the backend must treat all browser output as untrusted input.
 
-```scala
-if (WebAuthn.isAvailable) {
-  for {
-    platform <- WebAuthn.isUserVerifyingPlatformAuthenticatorAvailable()
-    conditional <- WebAuthn.isConditionalMediationAvailable()
-    capabilities <- WebAuthn.clientCapabilities()
-  } yield {
-    println(platform)
-    println(conditional)
-    println(capabilities.get(WebAuthnClientCapability.HybridTransport))
-  }
-}
-```
+## API overview
 
-`isSupported` checks for the APIs, while `isAvailable` additionally checks the secure-context
-requirement. Capability queries return `false` or an empty map on older browsers that do not
-expose the corresponding query method.
-
-## Credential synchronization
-
-WebAuthn Level 3 can synchronize relying-party credential changes with authenticators:
-
-```scala
-WebAuthn.signalUnknownCredential(
-  UnknownCredentialOptions(
-    rpId = "example.com",
-    credentialId = deletedCredentialId
-  )
-)
-
-// Only use the full accepted-credential list for an authenticated user.
-WebAuthn.signalAllAcceptedCredentials(
-  AllAcceptedCredentialsOptions(
-    rpId = "example.com",
-    userId = base64UrlUserId,
-    allAcceptedCredentialIds = activeCredentialIds
-  )
-)
-```
-
-The signal methods fail with `UnsupportedOperationException` when unavailable. Call
-`clientCapabilities()` before using them when graceful degradation is required.
-
-## JSON and Base64URL behavior
-
-On current browsers, the module delegates option parsing to
-`PublicKeyCredential.parseCreationOptionsFromJSON` and
-`PublicKeyCredential.parseRequestOptionsFromJSON`. This includes extension-specific binary
-fields. A strict fallback covers the Level 2 fields on older browsers.
-
-Credential output uses native `PublicKeyCredential.toJSON()` when present. The fallback
-serializes all standard registration and authentication fields and recursively converts binary
-extension outputs to base64url. `Base64Url` is also public for application-specific payloads.
-
-## Security boundary
-
-This module only handles the browser side of a WebAuthn ceremony. Challenge generation and
-single use, origin and RP-ID validation, attestation policy, signature verification, sign-count
-handling, credential storage, and session establishment belong on the backend.
+- `WebAuthn.register`, `registerJson`, `authenticate`, `authenticateJson`
+- `WebAuthn.isSupported`, `isAvailable`, and capability queries
+- `WebAuthn.signalUnknownCredential`, `signalAllAcceptedCredentials`, `signalCurrentUserDetails`
+- `CredentialCreationSettings`, `CredentialRequestSettings`
+- `PublicKeyCredentialCreationOptions`, `PublicKeyCredentialRequestOptions`
+- `Base64Url`, `RegistrationCredential`, `AuthenticationCredential`

@@ -1,116 +1,65 @@
 # @anjunar/jfx-router
 
-The routing API of JFX3 in TypeScript: route tables, nested outlets and
-navigating links.
+Typed route tables, nested outlets, navigation links, and route failures for JFX3 TypeScript applications.
 
-Like every package in the family, this is **types and ergonomics, not a
-framework**. Matching, forwarding, history, localized URLs and error routes with
-their own status all live in `jfx.router.Router` -- the same Scala.js class the
-Scala demo mounts -- published as part of the linked runtime
-`@anjunar/scalajs-jfx-bridge`. Adding this package does not add a second router;
-`jfx-bridge` grew a `dependsOn(jfxRouter)` edge and three registry entries
-(`router`, `router-outlet`, `router-link`). The measured cost of that on the one
-linked artifact is in [`JAVASCRIPT_API.md` §14](../../JAVASCRIPT_API.md).
+## Overview
+
+The package is a TypeScript facade over `jfx.router.Router`. Matching, async loading, history handling, localized URLs, and SSR status remain in the Scala.js runtime linked by `@anjunar/scalajs-jfx-bridge`.
+
+## Installation
 
 ```bash
-npm install @anjunar/jfx-core @anjunar/jfx-router @anjunar/scalajs-jfx @anjunar/scalajs-jfx-bridge
+npm install @anjunar/jfx-core @anjunar/jfx-router @anjunar/scalajs-jfx-bridge @anjunar/scalajs-jfx
 ```
 
-Import `@anjunar/scalajs-jfx/index.css` from the application stylesheet as
-well. It owns the default `.jfx-*` component styles, including router links;
-`@anjunar/jfx-router` provides the API and runtime registration, not CSS.
-
-## A route table
+## Quick start
 
 ```ts
 import { div, text } from "@anjunar/jfx-core";
-import { errorRoute, router, routerLink, routerOutlet, view } from "@anjunar/jfx-router";
+import { router, routerLink, routerOutlet, view } from "@anjunar/jfx-router";
 
 const routes = [
-  view("/", async () => () => {
-    div(() => text("Home"));
-    routerLink("/about", "About");
+  view("/", async () => () => div(() => text("Home"))),
+  view("/docs", async () => () => {
+    div(() => {
+      text("Documentation");
+      routerOutlet();
+    });
+  }, {
+    children: [view("page/:id", async (context) => () => div(() => text(context.params["id"] ?? "")))],
   }),
-  view(
-    "/docs",
-    async () => () => {
-      div(() => text("Docs"));
-      routerOutlet();            // where /docs/:page renders
-    },
-    {
-      children: [
-        view("page/:id", async (context) => () => div(() => text(context.params["id"]!))),
-      ],
-    },
-  ),
-  errorRoute("/404", 404, async () => () => div(() => text("Not found"))),
 ];
+
+router(routes, {}, () => routerLink("/", "Home"));
 ```
 
-`view(path, load, options?)` mirrors `Route.view`; `errorRoute(path, status, load)`
-mirrors `Route.error` and rejects a non-4xx/5xx status. A loader returns a
-`PageBody` -- `() => void` that composes the page with the core DSL, exactly like
-any other body.
+`view(path, load, options?)` loaders return a `PageBody`, a synchronous body that composes through the core DSL. `errorRoute(path, status, load)` declares a route with a 4xx or 5xx status.
 
-## The shell
-
-`router()` takes an optional third argument: the application chrome that wraps
-every routed page. It runs with the router in context, so its `routerLink`s
-resolve, and the matched page renders straight after it.
-
-```ts
-import { classes, nav } from "@anjunar/jfx-core";
-import { router, routerLink } from "@anjunar/jfx-router";
-
-function appShell(): void {
-  nav(() => {
-    classes("app-nav");
-    routerLink("/", "Home", { activeClass: "is-active" });
-    routerLink("/docs", "Docs", { activeClass: "is-active" });
-  });
-}
-
-router(routes, config, appShell);
-```
-
-This is the assembly `app.App.compose` does by hand on the Scala side
-(`Router.provide`, a sidebar, `child(appRouter)`). Omit the shell and only the
-page renders -- which is what the Node runners in `npm/jfx-demo` do.
-
-## Booting
+## SSR and hydration
 
 ```ts
 import { hydrate, renderToString } from "@anjunar/jfx-core";
 import "@anjunar/scalajs-jfx-bridge";
-import { router } from "@anjunar/jfx-router";
 
-// server: pass the request path as `url`
-const { html, status } = await renderToString(() =>
-  router(routes, { url: requestPath, onFailure: () => "/404", renderErrorsOnServer: true }, appShell)
-);
+const server = await renderToString(() => router(routes, {
+  url: requestPath,
+  onFailure: () => "/404",
+  renderErrorsOnServer: true,
+}, appShell));
 
-// browser: no `url` -- the router reads window.location
-await hydrate(document.getElementById("root")!, () =>
-  router(routes, { onFailure: () => "/404" }, appShell)
-);
+await hydrate(document.getElementById("root")!, () => router(routes, {}, appShell));
 ```
 
-Navigation between pages is a client-side route change through `routerLink` --
-the server renders the first request and serves assets, it does not route.
+The server resolves the first request and returns the matched route status. `routerLink` remains an ordinary anchor without JavaScript; hydration enhances it with client-side navigation. Nested routes render only where a parent calls `routerOutlet()`.
 
-`status` on the SSR result carries the matched (or forwarded) route's own
-`status` -- a `404` route reached through `onFailure` answers `404`, at its
-original URL, the way `jfx.router` does for Scala.
+## API overview
 
-## Tests
+- `view`, `errorRoute`, `router`
+- `routerOutlet`, `routerLink`
+- `RouteContext`, `RouterConfig`, `RouteDefinition`, `RouteFailure`
+- `PageBody`, `RouteLoad`, `ViewOptions`, `LinkOptions`
 
-```bash
-npm run verify   # typecheck + the bridge smoke test + the consumer test
-```
+## Related modules
 
-The suite runs only against the really linked bridge -- there is no stub half,
-because the stub runtime knows nothing about routing. Link it first:
-
-```bash
-sbtn "scalajs-jfx-bridge/fullLinkJS"
-```
+- [`@anjunar/jfx-core`](../jfx-core/README.md) provides the DSL and SSR entry points.
+- [`@anjunar/jfx-viewport`](../jfx-viewport/README.md) commonly wraps the routed application.
