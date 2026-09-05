@@ -30,9 +30,10 @@ enum EditorToolbarMode:
 /** A Markdown-valued editor.
   *
   * Markdown is the public value in every environment. On the server, readonly mode produces
-  * semantic HTML and editable mode produces a textarea. In the browser the textarea is the
-  * no-JavaScript/hydration representation and is progressively enhanced to Lexical after compose;
-  * Lexical imports and exports Markdown at the component boundary.
+  * semantic HTML and editable mode produces a textarea. In the browser both server
+  * representations are progressively enhanced to Lexical after compose; its own editable state
+  * then decides whether the mounted surface is interactive. Lexical imports and exports Markdown
+  * at the component boundary.
   */
 final class Editor private[editor] (
     val name: String,
@@ -70,6 +71,7 @@ final class Editor private[editor] (
       // claim a different subtree than SSR produced.
       installControlObservers()
       registerWithForm()
+      initializeUrlMode()
 
       browserRendering = cursor.isBrowser
       addClass("jfx-editor-host")
@@ -96,15 +98,17 @@ final class Editor private[editor] (
             dynamic(editableProperty.map[AbstractComponent] { editable =>
               if (editable)
                 new MarkdownModeLink(
-                  readonlyUrlValue.getOrElse(modeUrl("readonly")),
+                  readonlyUrlValue.getOrElse(modeUrl(editable = false)),
                   readonlyLabelValue,
-                  readonly = true
+                  readonly = true,
+                  onActivate = () => editableProperty.set(false)
                 )
               else
                 new MarkdownModeLink(
-                  editUrlValue.getOrElse(modeUrl("editable")),
+                  editUrlValue.getOrElse(modeUrl(editable = true)),
                   editLabelValue,
-                  readonly = false
+                  readonly = false,
+                  onActivate = () => editableProperty.set(true)
                 )
             })
           }
@@ -161,7 +165,7 @@ final class Editor private[editor] (
   }
 
   override def afterCompose(cursor: Cursor): Unit =
-    if (cursor.isBrowser && editableProperty.get) mountLexical()
+    if (cursor.isBrowser) mountLexical()
 
   override protected def setPlaceholder(value: String): Unit =
     placeholderProperty.set(Option(value).getOrElse(""))
@@ -199,32 +203,17 @@ final class Editor private[editor] (
   private[editor] def readonlyLabel_=(value: String): Unit =
     readonlyLabelValue = Option(value).map(_.trim).filter(_.nonEmpty).getOrElse("Readonly")
 
-  private def modeUrl(mode: String): String = {
-    val parameter = s"$name.editor"
+  private def initializeUrlMode(): Unit =
     UrlScope
       .current(using this)
-      .map(scope => withQueryParameter(scope.url, parameter, mode))
-      .getOrElse(s"?$parameter=$mode")
-  }
+      .flatMap(scope => EditorModeUrl.read(scope.url, name))
+      .foreach(editableProperty.set)
 
-  private def withQueryParameter(url: String, name: String, value: String): String = {
-    val hashIndex           = url.indexOf('#')
-    val (withoutHash, hash) =
-      if (hashIndex >= 0) url.splitAt(hashIndex) else (url, "")
-    val queryIndex    = withoutHash.indexOf('?')
-    val (path, query) =
-      if (queryIndex >= 0)
-        (withoutHash.substring(0, queryIndex), withoutHash.substring(queryIndex + 1))
-      else (withoutHash, "")
-    val retained = query
-      .split('&')
-      .iterator
-      .filter(_.nonEmpty)
-      .filterNot(entry => entry.takeWhile(_ != '=') == name)
-      .toSeq
-    val nextQuery = (retained :+ s"$name=$value").mkString("&")
-    s"$path?$nextQuery$hash"
-  }
+  private def modeUrl(editable: Boolean): String =
+    UrlScope
+      .current(using this)
+      .map(scope => EditorModeUrl.write(scope.url, name, editable))
+      .getOrElse(EditorModeUrl.fallback(name, editable))
 
   private def installControlObservers(): Unit = {
     addDisposable(valueProperty.observe { _ => validate() })
@@ -287,7 +276,11 @@ final class Editor private[editor] (
   }
 
   private def syncPresentation(editable: Boolean): Unit = {
-    val enhanced = lexicalAdapter != null && editable
+    // Once Lexical has been mounted in the browser, keep it as the live surface when the
+    // control becomes readonly. The adapter applies Lexical's readonly state and hides the
+    // toolbar; falling back to MarkdownRenderer here would unnecessarily replace the DOM and
+    // lose the hydrated Lexical surface.
+    val enhanced = browserRendering && lexicalAdapter != null
     Option(fallbackHost).foreach(_.setStyle("display", if (enhanced) "none" else ""))
     Option(surfaceHost).foreach { surface =>
       surface.setStyle("display", if (enhanced) "" else "none")

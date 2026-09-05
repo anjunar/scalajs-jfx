@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { jfxCode } from "./tools/vite-plugin-jfx-code.js";
 
 const clientEntry = fileURLToPath(new URL("./src/entry-client.ts", import.meta.url));
+const stylesheetEntry = fileURLToPath(new URL("./src/styles/style.css", import.meta.url));
 
 // npm workspaces hoist every package in npm/* into the repo root's node_modules,
 // so `@anjunar/jfx-core` resolves through a symlink into the source tree. Vite's
@@ -50,6 +51,11 @@ export default defineConfig(({ isSsrBuild }) => ({
     // server.mjs's clientAssets() finds the client build's hashed file names
     // in production (mirrors the repo root's vite.config.js).
     manifest: !isSsrBuild,
-    ...(isSsrBuild ? {} : { rollupOptions: { input: clientEntry } }),
+    // Keep CSS independent from hydration. The server can therefore link the
+    // stylesheet for a JavaScript-free SSR response, while the manifest still
+    // owns the hashed production file name.
+    ...(isSsrBuild
+      ? {}
+      : { rollupOptions: { input: { main: clientEntry, styles: stylesheetEntry } } }),
   },
 }));

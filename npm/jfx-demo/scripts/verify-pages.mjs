@@ -106,6 +106,31 @@ async function main() {
       await checkRoute(entry);
     }
 
+    // The stylesheet must be an SSR asset in its own right. If it only enters
+    // through entry-client.ts, this HTML looks fine to the test but an actual
+    // browser with JavaScript disabled never requests any CSS.
+    const homeResponse = await fetch(`http://localhost:${port}/`);
+    const homeHtml = await homeResponse.text();
+    const stylesheetHref = homeHtml.match(
+      /<link[^>]+rel="stylesheet"[^>]+href="([^"]+\.css)"/
+    )?.[1];
+    check(
+      "/ -- production SSR links the built stylesheet",
+      stylesheetHref !== undefined,
+      "no built CSS link found in the SSR head"
+    );
+    if (stylesheetHref !== undefined) {
+      const stylesheetResponse = await fetch(new URL(stylesheetHref, homeResponse.url));
+      const stylesheet = await stylesheetResponse.text();
+      check(
+        "/ -- production stylesheet is directly loadable",
+        stylesheetResponse.status === 200 &&
+          stylesheetResponse.headers.get("content-type")?.includes("text/css") === true &&
+          stylesheet.includes("--aj-ink"),
+        `status ${stylesheetResponse.status}, content-type ${stylesheetResponse.headers.get("content-type")}`
+      );
+    }
+
     const germanResponse = await fetch(`http://localhost:${port}/de/core/derived`);
     const germanHtml = await germanResponse.text();
     check(

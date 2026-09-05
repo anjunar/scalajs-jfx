@@ -129,6 +129,29 @@ async function devServer() {
       html.includes("A TypeScript facade over JFX3"),
       "the SSR outlet was not filled -- with two runtime slots, renderToString throws instead"
     );
+    const stylesheetHref = html.match(
+      /<link[^>]+rel="stylesheet"[^>]+href="([^"]*\/src\/styles\/style\.css)"/
+    )?.[1];
+    check(
+      "dev SSR links CSS independently of JavaScript",
+      stylesheetHref !== undefined,
+      "the SSR head has no link to the stylesheet source"
+    );
+    if (stylesheetHref !== undefined) {
+      // Match a browser stylesheet request. Vite deliberately serves its CSS
+      // module wrapper to generic fetch() calls, but raw CSS to a <link>.
+      const stylesheetResponse = await fetch(new URL(stylesheetHref, response.url), {
+        headers: { accept: "text/css,*/*;q=0.1" },
+      });
+      const stylesheet = await stylesheetResponse.text();
+      check(
+        "dev SSR stylesheet is directly loadable",
+        stylesheetResponse.status === 200 &&
+          stylesheetResponse.headers.get("content-type")?.includes("text/css") === true &&
+          stylesheet.includes("--aj-ink"),
+        `status ${stylesheetResponse.status}, content-type ${stylesheetResponse.headers.get("content-type")}`
+      );
+    }
 
     // /controls/table pulls in @anjunar/jfx-controls; if that package dragged
     // its own copy of jfx-core, the runtime marker count above would rise and

@@ -1,9 +1,10 @@
 /**
  * A Lexical-backed rich-text field, bound by name like `input`. Mirrors
  * `jfx.editor.Editor`. Its value is always Markdown. SSR renders that value as
- * semantic readonly HTML or, when editable, as a textarea. In the browser the
- * editable fallback is progressively enhanced to Lexical, which imports and
- * exports the same Markdown string.
+ * semantic readonly HTML or, when editable, as a textarea. In the browser
+ * either fallback is progressively enhanced to Lexical; the mounted Lexical
+ * surface itself becomes editable or readonly and imports/exports the same
+ * Markdown string.
  *
  * `jfx.editor.plugins.basePlugin()`/`headingPlugin()`/... are Scala
  * functions, not values, so they cannot be passed across the bridge as

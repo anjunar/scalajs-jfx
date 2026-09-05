@@ -62,18 +62,16 @@
     opacity: 0.78;
 }
 
-.jfx-editor-fallback {
+.jfx-editor__fallback {
     min-height: 220px;
-    display: grid;
-    place-items: center;
-    padding: 18px;
+    display: block;
     color: var(--aj-ink-soft);
     background:
         linear-gradient(90deg, transparent, color-mix(in srgb, var(--aj-accent) 11%, transparent), transparent),
         var(--aj-surface-muted);
 }
 
-.jfx-editor-readonly {
+.jfx-editor__readonly {
     min-height: 220px;
     display: grid;
     gap: 12px;
@@ -82,16 +80,21 @@
     background: var(--aj-surface-overlay);
 }
 
-.jfx-editor-readonly .lexical-paragraph,
-.jfx-editor-readonly .lexical-heading,
-.jfx-editor-readonly .lexical-quote {
-    margin: 0;
+.jfx-editor-readonly .lexical-paragraph {
+    margin: 0 0 0.9em;
+    line-height: 1.65;
 }
 
-.jfx-editor-readonly .lexical-heading {
-    font-size: 1.35rem;
+.jfx-editor-readonly .lexical-heading-h1,
+.jfx-editor-readonly .lexical-heading-h2,
+.jfx-editor-readonly .lexical-heading-h3,
+.jfx-editor-readonly .lexical-heading-h4,
+.jfx-editor-readonly .lexical-heading-h5,
+.jfx-editor-readonly .lexical-heading-h6 {
+    margin: 1.2em 0 0.55em;
     font-weight: 850;
     letter-spacing: -0.04em;
+    line-height: 1.2;
 }
 
 .jfx-editor-readonly .lexical-quote {

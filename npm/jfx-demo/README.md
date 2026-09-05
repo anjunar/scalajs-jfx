@@ -100,6 +100,11 @@ to the bridge runtime; core-only pages can also run against the stub.
 @import "./pages/index.css";
 ```
 
+Vite builds that file as its own entry, and the SSR server emits its `<link>`
+directly. It is deliberately not imported by `entry-client.ts`: the complete
+server-rendered document stays styled when JavaScript is disabled, while the
+manifest remains the source of truth for the hashed production URL.
+
 `@anjunar/ui` is a real dependency of this package (see `package.json`) and
 supplies every `--aj-*` token the library CSS reads, for both light and dark
 (`html[data-theme]`) -- there is nothing to fall back to a browser default

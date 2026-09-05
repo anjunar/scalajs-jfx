@@ -1,4 +1,4 @@
-.editor {
+.jfx-editor {
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -17,23 +17,22 @@
     background: var(--aj-surface-overlay, var(--aj-surface));
 }
 
-.jfx-editor-fallback,
-.jfx-editor-readonly {
+.jfx-editor__fallback,
+.jfx-editor__readonly {
     min-height: 220px;
-    padding: 18px;
     color: var(--aj-ink);
     background: var(--aj-surface-overlay, var(--aj-surface));
 }
 
-.jfx-editor-fallback {
-    display: grid;
-    place-items: center;
+.jfx-editor__fallback {
+    display: block;
     color: var(--aj-ink-muted);
 }
 
-.jfx-editor-readonly {
+.jfx-editor__readonly {
     display: grid;
     gap: 12px;
+    padding: 18px;
 }
 
 .jfx-editor__fallback,
@@ -188,19 +187,25 @@
     color: var(--aj-ink-muted);
 }
 
-.jfx-editor-readonly .lexical-paragraph,
-.jfx-editor-readonly .lexical-heading,
-.jfx-editor-readonly .lexical-quote {
-    margin: 0;
+.jfx-editor-readonly .lexical-paragraph {
+    margin: 0 0 0.9em;
+    line-height: 1.65;
 }
 
-.jfx-editor-readonly .lexical-heading {
-    font-size: 1.35rem;
+.jfx-editor-readonly .lexical-heading-h1,
+.jfx-editor-readonly .lexical-heading-h2,
+.jfx-editor-readonly .lexical-heading-h3,
+.jfx-editor-readonly .lexical-heading-h4,
+.jfx-editor-readonly .lexical-heading-h5,
+.jfx-editor-readonly .lexical-heading-h6 {
+    margin: 1.2em 0 0.55em;
     font-weight: 850;
     letter-spacing: -0.04em;
+    line-height: 1.2;
 }
 
 .jfx-editor-readonly .lexical-quote {
+    margin: 0.9em 0;
     border-left: 3px solid var(--aj-accent);
     padding-left: 14px;
     color: var(--aj-ink-soft);
@@ -228,6 +233,115 @@
     white-space: pre;
 }
 
+/* Lexical uses theme classes on spans instead of semantic inline elements. */
+.jfx-editor .lexical-text-bold {
+    font-weight: 700;
+}
+
+.jfx-editor .lexical-text-italic {
+    font-style: italic;
+}
+
+.jfx-editor .lexical-text-underline {
+    text-decoration: underline;
+    text-decoration-thickness: 0.08em;
+    text-underline-offset: 0.12em;
+}
+
+.jfx-editor .lexical-text-strikethrough {
+    text-decoration: line-through;
+}
+
+.jfx-editor .lexical-text-code,
+.jfx-editor code:not(.jfx-editor-code__content) {
+    border: 1px solid var(--aj-line-soft);
+    border-radius: 5px;
+    padding: 0.1em 0.3em;
+    color: var(--aj-accent-strong);
+    background: color-mix(in srgb, var(--aj-surface-muted) 82%, transparent);
+    font-family: "Cascadia Code", "JetBrains Mono", "Fira Code", monospace;
+    font-size: 0.9em;
+}
+
+.jfx-editor .lexical-text-highlight {
+    border-radius: 2px;
+    padding: 0 0.08em;
+    background: var(--aj-accent-muted);
+}
+
+.jfx-editor mark {
+    border-radius: 2px;
+    padding: 0 0.08em;
+    background: var(--aj-accent-muted);
+}
+
+.jfx-editor .lexical-quote,
+.jfx-editor-readonly .lexical-quote {
+    margin: 0.9em 0;
+    border-left: 3px solid var(--aj-accent);
+    padding-left: 14px;
+    color: var(--aj-ink-soft);
+}
+
+.jfx-editor-readonly .lexical-paragraph:last-child,
+.jfx-editor-readonly .lexical-heading-h1:first-child,
+.jfx-editor-readonly .lexical-heading-h2:first-child,
+.jfx-editor-readonly .lexical-heading-h3:first-child,
+.jfx-editor-readonly .lexical-heading-h4:first-child,
+.jfx-editor-readonly .lexical-heading-h5:first-child,
+.jfx-editor-readonly .lexical-heading-h6:first-child {
+    margin-top: 0;
+}
+
+.jfx-editor-readonly .lexical-paragraph:last-child {
+    margin-bottom: 0;
+}
+
+.jfx-editor-readonly .lexical-heading-h1 { font-size: 2rem; }
+.jfx-editor-readonly .lexical-heading-h2 { font-size: 1.6rem; }
+.jfx-editor-readonly .lexical-heading-h3 { font-size: 1.3rem; }
+.jfx-editor-readonly .lexical-heading-h4 { font-size: 1.15rem; }
+.jfx-editor-readonly .lexical-heading-h5 { font-size: 1.05rem; }
+.jfx-editor-readonly .lexical-heading-h6 { font-size: 0.95rem; }
+
+.jfx-editor-readonly .lexical-list-ul,
+.jfx-editor-readonly .lexical-list-ol {
+    margin: 0.9em 0;
+    padding-left: 1.6em;
+}
+
+.jfx-editor-readonly .lexical-list-ul { list-style-type: disc; }
+.jfx-editor-readonly .lexical-list-ol { list-style-type: decimal; }
+
+.jfx-editor-readonly .lexical-listitem {
+    margin: 0.3em 0;
+    line-height: 1.6;
+}
+
+.jfx-editor .lexical-horizontal-rule,
+.jfx-editor-readonly .lexical-horizontal-rule {
+    margin: 1.25em 0;
+    border: 0;
+    border-top: 1px solid var(--aj-line);
+}
+
+.jfx-editor .lexical-editor-input a,
+.jfx-editor .lexical-read-only a,
+.jfx-editor-readonly a {
+    color: var(--aj-accent-strong);
+    text-decoration: underline;
+    text-decoration-thickness: 0.08em;
+    text-underline-offset: 0.12em;
+}
+
+.jfx-editor .lexical-editor-input img,
+.jfx-editor .lexical-read-only img,
+.jfx-editor-readonly img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
 .hljs-keyword {
     color: var(--aj-accent-strong);
     font-weight: 800;
@@ -253,7 +367,7 @@
     color: var(--aj-accent-strong);
 }
 
-.editor .lexical-ribbon-wrapper {
+.jfx-editor .lexical-ribbon-wrapper {
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -268,7 +382,7 @@
     color: var(--aj-ink);
 }
 
-.editor .lexical-ribbon-tabs {
+.jfx-editor .lexical-ribbon-tabs {
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
@@ -276,7 +390,7 @@
     background: transparent !important;
 }
 
-.editor .lexical-ribbon-tab {
+.jfx-editor .lexical-ribbon-tab {
     display: inline-flex;
     align-items: center;
     min-height: 28px;
@@ -293,18 +407,18 @@
     transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease;
 }
 
-.editor .lexical-ribbon-tab:hover {
+.jfx-editor .lexical-ribbon-tab:hover {
     background: color-mix(in srgb, var(--aj-surface-muted) 52%, transparent);
     color: var(--aj-ink);
 }
 
-.editor .lexical-ribbon-tab.active {
+.jfx-editor .lexical-ribbon-tab.active {
     background: color-mix(in srgb, var(--aj-accent) 8%, transparent);
     border-color: color-mix(in srgb, var(--aj-line-strong) 36%, transparent);
     color: var(--aj-ink);
 }
 
-.editor .lexical-ribbon-content {
+.jfx-editor .lexical-ribbon-content {
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -312,20 +426,20 @@
     flex-wrap: wrap;
 }
 
-.editor .lexical-ribbon-tab-content {
+.jfx-editor .lexical-ribbon-tab-content {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-start;
     gap: 12px;
 }
 
-.editor .lexical-ribbon-tab-content:last-child {
+.jfx-editor .lexical-ribbon-tab-content:last-child {
     width: 100%;
     gap: 16px;
     padding-top: 2px;
 }
 
-.editor .lexical-ribbon-section {
+.jfx-editor .lexical-ribbon-section {
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -334,7 +448,7 @@
     border-bottom: 1px solid color-mix(in srgb, var(--aj-line-strong) 22%, transparent);
 }
 
-.editor .lexical-ribbon-tab-content:last-child .lexical-ribbon-section {
+.jfx-editor .lexical-ribbon-tab-content:last-child .lexical-ribbon-section {
     flex: 1 1 220px;
     min-width: 220px;
     gap: 8px;
@@ -343,18 +457,18 @@
     padding-bottom: 12px;
 }
 
-.editor .lexical-ribbon-tab-content:last-child .lexical-ribbon-section:last-child {
+.jfx-editor .lexical-ribbon-tab-content:last-child .lexical-ribbon-section:last-child {
     min-width: 180px;
 }
 
-.editor .lexical-ribbon-section:last-child {
+.jfx-editor .lexical-ribbon-section:last-child {
     border-bottom: none;
     border-right: none;
     padding-bottom: 0;
     padding-right: 0;
 }
 
-.editor .lexical-ribbon-buttons-container {
+.jfx-editor .lexical-ribbon-buttons-container {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -362,7 +476,7 @@
     flex-wrap: wrap;
 }
 
-.editor .lexical-ribbon-section-label {
+.jfx-editor .lexical-ribbon-section-label {
     font-size: 9px;
     letter-spacing: 0.16em;
     color: var(--aj-ink-faint);
@@ -374,7 +488,7 @@
     border-top: 1px solid color-mix(in srgb, var(--aj-line-strong) 22%, transparent);
 }
 
-.editor .lexical-ribbon-button {
+.jfx-editor .lexical-ribbon-button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -392,29 +506,29 @@
     transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
 }
 
-.editor .lexical-ribbon-button:hover {
+.jfx-editor .lexical-ribbon-button:hover {
     background: color-mix(in srgb, var(--aj-accent-muted) 72%, transparent);
     border-color: color-mix(in srgb, var(--aj-line-strong) 28%, transparent);
 }
 
-.editor .lexical-ribbon-button.active {
+.jfx-editor .lexical-ribbon-button.active {
     background: color-mix(in srgb, var(--aj-accent-muted) 70%, transparent);
     border-color: color-mix(in srgb, var(--aj-line-strong) 34%, transparent);
     color: var(--aj-accent);
 }
 
-.editor .lexical-dropdown-wrapper {
+.jfx-editor .lexical-dropdown-wrapper {
     position: relative;
     display: inline-flex;
     align-items: stretch;
 }
 
-.editor .lexical-ribbon-tab-content:last-child .lexical-ribbon-button {
+.jfx-editor .lexical-ribbon-tab-content:last-child .lexical-ribbon-button {
     padding-left: 12px;
     padding-right: 12px;
 }
 
-.editor .lexical-dropdown-menu {
+.jfx-editor .lexical-dropdown-menu {
     position: fixed;
     z-index: 3000;
     min-width: 180px;
@@ -428,7 +542,7 @@
     -webkit-backdrop-filter: none;
 }
 
-.editor .lexical-dropdown-item {
+.jfx-editor .lexical-dropdown-item {
     min-height: 32px;
     display: flex;
     align-items: center;
@@ -438,75 +552,75 @@
     color: var(--aj-ink);
 }
 
-.editor .lexical-dropdown-item:hover {
+.jfx-editor .lexical-dropdown-item:hover {
     background: var(--aj-accent-muted);
 }
 
-.editor .lexical-menu {
+.jfx-editor .lexical-menu {
     width: 100%;
 }
 
-.editor .lexical-menu-bar {
+.jfx-editor .lexical-menu-bar {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
     align-items: flex-start;
 }
 
-.editor .lexical-menu-item {
+.jfx-editor .lexical-menu-item {
     display: flex;
     flex-direction: column;
     gap: 8px;
     min-width: 180px;
 }
 
-.editor .lexical-menu-trigger {
+.jfx-editor .lexical-menu-trigger {
     align-self: flex-start;
 }
 
-.editor .lexical-menu-trigger.active {
+.jfx-editor .lexical-menu-trigger.active {
     background: color-mix(in srgb, var(--aj-accent) 8%, transparent);
     border-color: color-mix(in srgb, var(--aj-line-strong) 36%, transparent);
 }
 
-.editor .lexical-menu-panel {
+.jfx-editor .lexical-menu-panel {
     position: static;
     display: grid;
     gap: 10px;
     min-width: 220px;
 }
 
-.editor .lexical-menu-section {
+.jfx-editor .lexical-menu-section {
     display: grid;
     gap: 8px;
 }
 
-.editor .lexical-menu-section-label {
+.jfx-editor .lexical-menu-section-label {
     font-size: 9px;
     letter-spacing: 0.16em;
     color: var(--aj-ink-faint);
     text-transform: uppercase;
 }
 
-.editor .lexical-menu-section-content {
+.jfx-editor .lexical-menu-section-content {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
 }
 
-.editor .lexical-menu-button {
+.jfx-editor .lexical-menu-button {
     min-height: 30px;
 }
 
-.editor .lexical-menu-dropdown {
+.jfx-editor .lexical-menu-dropdown {
     display: inline-flex;
 }
 
-.editor .lexical-menu-dropdown-panel {
+.jfx-editor .lexical-menu-dropdown-panel {
     min-width: 180px;
 }
 
-.editor .lexical-floating-toolbar {
+.jfx-editor .lexical-floating-toolbar {
     display: inline-flex;
     flex-wrap: wrap;
     gap: 6px;
@@ -517,7 +631,7 @@
     box-shadow: 0 8px 18px color-mix(in srgb, var(--aj-shadow-medium) 28%, transparent);
 }
 
-.editor .lexical-floating-button {
+.jfx-editor .lexical-floating-button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -532,41 +646,47 @@
     transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
 }
 
-.editor .lexical-floating-button:hover {
+.jfx-editor .lexical-floating-button:hover {
     background: color-mix(in srgb, var(--aj-accent-muted) 72%, transparent);
     border-color: color-mix(in srgb, var(--aj-line-strong) 28%, transparent);
 }
 
-.editor .lexical-floating-button.active {
+.jfx-editor .lexical-floating-button.active {
     background: color-mix(in srgb, var(--aj-accent-muted) 72%, transparent);
     border-color: color-mix(in srgb, var(--aj-line-strong) 34%, transparent);
     color: var(--aj-accent);
 }
 
-.editor .lexical-editor-input,
-.editor .lexical-read-only {
+.jfx-editor .lexical-editor-input,
+.jfx-editor .lexical-read-only {
     flex: 0 1 auto;
     min-height: 0;
     height: auto;
 }
 
-.editor .lexical-editor-input .lexical-paragraph,
-.editor .lexical-read-only .lexical-paragraph {
+.jfx-editor .lexical-editor-input .lexical-paragraph,
+.jfx-editor .lexical-read-only .lexical-paragraph {
     margin: 0 0 0.9em;
     line-height: 1.65;
 }
 
-.editor .lexical-editor-input .lexical-paragraph:last-child,
-.editor .lexical-read-only .lexical-paragraph:last-child {
+.jfx-editor .lexical-editor-input .lexical-paragraph:last-child,
+.jfx-editor .lexical-read-only .lexical-paragraph:last-child {
     margin-bottom: 0;
 }
 
-.editor .lexical-editor-input .lexical-heading-h1,
-.editor .lexical-read-only .lexical-heading-h1,
-.editor .lexical-editor-input .lexical-heading-h2,
-.editor .lexical-read-only .lexical-heading-h2,
-.editor .lexical-editor-input .lexical-heading-h3,
-.editor .lexical-read-only .lexical-heading-h3 {
+.jfx-editor .lexical-editor-input .lexical-heading-h1,
+.jfx-editor .lexical-read-only .lexical-heading-h1,
+.jfx-editor .lexical-editor-input .lexical-heading-h2,
+.jfx-editor .lexical-read-only .lexical-heading-h2,
+.jfx-editor .lexical-editor-input .lexical-heading-h3,
+.jfx-editor .lexical-read-only .lexical-heading-h3,
+.jfx-editor .lexical-editor-input .lexical-heading-h4,
+.jfx-editor .lexical-read-only .lexical-heading-h4,
+.jfx-editor .lexical-editor-input .lexical-heading-h5,
+.jfx-editor .lexical-read-only .lexical-heading-h5,
+.jfx-editor .lexical-editor-input .lexical-heading-h6,
+.jfx-editor .lexical-read-only .lexical-heading-h6 {
     margin: 1.2em 0 0.55em;
     color: var(--aj-ink);
     font-weight: 850;
@@ -574,70 +694,91 @@
     line-height: 1.2;
 }
 
-.editor .lexical-editor-input .lexical-heading-h1:first-child,
-.editor .lexical-read-only .lexical-heading-h1:first-child,
-.editor .lexical-editor-input .lexical-heading-h2:first-child,
-.editor .lexical-read-only .lexical-heading-h2:first-child,
-.editor .lexical-editor-input .lexical-heading-h3:first-child,
-.editor .lexical-read-only .lexical-heading-h3:first-child {
+.jfx-editor .lexical-editor-input .lexical-heading-h1:first-child,
+.jfx-editor .lexical-read-only .lexical-heading-h1:first-child,
+.jfx-editor .lexical-editor-input .lexical-heading-h2:first-child,
+.jfx-editor .lexical-read-only .lexical-heading-h2:first-child,
+.jfx-editor .lexical-editor-input .lexical-heading-h3:first-child,
+.jfx-editor .lexical-read-only .lexical-heading-h3:first-child,
+.jfx-editor .lexical-editor-input .lexical-heading-h4:first-child,
+.jfx-editor .lexical-read-only .lexical-heading-h4:first-child,
+.jfx-editor .lexical-editor-input .lexical-heading-h5:first-child,
+.jfx-editor .lexical-read-only .lexical-heading-h5:first-child,
+.jfx-editor .lexical-editor-input .lexical-heading-h6:first-child,
+.jfx-editor .lexical-read-only .lexical-heading-h6:first-child {
     margin-top: 0;
 }
 
-.editor .lexical-editor-input .lexical-heading-h1,
-.editor .lexical-read-only .lexical-heading-h1 {
+.jfx-editor .lexical-editor-input .lexical-heading-h1,
+.jfx-editor .lexical-read-only .lexical-heading-h1 {
     font-size: 2rem;
 }
 
-.editor .lexical-editor-input .lexical-heading-h2,
-.editor .lexical-read-only .lexical-heading-h2 {
+.jfx-editor .lexical-editor-input .lexical-heading-h2,
+.jfx-editor .lexical-read-only .lexical-heading-h2 {
     font-size: 1.6rem;
 }
 
-.editor .lexical-editor-input .lexical-heading-h3,
-.editor .lexical-read-only .lexical-heading-h3 {
+.jfx-editor .lexical-editor-input .lexical-heading-h3,
+.jfx-editor .lexical-read-only .lexical-heading-h3 {
     font-size: 1.3rem;
 }
 
-.editor .lexical-editor-input .lexical-list-ul,
-.editor .lexical-read-only .lexical-list-ul,
-.editor .lexical-editor-input .lexical-list-ol,
-.editor .lexical-read-only .lexical-list-ol {
+.jfx-editor .lexical-editor-input .lexical-heading-h4,
+.jfx-editor .lexical-read-only .lexical-heading-h4 {
+    font-size: 1.15rem;
+}
+
+.jfx-editor .lexical-editor-input .lexical-heading-h5,
+.jfx-editor .lexical-read-only .lexical-heading-h5 {
+    font-size: 1.05rem;
+}
+
+.jfx-editor .lexical-editor-input .lexical-heading-h6,
+.jfx-editor .lexical-read-only .lexical-heading-h6 {
+    font-size: 0.95rem;
+}
+
+.jfx-editor .lexical-editor-input .lexical-list-ul,
+.jfx-editor .lexical-read-only .lexical-list-ul,
+.jfx-editor .lexical-editor-input .lexical-list-ol,
+.jfx-editor .lexical-read-only .lexical-list-ol {
     margin: 0.9em 0;
     padding-left: 1.6em;
 }
 
-.editor .lexical-editor-input .lexical-list-ul,
-.editor .lexical-read-only .lexical-list-ul {
+.jfx-editor .lexical-editor-input .lexical-list-ul,
+.jfx-editor .lexical-read-only .lexical-list-ul {
     list-style-type: disc;
 }
 
-.editor .lexical-editor-input .lexical-list-ol,
-.editor .lexical-read-only .lexical-list-ol {
+.jfx-editor .lexical-editor-input .lexical-list-ol,
+.jfx-editor .lexical-read-only .lexical-list-ol {
     list-style-type: decimal;
 }
 
-.editor .lexical-editor-input .lexical-listitem,
-.editor .lexical-read-only .lexical-listitem {
+.jfx-editor .lexical-editor-input .lexical-listitem,
+.jfx-editor .lexical-read-only .lexical-listitem {
     margin: 0.3em 0;
     color: var(--aj-ink);
     line-height: 1.6;
 }
 
-.editor .lexical-editor-input .lexical-listitem > .lexical-list-ul,
-.editor .lexical-read-only .lexical-listitem > .lexical-list-ul,
-.editor .lexical-editor-input .lexical-listitem > .lexical-list-ol,
-.editor .lexical-read-only .lexical-listitem > .lexical-list-ol {
+.jfx-editor .lexical-editor-input .lexical-listitem > .lexical-list-ul,
+.jfx-editor .lexical-read-only .lexical-listitem > .lexical-list-ul,
+.jfx-editor .lexical-editor-input .lexical-listitem > .lexical-list-ol,
+.jfx-editor .lexical-read-only .lexical-listitem > .lexical-list-ol {
     margin-top: 0.45em;
     margin-bottom: 0.45em;
 }
 
-.editor .lexical-editor-input {
+.jfx-editor .lexical-editor-input {
     display: block;
     overflow: auto;
 }
 
-.editor div:has(> .lexical-editor-input),
-.editor div:has(> .lexical-read-only) {
+.jfx-editor div:has(> .lexical-editor-input),
+.jfx-editor div:has(> .lexical-read-only) {
     display: flex;
     flex-direction: column;
     flex: 0 1 auto;
@@ -645,8 +786,8 @@
     height: auto;
 }
 
-.editor .lexical-editor-input table,
-.editor .lexical-read-only table {
+.jfx-editor .lexical-editor-input table,
+.jfx-editor .lexical-read-only table {
     width: fit-content;
     min-width: 100%;
     border-collapse: collapse;
@@ -659,15 +800,15 @@
     overflow: hidden;
 }
 
-.editor .lexical-editor-input table tr,
-.editor .lexical-read-only table tr {
+.jfx-editor .lexical-editor-input table tr,
+.jfx-editor .lexical-read-only table tr {
     background: transparent;
 }
 
-.editor .lexical-editor-input table td,
-.editor .lexical-editor-input table th,
-.editor .lexical-read-only table td,
-.editor .lexical-read-only table th {
+.jfx-editor .lexical-editor-input table td,
+.jfx-editor .lexical-editor-input table th,
+.jfx-editor .lexical-read-only table td,
+.jfx-editor .lexical-read-only table th {
     min-width: 96px;
     padding: 10px 12px;
     vertical-align: top;
@@ -677,22 +818,65 @@
     background: transparent;
 }
 
-.editor .lexical-editor-input table td:last-child,
-.editor .lexical-editor-input table th:last-child,
-.editor .lexical-read-only table td:last-child,
-.editor .lexical-read-only table th:last-child {
+.jfx-editor .lexical-editor-input table td:last-child,
+.jfx-editor .lexical-editor-input table th:last-child,
+.jfx-editor .lexical-read-only table td:last-child,
+.jfx-editor .lexical-read-only table th:last-child {
     border-right: none;
 }
 
-.editor .lexical-editor-input table tr:last-child td,
-.editor .lexical-editor-input table tr:last-child th,
-.editor .lexical-read-only table tr:last-child td,
-.editor .lexical-read-only table tr:last-child th {
+.jfx-editor .lexical-editor-input table tr:last-child td,
+.jfx-editor .lexical-editor-input table tr:last-child th,
+.jfx-editor .lexical-read-only table tr:last-child td,
+.jfx-editor .lexical-read-only table tr:last-child th {
     border-bottom: none;
 }
 
-.editor .lexical-editor-input table th,
-.editor .lexical-read-only table th {
+.jfx-editor .lexical-editor-input table th,
+.jfx-editor .lexical-read-only table th {
+    font-weight: 600;
+    background: var(--aj-surface-muted);
+    color: var(--aj-ink-soft);
+}
+
+/* The SSR renderer uses .jfx-editor-readonly instead of Lexical's root class. */
+.jfx-editor-readonly table {
+    width: fit-content;
+    min-width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+    margin: 12px 0;
+    table-layout: auto;
+    background: var(--aj-surface);
+    border: 1px solid var(--aj-line);
+}
+
+.jfx-editor-readonly table tr {
+    background: transparent;
+}
+
+.jfx-editor-readonly table td,
+.jfx-editor-readonly table th {
+    min-width: 96px;
+    padding: 10px 12px;
+    vertical-align: top;
+    border-right: 1px solid var(--aj-line-soft);
+    border-bottom: 1px solid var(--aj-line-soft);
+    color: var(--aj-ink-muted);
+    background: transparent;
+}
+
+.jfx-editor-readonly table td:last-child,
+.jfx-editor-readonly table th:last-child {
+    border-right: none;
+}
+
+.jfx-editor-readonly table tr:last-child td,
+.jfx-editor-readonly table tr:last-child th {
+    border-bottom: none;
+}
+
+.jfx-editor-readonly table th {
     font-weight: 600;
     background: var(--aj-surface-muted);
     color: var(--aj-ink-soft);

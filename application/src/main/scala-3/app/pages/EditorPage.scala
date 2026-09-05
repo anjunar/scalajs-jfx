@@ -16,11 +16,10 @@ import jfx.core.i18n.i18n
 import jfx.router.RouteContext
 
 object EditorPage {
-  def render(context: RouteContext)(using AbstractComponent, Cursor): Unit = {
-    val document    = initialDocument()
-    val state       = Property(document)
-    val editorName  = "article"
-    val ssrEditable = context.queryParams.get(s"$editorName.editor").contains("editable")
+  def render(_context: RouteContext)(using AbstractComponent, Cursor): Unit = {
+    val document   = initialDocument()
+    val state      = Property(document)
+    val editorName = "article"
 
     Showcase.showcasePage(
       i18n"Editor",
@@ -43,7 +42,7 @@ object EditorPage {
             classes = Seq("jfx2-demo__lexical")
             placeholder = i18n"Write the article..."
             value = state.get
-            editable = ssrEditable
+            editable = false
             ribbonToolbar()
 
             basePlugin()

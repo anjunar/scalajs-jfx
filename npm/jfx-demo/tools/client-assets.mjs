@@ -11,19 +11,28 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
-/** Client entry, as configured in vite.config.ts's `build.rollupOptions.input`. */
-const entryId = "src/entry-client.ts";
+/** Client entries, as configured in vite.config.ts's `build.rollupOptions.input`. */
+const scriptEntryId = "src/entry-client.ts";
+const stylesheetEntryId = "src/styles/style.css";
 
 /** In the dev server Vite serves the source directly; its own client script is
  * injected separately by `vite.transformIndexHtml`. */
 export function developmentAssets() {
   return [
     {
+      key: "asset:stylesheet",
+      tagName: "link",
+      attributes: [
+        ["rel", "stylesheet"],
+        ["href", `/${stylesheetEntryId}`],
+      ],
+    },
+    {
       key: "asset:script",
       tagName: "script",
       attributes: [
         ["type", "module"],
-        ["src", `/${entryId}`],
+        ["src", `/${scriptEntryId}`],
       ],
     },
   ];
@@ -33,35 +42,44 @@ export function developmentAssets() {
 export async function productionAssets(clientDist) {
   const manifestPath = resolve(clientDist, ".vite", "manifest.json");
   const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
-  const entry = manifest[entryId];
+  const scriptEntry = requiredEntry(manifest, scriptEntryId, manifestPath);
+  const stylesheetEntry = requiredEntry(manifest, stylesheetEntryId, manifestPath);
+  const stylesheetFile = stylesheetEntry.file;
 
-  if (!entry) {
+  if (!stylesheetFile.endsWith(".css")) {
     throw new Error(
-      `${manifestPath} does not know the entry "${entryId}". ` +
-        `Present: ${Object.keys(manifest).join(", ")}`
+      `${manifestPath} does not map "${stylesheetEntryId}" to CSS: ${stylesheetFile}`
     );
   }
 
-  const stylesheets = (entry.css ?? []).map((file, index) => ({
-    key: `asset:stylesheet:${index}`,
-    tagName: "link",
-    attributes: [
-      ["rel", "stylesheet"],
-      ["crossorigin", ""],
-      ["href", `/${file}`],
-    ],
-  }));
-
   return [
-    ...stylesheets,
+    {
+      key: "asset:stylesheet",
+      tagName: "link",
+      attributes: [
+        ["rel", "stylesheet"],
+        ["crossorigin", ""],
+        ["href", `/${stylesheetFile}`],
+      ],
+    },
     {
       key: "asset:script",
       tagName: "script",
       attributes: [
         ["type", "module"],
         ["crossorigin", ""],
-        ["src", `/${entry.file}`],
+        ["src", `/${scriptEntry.file}`],
       ],
     },
   ];
+}
+
+function requiredEntry(manifest, entryId, manifestPath) {
+  const entry = manifest[entryId];
+  if (entry) return entry;
+
+  throw new Error(
+    `${manifestPath} does not know the entry "${entryId}". ` +
+      `Present: ${Object.keys(manifest).join(", ")}`
+  );
 }

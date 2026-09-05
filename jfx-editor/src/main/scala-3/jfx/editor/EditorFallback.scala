@@ -1,10 +1,11 @@
 package jfx.editor
 
 import jfx.core.component.AbstractComponent
+import jfx.core.context.UrlScope
 import jfx.core.dsl.AttributeDsl.{setAttribute as setDslAttribute}
 import jfx.core.dsl.ClassDsl.classes
 import jfx.core.dsl.DslLayer.render
-import jfx.core.dsl.EventDsl.on
+import jfx.core.dsl.EventDsl.{on, onClick}
 import jfx.core.layout.Div.div
 import jfx.core.layout.TextComponent.text
 import jfx.core.render.Cursor
@@ -68,8 +69,12 @@ private final class MarkdownTextArea(
 }
 
 /** The ordinary link used to change editor mode with or without JavaScript. */
-private final class MarkdownModeLink(url: String, label: String, readonly: Boolean)
-    extends AbstractComponent {
+private[editor] final class MarkdownModeLink(
+    url: String,
+    label: String,
+    readonly: Boolean,
+    onActivate: () => Unit
+) extends AbstractComponent {
   override val tagName: String = "a"
 
   override def compose(cursor: Cursor): Unit =
@@ -79,15 +84,19 @@ private final class MarkdownModeLink(url: String, label: String, readonly: Boole
         Option.when(readonly)("jfx-editor__readonly-link")
       setDslAttribute("href", safeUrl)
       text(label) {}
-      installBrowserNavigation(safeUrl)
+      if (cursor.isBrowser && isInternalDestination(safeUrl))
+        onClick { event =>
+          event.preventDefault()
+          onActivate()
+          UrlScope.current(using this) match {
+            case Some(scope) => scope.navigate(safeUrl, replace = false)
+            case None        => dom.window.history.pushState(null, "", safeUrl)
+          }
+        }
     }
-}
 
-private def installBrowserNavigation(
-    url: String
-)(using cursor: Cursor, eventDsl: jfx.core.dsl.EventDsl): Unit =
-  if (cursor.isBrowser)
-    jfx.core.dsl.EventDsl.onClick { event =>
-      event.preventDefault()
-      dom.window.location.href = url
-    }
+  private def isInternalDestination(destination: String): Boolean =
+    (destination.startsWith("/") && !destination.startsWith("//")) ||
+      destination.startsWith("?") ||
+      destination.startsWith("#")
+}

@@ -1,9 +1,11 @@
 package jfx.editor
 
 import jfx.core.component.{AbstractComponent, Runtime}
+import jfx.core.context.UrlScope
+import jfx.core.dsl.DslLayer
 import jfx.core.dsl.DslLayer.render
-import jfx.core.render.{Cursor, SsrCursor}
-import jfx.core.state.Property
+import jfx.core.render.{Cursor, HostElement, HostNode, SsrCursor, TextNode, UiEvent}
+import jfx.core.state.{Disposable, Property}
 import jfx.editor.Editor.*
 import jfx.editor.plugins.*
 import jfx.forms.{Control, ErrorResponse, Form, FormController}
@@ -109,6 +111,82 @@ final class EditorSpec extends AnyFlatSpec with Matchers {
     editableHtml should include("href=\"?article.editor=readonly\"")
     editableHtml should not include "<h1"
     editableHtml should include("jfx-editor__readonly-link")
+  }
+
+  it should "derive its mode from UrlScope and preserve the remaining route URL" in {
+    val readonly = Runtime.renderToString { cursor =>
+      Runtime.mount(
+        new EditorUrlRoot(
+          UrlScope(() => "/articles/42?lang=de&article.editor=readonly#body")((_, _) => ())
+        ) {
+          override protected def content(using AbstractComponent, Cursor): Unit =
+            editor("article", standalone = true) {
+              Editor.value = "# Readonly from URL"
+              editable = true
+            }
+        },
+        cursor
+      )
+    }
+
+    readonly should include("<h1")
+    readonly should not include "<textarea"
+    readonly should include(
+      "href=\"/articles/42?lang=de&amp;article.editor=editable#body\""
+    )
+
+    val editableHtml = Runtime.renderToString { cursor =>
+      Runtime.mount(
+        new EditorUrlRoot(UrlScope(() => "/articles/42?article.editor=editable")((_, _) => ())) {
+          override protected def content(using AbstractComponent, Cursor): Unit =
+            editor("article", standalone = true) {
+              Editor.value = "Editable from URL"
+              editable = false
+            }
+        },
+        cursor
+      )
+    }
+
+    editableHtml should include("<textarea")
+    editableHtml should include("Editable from URL")
+    editableHtml should not include "<h1"
+  }
+
+  it should "navigate mode links through UrlScope without a browser reload" in {
+    val navigations = mutable.ArrayBuffer.empty[(String, Boolean)]
+    val scope       = UrlScope(() => "/articles/42?lang=de&article.editor=editable#body") {
+      (url, replace) => navigations += url -> replace
+    }
+    var activated                           = false
+    var linkHost: EditorLinkTestHostElement = null
+    val cursor = new EditorLinkTestCursor(host => if (host.tagName == "a") linkHost = host)
+    val root   = Runtime.mount(
+      new EditorUrlRoot(scope) {
+        override protected def content(using AbstractComponent, Cursor): Unit =
+          DslLayer.child(
+            new MarkdownModeLink(
+              "/articles/42?lang=de&article.editor=readonly#body",
+              "Readonly",
+              readonly = true,
+              onActivate = () => activated = true
+            )
+          ) {}
+      },
+      cursor
+    )
+
+    linkHost.attribute("href") shouldBe Some(
+      "/articles/42?lang=de&article.editor=readonly#body"
+    )
+    linkHost.fireClick() shouldBe Some(true)
+    activated shouldBe true
+    navigations.toSeq shouldBe Seq(
+      "/articles/42?lang=de&article.editor=readonly#body" -> false
+    )
+
+    Runtime.unmount(root)
+    linkHost.fireClick() shouldBe None
   }
 
   it should "render a deterministic readonly shell and placeholder" in {
@@ -398,5 +476,78 @@ private abstract class EditorRoot extends AbstractComponent {
   override def compose(cursor: Cursor): Unit =
     render(this, cursor) {
       content
+    }
+}
+
+private abstract class EditorUrlRoot(scope: UrlScope) extends EditorRoot {
+  override def compose(cursor: Cursor): Unit = {
+    UrlScope.provide(scope)(using this)
+    super.compose(cursor)
+  }
+}
+
+private final class EditorLinkTestCursor(onCreate: EditorLinkTestHostElement => Unit)
+    extends Cursor {
+  override def isBrowser: Boolean = true
+
+  override def claimElement(tag: String): HostElement = {
+    val host = new EditorLinkTestHostElement(tag)
+    onCreate(host)
+    host
+  }
+
+  override def claimText(initial: String): TextNode = new EditorLinkTestTextNode(initial)
+
+  override def sub(host: HostElement): Cursor = this
+}
+
+private final class EditorLinkTestTextNode(private var value: String) extends TextNode {
+  override def setText(next: String): Unit = value = next
+  override def getText: String             = value
+  override def renderHtml(): String        = value
+}
+
+private final class EditorLinkTestHostElement(val tagName: String) extends HostElement {
+  private val attributes = mutable.Map.empty[String, String]
+  private val properties = mutable.Map.empty[String, Any]
+  private val styles     = mutable.Map.empty[String, String]
+  private val children   = mutable.ArrayBuffer.empty[HostNode]
+  private val listeners  = mutable.Map.empty[String, UiEvent => Unit]
+
+  override def setAttribute(name: String, value: String): Unit = attributes.update(name, value)
+  override def removeAttribute(name: String): Unit             = attributes.remove(name)
+  override def attribute(name: String): Option[String]         = attributes.get(name)
+  override def setProperty(name: String, value: Any): Unit     = properties.update(name, value)
+  override def property[T](name: String): Option[T] = properties.get(name).map(_.asInstanceOf[T])
+  override def setStyle(name: String, value: String): Unit = styles.update(name, value)
+  override def removeStyle(name: String): Unit             = styles.remove(name)
+  override def style(name: String): Option[String]         = styles.get(name)
+  override def setClassNames(names: Seq[String]): Unit     =
+    attributes.update("class", names.mkString(" "))
+  override def insertChild(index: Int, child: HostNode): Unit = children.insert(index, child)
+  override def insertBefore(child: HostNode, before: Option[HostNode]): Unit =
+    before.map(children.indexOf).filter(_ >= 0) match {
+      case Some(index) => children.insert(index, child)
+      case None        => children += child
+    }
+  override def removeChild(child: HostNode): Unit = children -= child
+  override def clearChildren(): Unit              = children.clear()
+  override def childCount: Int                    = children.size
+  override def renderHtml(): String               = s"<$tagName></$tagName>"
+
+  override def on(eventName: String)(handler: UiEvent => Unit): Disposable = {
+    listeners.update(eventName, handler)
+    Disposable(listeners.remove(eventName))
+  }
+
+  def fireClick(): Option[Boolean] =
+    listeners.get("click").map { listener =>
+      var prevented = false
+      listener(new UiEvent {
+        override def raw: Any                = null
+        override def preventDefault(): Unit  = prevented = true
+        override def stopPropagation(): Unit = ()
+      })
+      prevented
     }
 }

@@ -24,7 +24,7 @@
  */
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   hydrate,
   installRuntime,
@@ -36,6 +36,7 @@ import {
 } from "@anjunar/jfx-core";
 import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";
 import { form } from "@anjunar/jfx-forms";
+import { router, view } from "@anjunar/jfx-router";
 import { viewport } from "@anjunar/jfx-viewport";
 import { editor } from "../src/index.js";
 
@@ -52,8 +53,10 @@ beforeAll(() => {
 });
 
 beforeEach(() => {
+  vi.restoreAllMocks();
   resetRuntime();
   installRuntime(bridgeRuntime);
+  window.history.replaceState(null, "", "/");
 });
 
 describe("the linked runtime", () => {
@@ -63,6 +66,45 @@ describe("the linked runtime", () => {
 });
 
 describe("form + editor", () => {
+  it("switches URL modes through the router without reloading the page", () => {
+    window.history.replaceState(null, "", "/article?body.editor=editable&lang=de");
+    const pushState = vi.spyOn(window.history, "pushState");
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const app = mount(root, () => {
+      router([
+        view("/article", () => () => {
+          viewport(() => {
+            editor("body", {
+              standalone: true,
+              value: "## Stable Markdown",
+              editable: false,
+            });
+          });
+        }),
+      ]);
+    });
+
+    expect(root.querySelector(".jfx-editor__surface")?.textContent).toBe("Stable Markdown");
+    const readonlyLink = root.querySelector(".jfx-editor__readonly-link")!;
+    readonlyLink.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+
+    expect(pushState).toHaveBeenCalled();
+    expect(window.location.pathname).toBe("/article");
+    expect(window.location.search).toBe("?lang=de&body.editor=readonly");
+    expect(root.querySelector("textarea")).toBeNull();
+    expect(root.querySelector("h2")?.textContent).toBe("Stable Markdown");
+
+    const editLink = root.querySelector(".jfx-editor__edit-link")!;
+    editLink.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+
+    expect(window.location.search).toBe("?lang=de&body.editor=editable");
+    expect(root.querySelector(".jfx-editor__surface")?.textContent).toBe("Stable Markdown");
+
+    app.dispose();
+  });
+
   it("imports the initial Markdown value into the live Lexical surface", () => {
     const model = { body: property("## Hello **world**") };
     const root = document.createElement("div");
@@ -79,6 +121,97 @@ describe("form + editor", () => {
     const surface = root.querySelector(".jfx-editor__surface");
     expect(surface?.textContent).toBe("Hello world");
     expect(model.body.get).toBe("## Hello **world**");
+
+    app.dispose();
+  });
+
+  it("switches a mounted Lexical surface to readonly without replacing it", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const app = mount(root, () => {
+      viewport(() =>
+        editor("body", {
+          standalone: true,
+          value: "## Stable Markdown",
+          editable: true,
+          plugins: ["base"],
+        })
+      );
+    });
+
+    const surface = root.querySelector(".jfx-editor__surface") as HTMLElement;
+    const toolbar = root.querySelector(".jfx-editor__toolbar") as HTMLElement;
+    expect(surface.getAttribute("contenteditable")).toBe("true");
+
+    (root.querySelector(".jfx-editor__readonly-link") as HTMLAnchorElement).click();
+
+    expect(root.querySelector(".jfx-editor__surface")).toBe(surface);
+    expect(surface.getAttribute("contenteditable")).toBe("false");
+    expect(surface.getAttribute("aria-readonly")).toBe("true");
+    expect(toolbar.style.display).toBe("none");
+    expect(window.location.search).toBe("?body.editor=readonly");
+
+    (root.querySelector(".jfx-editor__edit-link") as HTMLAnchorElement).click();
+
+    expect(root.querySelector(".jfx-editor__surface")).toBe(surface);
+    expect(surface.getAttribute("contenteditable")).toBe("true");
+    expect(surface.getAttribute("aria-readonly")).toBe("false");
+    expect(window.location.search).toBe("?body.editor=editable");
+
+    app.dispose();
+  });
+
+  it("mounts the Lexical surface readonly on the first browser render", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const app = mount(root, () => {
+      viewport(() =>
+        editor("body", {
+          standalone: true,
+          value: "## Initially readonly",
+          editable: false,
+          plugins: ["base"],
+        })
+      );
+    });
+
+    const fallback = root.querySelector(".jfx-editor__fallback") as HTMLElement;
+    const surface = root.querySelector(".jfx-editor__surface") as HTMLElement;
+    const toolbar = root.querySelector(".jfx-editor__toolbar") as HTMLElement;
+
+    expect(surface.textContent).toBe("Initially readonly");
+    expect(surface.getAttribute("contenteditable")).toBe("false");
+    expect(surface.getAttribute("aria-readonly")).toBe("true");
+    expect(surface.classList.contains("lexical-read-only")).toBe(true);
+    expect(surface.style.display).toBe("");
+    expect(fallback.style.display).toBe("none");
+    expect(toolbar.style.display).toBe("none");
+
+    app.dispose();
+  });
+
+  it("keeps the full heading and inline-format theme contract in Lexical", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const app = mount(root, () => {
+      viewport(() =>
+        editor("body", {
+          standalone: true,
+          value: "###### H6\n\n**bold** *italic* ++underlined++ ~~struck~~ ==marked== `code`",
+        })
+      );
+    });
+
+    expect(root.querySelector(".lexical-heading-h6")?.textContent).toBe("H6");
+    expect(root.querySelector(".lexical-text-bold")?.textContent).toBe("bold");
+    expect(root.querySelector(".lexical-text-italic")?.textContent).toBe("italic");
+    expect(root.querySelector(".lexical-text-underline")?.textContent).toBe("underlined");
+    expect(root.querySelector(".lexical-text-strikethrough")?.textContent).toBe("struck");
+    expect(root.querySelector("mark")?.textContent).toBe("marked");
+    expect(root.querySelector(".jfx-editor__surface code")?.textContent).toBe("code");
 
     app.dispose();
   });
@@ -139,6 +272,42 @@ describe("form + editor", () => {
     app.dispose();
   });
 
+  it("enhances an initially readonly SSR preview to readonly Lexical during hydration", async () => {
+    const build = (): void => {
+      viewport(() =>
+        editor("body", {
+          standalone: true,
+          value: "## Hydrated readonly",
+          editable: false,
+          plugins: ["base"],
+        })
+      );
+    };
+
+    const rendered = await renderToString(build);
+    expect(rendered.html).toContain('<h2 class="lexical-heading-h2">');
+    expect(rendered.html).not.toContain("<textarea");
+
+    const root = document.createElement("div");
+    root.innerHTML = rendered.html;
+    document.body.appendChild(root);
+    const serverFallback = root.querySelector(".jfx-editor__fallback") as HTMLElement;
+    const serverSurface = root.querySelector(".jfx-editor__surface") as HTMLElement;
+
+    const app = await hydrate(root, build);
+
+    expect(root.querySelector(".jfx-editor__fallback")).toBe(serverFallback);
+    expect(root.querySelector(".jfx-editor__surface")).toBe(serverSurface);
+    expect(serverFallback.style.display).toBe("none");
+    expect(serverSurface.style.display).toBe("");
+    expect(serverSurface.textContent).toBe("Hydrated readonly");
+    expect(serverSurface.getAttribute("contenteditable")).toBe("false");
+    expect(serverSurface.getAttribute("aria-readonly")).toBe("true");
+    expect(serverSurface.classList.contains("lexical-read-only")).toBe(true);
+
+    app.dispose();
+  });
+
   it("binds Markdown textarea input back through the form model", () => {
     const model = { body: property("Initial") };
     const root = document.createElement("div");
@@ -193,7 +362,13 @@ describe("form + editor", () => {
 
     const readonlyApp = mountMode(false);
     expect(root.querySelector("textarea")).toBeNull();
-    expect(root.querySelector("h2")?.textContent).toBe("Persistent Markdown");
+    expect(root.querySelector(".jfx-editor__surface")?.textContent).toBe("Persistent Markdown");
+    expect(root.querySelector(".jfx-editor__surface")?.getAttribute("contenteditable")).toBe(
+      "false"
+    );
+    expect((root.querySelector(".jfx-editor__fallback") as HTMLElement).style.display).toBe(
+      "none"
+    );
     readonlyApp.dispose();
 
     markdown = "### Remounted";

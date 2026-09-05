@@ -569,8 +569,12 @@ zeigt -- letzteres über einen `?jfx-code`-Import, den
 tokenisiert (keine Highlighting-Bibliothek im Bundle, ein serverseitig
 gerendeter `pre > code > span`-Baum). Design kommt jetzt aus `@anjunar/ui`
 (echte Abhängigkeit, nicht "nicht installiert") in derselben Kaskadenordnung
-wie `application/`. 27 Katalogeinträge plus zwei erreichbare Kindrouten,
-geprüft von `scripts/verify-pages.mjs` gegen den Produktionsbuild.
+wie `application/`. Das Kaskaden-Stylesheet ist in beiden Demos ein eigener
+Vite-Einstieg und wird vom SSR-Dokument direkt verlinkt, nicht vom
+Hydrationsmodul importiert; damit bleibt die Seite auch ohne ausgeführtes
+JavaScript gestaltet. `verify-single-runtime.mjs` prüft diesen Pfad im
+Development, `verify-pages.mjs` im Produktionsbuild. 27 Katalogeinträge plus
+zwei erreichbare Kindrouten werden gegen den Produktionsbuild geprüft.
 
 Zwei weitere reale Befunde dabei, derselben Art wie die drei oben: (1) mehrere
 `text()`-Aufrufe direkt hintereinander ohne dazwischenliegendes Element

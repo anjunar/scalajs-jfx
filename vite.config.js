@@ -10,6 +10,8 @@ const webappRoot = resolve(projectRoot, "application", "src", "main", "webapp")
 const scalaJsOutputRoot = resolve(projectRoot, "application", "target", "vite")
 const scalaJsFastOptMain = resolve(scalaJsOutputRoot, "fastopt", "main.js")
 const scalaJsFullOptMain = resolve(scalaJsOutputRoot, "fullopt", "main.js")
+const clientEntry = resolve(webappRoot, "src", "main.js")
+const stylesheetEntry = resolve(webappRoot, "src", "style.css")
 
 export default defineConfig(({ command, isSsrBuild }) => ({
     root: webappRoot,
@@ -33,9 +35,16 @@ export default defineConfig(({ command, isSsrBuild }) => ({
         sourcemap: true,
         manifest: !isSsrBuild,
         // Es gibt keine index.html mehr -- das Dokument rendert AppDocument. Der
-        // Client-Build braucht deshalb ein JS-Modul als Einstieg, und das
-        // Manifest ist der Weg, wie server.mjs und prerender-pages.mjs die
-        // gehashten Dateinamen wiederfinden (tools/client-assets.mjs).
-        ...(isSsrBuild ? {} : { rollupOptions: { input: resolve(webappRoot, "src", "main.js") } })
+        // Client-Build braucht deshalb Skript und Stylesheet als explizite
+        // Einstiege. Ueber das Manifest finden server.mjs und
+        // prerender-pages.mjs deren gehashte Dateinamen wieder
+        // (tools/client-assets.mjs).
+        // CSS ist ein eigener Einstieg statt eines Imports im Hydrationsmodul.
+        // Dadurch kann SSR das Stylesheet auch ohne ausgefuehrtes JavaScript
+        // verlinken; tools/client-assets.mjs loest beide Eintraege aus dem
+        // Manifest auf.
+        ...(isSsrBuild
+            ? {}
+            : { rollupOptions: { input: { main: clientEntry, styles: stylesheetEntry } } })
     }
 }))

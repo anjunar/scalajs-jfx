@@ -14,41 +14,61 @@ import { resolve } from "node:path"
 
 import { siteConfig } from "./site-config.mjs"
 
-/** Client-Entry, wie er in vite.config.js als rollupOptions.input steht. */
-const entryId = "src/main.js"
+/** Client-Entries, wie sie in vite.config.js als rollupOptions.input stehen. */
+const scriptEntryId = "src/main.js"
+const stylesheetEntryId = "src/style.css"
 
 /** Im Dev-Server liefert Vite den Quelltext direkt; Vite haengt seinen eigenen
  *  Client separat an (transformIndexHtml). */
 export function developmentAssets() {
   // transformIndexHtml applies Vite's configured base path to root-relative source entries.
-  return [{ tag: "script", attributes: { type: "module", src: `/${entryId}` } }]
+  return [
+    {
+      tag: "link",
+      attributes: { rel: "stylesheet", href: `/${stylesheetEntryId}` }
+    },
+    { tag: "script", attributes: { type: "module", src: `/${scriptEntryId}` } }
+  ]
 }
 
 /** Im Produktionsbuild stehen die Namen im Vite-Manifest. */
 export async function productionAssets(clientDist) {
   const manifestPath = resolve(clientDist, ".vite", "manifest.json")
   const manifest = JSON.parse(await readFile(manifestPath, "utf8"))
-  const entry = manifest[entryId]
+  const scriptEntry = requiredEntry(manifest, scriptEntryId, manifestPath)
+  const stylesheetEntry = requiredEntry(manifest, stylesheetEntryId, manifestPath)
+  const stylesheetFile = stylesheetEntry.file
 
-  if (!entry) {
+  if (!stylesheetFile.endsWith(".css")) {
     throw new Error(
-      `${manifestPath} kennt den Eintrag "${entryId}" nicht. ` +
-        `Vorhanden: ${Object.keys(manifest).join(", ")}`
+      `${manifestPath} bildet "${stylesheetEntryId}" nicht auf CSS ab: ${stylesheetFile}`
     )
   }
 
-  const stylesheets = (entry.css ?? []).map((file) => ({
-    tag: "link",
-    attributes: { rel: "stylesheet", crossorigin: "", href: publicAssetUrl(file) }
-  }))
-
   return [
-    ...stylesheets,
+    {
+      tag: "link",
+      attributes: {
+        rel: "stylesheet",
+        crossorigin: "",
+        href: publicAssetUrl(stylesheetFile)
+      }
+    },
     {
       tag: "script",
-      attributes: { type: "module", crossorigin: "", src: publicAssetUrl(entry.file) }
+      attributes: { type: "module", crossorigin: "", src: publicAssetUrl(scriptEntry.file) }
     }
   ]
+}
+
+function requiredEntry(manifest, entryId, manifestPath) {
+  const entry = manifest[entryId]
+  if (entry) return entry
+
+  throw new Error(
+    `${manifestPath} kennt den Eintrag "${entryId}" nicht. ` +
+      `Vorhanden: ${Object.keys(manifest).join(", ")}`
+  )
 }
 
 function publicAssetUrl(file) {
