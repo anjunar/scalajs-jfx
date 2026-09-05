@@ -5,6 +5,7 @@ import { example } from "../../docs/example.js";
 import { callout } from "../../docs/callout.js";
 import { routerLinksPage } from "./page.js";
 import snippet from "./page.ts?jfx-code";
+import { translated } from "../../app/i18n.js";
 
 export function routerLinksDoc(): void {
   docPage(
@@ -19,10 +20,10 @@ export function routerLinksDoc(): void {
 
       callout("note", () => {
         paragraph(() => {
-          text("RouterConfig also takes a ");
-          code(() => text("basePath"));
+          text(translated("RouterConfig also takes a "));
+          code(() => text(translated("basePath")));
           text(
-            " -- every route and routerLink resolves under it, for mounting the whole app under a URL prefix (a reverse proxy path, say). Not exercised live here: this demo's own routes, nav links and search index all assume no prefix, and setting one would mean rewriting every hardcoded path in this project just to prove the option exists. The option itself is unchanged since CLAUDE_REVIEW_3.md -- see RouterConfig in @anjunar/jfx-router's router.ts."
+            translated(" -- every route and routerLink resolves under it, for mounting the whole app under a URL prefix (a reverse proxy path, say). Not exercised live here: this demo's own routes, nav links and search index all assume no prefix, and setting one would mean rewriting every hardcoded path in this project just to prove the option exists. The option itself is unchanged since CLAUDE_REVIEW_3.md -- see RouterConfig in @anjunar/jfx-router's router.ts.")
           );
         });
       });

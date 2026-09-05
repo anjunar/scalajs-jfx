@@ -1,5 +1,6 @@
 import { classes, div, forEach, text } from "@anjunar/jfx-core";
 import { fetchInto, listProperty } from "@anjunar/jfx-core";
+import { translated } from "../../app/i18n.js";
 
 export interface Book {
   readonly title: string;
@@ -46,7 +47,7 @@ export function coreAsyncPage(): void {
       if (loaded.length === 0) {
         div(() => {
           classes("text-ink-muted", "italic");
-          text("Nothing loaded yet.");
+          text(translated("Nothing loaded yet."));
         });
         return;
       }

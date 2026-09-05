@@ -3,7 +3,7 @@
  * ported from `application/src/main/scala-3/app/AppHead.scala`'s
  * `siteEntries`/`themeInitScript`, minus the SEO fields (Open Graph, JSON-LD,
  * hreflang alternates, canonical URL) that Scala file also carries: those are
- * driven by a `SiteConfig`/i18n setup this demo doesn't have. Per-page
+ * driven by a `SiteConfig` setup this demo doesn't have. Per-page
  * `<title>`/`meta[description]` are pushed from `../docs/page.ts` instead,
  * since a doc page -- not the shell -- is what knows them.
  *
@@ -15,7 +15,7 @@
  * inside this `head()` call rather than `document.ts`'s top level, which has
  * no composing element of its own to tie their disposal to.
  */
-import { charset, disposeWith, documentHead, head, type HeadEntry, inlineScript, link, meta, title } from "@anjunar/jfx-core";
+import { charset, disposeWith, documentHead, head, type HeadEntry, inlineScript, link, locale, meta, title } from "@anjunar/jfx-core";
 
 /** Runs before anything paints so the first frame already carries the right
  * `data-theme` -- otherwise the page would flash light before a stored
@@ -44,7 +44,9 @@ export function appHead(assets: readonly HeadEntry[] = []): void {
     const documentHeadHandle = documentHead();
     if (documentHeadHandle === null) return;
 
-    documentHeadHandle.htmlAttribute("lang", "en");
+    const activeLocale = locale();
+    documentHeadHandle.htmlAttribute("lang", activeLocale.get);
+    disposeWith(activeLocale.observeWithoutInitial((code) => documentHeadHandle.htmlAttribute("lang", code)));
 
     disposeWith(documentHeadHandle.push(charset()));
     disposeWith(documentHeadHandle.push(title("@anjunar/jfx demo")));

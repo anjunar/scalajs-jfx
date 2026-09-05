@@ -1,0 +1,8 @@
+import { catalogEntry, i18n, type CatalogEntry } from "@anjunar/jfx-core";
+
+export const entries: readonly CatalogEntry[] = [
+  catalogEntry(i18n`RemoteSource`, { de: "RemoteSource" }),
+  catalogEntry(i18n`A sparsely loaded data source fed to the same tableView() a local ListProperty uses.`, { de: "Eine sparsam geladene Datenquelle für dasselbe tableView(), das auch eine lokale ListProperty verwendet." }),
+  catalogEntry(i18n`remoteSource(): a sparsely loaded data source -- initial, initialQuery, rangeQuery, sortQuery, totalCount, nextQuery -- fed to the same tableView() as a local ListProperty.`, { de: "remoteSource(): eine sparsam geladene Datenquelle – initial, initialQuery, rangeQuery, sortQuery, totalCount, nextQuery – für dasselbe tableView() wie eine lokale ListProperty." }),
+  catalogEntry(i18n`The footer pager remains usable without JavaScript: its server-rendered links carry remote-rows.offset and remote-rows.limit, and RemoteSource.initialOffset renders the requested page directly on the server. Hydration then adds client-side navigation to those same links -- what sorting exists is not carried across pages, but sorting itself needs a click handler and so is unreachable without JavaScript in the first place.`, { de: "Der Pager im Footer bleibt ohne JavaScript nutzbar: Seine serverseitig gerenderten Links enthalten remote-rows.offset und remote-rows.limit, und RemoteSource.initialOffset rendert die angeforderte Seite direkt auf dem Server. Die Hydration ergänzt anschließend clientseitige Navigation für dieselben Links. Eine vorhandene Sortierung wird nicht über Seiten hinweg übertragen; Sortieren benötigt ohnehin einen Click-Handler und ist ohne JavaScript zunächst nicht erreichbar." }),
+];

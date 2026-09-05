@@ -6,6 +6,7 @@ import { codeBlock } from "../../docs/code-block.js";
 import { routerParamsPage } from "./page.js";
 import snippet from "./page.ts?jfx-code";
 import detailSnippet from "./detail.ts?jfx-code";
+import { translated } from "../../app/i18n.js";
 
 export function routerParamsDoc(): void {
   docPage(
@@ -17,7 +18,7 @@ export function routerParamsDoc(): void {
       example({ code: snippet }, () => {
         routerParamsPage();
       });
-      heading(3, () => text("The child route's loader (detail.ts)"));
+      heading(3, () => text(translated("The child route's loader (detail.ts)")));
       codeBlock(detailSnippet);
     }
   );

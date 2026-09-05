@@ -9,24 +9,38 @@
  * is exactly this: shell logic, not routing logic, until nested parent
  * routes land in the library and `routes.ts` can build a real outlet tree.
  */
-import { button, classes, div, nav, onClick, text } from "@anjunar/jfx-core";
+import { button, classes, div, disposeWith, locale, nav, onClick, property, text } from "@anjunar/jfx-core";
 import { routerLink } from "@anjunar/jfx-router";
 import { catalog, packages } from "./catalog.js";
 import { themeProperty, toggleTheme } from "./theme.js";
+import { switchLocale, translated } from "./i18n.js";
 
 export function appShell(): void {
+  const activeLocale = locale();
+  const theme = themeProperty();
+  const themeLabel = property("");
+  const updateThemeLabel = (mode = theme.get): void => {
+    themeLabel.set(translated(mode === "dark" ? "Light mode" : "Dark mode").get);
+  };
+  updateThemeLabel();
+  disposeWith(theme.observeWithoutInitial(updateThemeLabel));
+  disposeWith(activeLocale.observeWithoutInitial(() => updateThemeLabel()));
   div(() => {
     classes("app-shell__header");
-    routerLink("/", "@anjunar/jfx", {});
-    routerLink("/search", "Search");
+    routerLink("/", translated("@anjunar/jfx"), {});
+    routerLink("/search", translated("Search"));
     button(
-      themeProperty().map((mode) => (mode === "dark" ? "Light mode" : "Dark mode")),
+      themeLabel,
       {},
       () => {
         classes("app-shell__theme-toggle");
         onClick(toggleTheme);
       }
     );
+    button(activeLocale.map((code) => (code === "de" ? "EN" : "DE")), {}, () => {
+      classes("app-shell__locale-toggle");
+      onClick(() => switchLocale(activeLocale.get === "de" ? "en" : "de"));
+    });
   });
 
   nav(() => {
@@ -36,10 +50,10 @@ export function appShell(): void {
         classes("app-shell__nav-group");
         div(() => {
           classes("app-shell__nav-group-title");
-          text(pkg.name);
+          text(translated(pkg.name));
         });
         for (const entry of catalog.filter((candidate) => candidate.pkg === pkg.id)) {
-          routerLink(entry.path, entry.title, { activeClass: "app-shell__nav-link--active" });
+          routerLink(entry.path, translated(entry.title), { activeClass: "app-shell__nav-link--active" });
         }
       });
     }

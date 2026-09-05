@@ -1,6 +1,7 @@
 import { classes, div, text } from "@anjunar/jfx-core";
 import { column, remoteSource, tableView } from "@anjunar/jfx-controls";
 import type { RemotePage, RemoteSource, SortSpec } from "@anjunar/jfx-controls";
+import { translated } from "../../app/i18n.js";
 
 interface Row {
   readonly id: number;
@@ -66,8 +67,8 @@ export function controlsRemotePage(initialOffset = 0): void {
     tableView(
       source,
       [
-        column("Id", (row) => text(String(row.id)), { prefWidth: 100 }),
-        column("Name", (row) => text(row.name), { prefWidth: 220, sortable: true, sortKey: "name" }),
+        column(translated("Id").get, (row) => text(String(row.id)), { prefWidth: 100 }),
+        column(translated("Name").get, (row) => text(row.name), { prefWidth: 220, sortable: true, sortKey: "name" }),
       ],
       { rowHeight: 36, paging: true, pageSize: 50, crawlable: true, crawlId: "remote-rows" }
     );

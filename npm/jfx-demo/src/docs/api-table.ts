@@ -1,5 +1,6 @@
 /** A signature/options table -- name, type, description. See CLAUDE_DEMO_PLAN.md §4. */
 import { classes, element, text } from "@anjunar/jfx-core";
+import { translated } from "../app/i18n.js";
 
 const table = element("table");
 const thead = element("thead");
@@ -19,9 +20,9 @@ export function apiTable(rows: readonly ApiRow[]): void {
     classes("docs-api-table");
     thead(() => {
       tr(() => {
-        th(() => text("Name"));
-        th(() => text("Type"));
-        th(() => text("Description"));
+        th(() => text(translated("Name")));
+        th(() => text(translated("Type")));
+        th(() => text(translated("Description")));
       });
     });
     tbody(() => {

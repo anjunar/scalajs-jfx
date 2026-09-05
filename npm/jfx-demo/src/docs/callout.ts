@@ -5,6 +5,7 @@
  * `/controls/remote`'s SSR-pager caveat).
  */
 import { classes, div, text } from "@anjunar/jfx-core";
+import { translated } from "../app/i18n.js";
 
 export type CalloutKind = "note" | "pitfall" | "library-bug";
 
@@ -19,7 +20,7 @@ export function callout(kind: CalloutKind, body: () => void): void {
     classes("docs-callout", `docs-callout--${kind}`);
     div(() => {
       classes("docs-callout__label");
-      text(LABEL[kind]);
+      text(translated(LABEL[kind]));
     });
     div(() => {
       classes("docs-callout__body");

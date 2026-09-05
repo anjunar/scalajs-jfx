@@ -1,5 +1,6 @@
 import { classes, div, listProperty, text } from "@anjunar/jfx-core";
 import { dataGrid } from "@anjunar/jfx-controls";
+import { translated } from "../../app/i18n.js";
 
 interface Tile {
   readonly label: string;
@@ -25,7 +26,7 @@ export function controlsDataGridPage(): void {
         itemHeightPx: 90,
         gapPx: 8,
         emptyPlaceholder: () => {
-          text("No tiles.");
+          text(translated("No tiles."));
         },
       }
     );

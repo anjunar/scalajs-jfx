@@ -5,6 +5,7 @@ import { callout } from "../../docs/callout.js";
 import { text } from "@anjunar/jfx-core";
 import { controlsTablePage } from "./page.js";
 import snippet from "./page.ts?jfx-code";
+import { translated } from "../../app/i18n.js";
 
 export function controlsTableDoc(): void {
   docPage(
@@ -18,7 +19,7 @@ export function controlsTableDoc(): void {
       });
 
       callout("note", () => {
-        text("crawlable + crawlId render the page links in the footer on the server, so a crawler without JavaScript can still reach past the first screen.");
+        text(translated("crawlable + crawlId render the page links in the footer on the server, so a crawler without JavaScript can still reach past the first screen."));
       });
     }
   );

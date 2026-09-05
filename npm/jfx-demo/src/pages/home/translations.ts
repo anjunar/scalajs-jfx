@@ -1,0 +1,24 @@
+import { catalogEntry, i18n, type CatalogEntry } from "@anjunar/jfx-core";
+
+export const entries: readonly CatalogEntry[] = [
+  catalogEntry(i18n`Overview`, { de: "Übersicht" }),
+  catalogEntry(i18n`What @anjunar/jfx-* is and where to start.`, { de: "Was @anjunar/jfx-* ist und wo du startest." }),
+  catalogEntry(i18n`A TypeScript facade over JFX3 -- one route per capability, the running component next to the source that produced it.`, { de: "Eine TypeScript-Fassade über JFX3 – eine Route pro Fähigkeit, die laufende Komponente neben ihrem Quelltext." }),
+  catalogEntry(i18n`The ambient-scope DSL: reactive state, control flow, elements, lifecycle.`, { de: "Die DSL mit Ambient-Scope: reaktiver Zustand, Kontrollfluss, Elemente und Lebenszyklus." }),
+  catalogEntry(i18n`Tabs, tables, carousels, a virtualized grid and list, remote data sources.`, { de: "Tabs, Tabellen, Karussells, virtualisiertes Grid und Listen sowie entfernte Datenquellen." }),
+  catalogEntry(i18n`Validated forms, sub-forms, repeating fields, a combo box, an image cropper.`, { de: "Validierte Formulare, Unterformulare, wiederholende Felder, eine ComboBox und ein Bildzuschnitt." }),
+  catalogEntry(i18n`A Lexical-backed rich-text field, bound by name like input.`, { de: "Ein Lexical-basiertes Rich-Text-Feld, wie input per Namen gebunden." }),
+  catalogEntry(i18n`Notifications, floating windows and overlays, mounted above the routed page.`, { de: "Benachrichtigungen, schwebende Fenster und Overlays über der gerouteten Seite." }),
+  catalogEntry(i18n`Client-side routing: links, a nested outlet, params, constraints, async loaders.`, { de: "Clientseitiges Routing: Links, ein verschachteltes Outlet, Parameter, Bedingungen und asynchrone Loader." }),
+  catalogEntry(i18n`Explore →`, { de: "Entdecken →" }),
+  catalogEntry(i18n`@anjunar/jfx`, { de: "@anjunar/jfx" }),
+  catalogEntry(i18n`@anjunar/jfx-core`, { de: "@anjunar/jfx-core" }),
+  catalogEntry(i18n`@anjunar/jfx-controls`, { de: "@anjunar/jfx-controls" }),
+  catalogEntry(i18n`@anjunar/jfx-forms`, { de: "@anjunar/jfx-forms" }),
+  catalogEntry(i18n`@anjunar/jfx-editor`, { de: "@anjunar/jfx-editor" }),
+  catalogEntry(i18n`@anjunar/jfx-viewport`, { de: "@anjunar/jfx-viewport" }),
+  catalogEntry(i18n`@anjunar/jfx-router`, { de: "@anjunar/jfx-router" }),
+  catalogEntry(i18n`Search`, { de: "Suche" }),
+  catalogEntry(i18n`Light mode`, { de: "Heller Modus" }),
+  catalogEntry(i18n`Dark mode`, { de: "Dunkler Modus" }),
+];

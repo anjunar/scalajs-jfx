@@ -6,6 +6,7 @@
  */
 import { attr, classes, div, element, forEach, li, on, property, text, ul } from "@anjunar/jfx-core";
 import { routerLink } from "@anjunar/jfx-router";
+import { translated } from "../../app/i18n.js";
 
 export interface SearchEntry {
   readonly path: string;
@@ -43,7 +44,7 @@ export function searchPage(entries: readonly SearchEntry[]): void {
     searchInput(() => {
       classes("px-3", "py-1.5", "border", "border-line", "rounded-control");
       attr("type", "search");
-      attr("placeholder", "Filter by title, summary or keyword…");
+      attr("placeholder", translated("Filter by title, summary or keyword…").get);
       on("input", (event) => {
         query.set((event.target as HTMLInputElement | null)?.value ?? "");
       });
@@ -53,10 +54,10 @@ export function searchPage(entries: readonly SearchEntry[]): void {
       classes("flex", "flex-col", "gap-3");
       forEach(results, (entry) => {
         li(() => {
-          routerLink(entry.path, entry.title);
+          routerLink(entry.path, translated(entry.title));
           div(() => {
             classes("text-ink-soft", "text-sm");
-            text(entry.summary);
+            text(translated(entry.summary));
           });
         });
       });

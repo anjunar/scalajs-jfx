@@ -1,5 +1,6 @@
 import { button, classes, div, listProperty, onClick, property } from "@anjunar/jfx-core";
 import { arrayForm, form, input, inputContainer, size as sizeValidator, subForm } from "@anjunar/jfx-forms";
+import { translated } from "../../app/i18n.js";
 
 export function formsCompositionPage(): void {
   const address = { city: property("") };
@@ -20,14 +21,14 @@ export function formsCompositionPage(): void {
         arrayForm("tags", (index) => {
           input(`tags-${index}`);
         });
-        button("Add tag", {}, () => {
+        button(translated("Add tag"), {}, () => {
           classes("px-3", "py-1.5");
           onClick(() => model.tags.add(""));
         });
       });
 
       subForm("address", address, { schema: { city: [sizeValidator(1, 60)] } }, () => {
-        inputContainer({ label: "City" }, () => {
+        inputContainer({ label: translated("City").get }, () => {
           input("city");
         });
       });

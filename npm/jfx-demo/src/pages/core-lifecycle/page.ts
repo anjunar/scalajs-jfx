@@ -1,4 +1,5 @@
-import { attr, button, capture, classes, div, hasScope, isBrowser, isHydrating, mount, onClick, self, text } from "@anjunar/jfx-core";
+import { attr, button, capture, classes, div, isBrowser, isHydrating, mount, onClick, self, text } from "@anjunar/jfx-core";
+import { translated } from "../../app/i18n.js";
 
 export function coreLifecyclePage(): void {
   let count = 0;
@@ -11,9 +12,12 @@ export function coreLifecyclePage(): void {
       // callback, not one of the DSL's own async helpers) checks before
       // composing -- true here because this whole function already runs
       // inside an active render pass.
-      text(
-        `Rendered on the ${isBrowser() ? "browser" : "server"}${isHydrating() ? ", while hydrating" : ""}. hasScope() here: ${hasScope()}.`
-      );
+      const status = isBrowser()
+        ? isHydrating()
+          ? "Rendered on the browser, while hydrating. hasScope() here: true."
+          : "Rendered on the browser. hasScope() here: true."
+        : "Rendered on the server. hasScope() here: true.";
+      text(translated(status));
     });
 
     div(() => {
@@ -31,7 +35,7 @@ export function coreLifecyclePage(): void {
       const restore = capture();
       queueMicrotask(() =>
         restore(() => {
-          div(() => text("Composed one microtask later, still inside the same render."));
+          div(() => text(translated("Composed one microtask later, still inside the same render.")));
         })
       );
     });
@@ -46,13 +50,13 @@ export function coreLifecyclePage(): void {
       classes("border", "border-dashed", "border-line", "rounded-control", "p-3", "min-h-12");
     });
 
-    button("mount() a widget into the box above", {}, () => {
+    button(translated("mount() a widget into the box above"), {}, () => {
       classes("px-3", "py-1.5");
       const trigger = self();
       onClick(() => {
         const target = document.getElementById("core-lifecycle-mount-target");
         if (target === null) return;
-        mount(target, () => text("Mounted independently -- a fresh render, no hydration involved."));
+        mount(target, () => text(translated("Mounted independently -- a fresh render, no hydration involved.")));
         trigger.setDomProperty("disabled", true);
       });
     });

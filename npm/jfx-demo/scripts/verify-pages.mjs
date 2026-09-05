@@ -106,6 +106,20 @@ async function main() {
       await checkRoute(entry);
     }
 
+    const germanResponse = await fetch(`http://localhost:${port}/de/core/derived`);
+    const germanHtml = await germanResponse.text();
+    check(
+      "/de/core/derived -- locale-prefixed route",
+      germanResponse.status === 200 && germanHtml.includes('<html lang="de">'),
+      `got ${germanResponse.status} or missing lang=de`
+    );
+    check(
+      "/de/core/derived -- page catalog resolves German title and summary",
+      germanHtml.includes("Abgeleiteter Zustand") &&
+        germanHtml.includes("map() leitet eine Property ab"),
+      "German page catalog entries were not resolved"
+    );
+
     const queryResponse = await fetch(
       `http://localhost:${port}/router/params/42?tab=details&tag=ssr`
     );
@@ -133,7 +147,7 @@ async function main() {
     check(
       "/controls/remote -- SSR pager links to the next page",
       remotePageHtml.includes(
-        'href="/controls/remote?remote-rows.offset=100&amp;remote-rows.limit=50"'
+        'href="/en/controls/remote?remote-rows.offset=100&amp;remote-rows.limit=50"'
       ),
       "the server-rendered Next link did not carry the next remote page offset"
     );

@@ -6,6 +6,7 @@ import { router } from "@anjunar/jfx-router";
 import { viewport } from "@anjunar/jfx-viewport";
 import { appDocument } from "./app/document.js";
 import { appRoutes, appShell, routerConfig } from "./app/routes.js";
+import { i18nProvider, providerConfig } from "./app/i18n.js";
 
 // Re-exported so scripts/verify-pages.mjs -- a plain Node script, not part of
 // the Vite graph -- can read the route list from this already-bundled file
@@ -33,8 +34,10 @@ export async function render(
   // `viewport(...)` wraps the routed page -- see `entry-client.ts`'s note on why.
   const result = await renderToString(
     () =>
-      appDocument(assets, () =>
-        viewport(() => router(appRoutes, { ...routerConfig, url: path }, appShell))
+      i18nProvider(providerConfig(path), () =>
+        appDocument(assets, () =>
+          viewport(() => router(appRoutes, { ...routerConfig, url: path }, appShell))
+        )
       ),
     { document: true }
   );

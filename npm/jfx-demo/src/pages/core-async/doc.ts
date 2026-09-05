@@ -4,6 +4,7 @@ import { docPage } from "../../docs/page.js";
 import { example } from "../../docs/example.js";
 import { callout } from "../../docs/callout.js";
 import { coreAsyncPage } from "./page.js";
+import { translated } from "../../app/i18n.js";
 import snippet from "./page.ts?jfx-code";
 
 export function coreAsyncDoc(): void {
@@ -18,9 +19,9 @@ export function coreAsyncDoc(): void {
       });
 
       callout("library-bug", () => {
-        text(
+        text(translated(
           "when() next to fetchInto() does not hydrate: renderToString only serializes the settled state, but the client's first pass re-evaluates the condition from scratch and expects a DOM node the server never sent. page.ts on this route sidesteps it by branching once, inside the loader, instead of next to it -- see the comment there. Not fixed here; it is a gap in Condition/fetchInto interaction in the library itself."
-        );
+        ));
       });
     }
   );

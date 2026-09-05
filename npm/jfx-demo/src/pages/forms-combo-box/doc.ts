@@ -4,6 +4,7 @@ import { docPage } from "../../docs/page.js";
 import { example } from "../../docs/example.js";
 import { callout } from "../../docs/callout.js";
 import { formsComboBoxPage } from "./page.js";
+import { translated } from "../../app/i18n.js";
 import snippet from "./page.ts?jfx-code";
 
 export function formsComboBoxDoc(): void {
@@ -15,7 +16,7 @@ export function formsComboBoxDoc(): void {
       });
 
       callout("note", () => {
-        text("The dropdown is an @anjunar/jfx-viewport overlay, so a comboBox needs a viewport ancestor -- entry-client.ts/entry-server.ts already wrap the whole app in one.");
+        text(translated("The dropdown is an @anjunar/jfx-viewport overlay, so a comboBox needs a viewport ancestor -- entry-client.ts/entry-server.ts already wrap the whole app in one."));
       });
     }
   );

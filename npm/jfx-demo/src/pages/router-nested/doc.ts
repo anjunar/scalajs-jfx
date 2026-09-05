@@ -6,6 +6,7 @@ import { codeBlock } from "../../docs/code-block.js";
 import { routerNestedPage } from "./page.js";
 import snippet from "./page.ts?jfx-code";
 import detailSnippet from "./detail.ts?jfx-code";
+import { translated } from "../../app/i18n.js";
 
 export function routerNestedDoc(): void {
   docPage(
@@ -17,7 +18,7 @@ export function routerNestedDoc(): void {
       example({ code: snippet }, () => {
         routerNestedPage();
       });
-      heading(3, () => text("The child route (detail.ts)"));
+      heading(3, () => text(translated("The child route (detail.ts)")));
       codeBlock(detailSnippet);
     }
   );

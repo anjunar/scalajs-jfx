@@ -1,4 +1,5 @@
 import { button, classes, classIf, div, forEach, listProperty, onClick, property, text, when } from "@anjunar/jfx-core";
+import { translated } from "../../app/i18n.js";
 
 export function coreControlFlowPage(): void {
   const items = listProperty<string>(["Alpha", "Beta"]);
@@ -10,11 +11,11 @@ export function coreControlFlowPage(): void {
 
     div(() => {
       classes("flex", "gap-2");
-      button("Add item", {}, () => {
+      button(translated("Add item"), {}, () => {
         classes("px-3", "py-1.5");
         onClick(() => items.add(`Item ${items.get.length + 1}`));
       });
-      button("Toggle highlight", {}, () => {
+      button(translated("Toggle highlight"), {}, () => {
         classes("px-3", "py-1.5");
         onClick(() => highlight.set(!highlight.get));
       });
@@ -23,7 +24,7 @@ export function coreControlFlowPage(): void {
     when(isEmpty, () => {
       div(() => {
         classes("text-ink-muted", "italic");
-        text("No items -- add one above.");
+        text(translated("No items -- add one above."));
       });
     });
 

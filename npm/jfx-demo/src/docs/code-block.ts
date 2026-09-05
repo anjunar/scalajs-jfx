@@ -6,6 +6,7 @@
  */
 import { button, classes, code, div, onClick, pre, span, text, when } from "@anjunar/jfx-core";
 import { hydratedProperty } from "../app/hydrated.js";
+import { translated } from "../app/i18n.js";
 
 export type TokenKind = "kw" | "str" | "num" | "com" | "id" | "typ" | "pun";
 
@@ -92,7 +93,7 @@ export function codeBlock(snippet: CodeSnippet): void {
     // entry-client.ts), so its absence without JavaScript is not a loading
     // state that never resolves -- it simply never appears, per E-6.
     when(hydratedProperty(), () => {
-      button("Copy", {}, () => {
+      button(translated("Copy"), {}, () => {
         classes("docs-code-block__copy");
         onClick(() => {
           void navigator.clipboard?.writeText(plainText(snippet));

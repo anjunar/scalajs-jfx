@@ -4,6 +4,7 @@ import { docPage } from "../../docs/page.js";
 import { example } from "../../docs/example.js";
 import { callout } from "../../docs/callout.js";
 import { formsCompositionPage } from "./page.js";
+import { translated } from "../../app/i18n.js";
 import snippet from "./page.ts?jfx-code";
 
 export function formsCompositionDoc(): void {
@@ -18,9 +19,9 @@ export function formsCompositionDoc(): void {
       });
 
       callout("note", () => {
-        text(
+        text(translated(
           "arrayForm must be mounted directly below form or subForm. fieldSet intentionally provides its own grouping context for its children; placing arrayForm inside it would register the array with the fieldSet instead of the parent model, so changes to model.tags could not create new items. The arrayForm itself renders a fieldset and remains the correct grouping boundary here."
-        );
+        ));
       });
     }
   );

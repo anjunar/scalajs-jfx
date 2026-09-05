@@ -1,6 +1,7 @@
 /** The tile grid on `/`, also used by the catalog for package navigation. */
 import { classes, div, heading, paragraph, text } from "@anjunar/jfx-core";
 import { routerLink } from "@anjunar/jfx-router";
+import { translated } from "../../app/i18n.js";
 
 export interface PackageTile {
   readonly id: "core" | "controls" | "forms" | "editor" | "viewport" | "router";
@@ -51,10 +52,10 @@ export const packageTiles: readonly PackageTile[] = [
 export function homePage(): void {
   div(() => {
     classes("home-page");
-    heading(1, () => text("@anjunar/jfx"));
+    heading(1, () => text(translated("@anjunar/jfx")));
     paragraph(() => {
       classes("home-page__intro");
-      text("A TypeScript facade over JFX3 -- one route per capability, the running component next to the source that produced it.");
+      text(translated("A TypeScript facade over JFX3 -- one route per capability, the running component next to the source that produced it."));
     });
     div(() => {
       classes("home-page__grid");
@@ -62,8 +63,8 @@ export function homePage(): void {
         div(() => {
           classes("home-page__tile");
           heading(2, () => text(pkg.name));
-          paragraph(() => text(pkg.blurb));
-          routerLink(pkg.entryPath, "Explore →");
+          paragraph(() => text(translated(pkg.blurb)));
+          routerLink(pkg.entryPath, translated("Explore →"));
         });
       }
     });

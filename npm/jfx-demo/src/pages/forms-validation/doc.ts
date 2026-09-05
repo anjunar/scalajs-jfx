@@ -4,6 +4,7 @@ import { docPage } from "../../docs/page.js";
 import { example } from "../../docs/example.js";
 import { callout } from "../../docs/callout.js";
 import { formsValidationPage } from "./page.js";
+import { translated } from "../../app/i18n.js";
 import snippet from "./page.ts?jfx-code";
 
 export function formsValidationDoc(): void {
@@ -18,9 +19,9 @@ export function formsValidationDoc(): void {
       });
 
       callout("note", () => {
-        text(
+        text(translated(
           "Each group above is a fieldSet, which groups controls for error propagation and disabled-state cascading -- it does not bind its children to the model by name; only form/subForm bind. Its own name (\"presence-group\", ...) is deliberately not a model field."
-        );
+        ));
       });
     }
   );

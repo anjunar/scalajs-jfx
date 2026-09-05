@@ -5,6 +5,7 @@
  */
 import { classes, div, heading, paragraph, text } from "@anjunar/jfx-core";
 import { codeBlock, type CodeSnippet } from "./code-block.js";
+import { translated } from "../app/i18n.js";
 
 export interface ExampleOptions {
   readonly title?: string;
@@ -17,7 +18,7 @@ export function example(options: ExampleOptions, body: () => void): void {
     classes("docs-example");
 
     if (options.title !== undefined) {
-      heading(3, () => text(options.title as string));
+      heading(3, () => text(translated(options.title as string)));
     }
 
     div(() => {
@@ -30,7 +31,7 @@ export function example(options: ExampleOptions, body: () => void): void {
     if (options.note !== undefined) {
       paragraph(() => {
         classes("docs-example__note");
-        text(options.note as string);
+        text(translated(options.note as string));
       });
     }
   });

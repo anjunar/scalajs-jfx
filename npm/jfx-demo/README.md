@@ -106,6 +106,11 @@ supplies every `--aj-*` token the library CSS reads, for both light and dark
 for. `src/styles/theme.css` sets only the handful of tokens `@anjunar/ui`
 doesn't define at all (`--aj-code-*`, for the syntax-highlighted code block).
 
+The i18n provider in `src/app/i18n.ts` uses English and German and sits above
+the router in both SSR and hydration. Each page keeps its own
+`translations.ts`; the merged catalog resolves page metadata, navigation and
+the locale-aware URL prefix (`/en/...` or `/de/...`).
+
 ## What's real, what's a stand-in
 
 - `entry-client.ts` / `entry-server.ts` call `hydrate()` / `renderToString()`
@@ -116,8 +121,7 @@ doesn't define at all (`--aj-code-*`, for the syntax-highlighted code block).
   (`/router/params/:id`), and an `errorRoute("/404", 404)`. Navigation is
   client-side through `routerLink`; Express renders the first request and
   serves assets, it does not route.
-- No i18n, no document `<head>` management (Blocker B-1, see
-  `CLAUDE_DEMO_PLAN.md` E-8) -- the pages are fragments mounted into a
-  hand-written `index.html`, not a full JFX3 document the way `AppDocument`
-  renders one in the Scala app. See `JAVASCRIPT_API.md` §6 for what a full
-  document boundary would need.
+- Locale-aware routing and message-based i18n are wired through the same
+  provider: `/en/...` and `/de/...` routes resolve their page catalogs, and the
+  shell locale switch preserves the current route. The document head is
+  rendered by `src/app/document.ts`, including the active language attribute.

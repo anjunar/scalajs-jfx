@@ -60,7 +60,8 @@ textarea {
     text-decoration: none;
 }
 
-.app-shell__theme-toggle {
+.app-shell__theme-toggle,
+.app-shell__locale-toggle {
     padding: 0.4rem 0.75rem;
     border-radius: var(--radius-control);
     border: 1px solid var(--aj-line);
@@ -69,7 +70,8 @@ textarea {
     cursor: pointer;
 }
 
-.app-shell__theme-toggle:hover {
+.app-shell__theme-toggle:hover,
+.app-shell__locale-toggle:hover {
     background: var(--aj-surface-hover);
 }
 

@@ -1,5 +1,6 @@
 import { classes, div, listProperty, text } from "@anjunar/jfx-core";
 import { column, tableView } from "@anjunar/jfx-controls";
+import { translated } from "../../app/i18n.js";
 
 interface Album {
   readonly title: string;
@@ -22,9 +23,9 @@ export function controlsTablePage(): void {
     tableView(
       rows,
       [
-        column("Title", (album) => text(album.title), { prefWidth: 260, sortable: true, sortKey: "title" }),
-        column("Artist", (album) => text(album.artist), { prefWidth: 220 }),
-        column("Year", (album) => text(String(album.year)), { prefWidth: 90 }),
+        column(translated("Title").get, (album) => text(album.title), { prefWidth: 260, sortable: true, sortKey: "title" }),
+        column(translated("Artist").get, (album) => text(album.artist), { prefWidth: 220 }),
+        column(translated("Year").get, (album) => text(String(album.year)), { prefWidth: 90 }),
       ],
       { rowHeight: 40, crawlable: true, crawlId: "albums" }
     );

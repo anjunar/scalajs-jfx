@@ -21,6 +21,7 @@ import {
   text,
   ul,
 } from "@anjunar/jfx-core";
+import { translated } from "../../app/i18n.js";
 
 const mark = element("mark");
 
@@ -33,21 +34,21 @@ export function coreElementsPage(): void {
 
     section(() => {
       paragraph(() => {
-        text("A ");
+        text(translated("A "));
         span(() => {
           style("font-weight", "600");
-          text("span");
+          text(translated("span"));
         });
-        text(" and a ");
+        text(translated(" and a "));
         mark(() => {
           classes("px-1", "rounded-control", "cursor-pointer");
           addClass("core-elements-mark");
-          domProperty("title", "Click to toggle");
+          domProperty("title", translated("Click to toggle").get);
           style("background-color", highlighted.map((value) => (value ? "var(--aj-accent-muted)" : "transparent")));
           on("click", () => highlighted.set(!highlighted.get));
-          text("mark");
+          text(translated("mark"));
         });
-        text(" -- element() builds both from the one-line pattern div/span/anchor are themselves built from.");
+        text(translated(" -- element() builds both from the one-line pattern div/span/anchor are themselves built from."));
       });
     });
 
@@ -55,9 +56,9 @@ export function coreElementsPage(): void {
       classes("gap-3", "items-center");
       anchor(() => {
         attr("href", "https://developer.mozilla.org/docs/Web/HTML/Element/a");
-        text("anchor()");
+        text(translated("anchor()"));
       });
-      button("Disable me", {}, () => {
+      button(translated("Disable me"), {}, () => {
         classes("px-3", "py-1.5");
         // Captured during render, then referenced (not re-called) inside the
         // handler -- self() itself only resolves while a scope is active,
@@ -75,11 +76,11 @@ export function coreElementsPage(): void {
 
     ul(() => {
       classes("list-disc", "pl-5");
-      li(() => text("attr() sets a plain HTML attribute"));
-      li(() => text("style() sets a plain CSS property, constant or reactive"));
-      li(() => text("domProperty() sets a DOM property directly, once at composition time"));
-      li(() => text("on() is the generic event entry point onClick/onInput/onDoubleClick are themselves built from"));
-      li(() => text("addClass() adds one class without touching whatever classes() already set"));
+      li(() => text(translated("attr() sets a plain HTML attribute")));
+      li(() => text(translated("style() sets a plain CSS property, constant or reactive")));
+      li(() => text(translated("domProperty() sets a DOM property directly, once at composition time")));
+      li(() => text(translated("on() is the generic event entry point onClick/onInput/onDoubleClick are themselves built from")));
+      li(() => text(translated("addClass() adds one class without touching whatever classes() already set")));
     });
   });
 }

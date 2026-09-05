@@ -1,12 +1,13 @@
 import { button, classes, div, onClick, property, text, when } from "@anjunar/jfx-core";
 import { notify, overlay } from "@anjunar/jfx-viewport";
+import { translated } from "../../app/i18n.js";
 
 export function viewportOverlayPage(): void {
   const menuOpen = property(false);
 
   div(() => {
     classes("relative", "inline-block");
-    button("Menu", {}, () => {
+    button(translated("Menu"), {}, () => {
       classes("px-3", "py-1.5");
       onClick(() => menuOpen.set(!menuOpen.get));
     });
@@ -15,10 +16,10 @@ export function viewportOverlayPage(): void {
         div(() => {
           classes("px-3", "py-2", "cursor-pointer");
           onClick(() => {
-            notify("Menu item chosen.");
+            notify(translated("Menu item chosen.").get);
             menuOpen.set(false);
           });
-          text("Choose me");
+          text(translated("Choose me"));
         });
       });
     });

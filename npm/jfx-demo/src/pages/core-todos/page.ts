@@ -16,7 +16,9 @@ import {
   text,
   when,
 } from "@anjunar/jfx-core";
+import { i18n, locale, named, t } from "@anjunar/jfx-core";
 import type { ComponentHandle, Disposable, Property, UiEvent } from "@anjunar/jfx-core";
+import { translated } from "../../app/i18n.js";
 
 /**
  * `input` has no typed wrapper in dsl.ts -- there is no `vbox`/`hbox`/`button`
@@ -69,6 +71,17 @@ export function coreTodosPage(): void {
   // down when this page's `MountedApp` is disposed, the same as any binding
   // `attr`/`classIf` set up.
   const remaining = property(0);
+  const activeLocale = locale();
+  const remainingLabel = property("");
+  const updateRemainingLabel = (): void => {
+    const count = remaining.get;
+    const message =
+      count === 1 ? i18n`${named("count", count)} item left` : i18n`${named("count", count)} items left`;
+    remainingLabel.set(t(message).get);
+  };
+  updateRemainingLabel();
+  disposeWith(remaining.observeWithoutInitial(updateRemainingLabel));
+  disposeWith(activeLocale.observeWithoutInitial(updateRemainingLabel));
   let itemSubscriptions: Disposable[] = [];
 
   function recomputeRemaining(items: readonly Todo[]): void {
@@ -103,13 +116,13 @@ export function coreTodosPage(): void {
         draftField = self();
         classes("px-3", "py-1.5", "border", "border-line", "rounded-control", "flex-1");
         attr("type", "text");
-        attr("placeholder", "Add a todo…");
+        attr("placeholder", translated("Add a todo…").get);
         onInput((event) => draft.set(inputValue(event)));
         on("keydown", (event) => {
           if ((event.native as KeyboardEvent | null)?.key === "Enter") addTodo();
         });
       });
-      button("Add", {}, () => {
+      button(translated("Add"), {}, () => {
         classes("px-3", "py-1.5");
         onClick(addTodo);
       });
@@ -118,7 +131,7 @@ export function coreTodosPage(): void {
     when(isEmpty, () => {
       div(() => {
         classes("text-ink-muted", "italic");
-        text("Nothing to do yet — add one above.");
+        text(translated("Nothing to do yet — add one above."));
       });
     });
 
@@ -141,7 +154,7 @@ export function coreTodosPage(): void {
               text(todo.label);
             });
 
-            button("Remove", {}, () => {
+            button(translated("Remove"), {}, () => {
               classes("text-ink-muted");
               onClick(() => todos.removeAt(index));
             });
@@ -151,8 +164,8 @@ export function coreTodosPage(): void {
 
       div(() => {
         classes("flex", "items-center", "justify-between", "text-ink-soft");
-        text(remaining.map((count) => `${count} item${count === 1 ? "" : "s"} left`));
-        button("Clear completed", {}, () => {
+        text(remainingLabel);
+        button(translated("Clear completed"), {}, () => {
           classes("underline");
           onClick(() => todos.setAll(todos.get.filter((todo) => !todo.done.get)));
         });
