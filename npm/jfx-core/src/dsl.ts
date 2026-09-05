@@ -4,8 +4,10 @@ import type {
   DocumentHeadHandle,
   Reactive,
   ReadOnlyProperty,
+  RuntimeMessage,
   UiEvent,
 } from "./contract.js";
+import { t } from "./i18n.js";
 import { capture, currentComponent, currentScope, withScope } from "./scope.js";
 
 /** The body of an element: composes children and configures the element itself. */
@@ -45,9 +47,30 @@ export function heading(level: 1 | 2 | 3 | 4 | 5 | 6, body?: Body): ComponentHan
   return element(`h${level}`)(body);
 }
 
-/** Mounts a text node. Accepts a constant or a property. */
-export function text(value: Reactive<string>): ComponentHandle {
-  return currentScope().text(value);
+/**
+ * A string, a reactive one, or an i18n message. Mirrors what Scala's `TextValue[T]` accepts
+ * wherever it is summoned -- `text()`'s argument, a `button()` label, and (on the Scala side only
+ * so far; nothing here wraps `Anchor`/`Image` yet) an anchor's label or an image's `alt`.
+ */
+export type TextLike = Reactive<string> | RuntimeMessage;
+
+function isRuntimeMessage(value: TextLike): value is RuntimeMessage {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "key" in value &&
+    typeof (value as RuntimeMessage).key?.fingerprint === "string"
+  );
+}
+
+/** Resolves a `RuntimeMessage` through `t()`; passes anything else through unchanged. */
+function resolveTextLike(value: TextLike): Reactive<string> {
+  return isRuntimeMessage(value) ? t(value) : value;
+}
+
+/** Mounts a text node. Accepts a constant, a property, or an i18n message (`i18n\`...\``). */
+export function text(value: TextLike): ComponentHandle {
+  return currentScope().text(resolveTextLike(value));
 }
 
 /**
@@ -100,11 +123,11 @@ export interface ButtonOptions {
 }
 
 export function button(
-  label: Reactive<string>,
+  label: TextLike,
   options: ButtonOptions = {},
   body: Body = noBody
 ): ComponentHandle {
-  return component("button", { label, ...options }, body);
+  return component("button", { label: resolveTextLike(label), ...options }, body);
 }
 
 /* ---------------------------------------------------------- element settings */

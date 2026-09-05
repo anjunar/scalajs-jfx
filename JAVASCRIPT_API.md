@@ -212,21 +212,21 @@ hängt am `ScopeHandle`, den die Einstiegspunkte ausgeben.
 Vier Stellen, an denen die TS-API bewusst anders aussehen muss. Sie sind der
 eigentliche Entwurfsaufwand — der Rest ist Mechanik.
 
-**i18n.** `i18n"Current value: ${…}"` ist ein Scala-3-Makro: es zieht Schlüssel,
-Platzhalter und Quellposition zur Compilezeit heraus (`I18nMacros`,
-`MessageFingerprint`, `MessageSourcePosition`). TypeScript hat keine Makros. Zwei
-gangbare Wege:
-
-- *Tagged Template + Build-Extractor.* `` i18n`Current value: ${value}` `` bleibt
-  zur Laufzeit ein einfacher Aufruf; ein Vite-Plugin sammelt die Schlüssel beim
-  Build und erzeugt denselben Katalog wie heute. Gleiche Ergonomie, gleiche
-  Katalogpflege, ein Werkzeug mehr.
-- *Explizite Schlüssel.* `t("state.current", { value })`. Kein Werkzeug, aber die
-  Eigenschaft verloren, die das Scala-Design ausmacht: dass ein Text nicht ohne
-  Schlüssel existieren kann.
-
-Empfehlung: Tagged Template mit Extractor. Alles andere ist ein Rückschritt
-gegenüber dem, was das Repo heute schon kann.
+**i18n.** ✅ Umgesetzt (Schritt 7, §15 unten). `i18n"Current value: ${…}"` ist ein
+Scala-3-Makro: es zieht Schlüssel, Platzhalter und Quellposition zur
+Compilezeit heraus (`I18nMacros`, `MessageFingerprint`,
+`MessageSourcePosition`). TypeScript hat keine Makros, also die empfohlene
+*Tagged Template + Build-Extractor*-Variante: `` i18n`Current value: ${…}` ``
+bleibt zur Laufzeit ein einfacher Aufruf, `tools/i18n-extract.mjs` sammelt die
+Schlüssel beim Build. Eine Verfeinerung gegenüber dem hier skizzierten Plan:
+Scala liest den Platzhalternamen aus dem Bezeichner (`i18n"Hello $name"` →
+`{name}`), weil das Makro den AST sieht. Ohne Makro sieht die Laufzeit nur den
+*Wert*, nicht den Namen — jede Interpolation muss deshalb explizit
+`named("name", value)` sein (`I18n.named` gibt es dafür bereits auf der
+Scala-Seite, unbenutzt bis jetzt). Alles andere — Quellrekonstruktion,
+Duplikat-Prüfung, der FNV-1a-Fingerprint — ist bytegleich zur Scala-Seite
+portiert und durch eine gemeinsame Fixtur in `I18nSpec.scala` und
+`i18n.test.ts` abgesichert.
 
 **Formulare.** `jfx.forms` bindet an ein annotiertes Modell und liest es über
 `com.anjunar::scala-reflect`. TypeScript hat zur Laufzeit keine Typen und keine
@@ -298,7 +298,7 @@ verschmutzt.
 4. Bundle-Größe messen und hier eintragen                                  ✅ (§14)
 5. Router-Fassade, dann Forms-Schema                                       ✅ (Router; Forms: CLAUDE_REVIEW_3.md Lauf 6)
 6. Komponentenregistratur auffüllen                                        ✅ (controls: tabs/carousel/table-view/data-grid/virtual-list-view; viewport: viewport/window/overlay/notification; forms: form/sub-form/input/input-container/field-set/array-form/combo-box/image-cropper)
-7. i18n-Extractor
+7. i18n-Extractor                                                          ✅ (§15, "Und seit Lauf 9")
 8. Consumer-Smoke-Test in CI: leeres TS-Projekt, SSR + Hydration
 ```
 
@@ -377,7 +377,9 @@ kreuzt nicht in diesen Link.
 **Was noch fehlt.** `headers` ist immer leer. `SsrResult.status` war bis Schritt
 5 fest `200`; seit `@anjunar/jfx-router` trägt ein mitgemounteter `router` seinen
 `Router.responseStatus` hinein (`SsrStatus`), ein core-only Render bleibt `200`.
-`forms` und der i18n-Extractor sind unverändert offen (Schritte 6 und 7).
+`forms` war zum Zeitpunkt dieses Abschnitts noch offen (Schritt 6, seither
+erledigt, siehe §9); der i18n-Extractor (Schritt 7) ist seit §15 "Und seit
+Lauf 9" ebenfalls erledigt.
 
 **Verifiziert, nicht nur kompiliert.** [`JfxRuntimeBridgeSpec`](jfx-bridge/src/test/scala-3/jfx/bridge/JfxRuntimeBridgeSpec.scala)
 treibt `renderToString` über genau diese Oberfläche -- `child`, `component`,
@@ -970,3 +972,56 @@ verlinkten Artefakt (nicht als Delta zu Lauf 6 vergleichbar, weil dessen
 Zahl nie gemessen wurde) -- der mit Abstand größte Sprung der Familie,
 getrieben vom vollständigen CodeMirror-Sprachsatz, den `scalajs-lexical`
 transitiv mitzieht, nicht von `jfx-editor`s eigenem Fassadencode.
+
+### Und seit Lauf 9: i18n
+
+Schritt 7 aus §9 -- anders als Router/Controls/Forms/Editor kein neues
+`@anjunar/jfx-*`-Paket, weil `jfx.core.i18n` selbst Teil von `jfx-core` ist
+(§3): `i18n-provider` ist ein Registratureintrag in `jfx-bridge`
+(`I18nFactories.scala`) neben `vbox`/`hbox`/`button`, nicht hinter einer neuen
+Modulkante.
+
+`i18n`/`i18nc` (`npm/jfx-core/src/i18n.ts`) sind reine Laufzeitfunktionen ohne
+Compile-Schritt -- §6s Empfehlung, mit einer notwendigen Verfeinerung: ohne
+Makro sieht die Laufzeit nur den *Wert* einer Interpolation, nie den
+*Bezeichner*, also ist `named("name", value)` an jeder Substitutionsstelle
+Pflicht, kein bequemer Bonus. Alles andere ist bytegleich zur Scala-Seite --
+Quellrekonstruktion, Duplikat-Prüfung, der FNV-1a-Fingerprint --, geprüft durch
+eine Fixtur, die auf beiden Seiten denselben Literalwert erwartet
+(`I18nSpec.scala` "should compute the fingerprint the TypeScript facade must
+reproduce byte-for-byte", `i18n.test.ts` "matches the Scala macro's fingerprint
+byte-for-byte"). `i18nProvider(config, body)` baut einen `I18nRuntime.managed`
+und stellt ihn in den Komponentenbaum, genau wie `app.App.compose` es von Hand
+tut; ein `router()` darunter liest denselben `I18nRuntime` für
+locale-präfixierte URLs (`Router.synchronizeI18n`), ohne dass die Bridge dafür
+router-spezifisch etwas verdrahten müsste -- der gewöhnliche
+Komponentenkontext-Walk reicht.
+
+**Ein echter Fund unterwegs, nichts mit der TS-Seite zu tun:** `i18nc"..."`
+(`I18nInterpolator.scala`) hatte, seit es existiert, null Aufrufstellen und
+null Tests. Beim Ausprobieren der Interpolator-Syntax für die TS-Parität
+stellte sich heraus, dass die Parameterreihenfolge
+`i18nc(context: String)(args: Any*)` mit der Sugar-Regel für String-
+Interpolatoren (`id"...${e}..."` → `StringContext(...).id(e)`) unbenutzbar
+ist: die Vorlage müsste ihr eigenes Loch in `context: String` zwingen und die
+eigentlichen Argumente in eine zweite, nachgestellte Anwendung schieben --
+genau verkehrt herum. Behoben durch Vertauschen der beiden Parameterlisten
+(`i18nc(args: Any*)(context: String)`), was `i18nc"Hello ${…}"("greeting")`
+zur tatsächlich funktionierenden Aufrufform macht -- keine Verhaltensänderung
+an einer Stelle, die niemand aufrief.
+
+`tools/i18n-extract.mjs` ist Schritt 7s zweite Hälfte: ein Node-Skript über
+dem TypeScript-Compiler-API (keine Vite-Plugin-Kopplung, läuft unabhängig vom
+Build), das jeden `i18n`/`i18nc`-Aufruf im AST findet, einen fehlenden
+`named(...)` mit Datei:Zeile:Spalte meldet (Exitcode 1) und einen
+Katalog-Entwurf schreibt (`--out datei.json`) -- dieselbe Fingerprint-Funktion
+aus `i18n.ts` importiert, nicht neu implementiert. `npm run i18n:extract`
+ruft es von der Repo-Wurzel auf.
+
+**Nicht Teil dieses Laufs:** `jfx-demo` selbst i18n-fähig machen (locale-
+präfixierte Routen, eine übersetzte Beispielseite). Die Fassade ist vollständig
+und dreifach verifiziert -- `I18nSpec.scala`/`i18n.test.ts` für die reine
+Logik, `I18nFactoriesSpec.scala` für die echte Bridge-Rundreise
+(Katalog-Übersetzung, `initialUrl`-Locale-Auflösung, `i18nSetLocale`-
+Reaktivität, die "kein Provider"-Fehlermeldung) --, aber die Demo selbst
+zeigt sie noch nicht. Ein eigener, kleiner Lauf.

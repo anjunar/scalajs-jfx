@@ -34,3 +34,4 @@ export { capture, currentComponent, currentScope, hasScope, withScope } from "./
 
 export * from "./dsl.js";
 export * from "./document.js";
+export * from "./i18n.js";

@@ -150,6 +150,31 @@ export interface ScopeHandle {
    */
   documentHead(): DocumentHeadHandle | null;
 
+  /**
+   * Resolves `message` against the current locale. Mirrors `I18nRuntime.text`, which is what
+   * a `RuntimeMessage` implicitly resolves through wherever Scala's `TextValue[RuntimeMessage]`
+   * applies (`text(i18n"...")`, a button label, ...). The property re-resolves whenever the
+   * ambient locale changes.
+   *
+   * Throws if no `i18nProvider()` is mounted above this point in the tree -- mirrors
+   * `I18nRuntime.require`, which throws for the same reason. Unlike `documentHead()`, a missing
+   * provider is not a supported "outside the feature" state: a message with nothing to resolve
+   * it is a bug at the call site, not a valid empty result.
+   */
+  i18nText(message: RuntimeMessage): ReadOnlyProperty<string>;
+
+  /** The active locale's code (`"en"`, `"de"`, ...), reactive. Same failure as `i18nText`. */
+  i18nLocale(): ReadOnlyProperty<string>;
+
+  /** Changes the active locale. Mirrors `I18nRuntime.setLocale`. Same failure as `i18nText`. */
+  i18nSetLocale(code: string): void;
+
+  /** The codes `i18nProvider()` was configured with. Same failure as `i18nText`. */
+  i18nSupportedLocales(): readonly string[];
+
+  /** The fallback locale's code. Same failure as `i18nText`. */
+  i18nDefaultLocale(): string;
+
   /** Mirrors `jfx.core.layout.Condition.when`. */
   when(
     active: ReadOnlyProperty<boolean>,
@@ -226,6 +251,67 @@ export interface DocumentHeadHandle {
   removeHtmlAttribute(name: string): void;
   /** A group of entries replaced as a whole on every `set()`. */
   handle(): HeadGroupHandle;
+}
+
+/**
+ * A disambiguation tag on a message -- the same English source can translate differently
+ * depending on it (a "date" the fruit vs. a "date" on a calendar). Mirrors
+ * `jfx.core.i18n.MessageContext`.
+ */
+export interface MessageContext {
+  readonly value: string;
+}
+
+/**
+ * Where a message was written, for a translator to find it. Mirrors
+ * `jfx.core.i18n.MessageSourcePosition`. Always absent from a `RuntimeMessage` built by `i18n`/
+ * `i18nc` -- unlike the Scala macro, a browser has no reliable way to recover its own call site's
+ * file and line at runtime. An extraction tool that parses source directly (`i18n.ts`'s doc
+ * comment) is the place this would come from instead.
+ */
+export interface MessageSourcePosition {
+  readonly file: string;
+  readonly line: number;
+  readonly column: number;
+}
+
+/**
+ * The translatable identity of a message -- everything a catalog entry keys off, and nothing that
+ * varies per call (an interpolated value lives in `RuntimeMessage.args`, not here). Mirrors
+ * `jfx.core.i18n.MessageKey`.
+ */
+export interface MessageKey {
+  readonly source: string;
+  readonly context?: MessageContext;
+  readonly fingerprint: string;
+  readonly placeholders: readonly string[];
+  readonly position?: MessageSourcePosition;
+}
+
+/** One resolved placeholder value. Mirrors `jfx.core.i18n.MessageArg`. */
+export interface MessageArg {
+  readonly name: string;
+  readonly value: unknown;
+}
+
+/**
+ * A message ready to resolve: a translatable key plus this call's placeholder values. Mirrors
+ * `jfx.core.i18n.RuntimeMessage`. Built by `i18n`/`i18nc` in `i18n.ts`, never by hand.
+ */
+export interface RuntimeMessage {
+  readonly key: MessageKey;
+  readonly args: readonly MessageArg[];
+}
+
+/**
+ * One catalog entry: a message key plus its translation per locale code. Mirrors
+ * `jfx.core.i18n.CatalogEntry` (`MessageValue`'s `translations`, projected to plain strings --
+ * `jfx-bridge` is where `LocalizedPattern` and `MessageValue.state` exist; a TS-authored catalog
+ * has no use for either).
+ */
+export interface CatalogEntry {
+  readonly key: MessageKey;
+  readonly translations: Readonly<Record<string, string>>;
 }
 
 /** A build function: everything it does happens inside the given scope. */

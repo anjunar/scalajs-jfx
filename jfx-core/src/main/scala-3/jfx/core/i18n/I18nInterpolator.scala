@@ -6,7 +6,13 @@ extension (inline sc: StringContext)
   inline def i18n(inline args: Any*): RuntimeMessage =
     ${ I18nMacros.i18n('sc, 'args) }
 
-  inline def i18nc(inline context: String)(inline args: Any*): RuntimeMessage =
+  // `args` before `context`, not after: interpolator sugar always feeds a template's holes into
+  // the *first* parameter list of the method named after it (`id"...${e}..."` is
+  // `StringContext(...).id(e)`). With `context` first, `i18nc"Hello ${x}"` would force the
+  // template's own hole into `context: String` and leave the real args for a second, trailing
+  // application -- exactly backwards from what `i18nc"Hello ${x}"("greeting")` should mean. This
+  // order is what makes that the actual, working call shape.
+  inline def i18nc(inline args: Any*)(inline context: String): RuntimeMessage =
     ${ I18nMacros.i18nWithContext('sc, 'args, 'context) }
 
 private object I18nMacros {

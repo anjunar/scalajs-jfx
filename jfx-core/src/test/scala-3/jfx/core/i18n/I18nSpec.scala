@@ -111,5 +111,25 @@ class I18nSpec extends AnyFlatSpec with Matchers {
       "{second} und $5\\replacement"
   }
 
+  it should "compute the fingerprint the TypeScript facade must reproduce byte-for-byte" in {
+    // `npm/jfx-core/src/i18n.ts` has no macro, so it re-derives `MessageKey.fingerprint` at
+    // runtime from the same FNV-1a over the same reconstructed source string
+    // (`I18nMacros.fingerprintOf`). This fixture is the parity proof between the two: its
+    // TypeScript twin (`i18n.test.ts`, "matches the Scala macro's fingerprint byte-for-byte")
+    // asserts the identical literal. If either side's algorithm ever drifts, exactly one of
+    // these two tests goes red.
+    val message = i18n"Hello ${I18n.named("name", "world")}"
+
+    message.key.source shouldBe "Hello {name}"
+    message.key.fingerprint.value shouldBe "51e962fae94c4a20"
+  }
+
+  it should "fold a context into the fingerprint the same way for both interpolators" in {
+    val message = i18nc"Hello ${I18n.named("name", "world")}"("greeting")
+
+    message.key.context shouldBe Some(MessageContext("greeting"))
+    message.key.fingerprint.value shouldBe "c13dfc3c6216d6de"
+  }
+
   private final case class User(name: String)
 }

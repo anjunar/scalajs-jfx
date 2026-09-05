@@ -12,6 +12,7 @@
     "build:server": "vite build --ssr src/entry-server.js",
     "start": "cross-env NODE_ENV=production node server/server.mjs",
     "generate:site-metadata": "node tools/generate-site-metadata.mjs",
+    "i18n:extract": "node tools/i18n-extract.mjs",
     "prerender": "node server/prerender-pages.mjs"
   },
   "dependencies": {

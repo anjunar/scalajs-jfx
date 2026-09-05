@@ -277,6 +277,39 @@ class StubScope implements ScopeHandle {
     return null;
   }
 
+  // No i18n, per this file's own doc comment: the stub is for developing and testing the
+  // declarative layer without a Scala.js build, and locale resolution is exactly the kind of
+  // thing the real bridge must still do properly. `i18nProvider()` isn't registered here either
+  // (nothing calls `component("i18n-provider", ...)` in this file), so these throw for the same
+  // reason `I18nRuntime.require` throws when nothing provided a runtime: unlike `documentHead()`'s
+  // "outside the feature" `null`, resolving a message with no provider is always a bug.
+  private i18nUnsupported(): never {
+    throw new Error(
+      "The stub runtime has no i18n support. Test i18n-dependent code against " +
+        "@anjunar/scalajs-jfx-bridge, or mount an i18n-independent tree under the stub."
+    );
+  }
+
+  i18nText(): ReadOnlyProperty<string> {
+    this.i18nUnsupported();
+  }
+
+  i18nLocale(): ReadOnlyProperty<string> {
+    this.i18nUnsupported();
+  }
+
+  i18nSetLocale(): void {
+    this.i18nUnsupported();
+  }
+
+  i18nSupportedLocales(): readonly string[] {
+    this.i18nUnsupported();
+  }
+
+  i18nDefaultLocale(): string {
+    this.i18nUnsupported();
+  }
+
   /**
    * Opens a virtual range and returns a scope that composes into it, plus the
    * `clear` that takes the whole block back.

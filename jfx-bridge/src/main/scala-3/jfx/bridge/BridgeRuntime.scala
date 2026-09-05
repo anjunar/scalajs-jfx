@@ -19,6 +19,11 @@ object BridgeRuntime {
   ComponentRegistry.register("hbox", HBoxFactory)
   ComponentRegistry.register("button", ButtonFactory)
 
+  // Step 7 of JAVASCRIPT_API.md §9: the i18n facade. `jfx.core.i18n` lives in `jfx-core` itself
+  // (§3), so -- unlike router/controls/viewport/forms/editor below -- registering it here adds no
+  // new module edge and no reachability cost beyond what `jfx-core` already pays.
+  ComponentRegistry.register("i18n-provider", I18nProviderFactory)
+
   // Step 5 of JAVASCRIPT_API.md §9. Registering these here is the point at which `jfx.router`
   // becomes reachable from `bridgeRuntime`'s initializer -- a reachability anchor no DCE can
   // resolve, so it lands in the bundle of every consumer, including one that imports only

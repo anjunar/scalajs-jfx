@@ -3,6 +3,7 @@ package jfx.bridge
 import jfx.core.component.AbstractComponent
 import jfx.core.document.DocumentHead
 import jfx.core.dsl.DslLayer
+import jfx.core.i18n.{I18nLocale, I18nRuntime}
 import jfx.core.layout.{Condition, Head, TextComponent}
 import jfx.core.render.Cursor
 import jfx.core.state.{
@@ -170,5 +171,49 @@ final class ScopeHandleBridge(
     )
 
     new ComponentHandleBridge(factory.mount(options, body))
+  }
+
+  /** Resolves `message` against the current locale. Mirrors `I18nRuntime.text`, which is what
+    * `RuntimeMessage`'s `given TextValue[RuntimeMessage]` calls on the Scala side -- same
+    * `I18nRuntime.require`, so the same `IllegalStateException` when no [[I18nProviderRoot]] is an
+    * ancestor. Mirrors `contract.ts`'s `ScopeHandle.i18nText`.
+    */
+  def i18nText(message: RuntimeMessageFacade): ReadOnlyPropertyHandle[String] = {
+    requireActive()
+    given AbstractComponent = parent
+
+    new ReadOnlyPropertyHandle[String](I18nRuntime.require.text(I18nFactories.toScala(message)))
+  }
+
+  /** The active locale's code, reactive. Mirrors `contract.ts`'s `ScopeHandle.i18nLocale`. */
+  def i18nLocale(): ReadOnlyPropertyHandle[String] = {
+    requireActive()
+    given AbstractComponent = parent
+
+    new ReadOnlyPropertyHandle[String](I18nRuntime.require.locale.map(_.code))
+  }
+
+  /** Mirrors `contract.ts`'s `ScopeHandle.i18nSetLocale`. */
+  def i18nSetLocale(code: String): Unit = {
+    requireActive()
+    given AbstractComponent = parent
+
+    I18nRuntime.require.setLocale(I18nLocale(code))
+  }
+
+  /** Mirrors `contract.ts`'s `ScopeHandle.i18nSupportedLocales`. */
+  def i18nSupportedLocales(): js.Array[String] = {
+    requireActive()
+    given AbstractComponent = parent
+
+    I18nRuntime.require.supportedLocales.map(_.code).toJSArray
+  }
+
+  /** Mirrors `contract.ts`'s `ScopeHandle.i18nDefaultLocale`. */
+  def i18nDefaultLocale(): String = {
+    requireActive()
+    given AbstractComponent = parent
+
+    I18nRuntime.require.defaultLocale.code
   }
 }
