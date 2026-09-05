@@ -54,6 +54,12 @@ nicht für ein anderes Scala-Modul: sie exportiert `bridgeRuntime`, den
 `ReadOnlyProperty`. Kein anderes publiziertes Modul hängt auf sie, und keins
 sollte das je -- sie ist ein Blatt im Graphen, kein Fundament.
 
+Der npm-Einstieg von `@anjunar/scalajs-jfx-bridge` registriert `bridgeRuntime`
+beim Import automatisch über `@anjunar/jfx-core` und dessen bestehende
+Runtime-Wache. Die Abhängigkeitsrichtung bleibt Bridge → Core; Core importiert
+keine konkrete Runtime. `installRuntime` bleibt für Tests mit eigener Runtime
+verfügbar.
+
 **Die Publish-Regel.** Ein publiziertes Modul darf nur auf publizierte Module
 und auf externe Artefakte hängen. Sonst verweist der erzeugte POM auf ein
 Artefakt, das in Maven Central nie existiert, und das Modul ist für externe

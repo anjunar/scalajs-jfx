@@ -52,10 +52,8 @@ the same pair travels in an ambient scope that the builders push and pop.
 ## Booting
 
 ```ts
-import { hydrate, installRuntime, mount, renderToString } from "@anjunar/jfx-core";
-import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";
-
-installRuntime(bridgeRuntime);
+import { hydrate, mount, renderToString } from "@anjunar/jfx-core";
+import "@anjunar/scalajs-jfx-bridge";
 
 // browser, claiming the server-rendered tree
 await hydrate(document, () => statePage());
@@ -67,8 +65,13 @@ mount(document.querySelector("#root")!, () => statePage());
 const { html, status } = await renderToString(() => statePage());
 ```
 
-`installRuntime` is called once per process. It is the only module-level state in
-this package, and it is constant after boot.
+Importing the bridge installs its runtime automatically, once per module instance.
+Modules that create properties at module load must import the bridge themselves:
+an import in a parent entry point does not order sibling modules when a dependency
+initializes asynchronously. Render-time state only needs the entry point import.
+The installed runtime is constant after boot; a different second runtime is rejected.
+`installRuntime` remains available for test runtimes, and `resetRuntime` clears
+the slot for tests. After a reset, reinstall explicitly: cached imports do not rerun.
 
 The runnable version of all three paths lives in `npm/jfx-demo`, which consumes
 this package the way a stranger would -- through its package exports, not by

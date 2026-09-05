@@ -156,8 +156,8 @@ describe("a packed install", () => {
   it("ships the bridge's types next to the linked, optimised bundle", () => {
     const installed = join(consumer, "node_modules", "@anjunar", "scalajs-jfx-bridge");
     expect(readdirSync(installed)).toContain("types");
-    // fullopt, not fastopt: package.json's main/exports point at the optimised
-    // build, and this is the artifact a real consumer actually gets.
+    expect(readdirSync(installed)).toContain("index.js");
+    // The package entry point installs the optimised linked runtime.
     expect(readdirSync(join(installed, "dist", "fullopt"))).toContain("main.js");
   });
 });
@@ -186,7 +186,7 @@ describe("typechecking a consumer", () => {
       "}",
       "",
       "export async function render(): Promise<SsrResult> {",
-      "  installRuntime(runtimes[0]!);",
+      "  installRuntime(runtimes[1]!);",
       "  return renderToString(page);",
       "}",
       "",
@@ -304,11 +304,45 @@ describe("rendering from a packed install", () => {
     expect(result.html).toContain('class="jfx-vbox page"');
   });
 
-  it("renders server-side against the linked Scala.js bridge", () => {
+  it("installs the bridge before a dependent module creates state at module load", () => {
+    writeFileSync(join(consumer, "page.mjs"), [
+      'import "@anjunar/scalajs-jfx-bridge";',
+      'import { property } from "@anjunar/jfx-core";',
+      "export const count = property(41);",
+    ].join("\n"));
     const script = [
-      'import { classes, div, installRuntime, property, renderToString, text, vbox } from "@anjunar/jfx-core";',
+      'import { count } from "./page.mjs";',
+      'import { div, renderToString, text } from "@anjunar/jfx-core";',
+      'const result = await renderToString(() => div(() => text(String(count.get + 1))));',
+      "console.log(JSON.stringify(result));",
+    ].join("\n");
+    writeFileSync(join(consumer, "ssr-auto.mjs"), script);
+    const result = lastJsonLine<{ html: string; status: number }>(
+      run(process.execPath, ["ssr-auto.mjs"], consumer)
+    );
+    expect(result.status).toBe(200);
+    expect(result.html).toContain("42");
+  });
+
+  it("refuses automatic installation over a different runtime", () => {
+    const script = [
+      'import { installRuntime, runtime } from "@anjunar/jfx-core";',
+      'import { stubRuntime } from "@anjunar/jfx-core/stub";',
+      "installRuntime(stubRuntime);",
+      "let refused = false;",
+      'try { await import("@anjunar/scalajs-jfx-bridge"); }',
+      'catch (error) { refused = String(error).includes("would split the component tree"); }',
+      "console.log(JSON.stringify({ refused, preserved: runtime() === stubRuntime }));",
+    ].join("\n");
+    writeFileSync(join(consumer, "auto-guard.mjs"), script);
+    expect(lastJsonLine(run(process.execPath, ["auto-guard.mjs"], consumer)))
+      .toEqual({ refused: true, preserved: true });
+  });
+
+  it("renders server-side after automatic installation through a named import", () => {
+    const script = [
+      'import { classes, div, property, renderToString, text, vbox } from "@anjunar/jfx-core";',
       'import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";',
-      "installRuntime(bridgeRuntime);",
       page,
       "console.log(JSON.stringify({ html: result.html, status: result.status, name: bridgeRuntime.name }));",
       "",

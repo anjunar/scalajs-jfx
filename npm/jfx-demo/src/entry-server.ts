@@ -1,7 +1,7 @@
 // By package specifier, like entry-client.ts -- see the note there and
 // vite.config.ts's `resolve.dedupe`, which is what makes it safe.
-import { installRuntime, renderToString, type HeadEntry } from "@anjunar/jfx-core";
-import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";
+import { renderToString, type HeadEntry } from "@anjunar/jfx-core";
+import "@anjunar/scalajs-jfx-bridge";
 import { router } from "@anjunar/jfx-router";
 import { viewport } from "@anjunar/jfx-viewport";
 import { appDocument } from "./app/document.js";
@@ -13,8 +13,6 @@ import { i18nProvider, providerConfig } from "./app/i18n.js";
 // instead of importing app/catalog.ts's source. See the note on
 // `routeManifest` in app/catalog.ts for why that import would otherwise fail.
 export { routeManifest } from "./app/catalog.js";
-
-installRuntime(bridgeRuntime);
 
 /**
  * Renders the complete document for `path`. `assets` carries the bundler's

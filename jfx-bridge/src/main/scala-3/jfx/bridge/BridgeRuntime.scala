@@ -2,11 +2,10 @@ package jfx.bridge
 
 import scala.scalajs.js.annotation.JSExportTopLevel
 
-/** The bridge's only export. `npm/jfx/README.md` already documents the consumer side of this:
+/** The bridge's only export. The npm package entry point installs it into core automatically:
   *
   * {{{
-  * import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";
-  * installRuntime(bridgeRuntime);
+  * import "@anjunar/scalajs-jfx-bridge";
   * }}}
   *
   * Registering the library components here rather than in [[JfxRuntimeBridge]] itself keeps that

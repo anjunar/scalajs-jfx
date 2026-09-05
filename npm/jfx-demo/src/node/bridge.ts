@@ -10,8 +10,8 @@
  * module graph. Router pages are verified through the mounted app and
  * `verify:pages`, because a bare renderToString has no router context.
  */
-import { installRuntime, property, renderToString } from "@anjunar/jfx-core";
-import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";
+import { property, renderToString } from "@anjunar/jfx-core";
+import "@anjunar/scalajs-jfx-bridge";
 import { format } from "./format.js";
 import { pageManifest } from "../app/page-manifest.js";
 
@@ -22,8 +22,6 @@ async function render(label: string, body: () => void, wrap?: (body: () => void)
 }
 
 async function main(): Promise<void> {
-  installRuntime(bridgeRuntime);
-
   for (const page of pageManifest) {
     await render(page.title, page.render, page.wrap);
   }

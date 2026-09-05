@@ -6,8 +6,8 @@
 // module-level variable -- two module instances meant two slots. The fix is in
 // vite.config.ts's `resolve.dedupe`, at the cause; see CLAUDE_REVIEW_3.md §7.1.
 import "./styles/style.css";
-import { hydrate, installRuntime } from "@anjunar/jfx-core";
-import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";
+import { hydrate } from "@anjunar/jfx-core";
+import "@anjunar/scalajs-jfx-bridge";
 import { router } from "@anjunar/jfx-router";
 import { viewport } from "@anjunar/jfx-viewport";
 import { appDocument } from "./app/document.js";
@@ -15,8 +15,6 @@ import { appRoutes, appShell, routerConfig } from "./app/routes.js";
 import { i18nProvider, providerConfig } from "./app/i18n.js";
 import { hydratedProperty } from "./app/hydrated.js";
 import { syncThemeFromDocument } from "./app/theme.js";
-
-installRuntime(bridgeRuntime);
 
 // Claims the whole server-rendered document -- `<html>`, `<head>` and `<body>`
 // included -- built by src/entry-server.ts for the same path through the same

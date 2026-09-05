@@ -23,10 +23,8 @@ import type { JfxRuntime } from "@anjunar/jfx-core";
  * The one runtime instance this bundle installs.
  *
  * ```ts
- * import { installRuntime } from "@anjunar/jfx-core";
- * import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";
- *
- * installRuntime(bridgeRuntime);
+ * import "@anjunar/scalajs-jfx-bridge";
  * ```
+ * Importing the package automatically installs this instance in core.
  */
 export declare const bridgeRuntime: JfxRuntime;

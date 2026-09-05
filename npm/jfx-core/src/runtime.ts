@@ -13,7 +13,7 @@ let installed: JfxRuntime | null = null;
 
 /**
  * Installs the runtime for this process. Called once at boot -- by the Scala.js
- * bundle in production, by the stub in tests.
+ * package entry point in production, by the stub in tests.
  */
 export function installRuntime(runtime: JfxRuntime): void {
   if (installed !== null && installed !== runtime) {
@@ -28,8 +28,8 @@ export function installRuntime(runtime: JfxRuntime): void {
 export function runtime(): JfxRuntime {
   if (installed === null) {
     throw new Error(
-      "No JFX runtime installed. Call installRuntime() with the Scala.js bridge " +
-        "(or the stub runtime) before rendering."
+      'No JFX runtime installed. Import "@anjunar/scalajs-jfx-bridge" ' +
+        "(or call installRuntime() with a test runtime) before rendering."
     );
   }
   return installed;

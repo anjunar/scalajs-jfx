@@ -4,12 +4,9 @@
  * the same reasoning as the theme toggle in E-7. `entry-client.ts` flips it
  * to true once `hydrate()` has settled; nothing on the server ever does.
  *
- * Created lazily, not as a module-top-level `property(false)`: both
- * `entry-server.ts` and `node/bridge.ts` import the route table before they
- * call `installRuntime()` (imports evaluate before a module's own body
- * runs), and every runtime factory -- `property()` included -- throws until
- * a runtime is installed. Lazy construction defers that first call to
- * render time, which is always after `installRuntime()`. A shared singleton
+ * Created lazily so importing the page manifest does not require a runtime:
+ * the stub runner installs its runtime in main(), while the browser and SSR
+ * entry points install the bridge through its package import. A shared singleton
  * is safe even across SSR requests because nothing ever mutates it on the
  * server; only the browser-only line in entry-client.ts does.
  */

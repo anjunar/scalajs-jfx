@@ -6,36 +6,36 @@ JavaScript, one class per handle, no `@JSExportAll`. See
 [`JAVASCRIPT_API.md`](../../JAVASCRIPT_API.md) for why this package exists and
 what it does and does not cover yet.
 
-This package has no source of its own: `dist/fullopt/` is the linker's output
-for the `jfx-bridge` sbt module (`jfx.bridge`), built with
+The handwritten `index.js` installs the runtime into `@anjunar/jfx-core` and
+re-exports `bridgeRuntime`. `dist/fullopt/` is the linker's output for the
+`jfx-bridge` sbt module (`jfx.bridge`), built with
 
 ```bash
 sbtn "scalajs-jfx-bridge/fullLinkJS"   # dist/fullopt/main.js -- optimised and minified
 ```
 
-`package.json`'s `main`/`exports` point at `fullopt`, not `fastopt`: this is a
-one-module artifact (`jfx-core` only, §3), and `fullLinkJS` links it in about the
-same time as `fastLinkJS` does -- roughly a second, measured. There is no
-meaningful dev/prod split to preserve here, so there is only one command to run,
-and every consumer -- the demo, the test harness, a real install -- gets the
-optimised bundle. Compare `application/`'s own `fastLinkJS`/`fullLinkJS` split,
-which exists because that build pulls in the whole component library and the
-difference in link time is real (JAVASCRIPT_API.md §14).
+`package.json`'s `main`/`exports` point at `index.js`, which imports the
+optimised `fullopt` bundle. Every consumer -- the demo, the test harness and
+a packed install -- uses this same entry point.
 
 `dist/` is gitignored; it is generated, not checked in. `types/` is not -- it is
-hand-written and versioned, and it is the only part of this package a human
-edits. There is nothing to `npm install` here either: the linked bundle imports
-nothing from npm, only JavaScript globals (`window`, `document`) through
-`org.scalajs.dom`'s facades.
+hand-written and versioned, as is `index.js`. The core peer dependency provides
+the shared runtime slot; the linked editor uses `@anjunar/scalajs-lexical`.
 
 ## Usage
 
 ```ts
-import { installRuntime } from "@anjunar/jfx-core";
-import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";
-
-installRuntime(bridgeRuntime);
+import "@anjunar/scalajs-jfx-bridge";
 ```
+
+This import automatically installs the runtime before the importing module's
+body runs. Named imports of `bridgeRuntime` have the same effect. A module that
+creates properties at module load must import the bridge itself; sibling imports
+can evaluate concurrently when a dependency initializes asynchronously.
+The package declares `sideEffects: true` so bundlers retain the installation.
+Core's existing guard still rejects a different runtime in the same slot.
+Tests can continue to use `installRuntime` explicitly; after `resetRuntime`,
+reinstall explicitly because an already evaluated import is cached.
 
 The types live in [`types/index.d.ts`](types/index.d.ts), and they *import*
 `JfxRuntime` from `@anjunar/jfx-core` rather than restating it -- the contract

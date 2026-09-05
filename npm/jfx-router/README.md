@@ -80,11 +80,9 @@ page renders -- which is what the Node runners in `npm/jfx-demo` do.
 ## Booting
 
 ```ts
-import { hydrate, installRuntime, renderToString } from "@anjunar/jfx-core";
-import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";
+import { hydrate, renderToString } from "@anjunar/jfx-core";
+import "@anjunar/scalajs-jfx-bridge";
 import { router } from "@anjunar/jfx-router";
-
-installRuntime(bridgeRuntime);
 
 // server: pass the request path as `url`
 const { html, status } = await renderToString(() =>
