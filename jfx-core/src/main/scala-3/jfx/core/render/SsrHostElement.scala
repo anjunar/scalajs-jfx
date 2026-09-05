@@ -90,10 +90,10 @@ final class SsrHostElement(val tagName: String) extends HostElement, SsrNode {
     }
   }
 
-  /** The children's HTML without this element's own tags. Used for the SSR root: [[SsrCursor]] roots
-    * at a nameless host so that a component reconciled away at the very top of the tree -- a route
-    * outlet's loading placeholder, a root-level `Foreach` item -- is removed from the output the way
-    * it would be under a real element. `renderHtml()` there would wrap everything in `<>`.
+  /** The children's HTML without this element's own tags. Used for the SSR root: [[SsrCursor]]
+    * roots at a nameless host so that a component reconciled away at the very top of the tree -- a
+    * route outlet's loading placeholder, a root-level `Foreach` item -- is removed from the output
+    * the way it would be under a real element. `renderHtml()` there would wrap everything in `<>`.
     */
   def renderChildrenHtml(): String =
     children.map(_.renderHtml()).mkString

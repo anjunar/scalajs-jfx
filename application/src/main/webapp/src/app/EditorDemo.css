@@ -171,7 +171,7 @@ html[data-theme="dark"] .hljs-number {
 
 .jfx-editor__shell {
     display: grid;
-    grid-template-rows: auto 1fr;
+    grid-template-rows: auto auto 1fr;
 }
 
 .jfx-editor__toolbar {

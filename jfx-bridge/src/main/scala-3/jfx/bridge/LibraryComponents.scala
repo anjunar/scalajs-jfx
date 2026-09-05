@@ -11,8 +11,8 @@ import scala.scalajs.js
   * `object` plus one line in [[BridgeRuntime]], exactly as JAVASCRIPT_API.md §4 describes.
   *
   * `jfx-controls` is deliberately not reached into here: this module depends on `jfx-core` alone
-  * (JAVASCRIPT_API.md §9, step 2 -- "nur core"). Filling out the registry with combo-box, table-view
-  * and friends is step 6, once the boundary itself has proven out.
+  * (JAVASCRIPT_API.md §9, step 2 -- "nur core"). Filling out the registry with combo-box,
+  * table-view and friends is step 6, once the boundary itself has proven out.
   */
 private[bridge] object VBoxFactory extends ComponentFactory {
   override def mount(
@@ -53,7 +53,9 @@ private[bridge] object ButtonFactory extends ComponentFactory {
       val childCursor = summon[Cursor]
 
       options.get("type").foreach(value => self.buttonType(value.asInstanceOf[String]))
-      options.get("disabled").foreach(value => self.disabled = ReactiveBridge.asProperty[Boolean](value))
+      options
+        .get("disabled")
+        .foreach(value => self.disabled = ReactiveBridge.asProperty[Boolean](value))
 
       body(new ComponentHandleBridge(self), new ScopeHandleBridge(self, childCursor))
     }

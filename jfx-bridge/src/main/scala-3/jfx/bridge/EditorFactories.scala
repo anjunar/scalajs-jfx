@@ -19,23 +19,23 @@ import scala.scalajs.js
 
 /** Step 6 of JAVASCRIPT_API.md §9, the editor half -- the trigger was FINAL.md Priorität 4
   * ("`jfx-editor` veröffentlichen oder bewusst ausklammern"), settled as: veröffentlichen, with a
-  * facade like every other family package (npm-Modularisierung Lauf 7). `jfx.editor.Editor` is
-  * already a plain `jfx.forms.Control[js.Any | Null]` -- SSR/hydration, the placeholder contract and
-  * form registration are the ones every other control already has, so this factory needs no
-  * counterpart to `FormFactories.DynamicFormular`: an `editor` registered under a `form`/`subForm`
-  * binds through the exact same generic `(_, s: CoreProperty[Any], t: CoreProperty[Any])` branch of
-  * `DynamicFormular.bindNow` that `input` uses, because `js.Any | Null` is already a JS-compatible
-  * value type -- no `MediaCodec`-style translation needed.
+  * facade like every other family package (npm-Modularisierung Lauf 7). `jfx.editor.Editor` is is a
+  * plain `jfx.forms.Control[String]` -- SSR/hydration, the placeholder contract and form
+  * registration are the ones every other control already has, so this factory needs no counterpart
+  * to `FormFactories.DynamicFormular`: an `editor` registered under a `form`/`subForm` binds
+  * through the exact same generic `(_, s: CoreProperty[Any], t: CoreProperty[Any])` branch of
+  * `DynamicFormular.bindNow` that `input` uses. Markdown is the stable value contract on both sides
+  * of the bridge; Lexical EditorState JSON remains an implementation detail.
   *
   * The one thing this factory does that no other does: `jfx.editor.plugins.basePlugin()`/
-  * `headingPlugin()`/... are Scala functions, not values, so a JS `plugins` list is turned into calls
-  * rather than into constructor arguments. Each of the eight plugins is self-contained with its
-  * default, no-argument body -- `imagePlugin()`'s upload dialog reads a local file into a data URL
-  * itself, no `MediaLike`/upload hook required (that FINAL.md item is about `jfx.forms.ImageCropper`,
-  * a different control). Per-plugin configuration (`ImagePlugin.dialogTitle`,
-  * `defaultWidthPx`, ...), `dialogService` overriding the default `Viewport`-window one, and per-plugin
-  * bodies are not projected -- each has an obvious trigger to add later, the same deferral shape as
-  * `ComboBoxFactory`'s `valueRenderer`/`identityBy`.
+  * `headingPlugin()`/... are Scala functions, not values, so a JS `plugins` list is turned into
+  * calls rather than into constructor arguments. Each of the eight plugins is self-contained with
+  * its default, no-argument body -- `imagePlugin()`'s upload dialog reads a local file into a data
+  * URL itself, no `MediaLike`/upload hook required (that FINAL.md item is about
+  * `jfx.forms.ImageCropper`, a different control). Per-plugin configuration
+  * (`ImagePlugin.dialogTitle`, `defaultWidthPx`, ...), `dialogService` overriding the default
+  * `Viewport`-window one, and per-plugin bodies are not projected -- each has an obvious trigger to
+  * add later, the same deferral shape as `ComboBoxFactory`'s `valueRenderer`/`identityBy`.
   *
   * Like `ComboBox`, `linkPlugin()`/`imagePlugin()` need a `viewport` ancestor: their dialogs are
   * `Viewport.WindowConf`s (`DefaultDialogService`, `jfx-editor`'s own doc comment).
@@ -51,7 +51,23 @@ private[bridge] object EditorFactory extends ComponentFactory {
     Editor.editor(name, standalone) {
       val self = summon[Editor]
 
+      options.get("value").foreach(value => self.valueProperty.set(ControlFactories.str(value)))
       options.get("placeholder").foreach(value => self.placeholder(ControlFactories.strProp(value)))
+      options
+        .get("editable")
+        .foreach(value => self.editableProperty.set(ControlFactories.bool(value)))
+      options
+        .get("editUrl")
+        .foreach(value => Editor.editUrl_=(ControlFactories.str(value))(using self))
+      options
+        .get("editLabel")
+        .foreach(value => Editor.editLabel_=(ControlFactories.str(value))(using self))
+      options
+        .get("readonlyUrl")
+        .foreach(value => Editor.readonlyUrl_=(ControlFactories.str(value))(using self))
+      options
+        .get("readonlyLabel")
+        .foreach(value => Editor.readonlyLabel_=(ControlFactories.str(value))(using self))
 
       options.get("toolbarMode").map(ControlFactories.str).foreach {
         case "menu"     => Editor.menuToolbar()(using self)
@@ -79,7 +95,7 @@ private[bridge] object EditorFactories {
       case "table"          => tablePlugin()
       case "code"           => codePlugin()
       case "horizontalRule" => horizontalRulePlugin()
-      case other =>
+      case other            =>
         dom.console.warn(s"editor '${editor.name}': unknown plugin '$other', ignored.")
     }
 }

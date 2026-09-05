@@ -12,8 +12,8 @@ import scala.scalajs.js
   */
 @js.native
 trait JsReadOnlyProperty[T] extends js.Object {
-  def get: T                                                   = js.native
-  def observe(observer: js.Function1[T, Unit]): JsDisposable   = js.native
+  def get: T                                                               = js.native
+  def observe(observer: js.Function1[T, Unit]): JsDisposable               = js.native
   def observeWithoutInitial(observer: js.Function1[T, Unit]): JsDisposable = js.native
 }
 
@@ -34,8 +34,8 @@ final class ConstantProperty[T](value: T) extends CoreReadOnlyProperty[T] {
   *
   * Mirrors `dsl.ts`'s own `isProperty`: an object exposing a callable `observe` is treated as a
   * property, anything else as a constant. TypeScript already applies the same duck test for `attr`,
-  * `style` and `domProperty`, which resolve `Reactive` without ever crossing into Scala; this is the
-  * one place the bridge has to do it itself, because `text()` and component options hand a
+  * `style` and `domProperty`, which resolve `Reactive` without ever crossing into Scala; this is
+  * the one place the bridge has to do it itself, because `text()` and component options hand a
   * `Reactive` straight through `ScopeHandle`.
   */
 object ReactiveBridge {

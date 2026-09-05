@@ -47,10 +47,9 @@ trait Cursor {
 
   def sub(host: HostElement): Cursor
 
-  /**
-    * Resolves a cursor for resumed work. During hydration this retains the
-    * shared claim position; after completion it inserts into the same host and
-    * virtual range without claiming server nodes again.
+  /** Resolves a cursor for resumed work. During hydration this retains the shared claim position;
+    * after completion it inserts into the same host and virtual range without claiming server nodes
+    * again.
     */
   def fresh: Cursor = this
 

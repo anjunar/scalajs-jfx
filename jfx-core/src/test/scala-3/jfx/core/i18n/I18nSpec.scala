@@ -125,7 +125,7 @@ class I18nSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "fold a context into the fingerprint the same way for both interpolators" in {
-    val message = i18nc"Hello ${I18n.named("name", "world")}"("greeting")
+    val message = i18nc"Hello ${I18n.named("name", "world")}" ("greeting")
 
     message.key.context shouldBe Some(MessageContext("greeting"))
     message.key.fingerprint.value shouldBe "c13dfc3c6216d6de"

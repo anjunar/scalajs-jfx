@@ -72,7 +72,8 @@ object TableViewPage {
         )
       },
       initialQuery = initialQuery,
-      underlying = js.Array(allBooks.slice(initialQuery.offset, initialQuery.offset + normalizedPageSize)*),
+      underlying =
+        js.Array(allBooks.slice(initialQuery.offset, initialQuery.offset + normalizedPageSize)*),
       sortUpdater = Some((query, sorting) =>
         query.copy(offset = 0, limit = normalizedPageSize, sorting = sorting.toVector)
       ),

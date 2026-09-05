@@ -4,7 +4,14 @@ import jfx.core.component.{AbstractComponent, AbstractCustomComponent}
 import jfx.core.layout.{Anchor, TextComponent}
 import jfx.core.dsl.DslLayer
 import jfx.core.render.Cursor
-import jfx.router.{Route, RouteContext => CoreRouteContext, RouteFailure, Router, RouterConfig, RouterLink}
+import jfx.router.{
+  Route,
+  RouteContext => CoreRouteContext,
+  RouteFailure,
+  Router,
+  RouterConfig,
+  RouterLink
+}
 
 import scala.concurrent.ExecutionContext
 import scala.scalajs.js
@@ -14,13 +21,13 @@ import scala.scalajs.js.JSConverters.*
   *
   * The trigger from CLAUDE_REVIEW_3.md §5 was "`jfx-bridge` gets `dependsOn(jfxRouter)` **and**
   * exports (a) a registry entry that mounts a `jfx.router.Router` with a route table translated
-  * from JS, (b) `router-outlet`, (c) `router-link`". This file is those three, plus the JS <-> Scala
-  * translation `jfx.router.Router` needs and the deleted `router.ts` only sketched.
+  * from JS, (b) `router-outlet`, (c) `router-link`". This file is those three, plus the JS <->
+  * Scala translation `jfx.router.Router` needs and the deleted `router.ts` only sketched.
   *
   * The hard part is `load`: `jfx.router.Route` takes `RouteContext => Future[AbstractComponent]`,
   * where the component is a virtual boundary the router renders. TypeScript writes a
-  * `(ctx) => Promise<PageBody>` where `PageBody = () => void` runs the ambient-scope DSL. The
-  * TS facade (`npm/jfx-router/src/router.ts`) already rewrites that into
+  * `(ctx) => Promise<PageBody>` where `PageBody = () => void` runs the ambient-scope DSL. The TS
+  * facade (`npm/jfx-router/src/router.ts`) already rewrites that into
   * `(ctx) => Promise<(scope) => void>` by wrapping the body in `withScope`; this side turns the
   * resolved `(scope) => void` into an `AbstractComponent` via [[Route.component]].
   */
@@ -29,25 +36,25 @@ import scala.scalajs.js.JSConverters.*
   *
   * `load` returns either a `ScopeBody` (`js.Function1[ScopeHandleBridge, Unit]`) for a synchronous
   * loader, or a `js.Promise` of one for an asynchronous loader -- [[RouterFactories.buildRoute]]
-  * branches on `js.typeOf`. A synchronous loader takes the same one-pass path as `Future.successful`
-  * on the Scala side, which is the path that hydrates cleanly.
+  * branches on `js.typeOf`. A synchronous loader takes the same one-pass path as
+  * `Future.successful` on the Scala side, which is the path that hydrates cleanly.
   */
 @js.native
 private[bridge] trait RouteFacade extends js.Object {
   val path: String                                                          = js.native
-  val load: js.Function1[RouteContextHandle, js.Any]                         = js.native
-  val children: js.UndefOr[js.Array[RouteFacade]]                            = js.native
-  val constraints: js.UndefOr[js.Dictionary[js.Function1[String, Boolean]]]  = js.native
-  val status: js.UndefOr[Int]                                                = js.native
+  val load: js.Function1[RouteContextHandle, js.Any]                        = js.native
+  val children: js.UndefOr[js.Array[RouteFacade]]                           = js.native
+  val constraints: js.UndefOr[js.Dictionary[js.Function1[String, Boolean]]] = js.native
+  val status: js.UndefOr[Int]                                               = js.native
 }
 
 /** Mirrors `router.ts`'s `RouterConfig`. Native, same reason. */
 @js.native
 private[bridge] trait RouterConfigFacade extends js.Object {
-  val basePath: js.UndefOr[String]                             = js.native
-  val initialUrl: js.UndefOr[String]                           = js.native
-  val onFailure: js.UndefOr[js.Function1[js.Object, js.Any]]   = js.native
-  val renderErrorsOnServer: js.UndefOr[Boolean]                = js.native
+  val basePath: js.UndefOr[String]                           = js.native
+  val initialUrl: js.UndefOr[String]                         = js.native
+  val onFailure: js.UndefOr[js.Function1[js.Object, js.Any]] = js.native
+  val renderErrorsOnServer: js.UndefOr[Boolean]              = js.native
 }
 
 /** The JS projection of `jfx.router.RouteContext`, handed to a TS route loader.
@@ -56,8 +63,8 @@ private[bridge] trait RouterConfigFacade extends js.Object {
   * those are Scala-internal routing types with no TypeScript meaning.
   */
 private[bridge] final class RouteContextHandle(source: CoreRouteContext) extends js.Object {
-  val path: String                    = source.path
-  val params: js.Dictionary[String]   = source.pathParams.toJSDictionary
+  val path: String                       = source.path
+  val params: js.Dictionary[String]      = source.pathParams.toJSDictionary
   val queryParams: js.Dictionary[String] =
     source.queryParams.entries.toMap.toJSDictionary
   val failure: String | Null =
@@ -108,14 +115,14 @@ private[bridge] object RouterFactories {
 
   def projectConfig(facade: js.UndefOr[RouterConfigFacade]): RouterConfig =
     facade.toOption match {
-      case None => RouterConfig()
+      case None         => RouterConfig()
       case Some(config) =>
         val base = RouterConfig()
 
         base.copy(
           basePath = config.basePath.getOrElse(base.basePath),
           onFailure = config.onFailure.toOption match {
-            case None => base.onFailure
+            case None     => base.onFailure
             case Some(fn) =>
               failure => {
                 val projected = js.Dynamic.literal(
@@ -127,8 +134,7 @@ private[bridge] object RouterFactories {
                 else Some(result.asInstanceOf[String])
               }
           },
-          renderErrorsOnServer =
-            config.renderErrorsOnServer.getOrElse(base.renderErrorsOnServer)
+          renderErrorsOnServer = config.renderErrorsOnServer.getOrElse(base.renderErrorsOnServer)
         )
     }
 }
@@ -136,12 +142,12 @@ private[bridge] object RouterFactories {
 /** The component `router()` mounts: it owns one `jfx.router.Router` and puts the application shell
   * around it.
   *
-  * This is what `app.App.compose` assembles by hand on the Scala side -- `Router.provide(appRouter)`,
-  * then a sidebar of `routerLink`s, then `child(appRouter)`. A Scala user writes that directly; a
-  * TypeScript user goes through `router(routes, config, shell)`, so the assembly lives here. The
-  * shell body runs with the router in context, so its `routerLink`s resolve; the routed page renders
-  * straight after it. An empty shell (`router(routes, config)` with no third argument) just renders
-  * the routed page.
+  * This is what `app.App.compose` assembles by hand on the Scala side --
+  * `Router.provide(appRouter)`, then a sidebar of `routerLink`s, then `child(appRouter)`. A Scala
+  * user writes that directly; a TypeScript user goes through `router(routes, config, shell)`, so
+  * the assembly lives here. The shell body runs with the router in context, so its `routerLink`s
+  * resolve; the routed page renders straight after it. An empty shell (`router(routes, config)`
+  * with no third argument) just renders the routed page.
   */
 private[bridge] final class RouterViewRoot(
     routerComponent: Router,
@@ -158,7 +164,8 @@ private[bridge] final class RouterViewRoot(
   }
 }
 
-/** `router` -- mounts a [[RouterViewRoot]] around a `jfx.router.Router` with the translated table. */
+/** `router` -- mounts a [[RouterViewRoot]] around a `jfx.router.Router` with the translated table.
+  */
 private[bridge] object RouterFactory extends ComponentFactory {
   override def mount(
       options: js.Dictionary[js.Any],
@@ -212,7 +219,7 @@ private[bridge] object RouterLinkFactory extends ComponentFactory {
 
     RouterLink.routerLink(href, activeClass) {
       val link       = summon[Anchor]
-      val linkCursor  = summon[Cursor]
+      val linkCursor = summon[Cursor]
 
       // `Cursor` is already a given from the context function; only the component is missing --
       // the body runs as the anchor, so `child()` and friends mount under it.

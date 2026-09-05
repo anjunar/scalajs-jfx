@@ -6,7 +6,11 @@ import { translated } from "../../app/i18n.js";
 export function editorBasicsPage(): void {
   const model = {
     title: property(translated("Getting started").get),
-    body: property<unknown>(null),
+    body: property(
+      "## Markdown editor\n\nThe public value stays **Markdown**.\n\n" +
+        "| Feature | Representation |\n| --- | --- |\n| Tables | GFM pipe table |\n| Code | Fenced block |\n\n" +
+        "```scala\nval publicValue = \"Markdown\"\n```\n\n---"
+    ),
   };
 
   form(model, {}, () => {

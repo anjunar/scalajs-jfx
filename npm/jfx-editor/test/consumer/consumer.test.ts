@@ -153,9 +153,10 @@ describe("typechecking a consumer", () => {
       'import { form } from "@anjunar/jfx-forms";',
       'import { viewport } from "@anjunar/jfx-viewport";',
       'import { editor } from "@anjunar/jfx-editor";',
-      'import type { EditorOptions } from "@anjunar/jfx-editor";',
+      'import type { EditorOptions, Markdown } from "@anjunar/jfx-editor";',
       "",
-      "const model = { body: property<unknown>(null) };",
+      'const initial: Markdown = "";',
+      'const model = { body: property(initial) };',
       'const options: EditorOptions = { plugins: ["base", "heading"] };',
       "",
       "export async function render(): Promise<SsrResult> {",
@@ -201,44 +202,37 @@ describe("typechecking a consumer", () => {
   });
 });
 
-describe("rendering a form-bound editor from a packed install", () => {
+describe("rendering a Markdown editor from a packed install", () => {
   it("renders against the bridge", () => {
     const script = [
       'import { installRuntime, property, renderToString } from "@anjunar/jfx-core";',
       'import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";',
-      'import { form } from "@anjunar/jfx-forms";',
       'import { viewport } from "@anjunar/jfx-viewport";',
       'import { editor } from "@anjunar/jfx-editor";',
       "installRuntime(bridgeRuntime);",
-      "const document_ = { root: { type: \"root\", version: 1, indent: 0, format: \"\", direction: null, children: [",
-      "  { type: \"paragraph\", version: 1, indent: 0, format: \"\", direction: null, children: [",
-      "    { type: \"text\", version: 1, format: 0, mode: \"normal\", detail: 0, style: \"\", text: \"Ada\" },",
-      "  ] },",
-      "] } };",
-      "const model = { body: property(document_) };",
       "const result = await renderToString(() => {",
       "  viewport(() => {",
-      "    form(model, {}, () => {",
-      "      editor(\"body\", { plugins: [\"base\"] });",
-      "    });",
+      "    editor(\"body\", { standalone: true, value: \"## Ada\", editable: false, plugins: [\"base\"] });",
       "  });",
       "});",
       "console.log(JSON.stringify({",
       "  status: result.status,",
       "  hasEditor: result.html.includes('name=\"body\"'),",
       "  hasValue: result.html.includes(\"Ada\"),",
+      "  hasHeading: result.html.includes(\"<h2\"),",
       "}));",
       "",
     ].join("\n");
 
     writeFileSync(join(consumer, "ssr-editor.mjs"), script);
 
-    const result = lastJsonLine<{ status: number; hasEditor: boolean; hasValue: boolean }>(
+    const result = lastJsonLine<{ status: number; hasEditor: boolean; hasValue: boolean; hasHeading: boolean }>(
       run(process.execPath, ["ssr-editor.mjs"], consumer)
     );
 
     expect(result.status).toBe(200);
     expect(result.hasEditor).toBe(true);
     expect(result.hasValue).toBe(true);
+    expect(result.hasHeading).toBe(true);
   });
 });

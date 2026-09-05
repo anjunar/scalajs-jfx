@@ -36,6 +36,53 @@
     gap: 12px;
 }
 
+.jfx-editor__fallback,
+.jfx-editor__readonly {
+    min-height: inherit;
+}
+
+.jfx-editor__markdown-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding: 10px 18px 0;
+}
+
+.jfx-editor__edit-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    border: 1px solid var(--aj-line);
+    border-radius: 999px;
+    padding: 0 14px;
+    color: var(--aj-ink);
+    background: var(--aj-surface-overlay);
+    text-decoration: none;
+}
+
+.jfx-editor__edit-link:hover {
+    border-color: var(--aj-accent);
+    background: var(--aj-accent-muted);
+}
+
+.jfx-editor__markdown-textarea {
+    display: block;
+    width: 100%;
+    min-height: 220px;
+    box-sizing: border-box;
+    resize: vertical;
+    border: 0;
+    padding: 18px;
+    color: var(--aj-ink);
+    background: var(--aj-surface-overlay, var(--aj-surface));
+    outline: none;
+    font: 0.95rem/1.6 "Cascadia Code", "JetBrains Mono", monospace;
+}
+
+.jfx-editor__markdown-textarea:focus {
+    box-shadow: inset var(--aj-shadow-focus);
+}
+
 .jfx-editor,
 .jfx-editor__shell {
     min-height: inherit;
@@ -44,7 +91,7 @@
 
 .jfx-editor__shell {
     display: grid;
-    grid-template-rows: auto 1fr;
+    grid-template-rows: auto auto 1fr;
 }
 
 .jfx-editor__toolbar {

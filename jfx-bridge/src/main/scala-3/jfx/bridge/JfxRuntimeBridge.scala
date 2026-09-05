@@ -27,8 +27,8 @@ final class JfxRuntimeBridge extends js.Object {
 
   /** Client-side render into an empty container. Synchronous, like `contract.ts` says: nothing here
     * awaits an `AsyncRenderContext`, so a `fetchInto` loader started during `build` resolves later,
-    * against the already-mounted tree, the same way it would for a plain client-side `FetchComponent`
-    * outside SSR.
+    * against the already-mounted tree, the same way it would for a plain client-side
+    * `FetchComponent` outside SSR.
     */
   def mount(root: dom.Element, build: js.Function1[ScopeHandleBridge, Unit]): MountedAppHandle = {
     val cursor = DomCursor.root(root)
@@ -70,19 +70,17 @@ final class JfxRuntimeBridge extends js.Object {
         case error: Throwable => Future.failed(error)
       }
 
-    hydration
-      .recoverWith { case error =>
-        async.cancel()
-        mountedRoot.foreach(Runtime.unmount)
-        Future.failed(error)
-      }
-      .toJSPromise
+    hydration.recoverWith { case error =>
+      async.cancel()
+      mountedRoot.foreach(Runtime.unmount)
+      Future.failed(error)
+    }.toJSPromise
   }
 
-  /** Server-side render. `headers` is still fixed empty. `status` is `200` unless a `@anjunar/jfx-router`
-    * `router` was mounted: then it carries that router's `responseStatus` -- an error route reached
-    * by `RouterConfig.onFailure` answers with its own `Route.status` (step 5 of JAVASCRIPT_API.md §9).
-    * See [[SsrStatus]] for the mechanism.
+  /** Server-side render. `headers` is still fixed empty. `status` is `200` unless a
+    * `@anjunar/jfx-router` `router` was mounted: then it carries that router's `responseStatus` --
+    * an error route reached by `RouterConfig.onFailure` answers with its own `Route.status` (step 5
+    * of JAVASCRIPT_API.md §9). See [[SsrStatus]] for the mechanism.
     */
   def renderToString(
       build: js.Function1[ScopeHandleBridge, Unit],

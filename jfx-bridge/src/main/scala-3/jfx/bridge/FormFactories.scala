@@ -27,31 +27,32 @@ import scala.scalajs.js
   *
   * The one real design problem this file solves: `jfx.forms.Form`/`SubForm` bind a control to a
   * model property by asking a macro-built `reflect.ClassDescriptor` for the accessor named
-  * `control.name` -- and there is no such descriptor for a plain TypeScript object, because there is
-  * no Scala case class behind it. `DynamicFormular` below is the alternative binding strategy: a TS
-  * model is a plain `Record<string, Property<T> | ListProperty<T>>`, so the control's model property
-  * is found by dynamic key lookup instead of macro reflection -- no `ClassDescriptor` involved. This
-  * mirrors `Formular.bind`/`bindNow` almost line for line; it does not touch `Formular.scala` itself,
-  * so the 285+ tests on the `ClassDescriptor` path are undisturbed.
+  * `control.name` -- and there is no such descriptor for a plain TypeScript object, because there
+  * is no Scala case class behind it. `DynamicFormular` below is the alternative binding strategy: a
+  * TS model is a plain `Record<string, Property<T> | ListProperty<T>>`, so the control's model
+  * property is found by dynamic key lookup instead of macro reflection -- no `ClassDescriptor`
+  * involved. This mirrors `Formular.bind`/`bindNow` almost line for line; it does not touch
+  * `Formular.scala` itself, so the 285+ tests on the `ClassDescriptor` path are undisturbed.
   *
   * Validators have the same shape of problem and the same shape of answer: `ValidatorFactory` (in
   * `jfx-forms`) already dispatches on `reflect.Annotation(annotationClassName, parameters)` at
-  * runtime, not at macro time -- `npm/jfx-forms/src/validators.ts` builds exactly that shape as plain
-  * data (`notNull()`, `size(1, 100)`, ...), and `FormFactories.schemaFrom` turns it into real
-  * `Annotation` values that the *same*, unmodified `ValidatorFactory`/`BuiltinValidators` consume. No
-  * validator logic is ported to TypeScript.
+  * runtime, not at macro time -- `npm/jfx-forms/src/validators.ts` builds exactly that shape as
+  * plain data (`notNull()`, `size(1, 100)`, ...), and `FormFactories.schemaFrom` turns it into real
+  * `Annotation` values that the *same*, unmodified `ValidatorFactory`/`BuiltinValidators` consume.
+  * No validator logic is ported to TypeScript.
   *
-  * `ArrayForm`, `FieldSet`, `ComboBox`, `ImageCropper`, `Input`, `InputContainer` need none of this --
-  * they have no `ClassDescriptor` dependency at all, so their factories register the existing Scala
-  * classes directly, exactly like `ControlFactories`/`ViewportFactories` do.
+  * `ArrayForm`, `FieldSet`, `ComboBox`, `ImageCropper`, `Input`, `InputContainer` need none of this
+  * -- they have no `ClassDescriptor` dependency at all, so their factories register the existing
+  * Scala classes directly, exactly like `ControlFactories`/`ViewportFactories` do.
   *
   * What is not projected in this pass: `SubForm`'s `newInstance()`/`clearForm()`/`factory` (an
   * imperative reinstantiation hook -- the facade is reactive-input only, so a JS consumer wanting a
   * fresh instance mounts a new `subForm` under a `when()` instead), `ComboBox`'s `valueRenderer`/
-  * `footerRenderer`/`identityBy`/`selectionText`/`dropdownWidth`/`dropdownHeight`/`rowHeight`, and a
-  * dynamic model that swaps its whole shape after the control tree is built (binding happens once, at
-  * registration -- matching `Formular`'s own per-control bind, which likewise never re-resolves the
-  * accessor after the first successful bind). Each has an obvious trigger to add later.
+  * `footerRenderer`/`identityBy`/`selectionText`/`dropdownWidth`/`dropdownHeight`/`rowHeight`, and
+  * a dynamic model that swaps its whole shape after the control tree is built (binding happens
+  * once, at registration -- matching `Formular`'s own per-control bind, which likewise never
+  * re-resolves the accessor after the first successful bind). Each has an obvious trigger to add
+  * later.
   */
 private[bridge] object FormFactories {
 
@@ -68,8 +69,8 @@ private[bridge] object FormFactories {
     }
 
   /** `{ fieldName: [{ name, parameters }] }` from `npm/jfx-forms/src/validators.ts` -> real
-    * `Annotation`s, the same value `ValidatorFactory.createValidators` already knows how to read off
-    * a macro-built `PropertyDescriptor`.
+    * `Annotation`s, the same value `ValidatorFactory.createValidators` already knows how to read
+    * off a macro-built `PropertyDescriptor`.
     */
   def schemaFrom(options: js.Dictionary[js.Any]): Map[String, Array[Annotation]] =
     options.get("schema") match {
@@ -96,9 +97,9 @@ private[bridge] object FormFactories {
     *
     * `self` is a thunk, not a value: this renderer has to exist *before* the `ArrayForm` it reads
     * from does, because `ArrayFormFactory` passes it to the constructor (`initialRenderer`) so the
-    * very first `compose` sees a renderer already -- see that constructor parameter's doc comment for
-    * why setting it after `compose` (`controlRenderer_=`, the ordinary DSL path) is a real hydration
-    * bug, not just a style difference.
+    * very first `compose` sees a renderer already -- see that constructor parameter's doc comment
+    * for why setting it after `compose` (`controlRenderer_=`, the ordinary DSL path) is a real
+    * hydration bug, not just a style difference.
     */
   def arrayFormRenderer(
       name: String,
@@ -159,8 +160,13 @@ private[bridge] object MediaCodec {
         name = CoreProperty(stringField(dict, "name")),
         contentType = CoreProperty(stringField(dict, "contentType")),
         data = CoreProperty(stringField(dict, "data")),
-        thumbnail = CoreProperty(dict.get("thumbnail")
-          .filter(value => value != null && !js.isUndefined(value)).map(thumbnailFromJs).orNull)
+        thumbnail = CoreProperty(
+          dict
+            .get("thumbnail")
+            .filter(value => value != null && !js.isUndefined(value))
+            .map(thumbnailFromJs)
+            .orNull
+        )
       )
     }
 
@@ -177,10 +183,13 @@ private[bridge] object MediaCodec {
   private def stringField(dict: js.Dictionary[js.Any], key: String): String =
     dict.get(key).map(_.asInstanceOf[String]).getOrElse("")
 
-  /** Same shape as `jfx.core.state.Property.subscribeBidirectional`, translating at each edge instead
-    * of passing the value straight through.
+  /** Same shape as `jfx.core.state.Property.subscribeBidirectional`, translating at each edge
+    * instead of passing the value straight through.
     */
-  def subscribeBidirectional(jsProperty: CoreProperty[js.Any], media: CoreProperty[Media]): CoreDisposable = {
+  def subscribeBidirectional(
+      jsProperty: CoreProperty[js.Any],
+      media: CoreProperty[Media]
+  ): CoreDisposable = {
     var syncing = false
 
     // The model is authoritative on initial binding. Neither conversion may
@@ -210,10 +219,10 @@ private[bridge] object MediaCodec {
 }
 
 /** The dynamic counterpart of `jfx.forms.Formular[M]`: same field bookkeeping, error grouping and
-  * lifecycle, but a control's model property is found by name in a `js.Dictionary` instead of through
-  * a `ClassDescriptor`, and its validators come from a JS-supplied schema instead of annotations on a
-  * Scala case class. See the file-level doc comment for why this exists as a sibling trait rather
-  * than a change to `Formular.scala`.
+  * lifecycle, but a control's model property is found by name in a `js.Dictionary` instead of
+  * through a `ClassDescriptor`, and its validators come from a JS-supplied schema instead of
+  * annotations on a Scala case class. See the file-level doc comment for why this exists as a
+  * sibling trait rather than a change to `Formular.scala`.
   */
 private[bridge] trait DynamicFormular extends FormController { self: AbstractComponent & Editable =>
 
@@ -225,9 +234,9 @@ private[bridge] trait DynamicFormular extends FormController { self: AbstractCom
 
   val controls: CoreListProperty[Control[?]] = CoreListProperty()
 
-  private val fieldsByName       = mutable.LinkedHashMap.empty[String, Control[?]]
-  private val bindingsByControl  = mutable.Map.empty[Control[?], CoreDisposable]
-  private val unboundControls    = mutable.LinkedHashMap.empty[String, String]
+  private val fieldsByName      = mutable.LinkedHashMap.empty[String, Control[?]]
+  private val bindingsByControl = mutable.Map.empty[Control[?], CoreDisposable]
+  private val unboundControls   = mutable.LinkedHashMap.empty[String, String]
 
   override def register(control: Control[?]): Unit = {
     fieldsByName.get(control.name) match {
@@ -257,13 +266,13 @@ private[bridge] trait DynamicFormular extends FormController { self: AbstractCom
   def validateBindings(): Seq[String] =
     unboundControls.values.toSeq ++ controls.toSeq.flatMap {
       case nested: FormController => nested.validateBindings()
-      case _                        => Seq.empty
+      case _                      => Seq.empty
     }
 
   def validate(): Seq[String] = controls.toSeq.flatMap(_.validate(forceVisible = true))
 
-  /** Rebinds every child against the current model dictionary. This matters for
-    * nested forms whose parent Property replaces the whole model object.
+  /** Rebinds every child against the current model dictionary. This matters for nested forms whose
+    * parent Property replaces the whole model object.
     */
   protected def rebindModel(): Unit =
     controls.toSeq.foreach { control =>
@@ -298,14 +307,14 @@ private[bridge] trait DynamicFormular extends FormController { self: AbstractCom
       .foreach { case (fieldName, errors) =>
         fieldsByName.get(fieldName).foreach {
           case nested: FormController => nested.setErrorResponses(errors.map(_.withoutHead))
-          case control                  => control.setErrors(errors.map(_.message))
+          case control                => control.setErrors(errors.map(_.message))
         }
       }
 
   private def bindNow(control: Control[?]): Unit = {
-    val annotations      = formSchema.getOrElse(control.name, Array.empty[Annotation])
-    val rawValidators     = control.validators.asInstanceOf[CoreListProperty[Validator[Any]]]
-    val addedValidators   = ValidatorFactory.createValidators(annotations)
+    val annotations     = formSchema.getOrElse(control.name, Array.empty[Annotation])
+    val rawValidators   = control.validators.asInstanceOf[CoreListProperty[Validator[Any]]]
+    val addedValidators = ValidatorFactory.createValidators(annotations)
     addedValidators.foreach(rawValidators += _)
 
     val binding: CoreDisposable =
@@ -316,32 +325,37 @@ private[bridge] trait DynamicFormular extends FormController { self: AbstractCom
         }
         unboundControls.remove(control.name)
         CoreDisposable.empty
-      } else FormFactories.resolveModelProperty(formModel, control.name) match {
-        case Some(source) =>
-          (control, source, control.valueProperty) match {
-            case (_: ImageCropper, s: CoreProperty[Any @unchecked], t: CoreProperty[Any @unchecked]) =>
-              unboundControls.remove(control.name)
-              MediaCodec.subscribeBidirectional(
-                s.asInstanceOf[CoreProperty[js.Any]],
-                t.asInstanceOf[CoreProperty[Media]]
-              )
-            case (_, s: CoreProperty[Any @unchecked], t: CoreProperty[Any @unchecked]) =>
-              unboundControls.remove(control.name)
-              CoreProperty.subscribeBidirectional(s, t)
-            case (_, s: CoreListProperty[Any @unchecked], t: CoreListProperty[Any @unchecked]) =>
-              unboundControls.remove(control.name)
-              CoreListProperty.subscribeBidirectional(s, t)
-            case _ =>
-              failBinding(
-                control,
-                s"model property '${control.name}' does not pair with the control's value type"
-              )
-              CoreDisposable.empty
-          }
-        case None =>
-          failBinding(control, s"no property named '${control.name}' on the form model")
-          CoreDisposable.empty
-      }
+      } else
+        FormFactories.resolveModelProperty(formModel, control.name) match {
+          case Some(source) =>
+            (control, source, control.valueProperty) match {
+              case (
+                    _: ImageCropper,
+                    s: CoreProperty[Any @unchecked],
+                    t: CoreProperty[Any @unchecked]
+                  ) =>
+                unboundControls.remove(control.name)
+                MediaCodec.subscribeBidirectional(
+                  s.asInstanceOf[CoreProperty[js.Any]],
+                  t.asInstanceOf[CoreProperty[Media]]
+                )
+              case (_, s: CoreProperty[Any @unchecked], t: CoreProperty[Any @unchecked]) =>
+                unboundControls.remove(control.name)
+                CoreProperty.subscribeBidirectional(s, t)
+              case (_, s: CoreListProperty[Any @unchecked], t: CoreListProperty[Any @unchecked]) =>
+                unboundControls.remove(control.name)
+                CoreListProperty.subscribeBidirectional(s, t)
+              case _ =>
+                failBinding(
+                  control,
+                  s"model property '${control.name}' does not pair with the control's value type"
+                )
+                CoreDisposable.empty
+            }
+          case None =>
+            failBinding(control, s"no property named '${control.name}' on the form model")
+            CoreDisposable.empty
+        }
 
     bindingsByControl.put(
       control,
@@ -397,9 +411,9 @@ private[bridge] final class DynamicForm(
 /** `sub-form` -- a nested, dynamically bound `<fieldset>` that is itself a `Control` of its parent
   * form, the same relationship `jfx.forms.SubForm` has to `Form`. Bound once, at registration, to
   * whatever the parent model held under this name -- matching `Formular`'s own per-control bind,
-  * which never re-resolves after the first successful bind either. `newInstance`/`clearForm` are not
-  * projected (see the file-level doc comment); a JS consumer wanting a fresh nested model mounts a new
-  * `subForm` under `when()` instead.
+  * which never re-resolves after the first successful bind either. `newInstance`/`clearForm` are
+  * not projected (see the file-level doc comment); a JS consumer wanting a fresh nested model
+  * mounts a new `subForm` under `when()` instead.
   */
 private[bridge] final class DynamicSubForm(
     val name: String,
@@ -461,7 +475,8 @@ private[bridge] object FormFactory extends ComponentFactory {
       options: js.Dictionary[js.Any],
       body: js.Function2[ComponentHandleBridge, ScopeHandleBridge, Unit]
   )(using parent: AbstractComponent, cursor: Cursor): AbstractComponent = {
-    val model  = options.get("model").map(_.asInstanceOf[js.Dictionary[js.Any]]).getOrElse(js.Dictionary())
+    val model =
+      options.get("model").map(_.asInstanceOf[js.Dictionary[js.Any]]).getOrElse(js.Dictionary())
     val schema = FormFactories.schemaFrom(options)
     val name   = options.get("name").map(ControlFactories.str).getOrElse("default")
 
@@ -477,8 +492,9 @@ private[bridge] object SubFormFactory extends ComponentFactory {
       options: js.Dictionary[js.Any],
       body: js.Function2[ComponentHandleBridge, ScopeHandleBridge, Unit]
   )(using parent: AbstractComponent, cursor: Cursor): AbstractComponent = {
-    val name       = ControlFactories.str(options("name"))
-    val model      = options.get("model").map(_.asInstanceOf[js.Dictionary[js.Any]]).getOrElse(js.Dictionary())
+    val name  = ControlFactories.str(options("name"))
+    val model =
+      options.get("model").map(_.asInstanceOf[js.Dictionary[js.Any]]).getOrElse(js.Dictionary())
     val schema     = FormFactories.schemaFrom(options)
     val standalone = options.get("standalone").map(ControlFactories.bool).getOrElse(false)
 
@@ -499,7 +515,9 @@ private[bridge] object InputFactory extends ComponentFactory {
 
     Input.input(name, standalone) {
       val self = summon[Input]
-      options.get("type").foreach(value => Input.inputType_=(ControlFactories.str(value))(using self))
+      options
+        .get("type")
+        .foreach(value => Input.inputType_=(ControlFactories.str(value))(using self))
       options.get("placeholder").foreach(value => self.placeholder(ControlFactories.strProp(value)))
       body(new ComponentHandleBridge(self), new ScopeHandleBridge(self, summon[Cursor]))
     }
@@ -579,21 +597,24 @@ private[bridge] object ComboBoxFactory extends ComponentFactory {
       }
 
       options.get("placeholder").foreach(value => self.placeholder(ControlFactories.strProp(value)))
-      options.get("multiSelect").foreach(value =>
-        ComboBox.multiSelect_=(ControlFactories.bool(value))(using self)
-      )
+      options
+        .get("multiSelect")
+        .foreach(value => ComboBox.multiSelect_=(ControlFactories.bool(value))(using self))
       options.get("converter").foreach { value =>
         val convert = value.asInstanceOf[js.Function1[js.Any, String]]
         ComboBox.converter_=[js.Any](using self)(item => convert(item))
       }
       options.get("itemRenderer").foreach { value =>
         val render = value.asInstanceOf[
-          js.Function2[js.Any, ReadOnlyPropertyHandle[Boolean], js.Function1[ScopeHandleBridge, Unit]]
+          js.Function2[
+            js.Any,
+            ReadOnlyPropertyHandle[Boolean],
+            js.Function1[ScopeHandleBridge, Unit]
+          ]
         ]
-        ComboBox.itemRenderer[js.Any](using self) { (item, selected) =>
-          (p: AbstractComponent) ?=>
-            (c: Cursor) ?=>
-              render(item, new ReadOnlyPropertyHandle(selected))(new ScopeHandleBridge(p, c))
+        ComboBox.itemRenderer[js.Any](using self) {
+          (item, selected) => (p: AbstractComponent) ?=> (c: Cursor) ?=>
+            render(item, new ReadOnlyPropertyHandle(selected))(new ScopeHandleBridge(p, c))
         }
       }
     }
@@ -611,18 +632,20 @@ private[bridge] object ImageCropperFactory extends ComponentFactory {
     ImageCropper.imageCropper(name, standalone) {
       val self = summon[ImageCropper]
       options.get("placeholder").foreach(value => self.placeholder(ControlFactories.strProp(value)))
-      options.get("aspectRatio").foreach(value =>
-        ImageCropper.aspectRatio_=(ControlFactories.dbl(value))(using self)
-      )
-      options.get("outputType").foreach(value =>
-        ImageCropper.outputType_=(ControlFactories.str(value))(using self)
-      )
-      options.get("outputQuality").foreach(value =>
-        ImageCropper.outputQuality_=(ControlFactories.dbl(value))(using self)
-      )
-      options.get("windowTitle").foreach(value =>
-        ImageCropper.windowTitle_=(ControlFactories.str(value))(using self, summon)
-      )
+      options
+        .get("aspectRatio")
+        .foreach(value => ImageCropper.aspectRatio_=(ControlFactories.dbl(value))(using self))
+      options
+        .get("outputType")
+        .foreach(value => ImageCropper.outputType_=(ControlFactories.str(value))(using self))
+      options
+        .get("outputQuality")
+        .foreach(value => ImageCropper.outputQuality_=(ControlFactories.dbl(value))(using self))
+      options
+        .get("windowTitle")
+        .foreach(value =>
+          ImageCropper.windowTitle_=(ControlFactories.str(value))(using self, summon)
+        )
     }
   }
 }

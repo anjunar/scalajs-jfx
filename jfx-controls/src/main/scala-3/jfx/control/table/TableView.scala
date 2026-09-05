@@ -1,6 +1,11 @@
 package jfx.control.table
 
-import jfx.control.virtualized.{CollectionDisplayMode, CrawlableCollection, FixedRowGeometry, VirtualizedCollection}
+import jfx.control.virtualized.{
+  CollectionDisplayMode,
+  CrawlableCollection,
+  FixedRowGeometry,
+  VirtualizedCollection
+}
 import jfx.control.table.TableRow.{placeholderRow, rowItem, tableRow}
 import jfx.core.component.AbstractComponent
 import jfx.core.remote.RemoteSort
@@ -577,14 +582,17 @@ object TableView {
   def fixedHeight_=(value: ReadOnlyProperty[Double])(using table: TableView[?]): Unit =
     table.addDisposable(value.observe(height => table.fixedHeightProperty.set(Some(height))))
 
-  def paging(using table: TableView[?]): Boolean = table.displayModeProperty.get == CollectionDisplayMode.Paging
+  def paging(using table: TableView[?]): Boolean =
+    table.displayModeProperty.get == CollectionDisplayMode.Paging
   def paging_=(value: Boolean)(using table: TableView[?]): Unit =
-    table.displayModeProperty.set(if (value) CollectionDisplayMode.Paging else CollectionDisplayMode.Scrolling)
+    table.displayModeProperty.set(
+      if (value) CollectionDisplayMode.Paging else CollectionDisplayMode.Scrolling
+    )
 
-  def scrolling(using table: TableView[?]): Boolean = !paging
-  def scrolling_=(value: Boolean)(using table: TableView[?]): Unit = paging_=( !value )
+  def scrolling(using table: TableView[?]): Boolean                = !paging
+  def scrolling_=(value: Boolean)(using table: TableView[?]): Unit = paging_=(!value)
 
-  def pageSize(using table: TableView[?]): Int = table.pageSizeProperty.get
+  def pageSize(using table: TableView[?]): Int                = table.pageSizeProperty.get
   def pageSize_=(value: Int)(using table: TableView[?]): Unit =
     table.pageSizeProperty.set(math.max(1, value))
 

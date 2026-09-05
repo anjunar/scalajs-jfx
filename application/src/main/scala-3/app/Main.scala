@@ -51,22 +51,20 @@ object Main {
         case error: Throwable => Future.failed(error)
       }
 
-    hydration
-      .recoverWith { case error =>
-        // A failed attempt may have installed listeners and async continuations before the
-        // mismatch became visible. Close that tree in every build mode before deciding whether to
-        // rethrow or recover.
-        async.cancel()
-        hydratedDocument.foreach(Runtime.unmount)
+    hydration.recoverWith { case error =>
+      // A failed attempt may have installed listeners and async continuations before the
+      // mismatch became visible. Close that tree in every build mode before deciding whether to
+      // rethrow or recover.
+      async.cancel()
+      hydratedDocument.foreach(Runtime.unmount)
 
-        if (LinkingInfo.developmentMode) {
-          Future.failed(error)
-        } else {
-          dom.console.warn(s"Hydration failed; falling back to client rendering: ${error.getMessage}")
-          renderClientSide(request, url)
-        }
+      if (LinkingInfo.developmentMode) {
+        Future.failed(error)
+      } else {
+        dom.console.warn(s"Hydration failed; falling back to client rendering: ${error.getMessage}")
+        renderClientSide(request, url)
       }
-      .toJSPromise
+    }.toJSPromise
   }
 
   private def renderClientSide(

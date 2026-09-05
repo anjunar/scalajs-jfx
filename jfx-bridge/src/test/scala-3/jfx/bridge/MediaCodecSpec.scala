@@ -10,19 +10,19 @@ import scala.scalajs.js
 class MediaCodecSpec extends AnyFlatSpec with Matchers {
   private def image(name: String): js.Dictionary[js.Any] =
     js.Dictionary(
-      "id" -> "11111111-1111-4111-8111-111111111111",
-      "name" -> name,
+      "id"          -> "11111111-1111-4111-8111-111111111111",
+      "name"        -> name,
       "contentType" -> "image/png",
-      "data" -> "data:image/png;base64,aGVsbG8="
+      "data"        -> "data:image/png;base64,aGVsbG8="
     )
 
   "MediaCodec" should "initialize from the model without echoing a converted value" in {
-    val initial = image("initial")
-    val source = Property[js.Any](initial)
-    val target = Property[Media](null)
-    var writes = 0
+    val initial  = image("initial")
+    val source   = Property[js.Any](initial)
+    val target   = Property[Media](null)
+    var writes   = 0
     val observer = source.observeWithoutInitial(_ => writes += 1)
-    val binding = MediaCodec.subscribeBidirectional(source, target)
+    val binding  = MediaCodec.subscribeBidirectional(source, target)
 
     source.get shouldBe initial
     writes shouldBe 0

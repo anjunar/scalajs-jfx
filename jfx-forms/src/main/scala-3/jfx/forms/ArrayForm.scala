@@ -25,10 +25,10 @@ class ArrayForm[V](
 
   override val valueProperty: ListProperty[V] = ListProperty()
 
-  private val mountedByIndex             = mutable.Map.empty[Int, Control[?]]
-  private val synchronizingControls      = mutable.Set.empty[Control[?]]
-  private var currentIndex               = -1
-  private var contextPrefix              = name
+  private val mountedByIndex        = mutable.Map.empty[Int, Control[?]]
+  private val synchronizingControls = mutable.Set.empty[Control[?]]
+  private var currentIndex          = -1
+  private var contextPrefix         = name
   // A renderer supplied here, rather than through `controlRenderer_=`, is visible to `compose`'s
   // very first `foreachIndexed` pass -- no `valueProperty.notified()` retrigger needed. That
   // retrigger is exactly right for a live, already-mounted form (the `controlRenderer_=` setter
@@ -111,7 +111,7 @@ class ArrayForm[V](
             val nestedErrors = itemErrors.map(_.withoutHead)
             control match {
               case nested: FormController => nested.setErrorResponses(nestedErrors)
-              case _                   => control.setErrors(nestedErrors.map(_.message))
+              case _                      => control.setErrors(nestedErrors.map(_.message))
             }
           }
         case (None, _) => ()
@@ -182,14 +182,18 @@ class ArrayForm[V](
     control.valueProperty match {
       case property: Property[Any @unchecked] =>
         control.addDisposable(property.observeWithoutInitial { value =>
-          if (!synchronizingControls.contains(control) &&
-              mountedByIndex.get(index).contains(control) && index < valueProperty.length)
+          if (
+            !synchronizingControls.contains(control) &&
+            mountedByIndex.get(index).contains(control) && index < valueProperty.length
+          )
             valueProperty.update(index, value.asInstanceOf[V])
         })
       case property: ListProperty[Any @unchecked] =>
         control.addDisposable(property.observeChanges { _ =>
-          if (!synchronizingControls.contains(control) &&
-              mountedByIndex.get(index).contains(control) && index < valueProperty.length)
+          if (
+            !synchronizingControls.contains(control) &&
+            mountedByIndex.get(index).contains(control) && index < valueProperty.length
+          )
             valueProperty.update(index, property.get.asInstanceOf[V])
         })
       case _ => ()

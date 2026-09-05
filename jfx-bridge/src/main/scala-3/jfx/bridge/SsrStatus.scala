@@ -7,7 +7,8 @@ import jfx.core.di.Context
   *
   * [[BridgeRoot]] provides it through the component context. A [[RouterFactory]] mounted after
   * asynchronous work can therefore still bind its `responseStatus` to the response being rendered.
-  * Client-side mounts do not provide a slot, and a render with no router stays at its `200` default.
+  * Client-side mounts do not provide a slot, and a render with no router stays at its `200`
+  * default.
   */
 private[bridge] final class SsrStatus {
   private var reader: () => Int = () => 200

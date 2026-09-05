@@ -10,11 +10,11 @@ import scala.scalajs.js
   */
 @js.native
 trait HeadEntryFacade extends js.Object {
-  val key: String                                  = js.native
-  val tagName: String                               = js.native
+  val key: String                                        = js.native
+  val tagName: String                                    = js.native
   val attributes: js.UndefOr[js.Array[js.Array[String]]] = js.native
-  val text: js.UndefOr[String]                      = js.native
-  val rawText: js.UndefOr[Boolean]                  = js.native
+  val text: js.UndefOr[String]                           = js.native
+  val rawText: js.UndefOr[Boolean]                       = js.native
 }
 
 object HeadEntryFacade {

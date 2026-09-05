@@ -26,18 +26,18 @@ import scala.scalajs.js
   */
 @js.native
 private[bridge] trait MessageSourcePositionFacade extends js.Object {
-  val file: String   = js.native
-  val line: Int      = js.native
-  val column: Int    = js.native
+  val file: String = js.native
+  val line: Int    = js.native
+  val column: Int  = js.native
 }
 
 @js.native
 private[bridge] trait MessageKeyFacade extends js.Object {
-  val source: String                                     = js.native
-  val context: js.UndefOr[String]                        = js.native
-  val fingerprint: String                                = js.native
-  val placeholders: js.Array[String]                     = js.native
-  val position: js.UndefOr[MessageSourcePositionFacade]  = js.native
+  val source: String                                    = js.native
+  val context: js.UndefOr[String]                       = js.native
+  val fingerprint: String                               = js.native
+  val placeholders: js.Array[String]                    = js.native
+  val position: js.UndefOr[MessageSourcePositionFacade] = js.native
 }
 
 @js.native
@@ -93,11 +93,12 @@ private[bridge] object I18nFactories {
 
 /** The component `i18nProvider()` mounts: it owns one [[I18nRuntime]] and puts `body` under it.
   *
-  * This is what `app.App.compose` assembles by hand on the Scala side -- `I18nRuntime.managed(...)`,
-  * then `I18nRuntime.provide(i18nRuntime)(using this)`. A TypeScript user gets both from one call;
-  * everything nested inside `body` -- including a `router()`, which reads `I18nRuntime.current` for
-  * its own locale-prefixed URLs (`jfx.router.Router.synchronizeI18n`) -- sees this runtime through
-  * the ordinary component-context walk, exactly as it would on the Scala side.
+  * This is what `app.App.compose` assembles by hand on the Scala side --
+  * `I18nRuntime.managed(...)`, then `I18nRuntime.provide(i18nRuntime)(using this)`. A TypeScript
+  * user gets both from one call; everything nested inside `body` -- including a `router()`, which
+  * reads `I18nRuntime.current` for its own locale-prefixed URLs
+  * (`jfx.router.Router.synchronizeI18n`) -- sees this runtime through the ordinary
+  * component-context walk, exactly as it would on the Scala side.
   */
 private[bridge] final class I18nProviderRoot(
     runtime: I18nRuntime,

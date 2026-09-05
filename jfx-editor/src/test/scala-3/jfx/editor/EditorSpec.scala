@@ -12,48 +12,33 @@ import org.scalajs.dom.HTMLElement
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-import scala.scalajs.js
 import scala.collection.mutable
 
 final class EditorSpec extends AnyFlatSpec with Matchers {
 
-  "Editor SSR" should "keep JavaScript JSON as its public control value" in {
-    val document = editorState(
-      node("heading", "Heading", tag = "h2", format = 1),
-      node("paragraph", "A linked paragraph", format = 2),
-      js.Dynamic.literal(
-        `type` = "list",
-        listType = "number",
-        children = js.Array[js.Any](node("listitem", "First"))
-      ),
-      js.Dynamic.literal(
-        `type` = "link",
-        url = "https://example.test",
-        children = js.Array[js.Any](node("text", "Example"))
-      ),
-      js.Dynamic.literal(
-        `type` = "image",
-        src = "https://example.test/image.png",
-        altText = "Preview",
-        width = 320
-      ),
-      js.Dynamic.literal(
-        `type` = "table",
-        children = js.Array[js.Any](
-          js.Dynamic.literal(
-            `type` = "tablerow",
-            children = js.Array[js.Any](
-              js.Dynamic.literal(
-                `type` = "tablecell",
-                children = js.Array[js.Any](node("paragraph", "Cell"))
-              )
-            )
-          )
-        )
-      ),
-      js.Dynamic.literal(`type` = "codemirror", code = "val answer = 42", language = "scala"),
-      js.Dynamic.literal(`type` = "horizontalrule")
-    )
+  "Editor SSR" should "keep Markdown as its public value and render semantic HTML" in {
+    val document =
+      """## **Heading**
+        |
+        |A *linked* [paragraph](https://example.test).
+        |
+        |1. First
+        |2. Second
+        |
+        |![Preview](https://example.test/image.png)
+        |
+        || Name | Value |
+        || --- | --- |
+        || answer | 42 |
+        |
+        |```scala
+        |val answer = 42
+        |```
+        |
+        |---
+        |
+        |<script>alert('escaped')</script>
+        |""".stripMargin
 
     val cursor          = new SsrCursor()
     var control: Editor = null
@@ -62,25 +47,66 @@ final class EditorSpec extends AnyFlatSpec with Matchers {
         override protected def content(using AbstractComponent, Cursor): Unit =
           control = editor("article", standalone = true) {
             Editor.value = document
+            editable = false
           }
       },
       cursor
     )
 
     try {
-      control.valueProperty.get should be theSameInstanceAs document
+      control.valueProperty.get shouldBe document
       val html = cursor.collectHtml()
       html should include("name=\"article\"")
-      html should include("<h2")
-      html should include("<strong>")
+      html should include("<h2 class=\"lexical-heading-h2\"")
+      html should include("<strong>Heading</strong>")
       html should include("Heading")
-      html should include("<ol")
+      html should include("<ol class=\"lexical-list-ol\"")
       html should include("href=\"https://example.test\"")
       html should include("alt=\"Preview\"")
-      html should include("<table")
+      html should include("<table>")
       html should include("val answer = 42")
       html should include("lexical-horizontal-rule")
+      html should include("&lt;script&gt;alert('escaped')&lt;/script&gt;")
+      html should not include "<script>"
     } finally Runtime.unmount(root)
+  }
+
+  it should "render an edit link in readonly mode and a Markdown textarea in editable mode" in {
+    val readonly = Runtime.renderToString { cursor =>
+      Runtime.mount(
+        new EditorRoot {
+          override protected def content(using AbstractComponent, Cursor): Unit =
+            editor("article", standalone = true) {
+              Editor.value = "# Server rendered"
+              editable = false
+            }
+        },
+        cursor
+      )
+    }
+
+    readonly should include("href=\"?article.editor=editable\"")
+    readonly should include("<h1 class=\"lexical-heading-h1\"")
+    readonly should not include "<textarea"
+
+    val editableHtml = Runtime.renderToString { cursor =>
+      Runtime.mount(
+        new EditorRoot {
+          override protected def content(using AbstractComponent, Cursor): Unit =
+            editor("article", standalone = true) {
+              Editor.value = "# Server rendered"
+              editable = true
+            }
+        },
+        cursor
+      )
+    }
+
+    editableHtml should include("<textarea")
+    editableHtml should include("# Server rendered")
+    editableHtml should include("href=\"?article.editor=readonly\"")
+    editableHtml should not include "<h1"
+    editableHtml should include("jfx-editor__readonly-link")
   }
 
   it should "render a deterministic readonly shell and placeholder" in {
@@ -97,20 +123,20 @@ final class EditorSpec extends AnyFlatSpec with Matchers {
       )
     }
 
-      html should include("class=\"jfx-editor-host\"")
-      html should include("aria-disabled=\"true\"")
-      html should include("aria-readonly=\"true\"")
-      html should include("Write a summary")
-      html should include("data-jfx-editor-loading=\"false\"")
+    html should include("class=\"jfx-editor-host")
+    html should include("aria-disabled=\"true\"")
+    html should include("aria-readonly=\"true\"")
+    html should include("Write a summary")
+    html should include("data-jfx-editor-loading=\"false\"")
 
-      val hostStart    = html.indexOf("class=\"jfx-editor-host")
-      val hostEnd      = html.indexOf('>', hostStart)
-      val surfaceStart = html.indexOf("class=\"jfx-editor__surface lexical")
-      val surfaceEnd   = html.indexOf('>', surfaceStart)
+    val hostStart    = html.indexOf("class=\"jfx-editor-host")
+    val hostEnd      = html.indexOf('>', hostStart)
+    val surfaceStart = html.indexOf("class=\"jfx-editor__surface lexical")
+    val surfaceEnd   = html.indexOf('>', surfaceStart)
 
-      html.substring(hostStart, hostEnd) should not include ("contenteditable")
-      html.substring(surfaceStart, surfaceEnd) should include ("contenteditable=\"false\"")
-    }
+    html.substring(hostStart, hostEnd) should not include ("contenteditable")
+    html.substring(surfaceStart, surfaceEnd) should include("contenteditable=\"false\"")
+  }
 
   it should "anchor an empty placeholder for hydration" in {
     val html = Runtime.renderToString { cursor =>
@@ -127,7 +153,7 @@ final class EditorSpec extends AnyFlatSpec with Matchers {
     html should include("<!--jfx:Condition:start--><!--jfx:Condition:end-->")
   }
 
-  it should "replace the SSR preview when JavaScript JSON changes" in {
+  it should "replace the SSR preview when Markdown changes" in {
     val cursor          = new SsrCursor()
     var control: Editor = null
     val root            = Runtime.mount(
@@ -135,6 +161,7 @@ final class EditorSpec extends AnyFlatSpec with Matchers {
         override protected def content(using AbstractComponent, Cursor): Unit =
           control = editor("reactive", standalone = true) {
             placeholder = "Start writing"
+            editable = false
           }
       },
       cursor
@@ -142,22 +169,45 @@ final class EditorSpec extends AnyFlatSpec with Matchers {
 
     try {
       cursor.collectHtml() should include("Start writing")
-      control.valueProperty.set(editorState(node("paragraph", "First state")))
+      control.valueProperty.set("## First state")
+      cursor.collectHtml() should include("<h2")
       cursor.collectHtml() should include("First state")
 
-      control.valueProperty.set(editorState(node("paragraph", "Second state")))
+      control.valueProperty.set("**Second state**")
       val updated = cursor.collectHtml()
-      updated should include("Second state")
+      updated should include("<strong>Second state</strong>")
       updated should not include "First state"
 
-      control.valueProperty.set(null)
+      control.valueProperty.set("")
       cursor.collectHtml() should not include "Second state"
       cursor.collectHtml() should include("Start writing")
     } finally Runtime.unmount(root)
   }
 
-  it should "compose the complete plugin set without changing the JSON value type" in {
-    val document        = editorState(node("paragraph", "Plugin content"))
+  it should "escape raw HTML and reject executable Markdown URLs" in {
+    val html = Runtime.renderToString { cursor =>
+      Runtime.mount(
+        new EditorRoot {
+          override protected def content(using AbstractComponent, Cursor): Unit =
+            editor("safe", standalone = true) {
+              Editor.value =
+                "[bad](javascript:alert(1)) ![bad](data:text/html;base64,PHNjcmlwdD4=) <script>alert(1)</script>"
+              editable = false
+            }
+        },
+        cursor
+      )
+    }
+
+    html should include("href=\"#\"")
+    html should include("&lt;script&gt;alert(1)&lt;/script&gt;")
+    html should not include "href=\"javascript:"
+    html should not include "src=\"data:text/html"
+    html should not include "<script>"
+  }
+
+  it should "compose the complete plugin set without changing the Markdown value type" in {
+    val document        = "Plugin content"
     var control: Editor = null
 
     val html = Runtime.renderToString { cursor =>
@@ -166,6 +216,7 @@ final class EditorSpec extends AnyFlatSpec with Matchers {
           override protected def content(using AbstractComponent, Cursor): Unit =
             control = editor("body", standalone = true) {
               Editor.value = document
+              editable = false
               menuToolbar()
               basePlugin()
               headingPlugin()
@@ -181,7 +232,7 @@ final class EditorSpec extends AnyFlatSpec with Matchers {
       )
     }
 
-    control.valueProperty.get should be theSameInstanceAs document
+    control.valueProperty.get shouldBe document
     html should include("jfx-editor__toolbar")
     html should include("Plugin content")
   }
@@ -239,37 +290,18 @@ final class EditorSpec extends AnyFlatSpec with Matchers {
     controller.controls shouldBe empty
   }
 
-  private def editorState(children: js.Any*): js.Dynamic =
-    js.Dynamic.literal(
-      root = js.Dynamic.literal(
-        `type` = "root",
-        children = js.Array(children*)
-      )
-    )
-
-  private def node(
-      nodeType: String,
-      value: String,
-      tag: String = "",
-      format: Int = 0
-  ): js.Dynamic = {
-    val child  = js.Dynamic.literal(`type` = "text", text = value, format = format)
-    val result = js.Dynamic.literal(`type` = nodeType, children = js.Array[js.Any](child))
-    if (tag.nonEmpty) result.updateDynamic("tag")(tag)
-    result
-  }
 }
 
 private final class RecordingFormController extends FormController {
   override val prefix: String                   = ""
   val controls: mutable.ArrayBuffer[Control[?]] = mutable.ArrayBuffer.empty
 
-  override def register(field: Control[?]): Unit   = controls += field
-  override def unregister(field: Control[?]): Unit = controls -= field
-  override def validateBindings(): Seq[String] = Seq.empty
+  override def register(field: Control[?]): Unit                      = controls += field
+  override def unregister(field: Control[?]): Unit                    = controls -= field
+  override def validateBindings(): Seq[String]                        = Seq.empty
   override def setErrorResponses(responses: Seq[ErrorResponse]): Unit = ()
-  override def clearErrors(): Unit                 = ()
-  override def resetInteractionState(): Unit       = ()
+  override def clearErrors(): Unit                                    = ()
+  override def resetInteractionState(): Unit                          = ()
 }
 
 private abstract class EditorRoot extends AbstractComponent {

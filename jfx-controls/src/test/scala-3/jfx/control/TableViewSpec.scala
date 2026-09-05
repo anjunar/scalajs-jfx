@@ -75,7 +75,7 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
 
   it should "restore the page from the route URL" in {
     val members = (0 until 25).map(index => s"Member $index")
-    val html = Runtime.renderToString { cursor =>
+    val html    = Runtime.renderToString { cursor =>
       Runtime.mount(
         new AbstractComponent {
           override val tagName: String = "main"
@@ -112,7 +112,9 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
           override def compose(contentCursor: Cursor): Unit =
             DslLayer.render(this, contentCursor) {
               UrlScope.provide(UrlScope(() => "/members") { (_, _) => () })
-              tableView[String](ListProperty(js.Array((0 until 15).map(index => s"Member $index")*))) {
+              tableView[String](
+                ListProperty(js.Array((0 until 15).map(index => s"Member $index")*))
+              ) {
                 crawlId = "members"
                 paging = true
                 pageSize = 5

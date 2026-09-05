@@ -81,7 +81,7 @@ class App(
       NavEntry(
         i18n"Composition",
         i18n"Editor",
-        i18n"Lexical JSON and composable plugins",
+        i18n"Markdown values and composable plugins",
         "/editor"
       ),
       NavEntry(

@@ -113,9 +113,9 @@ object AppRoutes {
           ImageCropperPage.render()
         })
       },
-      Route.view("/editor") { _ =>
+      Route.view("/editor") { context =>
         Future.successful(Route.component {
-          EditorPage.render()
+          EditorPage.render(context)
         })
       },
       Route.view("/tabs") { _ =>
@@ -135,14 +135,14 @@ object AppRoutes {
       },
       Route.view("/table") { context =>
         val (offset, limit) = paging(context, "table", 10)
-        val source = TableViewPage.createRemoteBooks(pageSize = limit, offset = offset)
+        val source          = TableViewPage.createRemoteBooks(pageSize = limit, offset = offset)
         loaded(source.reload()) {
           Route.component { TableViewPage.render(source) }
         }
       },
       Route.view("/data-grid") { context =>
         val (offset, limit) = paging(context, "showcase-tiles", 10)
-        val source = DataGridPage.createRemoteTiles(pageSize = limit, offset = offset)
+        val source          = DataGridPage.createRemoteTiles(pageSize = limit, offset = offset)
         loaded(source.reload()) {
           Route.component { DataGridPage.render(source) }
         }

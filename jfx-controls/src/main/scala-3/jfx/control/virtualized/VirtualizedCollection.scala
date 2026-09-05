@@ -41,8 +41,8 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
 
   val displayModeProperty: Property[CollectionDisplayMode] =
     Property(CollectionDisplayMode.Paging)
-  val pageSizeProperty: Property[Int]              = Property(10)
-  val pageIndexProperty: Property[Int]             = Property(0)
+  val pageSizeProperty: Property[Int]  = Property(10)
+  val pageIndexProperty: Property[Int] = Property(0)
 
   // --- supplied by the subclass -------------------------------------------
 
@@ -86,7 +86,7 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
   protected var browserRendering         = false
   protected var hydrating                = false
   protected var initialScrollIndex       = -1
-  protected var urlPagingStatePresent   = false
+  protected var urlPagingStatePresent    = false
 
   /** The item list as a remote list, or null.
     */
@@ -139,13 +139,13 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
 
   /** Reads the route URL before the first visible range is composed. */
   protected def initializeUrlState(): Unit = {
-    val key = pagingUrlKey
-    val url = UrlScope.current(using this).map(_.url)
-    val requestedLimit = url.flatMap(queryValue(_, s"$key.limit")).flatMap(parsePositiveInt)
+    val key             = pagingUrlKey
+    val url             = UrlScope.current(using this).map(_.url)
+    val requestedLimit  = url.flatMap(queryValue(_, s"$key.limit")).flatMap(parsePositiveInt)
     val requestedOffset = url.flatMap(queryValue(_, s"$key.offset")).flatMap(parseNonNegativeInt)
-    val limit = requestedLimit.getOrElse(pageSize)
-    val offset = requestedOffset.getOrElse(pageIndexProperty.get * limit)
-    val mode = url.flatMap(queryValue(_, s"$key.mode")).map(_.toLowerCase)
+    val limit           = requestedLimit.getOrElse(pageSize)
+    val offset          = requestedOffset.getOrElse(pageIndexProperty.get * limit)
+    val mode            = url.flatMap(queryValue(_, s"$key.mode")).map(_.toLowerCase)
     urlPagingStatePresent = requestedLimit.nonEmpty || requestedOffset.nonEmpty || mode.nonEmpty
 
     pageSizeProperty.set(limit)
@@ -154,7 +154,7 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
       mode match {
         case Some("scroll") => CollectionDisplayMode.Scrolling
         case Some("page")   => CollectionDisplayMode.Paging
-        case _               => displayModeProperty.get
+        case _              => displayModeProperty.get
       }
     )
 
@@ -184,7 +184,7 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
     else
       Option(currentRemoteItems) match {
         case Some(remote) if remote.totalCountProperty.get.isEmpty => canStillGrow
-        case _                                                     => pageStart + pageSize < renderableCount
+        case _ => pageStart + pageSize < renderableCount
       }
 
   protected def pageStatusProperty: jfx.core.state.ReadOnlyProperty[String] =
@@ -215,7 +215,8 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
       domElement(viewportComponent).foreach(_.scrollTop = scrollTopProperty.get)
       navigatePagingUrl(pageStart, scrolling = true)
     } else {
-      val offset = geometry.indexForOffset(math.max(0.0, scrollTopProperty.get - geometry.headerOffset))
+      val offset =
+        geometry.indexForOffset(math.max(0.0, scrollTopProperty.get - geometry.headerOffset))
       val nextPage = math.max(0, offset / pageSize)
       pageIndexProperty.set(nextPage)
       displayModeProperty.set(CollectionDisplayMode.Paging)
@@ -226,7 +227,9 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
     }
   }
 
-  protected def renderPagingFooter(cssPrefix: String)(using AbstractComponent, jfx.core.render.Cursor): Unit =
+  protected def renderPagingFooter(
+      cssPrefix: String
+  )(using AbstractComponent, jfx.core.render.Cursor): Unit =
     div {
       classes = Seq(s"$cssPrefix-footer", "jfx-virtualized-footer")
 
@@ -241,7 +244,7 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
 
       button(
         displayModeProperty.map {
-          case CollectionDisplayMode.Paging   => "Switch to scrolling"
+          case CollectionDisplayMode.Paging    => "Switch to scrolling"
           case CollectionDisplayMode.Scrolling => "Switch to paging"
         }
       ) {
@@ -251,10 +254,9 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
       }
     }
 
-  /**
-    * Uses the same element during SSR and the first browser render. Hydration cannot replace an
-    * SSR link with a button because it claims the existing DOM tree. An enabled link still gets
-    * the client-side pager behavior after hydration; without JavaScript its href remains usable.
+  /** Uses the same element during SSR and the first browser render. Hydration cannot replace an SSR
+    * link with a button because it claims the existing DOM tree. An enabled link still gets the
+    * client-side pager behavior after hydration; without JavaScript its href remains usable.
     */
   private def renderPagingControl(label: String, offset: Int, enabled: Boolean)(using
       AbstractComponent,
@@ -281,11 +283,12 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
   protected def requestPageLoad(start: Int, end: Int): Unit =
     if (browserRendering) {
       currentRemoteItems match {
-        case null => ()
-        case remote if remote.errorProperty.get.nonEmpty => ()
+        case null                                                                       => ()
+        case remote if remote.errorProperty.get.nonEmpty                                => ()
         case remote if remote.supportsRangeLoading && !remote.isRangeLoaded(start, end) =>
           discardResult(remote.ensureRangeLoaded(start, end))
-        case remote if !remote.supportsRangeLoading && end > remote.loadedLength && remote.canLoadMore =>
+        case remote
+            if !remote.supportsRangeLoading && end > remote.loadedLength && remote.canLoadMore =>
           discardResult(remote.loadMore())
         case _ => ()
       }
@@ -299,7 +302,8 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
   private def pagingHref(offset: Int, scrolling: Boolean): Option[String] =
     UrlScope.current(using this).map { scope =>
       val normalizedOffset = math.max(0, offset / pageSize) * pageSize
-      val withOffset = replaceQueryParameter(scope.url, s"$pagingUrlKey.offset", normalizedOffset.toString)
+      val withOffset       =
+        replaceQueryParameter(scope.url, s"$pagingUrlKey.offset", normalizedOffset.toString)
       val withLimit = replaceQueryParameter(withOffset, s"$pagingUrlKey.limit", pageSize.toString)
       if (scrolling) replaceQueryParameter(withLimit, s"$pagingUrlKey.mode", "scroll")
       else removeQueryParameter(withLimit, s"$pagingUrlKey.mode")
@@ -311,10 +315,16 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
   private def queryEntries(url: String): Vector[(String, String)] = {
     val search = url.takeWhile(_ != '#').dropWhile(_ != '?').stripPrefix("?")
     if (search.isEmpty) Vector.empty
-    else search.split("&").iterator.filter(_.nonEmpty).map { entry =>
-      val parts = entry.split("=", 2)
-      decode(parts.head) -> decode(parts.lift(1).getOrElse(""))
-    }.toVector
+    else
+      search
+        .split("&")
+        .iterator
+        .filter(_.nonEmpty)
+        .map { entry =>
+          val parts = entry.split("=", 2)
+          decode(parts.head) -> decode(parts.lift(1).getOrElse(""))
+        }
+        .toVector
   }
 
   private def parsePositiveInt(value: String): Option[Int] =
@@ -337,13 +347,18 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
 
   private def replaceQueryParameter(url: String, name: String, value: Option[String]): String = {
     val hash = url.indexOf('#') match {
-      case -1 => ""
+      case -1    => ""
       case index => url.drop(index)
     }
     val withoutHash = if (hash.isEmpty) url else url.dropRight(hash.length)
-    val path = withoutHash.takeWhile(_ != '?')
-    val entries = queryEntries(withoutHash).filterNot(_._1 == name) ++ value.map(name -> _)
-    val search = if (entries.isEmpty) "" else entries.map { case (key, current) => s"${encode(key)}=${encode(current)}" }.mkString("?", "&", "")
+    val path        = withoutHash.takeWhile(_ != '?')
+    val entries     = queryEntries(withoutHash).filterNot(_._1 == name) ++ value.map(name -> _)
+    val search      =
+      if (entries.isEmpty) ""
+      else
+        entries
+          .map { case (key, current) => s"${encode(key)}=${encode(current)}" }
+          .mkString("?", "&", "")
     s"$path$search$hash"
   }
 

@@ -114,6 +114,29 @@ class AppSsrSpec extends AsyncFlatSpec with Matchers {
       }
   }
 
+  it should "render the Markdown editor readonly with an edit URL" in {
+    Runtime
+      .renderToStringAsync(cursor => Runtime.mount(documentFor(desktopRequest, "/editor"), cursor))
+      .map { html =>
+        html should include("data-jfx-editor-format=\"markdown\"")
+        html should include("href=\"/scalajs-jfx/en/editor?article.editor=editable\"")
+        html should include("<strong>Markdown</strong>")
+        html should not include "<textarea"
+      }
+  }
+
+  it should "render the Markdown editor as a textarea for the editable query" in {
+    Runtime
+      .renderToStringAsync(cursor =>
+        Runtime.mount(documentFor(desktopRequest, "/editor?article.editor=editable"), cursor)
+      )
+      .map { html =>
+        html should include("<textarea class=\"jfx-editor__markdown-textarea\" name=\"article\"")
+        html should not include "href=\"/scalajs-jfx/en/editor?article.editor=editable\""
+        html should include("href=\"/scalajs-jfx/en/editor?article.editor=readonly\"")
+      }
+  }
+
   it should "render the router demo child inside its parent route" in {
     Runtime
       .renderToStringAsync(cursor =>

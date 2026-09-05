@@ -57,7 +57,7 @@ trait Formular[M] extends FormController, Editable { self: AbstractComponent =>
   def validateBindings(): Seq[String] =
     unboundControls.values.toSeq ++ controls.toSeq.flatMap {
       case nested: FormController => nested.validateBindings()
-      case _                   => Seq.empty
+      case _                      => Seq.empty
     }
 
   def validate(): Seq[String] =
@@ -70,7 +70,7 @@ trait Formular[M] extends FormController, Editable { self: AbstractComponent =>
       .foreach { case (fieldName, errors) =>
         fields.get(fieldName).foreach {
           case nested: FormController => nested.setErrorResponses(errors.map(_.withoutHead))
-          case control             => control.setErrors(errors.map(_.message))
+          case control                => control.setErrors(errors.map(_.message))
         }
       }
 

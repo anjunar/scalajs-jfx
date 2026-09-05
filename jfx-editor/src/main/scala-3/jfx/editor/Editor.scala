@@ -1,11 +1,13 @@
 package jfx.editor
 
 import jfx.core.component.AbstractComponent
+import jfx.core.context.UrlScope
 import jfx.core.di.Context
 import jfx.core.dsl.AttributeDsl.{setAttribute as setDslAttribute}
 import jfx.core.dsl.ClassDsl.{addClass, classes}
 import jfx.core.dsl.DslLayer
 import jfx.core.dsl.DslLayer.render
+import jfx.core.dsl.EventDsl.on
 import jfx.core.dsl.StyleDsl.*
 import jfx.core.layout.Condition.when
 import jfx.core.layout.Div
@@ -14,12 +16,12 @@ import jfx.core.layout.TextComponent.text
 import jfx.core.render.{Cursor, DomHostElement}
 import jfx.core.state.{Disposable, Property}
 import jfx.core.statement.DynamicComponentRenderer.dynamic
+import jfx.editor.plugins.{DefaultDialogService, EditorPlugin}
 import jfx.forms.Form.FormContext
 import jfx.forms.{Control, Editable, Placeholder}
-import jfx.editor.plugins.{DefaultDialogService, EditorPlugin}
 import lexical.*
 import org.scalajs.dom
-import org.scalajs.dom.{HTMLDivElement, HTMLElement}
+import org.scalajs.dom.{HTMLDivElement, HTMLElement, HTMLTextAreaElement}
 
 import scala.collection.mutable
 import scala.compiletime.uninitialized
@@ -29,17 +31,24 @@ import scala.util.control.NonFatal
 enum EditorToolbarMode:
   case Ribbon, Menu, Floating
 
+/** A Markdown-valued editor.
+  *
+  * Markdown is the public value in every environment. On the server, readonly mode produces
+  * semantic HTML and editable mode produces a textarea. In the browser the textarea is the
+  * no-JavaScript/hydration representation and is progressively enhanced to Lexical after compose;
+  * Lexical imports and exports Markdown at the component boundary.
+  */
 final class Editor private[editor] (
     val name: String,
     val standalone: Boolean,
     configure: Editor ?=> Cursor ?=> Unit
 ) extends AbstractComponent,
-      Control[js.Any | Null],
+      Control[String],
       Placeholder {
 
   override val tagName: String = "div"
 
-  override val valueProperty: Property[js.Any | Null] = Property(null)
+  override val valueProperty: Property[String] = Property("")
 
   private val placeholderProperty = Property("")
   private val plugins             = mutable.ArrayBuffer.empty[EditorPlugin]
@@ -47,38 +56,38 @@ final class Editor private[editor] (
 
   private var toolbarModeValue: EditorToolbarMode           = EditorToolbarMode.Ribbon
   private var dialogServiceValue: Option[DialogService]     = None
+  private var editUrlValue: Option[String]                  = None
+  private var editLabelValue                                = "Edit"
+  private var readonlyUrlValue: Option[String]              = None
+  private var readonlyLabelValue                            = "Readonly"
   private var toolbarHost: Div                              = uninitialized
-  private var previewHost: Div                              = uninitialized
+  private var fallbackHost: Div                             = uninitialized
   private var surfaceHost: Div                              = uninitialized
-  private var lexicalEditor: LexicalEditor | Null           = uninitialized
-  private var resolvedDialogService: DialogService | Null   = uninitialized
-  private var updateUnregister: js.Function0[Unit] | Null   = uninitialized
-  private var floatingUnregister: js.Function0[Unit] | Null = uninitialized
-  private var lastValueJson: String | Null                  = uninitialized
+  private var lexicalEditor: LexicalEditor | Null           = null
+  private var resolvedDialogService: DialogService | Null   = null
+  private var updateUnregister: js.Function0[Unit] | Null   = null
+  private var floatingUnregister: js.Function0[Unit] | Null = null
+  private var lastValueMarkdown: String | Null              = null
+  private var applyingMarkdown                            = false
   private var toolbarRendered                               = false
+  private var browserRendering                              = false
 
   override def compose(cursor: Cursor): Unit = {
     configure(using this)(using cursor)
 
     render(this, cursor) {
-      // Bound *before* the tree below is built: `registerWithForm()` (via `DynamicFormular`/
-      // `Formular.register` -> `bindNow`) sets `valueProperty` from the model as a side effect of
-      // registering, and the preview a few lines down (`dynamic(valueProperty.map(...))`) reads
-      // `valueProperty.get` the moment it is constructed. Registering after building the tree (as
-      // this used to) left that first `dynamic()` mount seeing the constructor's `Property(null)`
-      // instead of the bound value; a live `mount()`/SSR self-heals because the resulting reactive
-      // `replace()` still lands in the same synchronous compose call, but a `HydratingCursor` claims
-      // once per position against the *settled* SSR markup -- so hydration saw a real, non-empty
-      // preview where its own first (pre-bind) pass expected nothing, and failed with "Server-rendered
-      // nodes were not claimed by the client component tree." Same bug shape as Lauf 5's
-      // window/notification fix and Lauf 6's `ArrayForm` renderer fix: a `Property` a `dynamic()`/
-      // `when()` branch depends on must not change *after* that branch has already rendered once.
+      // Form registration can synchronously replace the constructor value with the model value.
+      // It must happen before the dynamic Markdown fallback is built, otherwise hydration would
+      // claim a different subtree than SSR produced.
       installControlObservers()
       registerWithForm()
 
+      browserRendering = cursor.isBrowser
       addClass("jfx-editor-host")
+      addClass("jfx-editor-host--markdown")
       setAttribute("name", name)
       setAttribute("role", "group")
+      setAttribute("data-jfx-editor-format", "markdown")
       setAttribute("data-jfx-editor-loading", cursor.isBrowser.toString)
 
       div {
@@ -90,18 +99,37 @@ final class Editor private[editor] (
           toolbarHost = div {
             classes = Seq("jfx-editor__toolbar")
             setDslAttribute("aria-label", "Editor toolbar")
-            style {
-              display = toolbarDisplay(editableProperty.get)
-            }
+            style { display = "none" }
+          }
+
+          div {
+            classes = Seq("jfx-editor__markdown-actions")
+            dynamic(editableProperty.map[AbstractComponent] { editable =>
+              if (editable)
+                new MarkdownModeLink(
+                  readonlyUrlValue.getOrElse(modeUrl("readonly")),
+                  readonlyLabelValue,
+                  readonly = true
+                )
+              else
+                new MarkdownModeLink(
+                  editUrlValue.getOrElse(modeUrl("editable")),
+                  editLabelValue,
+                  readonly = false
+                )
+            })
           }
 
           div {
             classes = Seq("jfx-editor__surface-wrap")
 
-            previewHost = div {
-              classes = Seq("jfx-editor__preview", "jfx-editor-readonly")
-              setDslAttribute("aria-hidden", "false")
-              dynamic(valueProperty.map[AbstractComponent](value => new EditorPreview(value)))
+            fallbackHost = div {
+              classes = Seq("jfx-editor__fallback")
+              dynamic(editableProperty.map[AbstractComponent] { editable =>
+                if (editable)
+                  new MarkdownTextArea(name, valueProperty, placeholderProperty)
+                else new MarkdownReadonly(valueProperty)
+              })
             }
 
             surfaceHost = div {
@@ -123,8 +151,7 @@ final class Editor private[editor] (
               style {
                 display = valueProperty.flatMap { value =>
                   placeholderProperty.map { placeholder =>
-                    if (EditorPreview.textContent(value).isEmpty && placeholder.trim.nonEmpty) ""
-                    else "none"
+                    if (value.trim.isEmpty && placeholder.trim.nonEmpty) "" else "none"
                   }
                 }
               }
@@ -139,7 +166,7 @@ final class Editor private[editor] (
   }
 
   override def afterCompose(cursor: Cursor): Unit =
-    if (cursor.isBrowser) mountLexical()
+    if (cursor.isBrowser && editableProperty.get) mountLexical()
 
   override protected def setPlaceholder(value: String): Unit =
     placeholderProperty.set(Option(value).getOrElse(""))
@@ -157,6 +184,52 @@ final class Editor private[editor] (
   private[editor] def dialogService_=(service: DialogService): Unit =
     dialogServiceValue = Option(service)
 
+  private[editor] def editUrl: Option[String] = editUrlValue
+
+  private[editor] def editUrl_=(value: String): Unit =
+    editUrlValue = Option(value).map(_.trim).filter(_.nonEmpty)
+
+  private[editor] def editLabel: String = editLabelValue
+
+  private[editor] def editLabel_=(value: String): Unit =
+    editLabelValue = Option(value).map(_.trim).filter(_.nonEmpty).getOrElse("Edit")
+
+  private[editor] def readonlyUrl: Option[String] = readonlyUrlValue
+
+  private[editor] def readonlyUrl_=(value: String): Unit =
+    readonlyUrlValue = Option(value).map(_.trim).filter(_.nonEmpty)
+
+  private[editor] def readonlyLabel: String = readonlyLabelValue
+
+  private[editor] def readonlyLabel_=(value: String): Unit =
+    readonlyLabelValue = Option(value).map(_.trim).filter(_.nonEmpty).getOrElse("Readonly")
+
+  private def modeUrl(mode: String): String = {
+    val parameter = s"$name.editor"
+    UrlScope.current(using this)
+      .map(scope => withQueryParameter(scope.url, parameter, mode))
+      .getOrElse(s"?$parameter=$mode")
+  }
+
+  private def withQueryParameter(url: String, name: String, value: String): String = {
+    val hashIndex = url.indexOf('#')
+    val (withoutHash, hash) =
+      if (hashIndex >= 0) url.splitAt(hashIndex) else (url, "")
+    val queryIndex = withoutHash.indexOf('?')
+    val (path, query) =
+      if (queryIndex >= 0)
+        (withoutHash.substring(0, queryIndex), withoutHash.substring(queryIndex + 1))
+      else (withoutHash, "")
+    val retained = query
+      .split('&')
+      .iterator
+      .filter(_.nonEmpty)
+      .filterNot(entry => entry.takeWhile(_ != '=') == name)
+      .toSeq
+    val nextQuery = (retained :+ s"$name=$value").mkString("&")
+    s"$path?$nextQuery$hash"
+  }
+
   private def installControlObservers(): Unit = {
     addDisposable(valueProperty.observe { _ => validate() })
     addDisposable(valueProperty.observeWithoutInitial(syncExternalValue))
@@ -164,7 +237,6 @@ final class Editor private[editor] (
     addDisposable(dirtyProperty.observe(_ => validate()))
     addDisposable(editableProperty.observe { editable =>
       setAttribute("aria-disabled", (!editable).toString)
-      Option(toolbarHost).foreach(_.setStyle("display", toolbarDisplay(editable)))
       updateEditable(editable)
     })
     addDisposable(Disposable(destroyEditor()))
@@ -183,67 +255,59 @@ final class Editor private[editor] (
 
   private def toolbarDisplay(editable: Boolean): String =
     if (
-      editable && plugins.exists(
-        _.toolbarElements.nonEmpty
-      ) && toolbarModeValue != EditorToolbarMode.Floating
-    )
-      ""
+      editable && plugins.exists(_.toolbarElements.nonEmpty) &&
+      toolbarModeValue != EditorToolbarMode.Floating
+    ) ""
     else "none"
 
   private def mountLexical(): Unit =
-    domElement[HTMLDivElement](surfaceHost).foreach { surface =>
-      val nodes   = defaultNodes()
-      val modules = collectModules()
-      val config  = js.Dynamic
-        .literal(
-          namespace = name,
-          theme = defaultTheme(),
-          nodes = nodes,
-          editable = editableProperty.get,
-          onError = (error: js.Error) => dom.console.error(error)
-        )
-        .asInstanceOf[CreateEditorArgs]
-      val editor = Lexical.createEditor(config)
-      lexicalEditor = editor
-      resolvedDialogService = resolveDialogService()
-      editor.setDialogService(resolvedDialogService.nn)
-      editor.setRootElement(surface)
+    if (lexicalEditor == null)
+      domElement[HTMLDivElement](surfaceHost).foreach { surface =>
+        val nodes   = defaultNodes()
+        val modules = collectModules()
+        val config  = js.Dynamic
+          .literal(
+            namespace = name,
+            theme = defaultTheme(),
+            nodes = nodes,
+            editable = editableProperty.get,
+            onError = (error: js.Error) => dom.console.error(error)
+          )
+          .asInstanceOf[CreateEditorArgs]
+        val editor = Lexical.createEditor(config)
+        lexicalEditor = editor
+        resolvedDialogService = resolveDialogService()
+        editor.setDialogService(resolvedDialogService.nn)
+        editor.setRootElement(surface)
 
-      register(LexicalRichText.registerRichText(editor))
-      if (!modules.exists(_.isInstanceOf[HistoryModule]))
-        register(
-          LexicalHistory.registerHistory(editor, LexicalHistory.createEmptyHistoryState(), 300)
-        )
-      if (hasTableNodes(nodes)) register(LexicalTable.registerTablePlugin(editor))
-      if (hasListNodes(nodes)) register(LexicalList.registerList(editor))
-      modules.distinct.foreach(module => register(module.register(editor)))
-      registerDecoratorMounting(editor)
+        register(LexicalRichText.registerRichText(editor))
+        if (!modules.exists(_.isInstanceOf[HistoryModule]))
+          register(
+            LexicalHistory.registerHistory(editor, LexicalHistory.createEmptyHistoryState(), 300)
+          )
+        if (hasTableNodes(nodes)) register(LexicalTable.registerTablePlugin(editor))
+        if (hasListNodes(nodes)) register(LexicalList.registerList(editor))
+        modules.distinct.foreach(module => register(module.register(editor)))
+        registerDecoratorMounting(editor)
 
-      if (valueProperty.get != null) applyEditorState(editor, valueProperty.get)
-      else publishEditorState(editor, markDirty = false)
+        applyMarkdown(editor, valueProperty.get)
+        updateUnregister = editor.registerUpdateListener { (_: js.Dynamic) =>
+          if (!applyingMarkdown) publishMarkdown(editor, markDirty = true)
+        }
 
-      updateUnregister = editor.registerUpdateListener { (_: js.Dynamic) =>
-        publishEditorState(editor, markDirty = true)
+        plugins.foreach { plugin => register(plugin.install(editor)) }
+
+        addDisposable(surfaceHost.onDisposable("focusin")(_ => focusedProperty.set(true)))
+        addDisposable(surfaceHost.onDisposable("focusout") { _ =>
+          focusedProperty.set(false)
+          validate()
+        })
+
+        renderToolbar(editor)
+        syncEditableSurface(editableProperty.get)
+        syncPresentation(editableProperty.get)
+        setAttribute("data-jfx-editor-loading", "false")
       }
-
-      plugins.foreach { plugin =>
-        register(plugin.install(editor))
-      }
-
-      addDisposable(surfaceHost.onDisposable("focusin")(_ => focusedProperty.set(true)))
-      addDisposable(surfaceHost.onDisposable("focusout") { _ =>
-        focusedProperty.set(false)
-        validate()
-      })
-
-      renderToolbar(editor)
-      syncEditableSurface(editableProperty.get)
-      surfaceHost.setStyle("display", "")
-      surfaceHost.setStyle("opacity", "1")
-      previewHost.setStyle("display", "none")
-      previewHost.setAttribute("aria-hidden", "true")
-      setAttribute("data-jfx-editor-loading", "false")
-    }
 
   private def register(unregister: js.Function0[Unit] | Null): Unit =
     Option(unregister).foreach(registrations += _)
@@ -281,9 +345,8 @@ final class Editor private[editor] (
       if (editableProperty.get && elements.nonEmpty) {
         toolbarModeValue match {
           case EditorToolbarMode.Floating =>
-            val modules = elements.collect { case module: EditorModule => module }.distinct
-            if (modules.nonEmpty && floatingUnregister == null)
-              floatingUnregister = new FloatingToolbarManager(editor, modules).register()
+            if (floatingUnregister == null)
+              floatingUnregister = new FloatingToolbarManager(editor, collectModules()).register()
           case mode =>
             if (!toolbarRendered) {
               val layout =
@@ -296,9 +359,15 @@ final class Editor private[editor] (
             }
         }
       }
+      toolbarHost.setStyle("display", toolbarDisplay(editableProperty.get))
     }
 
-  private def updateEditable(editable: Boolean): Unit =
+  private def updateEditable(editable: Boolean): Unit = {
+    if (
+      browserRendering && editable && lexicalEditor == null && Option(surfaceHost).exists(_.isBound)
+    )
+      mountLexical()
+
     Option(lexicalEditor).foreach { editor =>
       editor.setEditable(editable)
       syncEditableSurface(editable)
@@ -308,6 +377,18 @@ final class Editor private[editor] (
         floatingUnregister = null
       } else renderToolbar(editor)
     }
+    syncPresentation(editable)
+  }
+
+  private def syncPresentation(editable: Boolean): Unit = {
+    val enhanced = lexicalEditor != null && editable
+    Option(fallbackHost).foreach(_.setStyle("display", if (enhanced) "none" else ""))
+    Option(surfaceHost).foreach { surface =>
+      surface.setStyle("display", if (enhanced) "" else "none")
+      surface.setStyle("opacity", if (enhanced) "1" else "0")
+    }
+    Option(toolbarHost).foreach(_.setStyle("display", toolbarDisplay(enhanced)))
+  }
 
   private def syncEditableSurface(editable: Boolean): Unit =
     Option(surfaceHost).foreach { surface =>
@@ -317,37 +398,33 @@ final class Editor private[editor] (
       else surface.addClass("lexical-read-only")
     }
 
-  private def publishEditorState(editor: LexicalEditor, markDirty: Boolean): Unit = {
-    val state = editor.getEditorState().toJSON()
-    val json  = js.JSON.stringify(state)
-    if (lastValueJson != json) {
-      lastValueJson = json
+  private def publishMarkdown(editor: LexicalEditor, markDirty: Boolean): Unit = {
+    val markdown = editor.read(() => MarkdownInterop.toMarkdown(MarkdownInterop.transformers))
+    if (lastValueMarkdown != markdown) {
+      lastValueMarkdown = markdown
       if (markDirty) dirtyProperty.set(true)
-      valueProperty.set(state)
+      if (valueProperty.get != markdown) valueProperty.set(markdown)
     }
   }
 
-  private def syncExternalValue(value: js.Any | Null): Unit =
+  private def syncExternalValue(value: String): Unit =
     Option(lexicalEditor).foreach { editor =>
-      val json = EditorPreview.json(value)
-      if (lastValueJson != json) applyEditorState(editor, value)
+      val normalized = Option(value).getOrElse("")
+      if (lastValueMarkdown != normalized) applyMarkdown(editor, normalized)
     }
 
-  private def applyEditorState(editor: LexicalEditor, value: js.Any | Null): Unit =
+  private def applyMarkdown(editor: LexicalEditor, value: String): Unit =
     try {
-      parseEditorState(editor, value).foreach { state =>
-        lastValueJson = EditorPreview.json(value)
-        editor.setEditorState(state, js.Dynamic.literal())
-      }
+      val normalized = Option(value).getOrElse("")
+      applyingMarkdown = true
+      editor.update(
+        () => MarkdownInterop.fromMarkdown(normalized, MarkdownInterop.transformers),
+        js.Dynamic.literal(discrete = true).asInstanceOf[EditorUpdateOptions]
+      )
+      lastValueMarkdown = normalized
     } catch {
-      case NonFatal(_) => ()
-    }
-
-  private def parseEditorState(editor: LexicalEditor, value: js.Any | Null): Option[js.Dynamic] =
-    if (!EditorPreview.exists(value)) Some(editor.parseEditorState(EditorPreview.emptyStateJson))
-    else if (js.typeOf(value.asInstanceOf[js.Any]) == "string") {
-      Option(value.asInstanceOf[String]).map(_.trim).filter(_.nonEmpty).map(editor.parseEditorState)
-    } else Some(editor.parseEditorState(js.JSON.stringify(value)))
+      case NonFatal(error) => dom.console.error("Could not import editor Markdown", error)
+    } finally applyingMarkdown = false
 
   private def destroyEditor(): Unit = {
     focusedProperty.set(false)
@@ -393,7 +470,13 @@ final class Editor private[editor] (
           LexicalList.ListNode,
           LexicalList.ListItemNode,
           LexicalLink.LinkNode,
-          LexicalCode.CodeNode
+          LexicalCode.CodeNode,
+          js.constructorOf[ImageNode],
+          js.constructorOf[HorizontalRuleNode],
+          js.constructorOf[lexical.codemirror.CodeMirrorNode],
+          LexicalTable.TableNode,
+          LexicalTable.TableRowNode,
+          LexicalTable.TableCellNode
         ) ++ plugins.iterator.flatMap(_.nodes)
       ).distinct*
     )
@@ -439,12 +522,12 @@ object Editor {
   )(body: Editor ?=> Cursor ?=> Unit = {})(using AbstractComponent, Cursor): Editor =
     DslLayer.child(new Editor(name, standalone, body)) {}
 
-  def value(using editor: Editor): js.Any | Null = editor.valueProperty.get
+  def value(using editor: Editor): String = editor.valueProperty.get
 
-  def value_=(nextValue: js.Any | Null)(using editor: Editor): Unit =
-    editor.valueProperty.set(nextValue)
+  def value_=(nextValue: String)(using editor: Editor): Unit =
+    editor.valueProperty.set(Option(nextValue).getOrElse(""))
 
-  def valueProperty(using editor: Editor): Property[js.Any | Null] = editor.valueProperty
+  def valueProperty(using editor: Editor): Property[String] = editor.valueProperty
 
   def errorsProperty(using editor: Editor): jfx.core.state.ListProperty[String] = editor.errors
 
@@ -464,240 +547,92 @@ object Editor {
 
   def dialogService_=(service: DialogService)(using editor: Editor): Unit =
     editor.dialogService = service
+
+  def editUrl(using editor: Editor): Option[String] = editor.editUrl
+
+  def editUrl_=(value: String)(using editor: Editor): Unit = editor.editUrl = value
+
+  def editLabel(using editor: Editor): String = editor.editLabel
+
+  def editLabel_=(value: String)(using editor: Editor): Unit = editor.editLabel = value
+
+  def readonlyUrl(using editor: Editor): Option[String] = editor.readonlyUrl
+
+  def readonlyUrl_=(value: String)(using editor: Editor): Unit = editor.readonlyUrl = value
+
+  def readonlyLabel(using editor: Editor): String = editor.readonlyLabel
+
+  def readonlyLabel_=(value: String)(using editor: Editor): Unit = editor.readonlyLabel = value
 }
 
-private final class HtmlElement(tag: String) extends AbstractComponent {
-  override val tagName: String = tag
-}
-
-private object HtmlElement {
-  def element(tag: String)(body: HtmlElement ?=> Cursor ?=> Unit = {})(using
-      AbstractComponent,
-      Cursor
-  ): HtmlElement =
-    DslLayer.child(new HtmlElement(tag))(body)
-}
-
-private final class EditorPreview(value: js.Any | Null) extends AbstractComponent {
-  import EditorPreview.*
-  import HtmlElement.element
-
-  override val tagName: String = ""
+private final class MarkdownReadonly(valueProperty: Property[String]) extends AbstractComponent {
+  override val tagName: String = "div"
 
   override def compose(cursor: Cursor): Unit =
     render(this, cursor) {
-      previewRoot(value).foreach { root =>
-        previewChildren(root).foreach(node => DslLayer.child(new PreviewNode(node)) {})
+      classes = Seq("jfx-editor__readonly")
+      div {
+        classes = Seq("jfx-editor__preview", "jfx-editor-readonly")
+        setDslAttribute("aria-readonly", "true")
+        dynamic(valueProperty.map[AbstractComponent](value => new MarkdownPreview(value)))
       }
     }
 }
 
-private final class PreviewNode(node: js.Any) extends AbstractComponent {
-  import EditorPreview.*
-  import HtmlElement.element
-
-  override val tagName: String = ""
+private final class MarkdownTextArea(
+    name: String,
+    valueProperty: Property[String],
+    placeholderProperty: Property[String]
+) extends AbstractComponent {
+  override val tagName: String = "textarea"
 
   override def compose(cursor: Cursor): Unit =
     render(this, cursor) {
-      previewNodeType(node) match {
-        case "root"      => children()
-        case "paragraph" =>
-          element("p") {
-            classes = Seq("lexical-paragraph")
-            children()
-          }
-        case "heading" =>
-          val tag = previewTag(node)
-          element(tag) {
-            classes = Seq(s"lexical-heading-$tag")
-            children()
-          }
-        case "quote" =>
-          element("blockquote") {
-            classes = Seq("lexical-quote")
-            children()
-          }
-        case "list" =>
-          val tag = if (previewString(node, "listType").contains("number")) "ol" else "ul"
-          element(tag) {
-            classes = Seq(if (tag == "ol") "lexical-list-ol" else "lexical-list-ul")
-            children()
-          }
-        case "listitem" =>
-          element("li") {
-            classes = Seq("lexical-listitem")
-            children()
-          }
-        case "link" =>
-          element("a") {
-            setDslAttribute(
-              "href",
-              previewString(node, "url").orElse(extraString(node, "url")).getOrElse("")
-            )
-            children()
-          }
-        case "horizontalrule" =>
-          element("hr") { classes = Seq("lexical-horizontal-rule") }
-        case "linebreak"           => element("br") {}
-        case "code" | "codemirror" =>
-          element("pre") {
-            classes = Seq("jfx-editor-code")
-            element("code") {
-              classes = Seq("jfx-editor-code__content")
-              text(previewCode(node)) {}
+      classes = Seq("jfx-editor__markdown-textarea")
+      setDslAttribute("name", name)
+      setDslAttribute("aria-label", name)
+      setDslAttribute("aria-multiline", "true")
+      setDslAttribute("spellcheck", "true")
+      Option(placeholderProperty.get).filter(_.nonEmpty).foreach(setDslAttribute("placeholder", _))
+
+      text(valueProperty) {}
+
+      on("input") { event =>
+        event.raw match {
+          case domEvent: dom.Event =>
+            domEvent.target match {
+              case textarea: HTMLTextAreaElement => valueProperty.set(textarea.value)
+              case _                             => ()
             }
-          }
-        case "image" =>
-          element("img") {
-            setDslAttribute(
-              "src",
-              previewString(node, "src").orElse(extraString(node, "src")).getOrElse("")
-            )
-            setDslAttribute(
-              "alt",
-              previewString(node, "altText").orElse(extraString(node, "altText")).getOrElse("")
-            )
-            previewInt(node, "width")
-              .orElse(extraInt(node, "width"))
-              .foreach(width => setDslAttribute("width", width.toString))
-            style {
-              maxWidth = "100%"
-              height = "auto"
-            }
-          }
-        case "table"     => element("table") { children() }
-        case "tablerow"  => element("tr") { children() }
-        case "tablecell" => element("td") { children() }
-        case "text"      =>
-          DslLayer.child(
-            new PreviewText(
-              previewString(node, "text").getOrElse(""),
-              previewInt(node, "format").getOrElse(0)
-            )
-          ) {}
-        case _ => children()
+          case _ => ()
+        }
       }
-    }
 
-  private def children()(using AbstractComponent, Cursor): Unit =
-    previewChildren(node).foreach(child => DslLayer.child(new PreviewNode(child)) {})
+      if (cursor.isBrowser) {
+        addDisposable(valueProperty.observe(value => setProperty("value", value)))
+      }
+  }
 }
 
-private final class PreviewText(value: String, format: Int) extends AbstractComponent {
-  import HtmlElement.element
-
-  override val tagName: String = ""
+private final class MarkdownModeLink(url: String, label: String, readonly: Boolean)
+    extends AbstractComponent {
+  override val tagName: String = "a"
 
   override def compose(cursor: Cursor): Unit =
     render(this, cursor) {
-      if (value.nonEmpty) {
-        if ((format & 16) != 0) element("code") { text(value) {} }
-        else if ((format & 1) != 0) element("strong") { nested(format & ~1) }
-        else if ((format & 2) != 0) element("em") { nested(format & ~2) }
-        else if ((format & 8) != 0) element("u") { nested(format & ~8) }
-        else if ((format & 4) != 0) element("s") { nested(format & ~4) }
-        else text(value) {}
-      }
-    }
-
-  private def nested(nextFormat: Int)(using AbstractComponent, Cursor): Unit =
-    DslLayer.child(new PreviewText(value, nextFormat)) {}
-}
-
-private object EditorPreview {
-  val emptyStateJson: String =
-    """{"root":{"type":"root","version":1,"indent":0,"format":"","direction":null,"children":[]}}"""
-
-  def exists(value: js.Any | Null): Boolean =
-    value != null && !js.isUndefined(value.asInstanceOf[js.Any])
-
-  def json(value: js.Any | Null): String | Null =
-    if (!exists(value)) null else js.JSON.stringify(value)
-
-  def textContent(value: js.Any | Null): String = {
-    val parts = mutable.ArrayBuffer.empty[String]
-    previewRoot(value).foreach(collectText(_, parts))
-    parts.mkString(" ").trim
-  }
-
-  def previewRoot(value: js.Any | Null): Option[js.Any] =
-    if (!exists(value)) None
-    else if (js.typeOf(value.asInstanceOf[js.Any]) == "string") {
-      Option(value.asInstanceOf[String]).map(_.trim).filter(_.nonEmpty).map { plain =>
-        js.Dynamic
-          .literal(
-            `type` = "root",
-            children = js.Array[js.Any](
-              js.Dynamic.literal(
-                `type` = "paragraph",
-                children =
-                  js.Array[js.Any](js.Dynamic.literal(`type` = "text", text = plain, format = 0))
-              )
-            )
-          )
-          .asInstanceOf[js.Any]
-      }
-    } else {
-      val root = value.asInstanceOf[js.Dynamic].selectDynamic("root").asInstanceOf[js.Any]
-      Some(if (exists(root)) root else value.asInstanceOf[js.Any])
-    }
-
-  def previewNodeType(node: js.Any): String =
-    previewString(node, "type").orElse(previewString(node, "nodeType")).getOrElse("")
-
-  def previewTag(node: js.Any): String =
-    previewString(node, "tag")
-      .orElse(extraString(node, "tag"))
-      .filter(tag => Set("h1", "h2", "h3", "h4", "h5", "h6").contains(tag))
-      .getOrElse("h1")
-
-  def previewChildren(node: js.Any): Seq[js.Any] = {
-    val value = node.asInstanceOf[js.Dynamic].selectDynamic("children").asInstanceOf[js.Any]
-    if (!exists(value)) Seq.empty
-    else
-      try value.asInstanceOf[js.Array[js.Any]].toSeq
-      catch { case NonFatal(_) => Seq.empty }
-  }
-
-  def previewString(node: js.Any, field: String): Option[String] = {
-    val value = node.asInstanceOf[js.Dynamic].selectDynamic(field).asInstanceOf[js.Any]
-    Option.when(exists(value) && js.typeOf(value) == "string")(value.asInstanceOf[String])
-  }
-
-  def previewInt(node: js.Any, field: String): Option[Int] = {
-    val value = node.asInstanceOf[js.Dynamic].selectDynamic(field).asInstanceOf[js.Any]
-    if (!exists(value)) None
-    else
-      js.typeOf(value) match {
-        case "number" => Some(value.asInstanceOf[Double].toInt)
-        case "string" => value.asInstanceOf[String].trim.toIntOption
-        case _        => None
-      }
-  }
-
-  def extraString(node: js.Any, field: String): Option[String] =
-    extra(node).flatMap(previewString(_, field))
-
-  def extraInt(node: js.Any, field: String): Option[Int] =
-    extra(node).flatMap(previewInt(_, field))
-
-  private def extra(node: js.Any): Option[js.Any] = {
-    val value = node.asInstanceOf[js.Dynamic].selectDynamic("extra").asInstanceOf[js.Any]
-    Option.when(exists(value))(value)
-  }
-
-  def previewCode(node: js.Any): String =
-    previewString(node, "code").filter(_.nonEmpty).getOrElse {
-      val parts = mutable.ArrayBuffer.empty[String]
-      previewChildren(node).foreach(collectText(_, parts))
-      parts.mkString
-    }
-
-  private def collectText(value: js.Any, parts: mutable.ArrayBuffer[String]): Unit =
-    if (exists(value)) {
-      previewString(value, "text").foreach(parts += _)
-      previewString(value, "code").foreach(parts += _)
-      previewChildren(value).foreach(collectText(_, parts))
+      val safeUrl = MarkdownSecurity.safeLinkUrl(url)
+      classes =
+        Seq("jfx-editor__mode-toggle", "jfx-editor__edit-link") ++
+          Option.when(readonly)("jfx-editor__readonly-link")
+      setDslAttribute("href", safeUrl)
+      text(label) {}
+      installSsrNavigation(safeUrl)
     }
 }
+
+private def installSsrNavigation(url: String)(using cursor: Cursor, eventDsl: jfx.core.dsl.EventDsl): Unit =
+  if (cursor.isBrowser)
+    jfx.core.dsl.EventDsl.onClick { event =>
+      event.preventDefault()
+      dom.window.location.href = url
+    }

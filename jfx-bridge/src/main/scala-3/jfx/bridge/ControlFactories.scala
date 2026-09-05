@@ -28,8 +28,8 @@ import scala.scalajs.js.JSConverters.*
   * The item type is `js.Any` end to end -- a renderer or a cell hands back the exact opaque object
   * the JS consumer put into the source. Nothing about the item is interpreted on this side.
   *
-  * What is *not* projected in this pass (each has a trigger in CLAUDE_REVIEW_3.md, Nachtrag Lauf 4):
-  * imperative handles (`carousel.next()`, `tableView.select(item)`, `dataGrid.scrollTo`), the
+  * What is *not* projected in this pass (each has a trigger in CLAUDE_REVIEW_3.md, Nachtrag Lauf
+  * 4): imperative handles (`carousel.next()`, `tableView.select(item)`, `dataGrid.scrollTo`), the
   * `onRowDoubleClick` / `selectedItem` readback, and `TableColumn.cellValueFactory` (which already
   * throws in Scala). The facade is reactive-input only: reactive options in, no handle out.
   */
@@ -63,11 +63,11 @@ private[bridge] trait RemoteSourceFacade extends js.Object {
 
 @js.native
 private[bridge] trait RemotePageFacade extends js.Object {
-  val items: js.Array[js.Any]         = js.native
-  val offset: js.UndefOr[Int]         = js.native
-  val totalCount: js.UndefOr[Int]     = js.native
-  val nextQuery: js.UndefOr[js.Any]   = js.native
-  val hasMore: js.UndefOr[Boolean]    = js.native
+  val items: js.Array[js.Any]       = js.native
+  val offset: js.UndefOr[Int]       = js.native
+  val totalCount: js.UndefOr[Int]   = js.native
+  val nextQuery: js.UndefOr[js.Any] = js.native
+  val hasMore: js.UndefOr[Boolean]  = js.native
 }
 
 /** Mirrors `jfx.core.remote.RemoteSort`. */
@@ -79,13 +79,13 @@ private[bridge] trait SortFacade extends js.Object {
 
 @js.native
 private[bridge] trait TabFacade extends js.Object {
-  val title: js.Any                                   = js.native
-  val content: js.Function1[ScopeHandleBridge, Unit]  = js.native
+  val title: js.Any                                  = js.native
+  val content: js.Function1[ScopeHandleBridge, Unit] = js.native
 }
 
 @js.native
 private[bridge] trait ColumnFacade extends js.Object {
-  val text: String                 = js.native
+  val text: String                  = js.native
   val prefWidth: js.UndefOr[Double] = js.native
   val sortable: js.UndefOr[Boolean] = js.native
   val sortKey: js.UndefOr[String]   = js.native
@@ -125,12 +125,14 @@ private[bridge] object ControlFactories {
       initialQuery = facade.initialQuery,
       underlying = facade.initial.getOrElse(js.Array[js.Any]()),
       initialOffset = facade.initialOffset.toOption.getOrElse(0),
-      sortUpdater = facade.sortQuery.toOption.map { fn => (query: js.Any, sorting: Seq[RemoteSort]) =>
-        fn(query, sorting.map(sortFacade).toJSArray)
-      },
-      rangeQueryUpdater = facade.rangeQuery.toOption.map { fn => (query: js.Any, offset: Int, limit: Int) =>
-        fn(query, offset, limit)
-      }
+      sortUpdater =
+        facade.sortQuery.toOption.map { fn => (query: js.Any, sorting: Seq[RemoteSort]) =>
+          fn(query, sorting.map(sortFacade).toJSArray)
+        },
+      rangeQueryUpdater =
+        facade.rangeQuery.toOption.map { fn => (query: js.Any, offset: Int, limit: Int) =>
+          fn(query, offset, limit)
+        }
     )
 
     facade.totalCount.toOption.foreach(count => remote.totalCountProperty.set(Some(count)))
@@ -140,15 +142,14 @@ private[bridge] object ControlFactories {
   private def sortFacade(sort: RemoteSort): SortFacade =
     js.Dynamic.literal(field = sort.field, ascending = sort.ascending).asInstanceOf[SortFacade]
 
-  /** A `(scope) => void` from TS, run against a fresh handle built from the ambient context. Mirrors
-    * `RouterFactories.routeComponent`.
+  /** A `(scope) => void` from TS, run against a fresh handle built from the ambient context.
+    * Mirrors `RouterFactories.routeComponent`.
     */
   def slotBody(
       fn: js.Function1[ScopeHandleBridge, Unit]
   ): AbstractComponent ?=> Cursor ?=> Unit =
     (_: AbstractComponent) ?=>
-      (_: Cursor) ?=>
-        fn(new ScopeHandleBridge(summon[AbstractComponent], summon[Cursor]))
+      (_: Cursor) ?=> fn(new ScopeHandleBridge(summon[AbstractComponent], summon[Cursor]))
 
   /** A `(item, index) => (scope) => void` from TS, as a control cell renderer. */
   def itemRenderer(
@@ -163,10 +164,10 @@ private[bridge] object ControlFactories {
 
   // --- option readers -------------------------------------------------------
 
-  private[bridge] def dbl(value: js.Any): Double  = value.asInstanceOf[Double]
-  private[bridge] def int(value: js.Any): Int     = value.asInstanceOf[Double].toInt
+  private[bridge] def dbl(value: js.Any): Double   = value.asInstanceOf[Double]
+  private[bridge] def int(value: js.Any): Int      = value.asInstanceOf[Double].toInt
   private[bridge] def bool(value: js.Any): Boolean = value.asInstanceOf[Boolean]
-  private[bridge] def str(value: js.Any): String  = value.asInstanceOf[String]
+  private[bridge] def str(value: js.Any): String   = value.asInstanceOf[String]
 
   /** Constant or reactive, always resolved to a property -- a constant becomes a `ConstantProperty`
     * that the control observes once.
@@ -191,11 +192,10 @@ private[bridge] object TabsFactory extends ComponentFactory {
 
     Tabs.tabs {
       options.get("renderMode").foreach { mode =>
-        Tabs.renderMode =
-          ControlFactories.str(mode) match {
-            case "keep-mounted" => Tabs.RenderMode.KeepMountedHidden
-            case _              => Tabs.RenderMode.ActiveOnly
-          }
+        Tabs.renderMode = ControlFactories.str(mode) match {
+          case "keep-mounted" => Tabs.RenderMode.KeepMountedHidden
+          case _              => Tabs.RenderMode.ActiveOnly
+        }
       }
 
       // Tabs are registered before the selection is set: `setSelectedIndex` clamps against the
@@ -206,7 +206,9 @@ private[bridge] object TabsFactory extends ComponentFactory {
         }
       }
 
-      options.get("selectedIndex").foreach(value => Tabs.selectedIndex_=(ControlFactories.intProp(value)))
+      options
+        .get("selectedIndex")
+        .foreach(value => Tabs.selectedIndex_=(ControlFactories.intProp(value)))
     }
   }
 }
@@ -226,17 +228,21 @@ private[bridge] object CarouselFactory extends ComponentFactory {
     Carousel.carousel[js.Any] {
       val self: Carousel[js.Any] = summon[Carousel[js.Any]]
       self.setItems(items)
-      self.setRenderer { (item: js.Any, index: Int) =>
-        (_: AbstractComponent) ?=>
-          (_: Cursor) ?=>
-            slide(item, index)(new ScopeHandleBridge(summon[AbstractComponent], summon[Cursor]))
+      self.setRenderer { (item: js.Any, index: Int) => (_: AbstractComponent) ?=> (_: Cursor) ?=>
+        slide(item, index)(new ScopeHandleBridge(summon[AbstractComponent], summon[Cursor]))
       }
-      options.get("autoAdvanceMs").foreach(value => Carousel.autoAdvanceMs_=(ControlFactories.intProp(value)))
-      options.get("wrapAround").foreach(value => Carousel.wrapAround_=(ControlFactories.boolProp(value)))
-      options.get("ssrShowAllStates").foreach(value =>
-        Carousel.ssrShowAllStates_=(ControlFactories.boolProp(value))
-      )
-      options.get("activeIndex").foreach(value => Carousel.activeIndex_=(ControlFactories.intProp(value)))
+      options
+        .get("autoAdvanceMs")
+        .foreach(value => Carousel.autoAdvanceMs_=(ControlFactories.intProp(value)))
+      options
+        .get("wrapAround")
+        .foreach(value => Carousel.wrapAround_=(ControlFactories.boolProp(value)))
+      options
+        .get("ssrShowAllStates")
+        .foreach(value => Carousel.ssrShowAllStates_=(ControlFactories.boolProp(value)))
+      options
+        .get("activeIndex")
+        .foreach(value => Carousel.activeIndex_=(ControlFactories.intProp(value)))
     }
   }
 }
@@ -254,8 +260,12 @@ private[bridge] object TableViewFactory extends ComponentFactory {
 
     TableView.tableView[js.Any](src) {
       options.get("rowHeight").foreach(value => TableView.rowHeight = ControlFactories.dbl(value))
-      options.get("showHeader").foreach(value => TableView.showHeader = ControlFactories.bool(value))
-      options.get("showFooter").foreach(value => TableView.showFooter = ControlFactories.bool(value))
+      options
+        .get("showHeader")
+        .foreach(value => TableView.showHeader = ControlFactories.bool(value))
+      options
+        .get("showFooter")
+        .foreach(value => TableView.showFooter = ControlFactories.bool(value))
       options.get("paging").foreach(value => TableView.paging = ControlFactories.bool(value))
       options.get("pageSize").foreach(value => TableView.pageSize = ControlFactories.int(value))
       options.get("crawlable").foreach(value => TableView.crawlable = ControlFactories.bool(value))
@@ -266,10 +276,9 @@ private[bridge] object TableViewFactory extends ComponentFactory {
           col.prefWidth.foreach(width => TableColumn.prefWidth_=[js.Any, js.Any](width))
           col.sortable.foreach(flag => TableColumn.sortable_=[js.Any, js.Any](flag))
           col.sortKey.foreach(key => TableColumn.sortKey_=[js.Any, js.Any](key))
-          TableColumn.cell[js.Any, js.Any] { (row: js.Any) =>
-            (_: AbstractComponent) ?=>
-              (_: Cursor) ?=>
-                col.cell(row)(new ScopeHandleBridge(summon[AbstractComponent], summon[Cursor]))
+          TableColumn.cell[js.Any, js.Any] {
+            (row: js.Any) => (_: AbstractComponent) ?=> (_: Cursor) ?=>
+              col.cell(row)(new ScopeHandleBridge(summon[AbstractComponent], summon[Cursor]))
           }
         }
       }
@@ -302,11 +311,19 @@ private[bridge] object DataGridFactory extends ComponentFactory {
 
     DataGrid.dataGrid[js.Any](src) {
       DataGrid.cellRenderer = ControlFactories.itemRenderer(cell)
-      options.get("itemWidthPx").foreach(value => DataGrid.itemWidthPx = ControlFactories.dbl(value))
-      options.get("itemHeightPx").foreach(value => DataGrid.itemHeightPx = ControlFactories.dbl(value))
+      options
+        .get("itemWidthPx")
+        .foreach(value => DataGrid.itemWidthPx = ControlFactories.dbl(value))
+      options
+        .get("itemHeightPx")
+        .foreach(value => DataGrid.itemHeightPx = ControlFactories.dbl(value))
       options.get("gapPx").foreach(value => DataGrid.gapPx = ControlFactories.dbl(value))
-      options.get("overscanRows").foreach(value => DataGrid.overscanRows = ControlFactories.int(value))
-      options.get("prefetchItems").foreach(value => DataGrid.prefetchItems = ControlFactories.int(value))
+      options
+        .get("overscanRows")
+        .foreach(value => DataGrid.overscanRows = ControlFactories.int(value))
+      options
+        .get("prefetchItems")
+        .foreach(value => DataGrid.prefetchItems = ControlFactories.int(value))
       options.get("paging").foreach(value => DataGrid.paging = ControlFactories.bool(value))
       options.get("pageSize").foreach(value => DataGrid.pageSize = ControlFactories.int(value))
       options.get("crawlable").foreach(value => DataGrid.crawlable = ControlFactories.bool(value))
@@ -345,16 +362,22 @@ private[bridge] object VirtualListFactory extends ComponentFactory {
 
     VirtualListView.virtualList[js.Any](src) {
       VirtualListView.cellRenderer = ControlFactories.itemRenderer(cell)
-      options.get("estimateHeightPx").foreach(value =>
-        VirtualListView.estimateHeightPx = ControlFactories.dbl(value)
-      )
-      options.get("overscanPx").foreach(value => VirtualListView.overscanPx = ControlFactories.dbl(value))
-      options.get("prefetchItems").foreach(value =>
-        VirtualListView.prefetchItems = ControlFactories.int(value)
-      )
+      options
+        .get("estimateHeightPx")
+        .foreach(value => VirtualListView.estimateHeightPx = ControlFactories.dbl(value))
+      options
+        .get("overscanPx")
+        .foreach(value => VirtualListView.overscanPx = ControlFactories.dbl(value))
+      options
+        .get("prefetchItems")
+        .foreach(value => VirtualListView.prefetchItems = ControlFactories.int(value))
       options.get("paging").foreach(value => VirtualListView.paging = ControlFactories.bool(value))
-      options.get("pageSize").foreach(value => VirtualListView.pageSize = ControlFactories.int(value))
-      options.get("crawlable").foreach(value => VirtualListView.crawlable = ControlFactories.bool(value))
+      options
+        .get("pageSize")
+        .foreach(value => VirtualListView.pageSize = ControlFactories.int(value))
+      options
+        .get("crawlable")
+        .foreach(value => VirtualListView.crawlable = ControlFactories.bool(value))
       options.get("crawlId").foreach(value => VirtualListView.crawlId = ControlFactories.str(value))
 
       options.get("header").foreach { slot =>

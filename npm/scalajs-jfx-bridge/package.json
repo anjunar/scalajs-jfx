@@ -37,6 +37,7 @@
     "@anjunar/jfx-core": "^3.0.0-SNAPSHOT"
   },
   "dependencies": {
-    "@anjunar/scalajs-lexical": "^1.0.9"
+    "@anjunar/scalajs-lexical": "^1.0.9",
+    "@lexical/markdown": "^0.45.0"
   }
 }

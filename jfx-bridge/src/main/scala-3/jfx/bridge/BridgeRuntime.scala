@@ -9,9 +9,9 @@ import scala.scalajs.js.annotation.JSExportTopLevel
   * }}}
   *
   * Registering the library components here rather than in [[JfxRuntimeBridge]] itself keeps that
-  * class a pure projection of the contract -- no side effects hiding in its constructor -- and keeps
-  * the registration a one-time, load-time fact instead of something every `new JfxRuntimeBridge()`
-  * would repeat.
+  * class a pure projection of the contract -- no side effects hiding in its constructor -- and
+  * keeps the registration a one-time, load-time fact instead of something every
+  * `new JfxRuntimeBridge()` would repeat.
   */
 object BridgeRuntime {
   ComponentRegistry.register("vbox", VBoxFactory)

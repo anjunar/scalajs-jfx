@@ -13,22 +13,23 @@ import jfx.core.state.Property
 import jfx.editor.Editor.*
 import jfx.editor.plugins.*
 import jfx.core.i18n.i18n
-
-import scala.scalajs.js
+import jfx.router.RouteContext
 
 object EditorPage {
-  def render()(using AbstractComponent, Cursor): Unit = {
-    val document = initialDocument()
-    val state    = Property[js.Any | Null](document)
+  def render(context: RouteContext)(using AbstractComponent, Cursor): Unit = {
+    val document    = initialDocument()
+    val state       = Property(document)
+    val editorName  = "article"
+    val ssrEditable = context.queryParams.get(s"$editorName.editor").contains("editable")
 
     Showcase.showcasePage(
       i18n"Editor",
-      i18n"Rich text as lifecycle-bound Lexical JSON in the regular forms contract."
+      i18n"Markdown as the stable editor value in SSR and the browser."
     ) {
       Showcase.sectionIntro(
         i18n"Structured content",
-        i18n"JavaScript JSON, not HTML",
-        i18n"The editor binds Lexical EditorState JSON, renders a semantic SSR preview and activates the interactive surface after hydration."
+        i18n"One Markdown value",
+        i18n"SSR renders Markdown as semantic HTML or a textarea; after hydration Lexical edits the same Markdown value."
       )
 
       Showcase.componentShowcase(
@@ -38,10 +39,11 @@ object EditorPage {
         vbox {
           style { gap = "14px" }
 
-          editor("article", standalone = true) {
+          editor(editorName, standalone = true) {
             classes = Seq("jfx2-demo__lexical")
             placeholder = i18n"Write the article..."
             value = state.get
+            editable = ssrEditable
             ribbonToolbar()
 
             basePlugin()
@@ -58,35 +60,20 @@ object EditorPage {
 
           div {
             classes = Seq("jfx2-demo__note")
-            text(state.map(value => s"Lexical JSON: ${serializedLength(value)} characters")) {}
+            text(state.map(value => s"Markdown: ${value.length} characters")) {}
           }
-        }
-      }
-
-      Showcase.componentShowcase(
-        i18n"Readonly SSR preview",
-        i18n"The same JSON value remains meaningful before JavaScript starts and when editing is disabled."
-      ) {
-        editor("article-preview", standalone = true) {
-          classes = Seq("jfx2-demo__lexical")
-          value = document
-          editable = false
-          basePlugin()
-          headingPlugin()
-          listPlugin()
-          codePlugin()
         }
       }
 
       Showcase.apiSection(
         i18n"Contextual plugin DSL",
-        i18n"Install only the editing capabilities needed by a field; the value remains a JavaScript EditorState object."
+        i18n"Install only the editing capabilities needed by a field; the value remains Markdown."
       ) {
         Showcase.codeBlock(
           "scala",
           """editor("body") {
             |  placeholder = "Write the article..."
-            |  value = lexicalEditorStateJson
+            |  value = markdown
             |  ribbonToolbar()
             |
             |  basePlugin()
@@ -103,58 +90,13 @@ object EditorPage {
     }
   }
 
-  private def serializedLength(value: js.Any | Null): Int =
-    if (value == null || js.isUndefined(value.asInstanceOf[js.Any])) 0
-    else js.JSON.stringify(value).length
-
-  private def initialDocument(): js.Dynamic =
-    js.Dynamic.literal(
-      root = js.Dynamic.literal(
-        `type` = "root",
-        version = 1,
-        indent = 0,
-        format = "",
-        direction = null,
-        children = js.Array[js.Any](
-          js.Dynamic.literal(
-            `type` = "heading",
-            tag = "h2",
-            version = 1,
-            indent = 0,
-            format = "",
-            direction = null,
-            children = js.Array[js.Any](
-              js.Dynamic.literal(
-                `type` = "text",
-                text = "A structured editor",
-                format = 1,
-                detail = 0,
-                mode = "normal",
-                style = "",
-                version = 1
-              )
-            )
-          ),
-          js.Dynamic.literal(
-            `type` = "paragraph",
-            version = 1,
-            indent = 0,
-            format = "",
-            direction = null,
-            children = js.Array[js.Any](
-              js.Dynamic.literal(
-                `type` = "text",
-                text =
-                  "This content is an EditorState JSON object shared by forms, SSR and Lexical.",
-                format = 0,
-                detail = 0,
-                mode = "normal",
-                style = "",
-                version = 1
-              )
-            )
-          )
-        )
-      )
-    )
+  private def initialDocument(): String =
+    """## A structured editor
+      |
+      |This **Markdown** document is shared by forms, SSR and Lexical.
+      |
+      |- Semantic HTML without JavaScript
+      |- A textarea when `?article.editor=editable` is present
+      |- Rich editing after hydration
+      |""".stripMargin
 }

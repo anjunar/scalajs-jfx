@@ -39,7 +39,7 @@ abstract class AbstractComponent
 
   private val baseClasses = mutable.ArrayBuffer.empty[String]
   private val userClasses = mutable.ArrayBuffer.empty[String]
-  private var disposed = false
+  private var disposed    = false
 
   def host: HostElement = _host match {
     case h: HostElement => h
@@ -155,8 +155,7 @@ abstract class AbstractComponent
     catch {
       case error: Throwable =>
         if (firstFailure == null) firstFailure = error
-    }
-    finally {
+    } finally {
       _host = null
       _parent = None
       _mountParentHost = None

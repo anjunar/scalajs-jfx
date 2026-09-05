@@ -22,8 +22,8 @@ final class SsrCursor private (
   override def asyncContext: Option[AsyncRenderContext] =
     currentAsyncContext
 
-  /** Always a real host now -- the nameless [[root]] when nothing else is in scope. That is what lets
-    * `Runtime.detach` remove a node reconciled away at the very top of the tree: before, a
+  /** Always a real host now -- the nameless [[root]] when nothing else is in scope. That is what
+    * lets `Runtime.detach` remove a node reconciled away at the very top of the tree: before, a
     * component whose whole ancestry to the root was virtual (a bridge `BridgeRoot` wrapping a
     * `Router` wrapping a route outlet) had no `_mountParentHost`, so its stale anchors survived
     * into the SSR string and faulted hydration.

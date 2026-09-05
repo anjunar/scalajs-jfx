@@ -138,7 +138,7 @@ object Runtime {
           return Future.failed(error)
       }
 
-    val timeout = Promise[Unit]()
+    val timeout       = Promise[Unit]()
     val timeoutHandle = setTimeout(timeoutMs.toDouble) {
       timeout.tryFailure(new SsrTimeoutException(timeoutMs))
     }

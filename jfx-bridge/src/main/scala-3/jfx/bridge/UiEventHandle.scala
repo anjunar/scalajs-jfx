@@ -23,7 +23,7 @@ final class UiEventHandle(private val underlying: CoreUiEvent) extends js.Object
 
   def target: js.Any = domEvent match {
     case Some(event) => event.target
-    case None         => js.undefined
+    case None        => js.undefined
   }
 
   def preventDefault(): Unit = underlying.preventDefault()
@@ -32,6 +32,6 @@ final class UiEventHandle(private val underlying: CoreUiEvent) extends js.Object
 
   def native: dom.Event = domEvent match {
     case Some(event) => event
-    case None         => null.asInstanceOf[dom.Event]
+    case None        => null.asInstanceOf[dom.Event]
   }
 }

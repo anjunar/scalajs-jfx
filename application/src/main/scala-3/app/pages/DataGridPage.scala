@@ -93,7 +93,8 @@ object DataGridPage {
         )
       },
       initialQuery = initialQuery,
-      underlying = js.Array(allTiles.slice(initialQuery.offset, initialQuery.offset + normalizedPageSize)*),
+      underlying =
+        js.Array(allTiles.slice(initialQuery.offset, initialQuery.offset + normalizedPageSize)*),
       rangeQueryUpdater = Some((_, offset, limit) => TileQuery(offset, math.max(1, limit)))
     )
 

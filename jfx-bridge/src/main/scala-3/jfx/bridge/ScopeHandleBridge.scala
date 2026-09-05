@@ -6,10 +6,7 @@ import jfx.core.dsl.DslLayer
 import jfx.core.i18n.{I18nLocale, I18nRuntime}
 import jfx.core.layout.{Condition, Head, TextComponent}
 import jfx.core.render.Cursor
-import jfx.core.state.{
-  ListProperty => CoreListProperty,
-  ReadOnlyProperty => CoreReadOnlyProperty
-}
+import jfx.core.state.{ListProperty => CoreListProperty, ReadOnlyProperty => CoreReadOnlyProperty}
 import jfx.core.statement.Foreach
 
 import scala.concurrent.ExecutionContext
@@ -100,7 +97,10 @@ final class ScopeHandleBridge(
     DocumentHead.current.map(new DocumentHeadHandleBridge(_)).orNull
   }
 
-  def when(active: JsReadOnlyProperty[Boolean], body: js.Function1[ScopeHandleBridge, Unit]): Unit = {
+  def when(
+      active: JsReadOnlyProperty[Boolean],
+      body: js.Function1[ScopeHandleBridge, Unit]
+  ): Unit = {
     requireActive()
     given AbstractComponent = parent
     given Cursor            = cursor
@@ -128,7 +128,9 @@ final class ScopeHandleBridge(
 
     items match {
       case handle: ListPropertyHandle[?] =>
-        Foreach.foreachIndexed(handle.underlyingList.asInstanceOf[CoreListProperty[js.Any]])(itemBody)
+        Foreach.foreachIndexed(handle.underlyingList.asInstanceOf[CoreListProperty[js.Any]])(
+          itemBody
+        )
       case _ =>
         val itemsAsSeq: CoreReadOnlyProperty[Seq[js.Any]] =
           ReactiveBridge.wrap(items.asInstanceOf[JsReadOnlyProperty[js.Array[js.Any]]]).map(_.toSeq)
@@ -166,9 +168,11 @@ final class ScopeHandleBridge(
     given AbstractComponent = parent
     given Cursor            = cursor
 
-    val factory = ComponentRegistry.get(name).getOrElse(
-      throw new IllegalArgumentException(s"No component is registered under the name '$name'.")
-    )
+    val factory = ComponentRegistry
+      .get(name)
+      .getOrElse(
+        throw new IllegalArgumentException(s"No component is registered under the name '$name'.")
+      )
 
     new ComponentHandleBridge(factory.mount(options, body))
   }

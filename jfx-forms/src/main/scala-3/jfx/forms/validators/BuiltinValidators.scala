@@ -272,8 +272,8 @@ private object ValidatorSupport {
     case value: ZonedDateTime  => Some(value.compareTo(ZonedDateTime.now()))
     case value: Date           => Some(value.compareTo(new Date()))
     // HTML date inputs bind ISO local-date strings through Control[String].
-    case value: String         => Try(LocalDate.parse(value)).toOption.map(_.compareTo(localToday()))
-    case _                     => None
+    case value: String => Try(LocalDate.parse(value)).toOption.map(_.compareTo(localToday()))
+    case _             => None
   }
 
   // The JS host owns the local calendar/time zone. Reading its date components

@@ -1,6 +1,11 @@
 package jfx.control.virtuallist
 
-import jfx.control.virtualized.{CollectionDisplayMode, CrawlableCollection, MeasuredRowGeometry, VirtualizedCollection}
+import jfx.control.virtualized.{
+  CollectionDisplayMode,
+  CrawlableCollection,
+  MeasuredRowGeometry,
+  VirtualizedCollection
+}
 import jfx.core.component.AbstractComponent
 import jfx.core.remote.RemoteSort
 import jfx.core.dsl.ClassDsl.{addClass, classIf, classes}
@@ -354,14 +359,17 @@ object VirtualListView {
   def prefetchItems_=(value: Int)(using list: VirtualListView[?]): Unit =
     list.prefetchItemsProperty.set(math.max(1, value))
 
-  def paging(using list: VirtualListView[?]): Boolean = list.displayModeProperty.get == CollectionDisplayMode.Paging
+  def paging(using list: VirtualListView[?]): Boolean =
+    list.displayModeProperty.get == CollectionDisplayMode.Paging
   def paging_=(value: Boolean)(using list: VirtualListView[?]): Unit =
-    list.displayModeProperty.set(if (value) CollectionDisplayMode.Paging else CollectionDisplayMode.Scrolling)
+    list.displayModeProperty.set(
+      if (value) CollectionDisplayMode.Paging else CollectionDisplayMode.Scrolling
+    )
 
-  def scrolling(using list: VirtualListView[?]): Boolean = !paging
-  def scrolling_=(value: Boolean)(using list: VirtualListView[?]): Unit = paging_=( !value )
+  def scrolling(using list: VirtualListView[?]): Boolean                = !paging
+  def scrolling_=(value: Boolean)(using list: VirtualListView[?]): Unit = paging_=(!value)
 
-  def pageSize(using list: VirtualListView[?]): Int = list.pageSizeProperty.get
+  def pageSize(using list: VirtualListView[?]): Int                = list.pageSizeProperty.get
   def pageSize_=(value: Int)(using list: VirtualListView[?]): Unit =
     list.pageSizeProperty.set(math.max(1, value))
 

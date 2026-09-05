@@ -18,7 +18,9 @@ class I18nFactoriesSpec extends AsyncFlatSpec with Matchers {
 
   private val runtime = BridgeRuntime.bridgeRuntime
 
-  private def render(build: js.Function1[ScopeHandleBridge, Unit]): scala.concurrent.Future[SsrResultHandle] =
+  private def render(
+      build: js.Function1[ScopeHandleBridge, Unit]
+  ): scala.concurrent.Future[SsrResultHandle] =
     runtime.renderToString(build, js.undefined).toFuture
 
   /** The `RuntimeMessageFacade` shape `i18n.ts`'s `` i18n`Hello ${named("name", "Mira")}` ``
@@ -64,7 +66,10 @@ class I18nFactoriesSpec extends AsyncFlatSpec with Matchers {
       scope.component(
         "i18n-provider",
         jsProviderOptions(),
-        (_, inner) => { inner.text(inner.i18nText(jsMessage("name", "Mira").asInstanceOf[RuntimeMessageFacade])); () }
+        (_, inner) => {
+          inner.text(inner.i18nText(jsMessage("name", "Mira").asInstanceOf[RuntimeMessageFacade]));
+          ()
+        }
       )
       ()
     }
@@ -79,7 +84,10 @@ class I18nFactoriesSpec extends AsyncFlatSpec with Matchers {
       scope.component(
         "i18n-provider",
         jsProviderOptions(catalog = catalog, initialUrl = "/de/dashboard"),
-        (_, inner) => { inner.text(inner.i18nText(jsMessage("name", "Mira").asInstanceOf[RuntimeMessageFacade])); () }
+        (_, inner) => {
+          inner.text(inner.i18nText(jsMessage("name", "Mira").asInstanceOf[RuntimeMessageFacade]));
+          ()
+        }
       )
       ()
     }
@@ -88,7 +96,7 @@ class I18nFactoriesSpec extends AsyncFlatSpec with Matchers {
   }
 
   it should "expose the resolved locale and let i18nSetLocale change what i18nText resolves" in {
-    val catalog = js.Array[js.Any](jsCatalogEntry("de" -> "Hallo {name}"))
+    val catalog          = js.Array[js.Any](jsCatalogEntry("de" -> "Hallo {name}"))
     var seenBeforeSwitch = ""
     var textAfterSwitch: ReadOnlyPropertyHandle[String] = null
 
@@ -99,7 +107,8 @@ class I18nFactoriesSpec extends AsyncFlatSpec with Matchers {
         (_, inner) => {
           seenBeforeSwitch = inner.i18nLocale().get
           inner.i18nSetLocale("de")
-          textAfterSwitch = inner.i18nText(jsMessage("name", "Mira").asInstanceOf[RuntimeMessageFacade])
+          textAfterSwitch =
+            inner.i18nText(jsMessage("name", "Mira").asInstanceOf[RuntimeMessageFacade])
           ()
         }
       )

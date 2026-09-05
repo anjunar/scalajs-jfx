@@ -21,7 +21,9 @@ class JfxRuntimeBridgeSpec extends AsyncFlatSpec with Matchers {
 
   private val runtime = BridgeRuntime.bridgeRuntime
 
-  private def render(build: js.Function1[ScopeHandleBridge, Unit]): scala.concurrent.Future[SsrResultHandle] =
+  private def render(
+      build: js.Function1[ScopeHandleBridge, Unit]
+  ): scala.concurrent.Future[SsrResultHandle] =
     runtime.renderToString(build, js.undefined).toFuture
 
   "renderToString" should "mount a generic element, a library component and reactive text" in {
@@ -171,8 +173,7 @@ class JfxRuntimeBridgeSpec extends AsyncFlatSpec with Matchers {
     }
 
     val routes = js.Array[js.Any](
-      jsRoute("/", home),
-      {
+      jsRoute("/", home), {
         val route = jsRoute("/404", notFound)
         route("status") = 404
         route
@@ -264,7 +265,7 @@ class JfxRuntimeBridgeSpec extends AsyncFlatSpec with Matchers {
   "the table-view facade" should "render one row per item of a local source, with cell renderers" in {
     val books = runtime.listProperty[js.Any](
       js.Array(
-        js.Dictionary[js.Any]("title" -> "1984", "author" -> "Orwell"),
+        js.Dictionary[js.Any]("title" -> "1984", "author"       -> "Orwell"),
         js.Dictionary[js.Any]("title" -> "Siddhartha", "author" -> "Hesse")
       )
     )
@@ -276,7 +277,7 @@ class JfxRuntimeBridgeSpec extends AsyncFlatSpec with Matchers {
           "source"    -> books,
           "crawlable" -> true,
           "crawlId"   -> "books",
-          "columns" -> js.Array[js.Any](
+          "columns"   -> js.Array[js.Any](
             column("Title", row => row.asInstanceOf[js.Dictionary[String]]("title")),
             column("Author", row => row.asInstanceOf[js.Dictionary[String]]("author"))
           )
@@ -307,9 +308,9 @@ class JfxRuntimeBridgeSpec extends AsyncFlatSpec with Matchers {
     )
 
     val remoteSource = js.Dictionary[js.Any](
-      "load"         -> (((_: js.Any) => js.Promise.resolve[js.Any](page)): js.Function1[js.Any, js.Any]),
+      "load" -> (((_: js.Any) => js.Promise.resolve[js.Any](page)): js.Function1[js.Any, js.Any]),
       "initialQuery" -> js.Dictionary[js.Any]("offset" -> 0, "limit" -> 50),
-      "initial" -> js.Array[js.Any](
+      "initial"      -> js.Array[js.Any](
         js.Dictionary[js.Any]("title" -> "Remote One"),
         js.Dictionary[js.Any]("title" -> "Remote Two")
       ),
@@ -323,7 +324,7 @@ class JfxRuntimeBridgeSpec extends AsyncFlatSpec with Matchers {
           "source"    -> remoteSource,
           "crawlable" -> true,
           "crawlId"   -> "remote",
-          "columns" -> js.Array[js.Any](
+          "columns"   -> js.Array[js.Any](
             column("Title", row => row.asInstanceOf[js.Dictionary[String]]("title"))
           )
         ),
@@ -396,7 +397,11 @@ class JfxRuntimeBridgeSpec extends AsyncFlatSpec with Matchers {
         (_, viewportScope) => {
           viewportScope.component(
             "window",
-            js.Dictionary[js.Any]("title" -> "A room for thoughts", "widthPx" -> 400, "heightPx" -> 300),
+            js.Dictionary[js.Any](
+              "title"    -> "A room for thoughts",
+              "widthPx"  -> 400,
+              "heightPx" -> 300
+            ),
             (_, windowScope) => { windowScope.text("window body"); () }
           )
           ()
@@ -468,9 +473,9 @@ class JfxRuntimeBridgeSpec extends AsyncFlatSpec with Matchers {
   }
 
   "property" should "notify observers and expose the live value through get" in {
-    val prop      = runtime.property[Int](1)
-    var observed  = Vector.empty[Int]
-    val handle    = prop.observe(value => observed = observed :+ value)
+    val prop     = runtime.property[Int](1)
+    var observed = Vector.empty[Int]
+    val handle   = prop.observe(value => observed = observed :+ value)
 
     prop.set(2)
     prop.set(3)

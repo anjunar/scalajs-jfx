@@ -1,6 +1,11 @@
 package jfx.control.datagrid
 
-import jfx.control.virtualized.{CollectionDisplayMode, CrawlableCollection, GridGeometry, VirtualizedCollection}
+import jfx.control.virtualized.{
+  CollectionDisplayMode,
+  CrawlableCollection,
+  GridGeometry,
+  VirtualizedCollection
+}
 import jfx.control.datagrid.DataGrid
 import jfx.core.component.AbstractComponent
 import jfx.core.remote.RemoteSort
@@ -248,7 +253,7 @@ final class DataGrid[T] private (
               }
             }
           }
-      }
+        }
 
       }
 
@@ -310,10 +315,10 @@ final class DataGrid[T] private (
   }
 
   private def cellFor(index: Int): DataGrid.VisibleCell[T] = {
-    val columns = columnCount
+    val columns    = columnCount
     val localIndex = layoutIndex(index)
-    val row     = localIndex / columns
-    val column  = localIndex % columns
+    val row        = localIndex / columns
+    val column     = localIndex % columns
     DataGrid.VisibleCell(
       index = index,
       item = itemAt(index),
@@ -425,14 +430,17 @@ object DataGrid {
   def prefetchItems_=(value: Int)(using grid: DataGrid[?]): Unit =
     grid.prefetchItemsProperty.set(math.max(1, value))
 
-  def paging(using grid: DataGrid[?]): Boolean = grid.displayModeProperty.get == CollectionDisplayMode.Paging
+  def paging(using grid: DataGrid[?]): Boolean =
+    grid.displayModeProperty.get == CollectionDisplayMode.Paging
   def paging_=(value: Boolean)(using grid: DataGrid[?]): Unit =
-    grid.displayModeProperty.set(if (value) CollectionDisplayMode.Paging else CollectionDisplayMode.Scrolling)
+    grid.displayModeProperty.set(
+      if (value) CollectionDisplayMode.Paging else CollectionDisplayMode.Scrolling
+    )
 
-  def scrolling(using grid: DataGrid[?]): Boolean = !paging
-  def scrolling_=(value: Boolean)(using grid: DataGrid[?]): Unit = paging_=( !value )
+  def scrolling(using grid: DataGrid[?]): Boolean                = !paging
+  def scrolling_=(value: Boolean)(using grid: DataGrid[?]): Unit = paging_=(!value)
 
-  def pageSize(using grid: DataGrid[?]): Int = grid.pageSizeProperty.get
+  def pageSize(using grid: DataGrid[?]): Int                = grid.pageSizeProperty.get
   def pageSize_=(value: Int)(using grid: DataGrid[?]): Unit =
     grid.pageSizeProperty.set(math.max(1, value))
 

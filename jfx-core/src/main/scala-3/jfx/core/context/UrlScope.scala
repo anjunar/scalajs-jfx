@@ -5,8 +5,8 @@ import jfx.core.di.Context
 
 /** The URL and navigation operation belonging to the currently rendered route.
   *
-  * This is deliberately smaller than a router API. Controls can keep their state in the address
-  * bar without depending on jfx-router, while an application without a router can provide its own
+  * This is deliberately smaller than a router API. Controls can keep their state in the address bar
+  * without depending on jfx-router, while an application without a router can provide its own
   * implementation.
   */
 trait UrlScope {
@@ -26,7 +26,7 @@ object UrlScope {
 
   def apply(currentUrl: () => String)(navigateTo: (String, Boolean) => Unit): UrlScope =
     new UrlScope {
-      override def url: String = currentUrl()
+      override def url: String                                   = currentUrl()
       override def navigate(url: String, replace: Boolean): Unit = navigateTo(url, replace)
     }
 }

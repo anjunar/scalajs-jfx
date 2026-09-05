@@ -51,10 +51,10 @@ class BuiltinValidatorsSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "validate HTML date input strings with local-date boundaries" in {
-    val now = new js.Date()
+    val now   = new js.Date()
     val today = LocalDate.of(now.getFullYear().toInt, now.getMonth().toInt + 1, now.getDate().toInt)
-    val yesterday = today.minusDays(1).toString
-    val tomorrow = today.plusDays(1).toString
+    val yesterday  = today.minusDays(1).toString
+    val tomorrow   = today.plusDays(1).toString
     val validators = Seq(
       (PastValidator[String](), Seq(true, false, false)),
       (PastOrPresentValidator[String](), Seq(true, true, false)),

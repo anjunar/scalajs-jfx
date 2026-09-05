@@ -1,8 +1,11 @@
 # @anjunar/jfx-editor
 
-A Lexical-backed rich-text field for JFX3, bound by name like `input`. The
-value is Lexical `EditorState` JSON as a plain JavaScript object -- neither
-HTML nor a string serialization.
+A Lexical-backed rich-text field for JFX3, bound by name like `input`.
+Markdown is its public value in SSR and in the browser; Lexical `EditorState`
+JSON remains internal.
+
+The TypeScript API exports `Markdown` as the documented alias for that public
+string value. Forms still bind it as an ordinary `Property<string>`.
 
 Like every package in the family, this is **types and ergonomics, not a
 framework**. Rendering, the SSR preview, hydration and the Lexical surface
@@ -26,7 +29,7 @@ import { viewport } from "@anjunar/jfx-viewport";
 
 const model = {
   title: property(""),
-  body: property<unknown>(null),
+  body: property("## Article\n\nStart writing here."),
 };
 
 // link/image plugins open a Viewport window, so an editor using either one
@@ -58,21 +61,51 @@ control).
 
 | `EditorPluginName` | Adds |
 | --- | --- |
-| `"base"` | The default toolbar group: bold, italic, underline, strikethrough, inline code. Rich text itself (typing, marks) works even with **no** plugins at all -- `LexicalRichText` is always registered; plugins add toolbar buttons and node types on top of it. |
+| `"base"` | The default toolbar group: bold, italic, underline, strikethrough, inline code. Rich text itself (typing, marks) works even with **no** plugins at all -- `LexicalRichText` is always registered. |
 | `"heading"` | H1-H3 blocks and a quote block. |
 | `"list"` | Bulleted and numbered lists. |
 | `"link"` | Inline links, inserted through a dialog. Needs a `viewport(...)` ancestor. |
 | `"image"` | Inline images, inserted through a dialog with a live preview. Needs a `viewport(...)` ancestor. |
-| `"table"` | A basic table node. |
-| `"code"` | A code block. |
-| `"horizontalRule"` | A horizontal rule block. |
+| `"table"` | Basic GFM table insertion and table commands. |
+| `"code"` | Code-block insertion and the CodeMirror editing surface. |
+| `"horizontalRule"` | A horizontal-rule insertion command. |
 
-An editor with no `plugins` renders no toolbar and stays a plain rich-text
-field -- opt into each capability explicitly.
+An editor with no `plugins` renders no toolbar. Markdown nodes are still
+registered for import/export, so omitting a toolbar plugin does not silently
+discard content from the public value.
+
+## Markdown contract
+
+The value uses CommonMark-shaped Markdown plus basic GFM pipe tables. Supported
+blocks are headings, paragraphs, block quotes, ordered/unordered lists, fenced
+code blocks, horizontal rules, images and tables. Supported inline syntax is
+emphasis, strong, strike-through, highlight (`==text==`), inline code, links
+(including optional titles) and images. Underline uses the explicit project
+extension `++text++`.
+
+Images may use the explicit project extension `![alt](url){width=320}`. Table
+alignment, captions, multiline cells, nested tables, arbitrary HTML and other
+extension data are not represented. Raw HTML is escaped as text. The same safe URL policy is used
+by SSR and the browser: `http(s)`, `mailto`, `tel` and relative URLs are
+allowed, while executable, data (except raster base64 image data), file, blob
+and unknown schemes are rejected. Lexical `EditorState`/node JSON never becomes
+part of the public Markdown value.
 
 ## Options
 
+- **`value`** -- initial Markdown for a standalone editor; a form binding wins.
 - **`placeholder`** -- shown while the value is empty.
+- **`editable`** -- SSR renders a Markdown textarea when true and semantic
+  readonly HTML when false.
+- **`editUrl`** -- optional URL override for the JavaScript-independent Edit
+  link in readonly mode. By default the editor name is reused as
+  `name.editor=editable`; the current `UrlScope` path and its other URL parts
+  are retained. Without a URL scope it falls back to `?name.editor=editable`;
+  **`editLabel`** defaults to `"Edit"`.
+- **`readonlyUrl`** -- optional URL for a JavaScript-independent Readonly link
+  in editable SSR mode. It follows the same URL rule with
+  `name.editor=readonly`;
+  **`readonlyLabel`** defaults to `"Readonly"`.
 - **`toolbarMode`** -- `"ribbon"` (default), `"menu"`, or `"floating"`
   (a selection-anchored floating toolbar instead of a fixed one).
 - **`standalone`** -- skips registration with the enclosing form context, for

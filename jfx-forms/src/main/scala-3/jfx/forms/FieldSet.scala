@@ -36,7 +36,7 @@ class FieldSet(val name: String) extends AbstractComponent, Control[Unit], FormC
       field.errors.clear()
       field match {
         case nested: FormController => nested.clearErrors()
-        case _                => ()
+        case _                      => ()
       }
     }
 
@@ -63,7 +63,7 @@ class FieldSet(val name: String) extends AbstractComponent, Control[Unit], FormC
       .foreach { case (fieldName, fieldErrors) =>
         fields.get(fieldName).foreach {
           case nested: FormController => nested.setErrorResponses(fieldErrors.map(_.withoutHead))
-          case field               => field.errors.setAll(fieldErrors.map(_.message))
+          case field                  => field.errors.setAll(fieldErrors.map(_.message))
         }
       }
 

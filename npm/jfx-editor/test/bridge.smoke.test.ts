@@ -62,38 +62,9 @@ describe("the linked runtime", () => {
   });
 });
 
-// A minimal, hand-built Lexical `EditorState` JSON document -- one paragraph,
-// one text run. Every field here is one `importJSON` on the matching Lexical
-// node type actually reads; this is not the semantic preview shape
-// `EditorPreview` (in `jfx-editor`) invents for SSR, it is what the real
-// Lexical runtime `editor.setEditorState` expects.
-function paragraphDocument(text: string): unknown {
-  return {
-    root: {
-      type: "root",
-      version: 1,
-      indent: 0,
-      format: "",
-      direction: null,
-      children: [
-        {
-          type: "paragraph",
-          version: 1,
-          indent: 0,
-          format: "",
-          direction: null,
-          children: [
-            { type: "text", version: 1, format: 0, mode: "normal", detail: 0, style: "", text },
-          ],
-        },
-      ],
-    },
-  };
-}
-
 describe("form + editor", () => {
-  it("mounts the initial model value into the live Lexical surface", () => {
-    const model = { body: property<unknown>(paragraphDocument("Hello world")) };
+  it("imports the initial Markdown value into the live Lexical surface", () => {
+    const model = { body: property("## Hello **world**") };
     const root = document.createElement("div");
     document.body.appendChild(root);
 
@@ -107,12 +78,13 @@ describe("form + editor", () => {
 
     const surface = root.querySelector(".jfx-editor__surface");
     expect(surface?.textContent).toBe("Hello world");
+    expect(model.body.get).toBe("## Hello **world**");
 
     app.dispose();
   });
 
   it("reflects an external model update in the live surface", () => {
-    const model = { body: property<unknown>(paragraphDocument("Hello world")) };
+    const model = { body: property("Hello world") };
     const root = document.createElement("div");
     document.body.appendChild(root);
 
@@ -124,7 +96,7 @@ describe("form + editor", () => {
       });
     });
 
-    model.body.set(paragraphDocument("Updated text"));
+    model.body.set("### Updated text");
 
     const surface = root.querySelector(".jfx-editor__surface");
     expect(surface?.textContent).toBe("Updated text");
@@ -133,7 +105,7 @@ describe("form + editor", () => {
   });
 
   it("renders and hydrates, matching the SSR preview in the live surface", async () => {
-    const model = { body: property<unknown>(paragraphDocument("Hello world")) };
+    const model = { body: property("Hello **world**") };
     const build = (): void => {
       viewport(() => {
         form(model, {}, () => {
@@ -143,28 +115,122 @@ describe("form + editor", () => {
     };
 
     const rendered = await renderToString(build);
-    expect(rendered.html).toContain("Hello world");
+    expect(rendered.html).toContain("<textarea");
+    expect(rendered.html).toContain("Hello **world**");
 
     const root = document.createElement("div");
     root.innerHTML = rendered.html;
     document.body.appendChild(root);
 
-    // Regression: `registerWithForm()` used to run after the tree containing
-    // `dynamic(valueProperty.map(...))` (the SSR preview) was already built,
-    // so that first render saw the constructor's `Property(null)` instead of
-    // the value bound from the model. A live `mount()`/SSR self-heals
-    // because the resulting reactive `replace()` still lands inside the same
-    // synchronous compose call, but `HydratingCursor` claims once per
-    // position against the *settled* SSR markup, and threw "Server-rendered
-    // nodes were not claimed by the client component tree." Fixed by binding
-    // before building the tree (`Editor.compose`), the same "no property a
-    // dynamic()/when() branch reads may change after that branch already
-    // rendered once" shape as Lauf 5's window/notification fix and Lauf 6's
-    // `ArrayForm` renderer fix.
+    // Hydration first claims the textarea emitted by SSR. `afterCompose` then
+    // progressively enhances it to Lexical without changing the Markdown
+    // value stored in the form model.
     const app = await hydrate(root, build);
 
     const surface = root.querySelector(".jfx-editor__surface");
     expect(surface?.textContent).toBe("Hello world");
+
+    app.dispose();
+  });
+
+  it("round-trips the project nodes through the public Markdown value", () => {
+    const markdown = [
+      "# Article",
+      "",
+      "![Preview](https://example.test/image.png){width=42}",
+      "",
+      "| Name | Value |",
+      "| --- | --- |",
+      "| **answer** | [source](https://example.test) |",
+      "",
+      "```scala",
+      "val answer = 42",
+      "```",
+      "",
+      "---",
+    ].join("\n");
+    const model = { body: property(markdown) };
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const app = mount(root, () => {
+      viewport(() => {
+        form(model, {}, () => {
+          editor("body", {
+            plugins: ["image", "table", "code", "horizontalRule"],
+          });
+        });
+      });
+    });
+
+    expect(root.querySelector("img")?.getAttribute("style")).toContain("max-width: 42px");
+    expect(root.querySelector("table")).not.toBeNull();
+    expect(root.querySelector(".codemirror-container")).not.toBeNull();
+    expect(root.querySelector("hr")).not.toBeNull();
+    expect(model.body.get).toBe(markdown);
+
+    model.body.set("![Updated](https://example.test/updated.png){width=17}");
+    expect(root.querySelector("img")?.getAttribute("alt")).toBe("Updated");
+    expect(root.querySelector("img")?.getAttribute("style")).toContain("max-width: 17px");
+
+    app.dispose();
+  });
+
+  it("renders semantic readonly Markdown and an edit URL during SSR", async () => {
+    const rendered = await renderToString(() => {
+      viewport(() => {
+        editor("body", {
+          standalone: true,
+          value: "## Hello **world** ++underlined++ ==marked==",
+          editable: false,
+        });
+      });
+    });
+
+    expect(rendered.html).toContain('<h2 class="lexical-heading-h2">');
+    expect(rendered.html).toContain("<strong>world</strong>");
+    expect(rendered.html).toContain("<u>underlined</u>");
+    expect(rendered.html).toContain("<mark>marked</mark>");
+    expect(rendered.html).toContain('href="?body.editor=editable"');
+    expect(rendered.html).not.toContain("<textarea");
+  });
+
+  it("renders the Markdown value in a textarea during editable SSR", async () => {
+    const rendered = await renderToString(() => {
+      viewport(() => {
+        editor("body", {
+          standalone: true,
+          value: "## Hello **world**",
+          editable: true,
+        });
+      });
+    });
+
+    expect(rendered.html).toContain("<textarea");
+    expect(rendered.html).toContain("## Hello **world**");
+    expect(rendered.html).toContain('href="?body.editor=readonly"');
+    expect(rendered.html).not.toContain("<h2");
+  });
+
+  it("does not create executable links or images in the live surface", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const app = mount(root, () => {
+      viewport(() =>
+        editor("body", {
+          standalone: true,
+          value:
+            "[bad](javascript:alert(1)) [also-bad](data:text/html;base64,PHNjcmlwdD4=) " +
+            "![bad](data:image/svg+xml;base64,PHN2Zz4=)",
+        })
+      );
+    });
+
+    expect(root.querySelector('a[href^="javascript:"]')).toBeNull();
+    expect(root.querySelector('a[href^="data:"]')).toBeNull();
+    expect(root.querySelector('img[src^="data:"]')).toBeNull();
+    expect(root.textContent).toContain("bad");
 
     app.dispose();
   });
