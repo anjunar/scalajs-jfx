@@ -18,6 +18,7 @@
  */
 import { component } from "@anjunar/jfx-core";
 import { defined } from "./internal.js";
+import { formSchemaOf } from "./validators.js";
 import type { FormModel } from "./form.js";
 import type { FormSchema } from "./validators.js";
 
@@ -28,11 +29,18 @@ export interface SubFormOptions {
 }
 
 /** Mounts a nested form named `name`, over `model`. */
-export function subForm<M extends FormModel>(
+export function subForm<M extends FormModel>(name: string, model: M, options: SubFormOptions, content: () => void): void;
+export function subForm<M extends object>(name: string, model: M, content: () => void): void;
+export function subForm<M extends object>(name: string, model: M, options: SubFormOptions, content: () => void): void;
+export function subForm<M extends object>(
   name: string,
   model: M,
-  options: SubFormOptions,
-  content: () => void
+  optionsOrContent: SubFormOptions | (() => void),
+  maybeContent?: () => void,
 ): void {
-  component("sub-form", defined({ name, model, ...options }), content);
+  const options = typeof optionsOrContent === "function" ? {} : optionsOrContent;
+  const content = typeof optionsOrContent === "function" ? optionsOrContent : maybeContent;
+  if (content === undefined) throw new TypeError("subForm requires a content callback");
+  const schema = options.schema ?? formSchemaOf((model as { constructor: new () => object }).constructor);
+  component("sub-form", defined({ name, model, ...options, schema }), content);
 }

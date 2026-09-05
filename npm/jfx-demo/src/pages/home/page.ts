@@ -4,7 +4,7 @@ import { routerLink } from "@anjunar/jfx-router";
 import { translated } from "../../app/i18n.js";
 
 export interface PackageTile {
-  readonly id: "core" | "controls" | "forms" | "editor" | "viewport" | "router";
+  readonly id: "core" | "controls" | "forms" | "editor" | "viewport" | "router" | "json";
   readonly name: string;
   readonly blurb: string;
   readonly entryPath: string;
@@ -46,6 +46,12 @@ export const packageTiles: readonly PackageTile[] = [
     name: "@anjunar/jfx-router",
     blurb: "Client-side routing: links, a nested outlet, params, constraints, async loaders.",
     entryPath: "/router/links",
+  },
+  {
+    id: "json",
+    name: "@anjunar/jfx-json",
+    blurb: "Schema-driven JSON mapping for TypeScript models, including IDs and nested state.",
+    entryPath: "/json/mapper",
   },
 ];
 

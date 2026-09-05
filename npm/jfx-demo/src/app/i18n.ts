@@ -21,6 +21,7 @@ import { entries as coreAsync } from "../pages/core-async/translations.js";
 import { entries as coreElements } from "../pages/core-elements/translations.js";
 import { entries as coreLifecycle } from "../pages/core-lifecycle/translations.js";
 import { entries as coreTodos } from "../pages/core-todos/translations.js";
+import { entries as jsonMapper } from "../pages/json-mapper/translations.js";
 import { entries as controlsTabs } from "../pages/controls-tabs/translations.js";
 import { entries as controlsTable } from "../pages/controls-table/translations.js";
 import { entries as controlsCarousel } from "../pages/controls-carousel/translations.js";
@@ -69,6 +70,7 @@ export const catalog: readonly CatalogEntry[] = mergeCatalog(
   coreElements,
   coreLifecycle,
   coreTodos,
+  jsonMapper,
   controlsTabs,
   controlsTable,
   controlsCarousel,

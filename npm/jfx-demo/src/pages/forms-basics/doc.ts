@@ -8,7 +8,7 @@ export function formsBasicsDoc(): void {
   docPage(
     {
       title: "Form and model",
-      summary: "form(), input(), inputContainer(): a FormModel of Property/ListProperty fields, bound to controls by name.",
+      summary: "form(), input(), inputContainer(): a decorated FormModel of Property/ListProperty fields, bound to controls by name.",
     },
     () => {
       example({ code: snippet }, () => {

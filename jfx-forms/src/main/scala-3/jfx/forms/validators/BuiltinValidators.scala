@@ -3,6 +3,7 @@ package jfx.forms.validators
 import java.time.{Instant, LocalDate, LocalDateTime, OffsetDateTime, ZonedDateTime}
 import java.util.Date
 import scala.scalajs.js
+import scala.util.Try
 import scala.util.matching.Regex
 
 final case class NotNullValidator[V](message: String = "Must not be null") extends Validator[V] {
@@ -254,22 +255,32 @@ private object ValidatorSupport {
       inclusive: Boolean,
       message: String
   ): Option[String] =
-    if (candidate == null) None
+    if (candidate == null || candidate == "") None
     else
       temporalComparison(candidate) match {
         case Some(comparison) if accepted(comparison, isPast, inclusive) => None
         case Some(_)                                                     => Some(message)
+        case None if candidate.isInstanceOf[String]                      => Some(message)
         case None                                                        => None
       }
 
   private def temporalComparison(candidate: Any): Option[Int] = candidate match {
     case value: Instant        => Some(value.compareTo(Instant.now()))
-    case value: LocalDate      => Some(value.compareTo(LocalDate.now()))
+    case value: LocalDate      => Some(value.compareTo(localToday()))
     case value: LocalDateTime  => Some(value.compareTo(LocalDateTime.now()))
     case value: OffsetDateTime => Some(value.compareTo(OffsetDateTime.now()))
     case value: ZonedDateTime  => Some(value.compareTo(ZonedDateTime.now()))
     case value: Date           => Some(value.compareTo(new Date()))
+    // HTML date inputs bind ISO local-date strings through Control[String].
+    case value: String         => Try(LocalDate.parse(value)).toOption.map(_.compareTo(localToday()))
     case _                     => None
+  }
+
+  // The JS host owns the local calendar/time zone. Reading its date components
+  // avoids requiring a separate IANA time-zone database for date-only comparisons.
+  private def localToday(): LocalDate = {
+    val now = new js.Date()
+    LocalDate.of(now.getFullYear().toInt, now.getMonth().toInt + 1, now.getDate().toInt)
   }
 
   private def accepted(comparison: Int, isPast: Boolean, inclusive: Boolean): Boolean =

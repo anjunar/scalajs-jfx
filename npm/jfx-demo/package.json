@@ -24,6 +24,7 @@
     "@anjunar/jfx-core": "*",
     "@anjunar/jfx-editor": "*",
     "@anjunar/jfx-forms": "*",
+    "@anjunar/jfx-json": "*",
     "@anjunar/jfx-router": "*",
     "@anjunar/jfx-viewport": "*",
     "@anjunar/scalajs-jfx": "*",

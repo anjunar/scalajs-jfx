@@ -72,6 +72,13 @@ jobs:
         working-directory: npm/jfx-core
         run: npm run verify
 
+      # The JSON mapper is a pure TypeScript package. Its packed consumer test
+      # verifies the public schema/mapper API without requiring the Scala.js
+      # bridge.
+      - name: jfx-json -- typecheck, unit tests, consumer test
+        working-directory: npm/jfx-json
+        run: npm run verify
+
       # The router facade: typecheck, the bridge smoke test (mount / SSR /
       # hydrate / routerLink navigation / 404 forward), and its own tarball
       # consumer test over all three packages. No stub half -- the stub knows

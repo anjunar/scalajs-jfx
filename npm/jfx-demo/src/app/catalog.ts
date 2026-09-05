@@ -15,6 +15,7 @@ import { coreAsyncDoc } from "../pages/core-async/doc.js";
 import { coreElementsDoc } from "../pages/core-elements/doc.js";
 import { coreLifecycleDoc } from "../pages/core-lifecycle/doc.js";
 import { coreTodosDoc } from "../pages/core-todos/doc.js";
+import { jsonMapperDoc } from "../pages/json-mapper/doc.js";
 import { controlsTabsDoc } from "../pages/controls-tabs/doc.js";
 import { controlsTableDoc } from "../pages/controls-table/doc.js";
 import { controlsCarouselDoc } from "../pages/controls-carousel/doc.js";
@@ -44,7 +45,7 @@ import { pageManifest } from "./page-manifest.js";
  * overview, search, the 404 page) -- everything else is one of the five
  * npm/jfx-* family packages this project documents.
  */
-export type PackageId = "frame" | "core" | "controls" | "forms" | "editor" | "viewport" | "router";
+export type PackageId = "frame" | "core" | "controls" | "forms" | "editor" | "viewport" | "router" | "json";
 
 export interface PackageInfo {
   readonly id: PackageId;
@@ -103,6 +104,14 @@ const catalogEntries: readonly DocEntry[] = [
     pkg: "core",
     keywords: ["property", "state", "map", "text"],
     doc: coreStateDoc,
+  },
+  {
+    path: "/json/mapper",
+    title: "Schema-driven JSON mapping",
+    summary: "Decorators and JsonMapper map a TypeScript class with renamed fields, IDs and ListProperty values.",
+    pkg: "json",
+    keywords: ["json", "JsonMapper", "JsonSchema", "serialize", "deserialize", "ListProperty"],
+    doc: jsonMapperDoc,
   },
   {
     path: "/core/derived",
@@ -210,7 +219,7 @@ const catalogEntries: readonly DocEntry[] = [
   {
     path: "/forms/basics",
     title: "Form and model",
-    summary: "A FormModel of Property fields, bound to controls by name.",
+    summary: "A decorated FormModel of Property fields, bound to controls by name.",
     pkg: "forms",
     keywords: ["form", "input", "inputContainer", "model"],
     doc: formsBasicsDoc,
@@ -246,7 +255,7 @@ const catalogEntries: readonly DocEntry[] = [
   {
     path: "/forms/validation",
     title: "Validators",
-    summary: "All 22 built-in validators, one field each -- a TS-native schema, not a ported reimplementation.",
+    summary: "All 22 built-in validators, one field each -- TypeScript decorators become annotations for the unchanged Scala validator runtime.",
     pkg: "forms",
     keywords: ["validators", "schema", "notBlank", "email", "size", "pattern"],
     doc: formsValidationDoc,

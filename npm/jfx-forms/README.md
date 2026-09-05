@@ -25,12 +25,12 @@ built by a Scala-3 macro over an actual case class
 TypeScript, and no case class behind a plain TS object to read annotations
 from.
 
-So a form model here is **not** a plain value object -- it is a
-`Record<string, Property<T> | ListProperty<T>>`: one bridge `Property`/
-`ListProperty` handle per bindable field, from `runtime.property(...)`/
-`runtime.listProperty(...)`. A control's model property is found by *name*
-directly in that record, not through reflection, and validators come from a
-`schema` you write next to the model instead of case-class annotations:
+So a form model here is **not** a plain value object -- it is a class or
+record containing one bridge `Property<T>`/`ListProperty<T>` handle per
+bindable field, from `runtime.property(...)`/`runtime.listProperty(...)`. A
+control's model property is found by *name* directly in that object. Decorated
+class models carry their validator metadata with the fields, so `form` can
+infer the schema without a separate `schema` object:
 
 ```ts
 import { property } from "@anjunar/jfx-core";
@@ -51,11 +51,38 @@ form(
 );
 ```
 
+The annotation-style API uses real TypeScript classes and returns the same
+model instance to the form:
+
+```ts
+import { property } from "@anjunar/jfx-core";
+import { Email, form, NotBlank, input } from "@anjunar/jfx-forms";
+
+class AccountModel {
+  @NotBlank()
+  readonly name = property("");
+
+  @Email()
+  readonly email = property("");
+}
+
+const model = new AccountModel();
+form(model, () => {
+  input("name");
+  input("email", { type: "email" });
+});
+```
+
+Enable TypeScript's `experimentalDecorators` option for this syntax. The
+explicit `{ schema }` form remains available for plain records and for cases
+where the validator list is assembled dynamically.
+
 `form(...)` returns a `FormHandle`. Keep it when a submit action needs to call
 `validate()`, inspect `validateBindings()`, apply `setErrorResponses(...)`, or
 clear errors with `clearErrors()`.
 
-`notNull()`/`size(...)`/`email()` build the exact `{ name, parameters }` shape
+`notNull()`/`size(...)`/`email()` and their decorator counterparts (`@NotNull()`/
+`@Size(...)`/`@Email()`) build the exact `{ name, parameters }` shape
 `reflect.Annotation` already has -- `FormFactories.schemaFrom` (in
 `jfx-bridge`) turns them into real `Annotation`s that the same, unmodified
 `ValidatorFactory`/`BuiltinValidators` consume. **No validator logic is

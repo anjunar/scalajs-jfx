@@ -20,6 +20,7 @@ import { coreDerivedPage } from "../pages/core-derived/page.js";
 import { coreElementsPage } from "../pages/core-elements/page.js";
 import { coreLifecyclePage } from "../pages/core-lifecycle/page.js";
 import { coreStatePage } from "../pages/core-state/page.js";
+import { jsonMapperPage } from "../pages/json-mapper/page.js";
 import { editorBasicsPage } from "../pages/editor-basics/page.js";
 import { formsBasicsPage } from "../pages/forms-basics/page.js";
 import { formsComboBoxPage } from "../pages/forms-combo-box/page.js";
@@ -29,7 +30,7 @@ import { formsValidationPage } from "../pages/forms-validation/page.js";
 import { viewportNotificationPage } from "../pages/viewport-notification/page.js";
 import { viewportOverlayPage } from "../pages/viewport-overlay/page.js";
 import { viewportWindowPage } from "../pages/viewport-window/page.js";
-type LibraryPackageId = "core" | "controls" | "forms" | "editor" | "viewport" | "router";
+type LibraryPackageId = "core" | "controls" | "forms" | "editor" | "viewport" | "router" | "json";
 
 export type PageRuntime = "stub" | "bridge";
 
@@ -46,6 +47,7 @@ export interface PageDefinition {
 const withViewport = (body: PageBody): void => viewport(body);
 
 export const pageManifest: readonly PageDefinition[] = [
+  { id: "json-mapper", path: "/json/mapper", title: "Schema-driven JSON mapping", pkg: "json", runtime: "stub", render: jsonMapperPage },
   { id: "core-state", path: "/core/state", title: "Property", pkg: "core", runtime: "stub", render: coreStatePage },
   { id: "core-derived", path: "/core/derived", title: "Derived state", pkg: "core", runtime: "stub", render: coreDerivedPage },
   { id: "core-control-flow", path: "/core/control-flow", title: "when and forEach", pkg: "core", runtime: "stub", render: coreControlFlowPage },

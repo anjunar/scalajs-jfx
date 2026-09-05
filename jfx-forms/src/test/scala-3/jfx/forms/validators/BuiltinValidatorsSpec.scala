@@ -1,9 +1,10 @@
 package jfx.forms.validators
 
-import java.time.Instant
+import java.time.{Instant, LocalDate}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import reflect.Annotation
+import scala.scalajs.js
 
 class BuiltinValidatorsSpec extends AnyFlatSpec with Matchers {
 
@@ -47,6 +48,29 @@ class BuiltinValidatorsSpec extends AnyFlatSpec with Matchers {
     PastValidator[Instant]().validate(Instant.now().minusSeconds(10)) shouldBe None
     FutureValidator[Instant]().validate(Instant.now().plusSeconds(10)) shouldBe None
     PastValidator[Instant]().validate(Instant.now().plusSeconds(10)) should not be empty
+  }
+
+  it should "validate HTML date input strings with local-date boundaries" in {
+    val now = new js.Date()
+    val today = LocalDate.of(now.getFullYear().toInt, now.getMonth().toInt + 1, now.getDate().toInt)
+    val yesterday = today.minusDays(1).toString
+    val tomorrow = today.plusDays(1).toString
+    val validators = Seq(
+      (PastValidator[String](), Seq(true, false, false)),
+      (PastOrPresentValidator[String](), Seq(true, true, false)),
+      (FutureValidator[String](), Seq(false, false, true)),
+      (FutureOrPresentValidator[String](), Seq(false, true, true))
+    )
+
+    validators.foreach { (validator, expected) =>
+      Seq(yesterday, today.toString, tomorrow).map(validator.validate(_).isEmpty) shouldBe expected
+      validator.validate("") shouldBe None
+      validator.validate(null) shouldBe None
+      validator.validate("not a date") should not be empty
+      validator.validate("2026-02-30") should not be empty
+    }
+    PastOrPresentValidator[LocalDate]().validate(today) shouldBe None
+    FutureOrPresentValidator[LocalDate]().validate(today) shouldBe None
   }
 
   "ValidatorFactory" should "create configured validators from reflection annotations" in {

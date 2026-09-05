@@ -2,8 +2,9 @@
  * The root of a model-bound form. Mirrors `jfx.forms.Form`, minus the
  * `ClassDescriptor` a TypeScript model cannot have -- see `FormFactories.scala`'s
  * file-level doc comment for the substitute binding strategy: a control's
- * model property is found by name in `model` directly, and its validators
- * come from `schema` (see `validators.ts`) instead of case-class annotations.
+ * model property is found by name in `model` directly. Decorated class models
+ * provide validator metadata at runtime; plain records can still pass `schema`
+ * explicitly (see `validators.ts`).
  *
  * `model`'s values are the actual bridge `Property`/`ListProperty` handles
  * (from `runtime.property(...)`/`runtime.listProperty(...)`) -- not plain
@@ -13,6 +14,7 @@
 import { component } from "@anjunar/jfx-core";
 import type { FormHandle, ListProperty, Property } from "@anjunar/jfx-core";
 import { defined } from "./internal.js";
+import { formSchemaOf } from "./validators.js";
 import type { FormSchema } from "./validators.js";
 
 /** A form model: one bridge `Property`/`ListProperty` per bindable field name. */
@@ -25,11 +27,18 @@ export interface FormOptions {
   readonly schema?: FormSchema;
 }
 
-/** Mounts a form over `model`. `content` composes its controls with the core DSL. */
-export function form<M extends FormModel>(
+/** Mounts a decorated class model and infers its validator schema. */
+export function form<M extends FormModel>(model: M, options: FormOptions, content: () => void): FormHandle;
+export function form<M extends object>(model: M, content: () => void): FormHandle;
+export function form<M extends object>(model: M, options: FormOptions, content: () => void): FormHandle;
+export function form<M extends object>(
   model: M,
-  options: FormOptions,
-  content: () => void
+  optionsOrContent: FormOptions | (() => void),
+  maybeContent?: () => void,
 ): FormHandle {
-  return component("form", defined({ model, ...options }), content) as FormHandle;
+  const options = typeof optionsOrContent === "function" ? {} : optionsOrContent;
+  const content = typeof optionsOrContent === "function" ? optionsOrContent : maybeContent;
+  if (content === undefined) throw new TypeError("form requires a content callback");
+  const schema = options.schema ?? formSchemaOf((model as { constructor: new () => object }).constructor);
+  return component("form", defined({ model, ...options, schema }), content) as FormHandle;
 }

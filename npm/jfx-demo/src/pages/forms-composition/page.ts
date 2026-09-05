@@ -1,15 +1,21 @@
 import { button, classes, div, listProperty, onClick, property } from "@anjunar/jfx-core";
-import { arrayForm, form, input, inputContainer, size as sizeValidator, subForm } from "@anjunar/jfx-forms";
+import { arrayForm, form, input, inputContainer, Size, subForm } from "@anjunar/jfx-forms";
 import { translated } from "../../app/i18n.js";
 
-export function formsCompositionPage(): void {
-  const address = { city: property("") };
-  const model = {
-    tags: listProperty<string>(["typescript"]),
-    address: property(address),
-  };
+class AddressModel {
+  @Size(1, 60)
+  readonly city = property("");
+}
 
-  form(model, {}, () => {
+class CompositionModel {
+  readonly tags = listProperty<string>(["typescript"]);
+  readonly address = property(new AddressModel());
+}
+
+export function formsCompositionPage(): void {
+  const model = new CompositionModel();
+
+  form(model, () => {
     div(() => {
       classes("flex", "flex-col", "gap-4");
 
@@ -27,7 +33,7 @@ export function formsCompositionPage(): void {
         });
       });
 
-      subForm("address", address, { schema: { city: [sizeValidator(1, 60)] } }, () => {
+      subForm("address", model.address.get, () => {
         inputContainer({ label: translated("City").get }, () => {
           input("city");
         });

@@ -43,7 +43,7 @@ ist ein Argument **für** eine kleine, bewusst entworfene Grenze und **gegen**
 
 ## 3. Modulschnitt
 
-Zwei neue Artefakte:
+Die zentralen Artefakte:
 
 ```
   jfx-core … jfx-forms  (unverändert, publiziert)
@@ -62,12 +62,14 @@ Zwei neue Artefakte:
 | Artefakt | Sprache | Inhalt |
 | --- | --- | --- |
 | `jfx-bridge` (`jfx.bridge`) | Scala | Die JS-Grenze: `@JSExport`-Fassade über core/router/viewport/controls/forms, Übersetzung `Future`↔`Promise`, `Option`↔`null`, `Seq`↔`Array`, plus die Namensregistratur der Bibliothekskomponenten. |
-| `@anjunar/jfx-core` | TypeScript | Der Vertrag als Typen, die deklarative Schicht (Ambient-Scope), typisierte Wrapper je Komponente, Stub-Runtime für Tests. Die Router-Fassade gehört **nicht** hierher — siehe §15. |
+| `@anjunar/jfx-core` | TypeScript | Der Vertrag als Typen, die deklarative Schicht (Ambient-Scope), typisierte Wrapper je Komponente, Stub-Runtime für Tests. |
+| `@anjunar/jfx-json` | TypeScript | Explizite Schemas und `JsonMapper` für TypeScript-Modelle; bildet die JSON-Regeln von `jfx-json` ohne Scala-Reflection ab. |
 | `@anjunar/scalajs-jfx` | CSS | Unverändert. Ein TS-Konsument braucht es genauso — die Klassennamen kommen weiterhin aus den Scala-Modulen (ARCHITECTURE.md §6). |
 
 **Die npm-Seite ist eine Familie, keine Einzelperson.** `@anjunar/jfx-core` ist
-das erste Paket von mehreren; `-router`, `-viewport`, `-controls` und `-forms`
-folgen, sobald `jfx-bridge` sie bedienen kann. Was das für den Modulschnitt
+das erste Paket von mehreren; `-router`, `-viewport`, `-controls`, `-forms` und
+`-json`
+folgen. Was das für den Modulschnitt
 bedeutet und warum das Laufzeitartefakt dabei trotzdem eines bleibt, steht in
 §15.
 
@@ -257,10 +259,10 @@ verschmutzt.
 
 ## 7. Auslieferung
 
-- **Ein Release, drei Artefakte.** Maven (`scalajs-jfx-*` inkl. `-bridge`), npm
-  (`@anjunar/scalajs-jfx-bridge` als geliktes ES-Modul, `@anjunar/jfx-core` als
-  Typen/DSL) und `@anjunar/scalajs-jfx` (CSS) tragen dieselbe Major-Version. Das
-  ist die Regel, die für die CSS schon gilt, erweitert um zwei Pakete.
+- **Ein Release, mehrere Artefakte.** Maven (`scalajs-jfx-*` inkl. `-bridge`),
+  die npm-Familie (`@anjunar/scalajs-jfx-bridge`, `@anjunar/jfx-core`,
+  `@anjunar/jfx-json` und weitere Fassaden) und `@anjunar/scalajs-jfx` (CSS)
+  tragen dieselbe Major-Version.
 - **SSR.** Der TS-Konsument rendert serverseitig genauso wie die heutige
   `application`: Node lädt das Bridge-Bundle, `renderToString` liefert
   `{ html, status, headers }`. Die `status`-Weitergabe aus `Route.error` bleibt
@@ -752,6 +754,7 @@ ausgelieferten JavaScript.
 | Paket | `dependencies` | `peerDependencies` |
 | --- | --- | --- |
 | `@anjunar/jfx-core` | — | `@anjunar/scalajs-jfx` |
+| `@anjunar/jfx-json` | — | `@anjunar/jfx-core` |
 | `@anjunar/scalajs-jfx-bridge` | — | `@anjunar/jfx-core` |
 | `@anjunar/jfx-router` | — | `@anjunar/jfx-core`, `@anjunar/scalajs-jfx-bridge` |
 | `@anjunar/jfx-controls` | — | `@anjunar/jfx-core`, `@anjunar/scalajs-jfx-bridge`, `@anjunar/scalajs-jfx` |
@@ -802,7 +805,7 @@ Nachgewiesen wird das an drei Stellen, nicht behauptet:
   `@anjunar/jfx-controls` mitzieht.
 - `npm/jfx-core/test/runtime.test.ts` deckt die Wache selbst ab.
 
-Gate ist `npm run verify` — in `jfx-core`, `jfx-router` und `jfx-controls`
+Gate ist `npm run verify` — in `jfx-core`, `jfx-json`, `jfx-router` und `jfx-controls`
 Typecheck, Tests und Consumer-Test, in `jfx-demo` Typecheck, Build und der
 Runtime-Nachweis.
 
@@ -873,22 +876,26 @@ Dropdown -- immer hinter einem `when()`.
 Gemessener Preis auf dem einen Artefakt: **+63 926 B raw / +9 332 B gzip**
 gegenüber Lauf 4 (jetzt 1 584 562 / 243 967).
 
-Die begründeten Abweichungen bei `jfx-json` und `jfx-webauthn` und die
-Auslösebedingung für `jfx-forms` stehen in `CLAUDE_REVIEW_3.md` §5 und §6, die
-Ausführungsberichte in den Nachträgen Lauf 3, Lauf 4 und Lauf 5.
+Die Abweichung bei `jfx-webauthn` und die Auslösebedingung für `jfx-forms` stehen
+in `CLAUDE_REVIEW_3.md` §5 und §6; `jfx-json` ist seit Lauf 8 als npm-Paket
+umgesetzt. Die Ausführungsberichte stehen in den Nachträgen.
 
 ### Und seit Lauf 6: `@anjunar/jfx-forms`
 
 `form()`, `input()`, `inputContainer()`, `fieldSet()`, `arrayForm()`,
 `subForm()`, `comboBox()`, `imageCropper()`, plus die 22
-`validators.ts`-Funktionen (`notNull()`, `size()`, `email()`, ...).
+`validators.ts`-Funktionen (`notNull()`, `size()`, `email()`, ...) und deren
+Decorator-Gegenstücke (`@NotNull()`, `@Size()`, `@Email()`, ...).
 `jfx.forms.Form`/`SubForm` binden ein Control über einen makrogebauten
-`reflect.ClassDescriptor` an eine Modell-Property -- kein TS-Äquivalent, weil
-keine Scala-Case-Class hinter einem TS-Objekt steht. `FormFactories.scala`
-löst das mit einem parallelen Trait `DynamicFormular` (bindet nach Namen in
-einem `Record<string, Property|ListProperty>` statt per Reflection) und
-`schemaFrom` (übersetzt eine TS-native `{name, parameters}`-Schema-Liste in
-echte `Annotation`-Werte für die **unveränderte** `ValidatorFactory`) --
+`reflect.ClassDescriptor` an eine Modell-Property. Decorierte TS-Klassen tragen
+die Validator-Metadaten in einer WeakMap; `form(model, content)` und
+`subForm(name, model, content)` leiten daraus automatisch das Schema ab.
+Plain Records können weiterhin ein explizites `schema` übergeben.
+`FormFactories.scala` löst die TS-Grenze mit einem parallelen Trait
+`DynamicFormular` (bindet nach Namen in einem `Record<string,
+Property|ListProperty>` statt per Reflection) und `schemaFrom` (übersetzt eine
+TS-native `{name, parameters}`-Schema-Liste in echte `Annotation`-Werte für die
+**unveränderte** `ValidatorFactory`) --
 `Formular.scala` selbst bleibt unangetastet, keins der bestehenden Tests auf
 dem `ClassDescriptor`-Pfad ist betroffen. `ArrayForm`, `FieldSet`, `ComboBox`,
 `ImageCropper`, `Input`, `InputContainer` brauchen nichts davon und sind
@@ -972,6 +979,22 @@ verlinkten Artefakt (nicht als Delta zu Lauf 6 vergleichbar, weil dessen
 Zahl nie gemessen wurde) -- der mit Abstand größte Sprung der Familie,
 getrieben vom vollständigen CodeMirror-Sprachsatz, den `scalajs-lexical`
 transitiv mitzieht, nicht von `jfx-editor`s eigenem Fassadencode.
+
+### Und seit Lauf 8: `@anjunar/jfx-json`
+
+`jfx-json` ist als reines TypeScript-Paket verfügbar. `JsonMapper` kann
+dekorierte Klassen direkt verarbeiten: `serialize(model)` nimmt die Runtime-
+Klasse, `deserialize(json, Profile)` nimmt den Konstruktor, und das Ergebnis
+ist eine echte Klasseninstanz. `@JsonProperty`, `@JsonIgnore`, `@JsonId` und
+`@JsonType` ersetzen die Scala-Annotationen an der npm-Grenze. `JsonSchema`
+und `jsonField` bleiben für explizite Schemas, verschachtelte Abhängigkeiten
+und `JsonSchema.abstractType` mit polymorphen `@type`-Werten verfügbar.
+Property- und ListProperty-Felder behalten die Dirty-Payload-Regel der
+Scala-Version.
+
+Das Paket hängt nur als Peer auf `@anjunar/jfx-core`; es braucht weder das
+gelinkte Bridge-Artefakt noch einen Registratureintrag. Dadurch bleibt die
+Serializer-Funktion auch in Node und in einem TS-Backend ohne DOM verfügbar.
 
 ### Und seit Lauf 9: i18n
 

@@ -1,0 +1,46 @@
+{
+  "name": "@anjunar/jfx-json",
+  "version": "3.0.0-SNAPSHOT",
+  "description": "Schema driven JSON mapping for JFX3 TypeScript models.",
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "sideEffects": false,
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "npm run build && tsc -p tsconfig.test.json",
+    "test": "vitest run",
+    "prepack": "npm run build",
+    "test:consumer": "vitest run --config vitest.consumer.config.ts",
+    "verify": "npm run typecheck && npm run test && npm run test:consumer"
+  },
+  "peerDependencies": {
+    "@anjunar/jfx-core": "^3.0.0"
+  },
+  "devDependencies": {
+    "@anjunar/jfx-core": "*",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^3.2.7"
+  },
+  "license": "MIT",
+  "author": "Patrick Bittner",
+  "homepage": "https://github.com/anjunar/scalajs-jfx#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anjunar/scalajs-jfx.git",
+    "directory": "npm/jfx-json"
+  },
+  "bugs": {
+    "url": "https://github.com/anjunar/scalajs-jfx/issues"
+  },
+  "publishConfig": { "access": "public" }
+}

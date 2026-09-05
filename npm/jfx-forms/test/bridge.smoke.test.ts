@@ -36,6 +36,11 @@ import {
   inputContainer,
   imageCropper,
   notBlank,
+  NotBlank,
+  AssertTrue,
+  AssertFalse,
+  Past,
+  Future,
   size,
   subForm,
   type MediaValue,
@@ -77,6 +82,71 @@ describe("the linked runtime", () => {
 });
 
 describe("form + input", () => {
+  it("validates native date input values and boolean model values", () => {
+    class Model {
+      @Past() readonly past = property("");
+      @Future() readonly future = property("");
+      @AssertTrue() readonly yes = property(false);
+      @AssertFalse() readonly no = property(true);
+    }
+    const model = new Model();
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+    let handle!: import("@anjunar/jfx-core").FormHandle;
+    const app = mount(root, () => viewport(() => {
+      handle = form(model, () => {
+        input("past", { type: "date" });
+        input("future", { type: "date" });
+        comboBox("yes", { items: [true, false], converter: String });
+        comboBox("no", { items: [true, false], converter: String });
+      });
+    }));
+    try {
+      const setDate = (name: string, value: string): void => {
+        const field = root.querySelector(`input[name="${name}"]`) as HTMLInputElement;
+        field.value = value;
+        field.dispatchEvent(new Event("input", { bubbles: true }));
+      };
+      setDate("past", "2999-01-01");
+      setDate("future", "1900-01-01");
+      expect(handle.validate()).toEqual(expect.arrayContaining([
+        "Must be in the past", "Must be in the future", "Must be true", "Must be false",
+      ]));
+      setDate("past", "1900-01-01");
+      setDate("future", "2999-01-01");
+      model.yes.set(true);
+      model.no.set(false);
+      expect(model.yes.get).toBe(true);
+      expect(model.no.get).toBe(false);
+      expect(model.past.get).toBe("1900-01-01");
+      expect(handle.validate()).toEqual([]);
+    } finally {
+      app.dispose();
+      root.remove();
+    }
+  });
+
+  it("infers validators from decorated class models", () => {
+    class AccountModel {
+      @NotBlank()
+      readonly name = property("");
+    }
+    const model = new AccountModel();
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    let handle!: import("@anjunar/jfx-core").FormHandle;
+    const app = mount(root, () => {
+      handle = form(model, () => {
+        inputContainer({ label: "Name" }, () => input("name"));
+      });
+    });
+
+    expect(handle.validate()).toContain("Must not be blank");
+    expect(model.name.get).toBe("");
+    app.dispose();
+  });
+
   it("returns a handle for validation and binding diagnostics", () => {
     const model = { name: property("") };
     const root = document.createElement("div");

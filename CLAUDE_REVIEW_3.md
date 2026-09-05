@@ -362,19 +362,16 @@ verbietet.
 Die 1:1-Abbildung ist an zwei Stellen nicht nur unfertig, sondern **semantisch
 falsch**. Beide Verdachtsmomente des Auftrags bestätigen sich.
 
-### 6.1 `jfx-json` bekommt kein npm-Gegenstück — dauerhaft, nicht „später"
+### 6.1 `jfx-json` bekommt ein npm-Gegenstück
 
-`jfx-json` ist `scala-reflect`-getriebene (De-)Serialisierung plus
-Formularannotationen. Sein Zweck ist, eine **Scala**-Typhierarchie auf JSON
-abzubilden und wieder zurück. Ein TypeScript-Konsument hat `JSON.parse` und
-strukturelle Typen; er braucht keine Laufzeitreflexion, um an ein Objekt zu
-kommen. Ein `@anjunar/jfx-json` wäre die Übersetzung eines Scala-Reflexionsmodells
-in TypeScript — also eine zweite Implementierung von etwas, das TypeScript
-nativ besser kann. Das ist die verbotene Portierung, nur in klein.
-
-Was ein TS-Konsument aus diesem Umfeld tatsächlich braucht, ist das
-**Formularschema** — und das gehört zu `@anjunar/jfx-forms`, wo die Formulare
-sind, nicht zu einem Serialisierungspaket.
+Die frühere Entscheidung, `jfx-json` dauerhaft aus npm herauszuhalten, ist
+überholt. Die Scala-Implementierung bleibt für Scala-Modelle
+`scala-reflect`-getrieben; die TypeScript-Seite verwendet dafür eine explizite
+`JsonSchema`-Beschreibung und dieselben JSON-Regeln (Property-Wrapper,
+Richtungsflags, IDs, Dirty-Payloads und `@type`). Damit wird keine
+Scala-Reflection in TypeScript vorgetäuscht und keine Bridge-Laufzeit benötigt.
+Das Paket `@anjunar/jfx-json` ist ein reines TypeScript-Familienmitglied mit
+`@anjunar/jfx-core` als Peer für Property/ListProperty.
 
 ### 6.2 `jfx-webauthn` gehört nicht in diese Paketfamilie
 

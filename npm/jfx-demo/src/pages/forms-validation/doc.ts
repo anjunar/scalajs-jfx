@@ -11,16 +11,16 @@ export function formsValidationDoc(): void {
   docPage(
     {
       title: "Validators",
-      summary: "All 22 built-in validators, one field each -- notNull() becomes a real reflect.Annotation the unmodified Scala ValidatorFactory/BuiltinValidators consume.",
+      summary: "All 22 built-in validators, one field each -- TypeScript decorators become annotations for the unchanged Scala validator runtime.",
     },
     () => {
-      example({ code: snippet, note: "Type into a field and move on to see its validator's message; the schema is TS-native data, not a ported reimplementation -- see validators.ts." }, () => {
+      example({ code: snippet, note: "Type into a field and move on to see its validator's message; each field carries its validator as a TypeScript decorator." }, () => {
         formsValidationPage();
       });
 
       callout("note", () => {
         text(translated(
-          "Each group above is a fieldSet, which groups controls for error propagation and disabled-state cascading -- it does not bind its children to the model by name; only form/subForm bind. Its own name (\"presence-group\", ...) is deliberately not a model field."
+          "Number, email and date fields use the corresponding HTML input types. Date validators compare ISO dates with the local calendar date. Boolean selectors bind actual true/false values to AssertTrue and AssertFalse."
         ));
       });
     }
