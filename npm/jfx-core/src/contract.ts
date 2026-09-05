@@ -1,5 +1,5 @@
 /**
- * The JavaScript boundary of JFX3.
+ * The JavaScript boundary of JFX 3.
  *
  * Everything in this file is a *contract*, not an implementation. The production
  * implementation is the Scala.js bundle published by the `jfx-bridge` module; the

@@ -57,7 +57,7 @@ class App(
 
   private val navigationEntries =
     Seq(
-      NavEntry(i18n"Welcome", i18n"Discover", i18n"The JFX2 vision", "/"),
+      NavEntry(i18n"Welcome", i18n"Discover", i18n"JFX 3 at a glance", "/"),
       NavEntry(i18n"Interaction", i18n"Actions", i18n"The pulse of the app", "/button"),
       NavEntry(i18n"Interaction", i18n"Images", i18n"Visual identity", "/image"),
       NavEntry(i18n"Architecture", i18n"Layout", i18n"Room for design", "/layout"),
@@ -204,7 +204,22 @@ class App(
 
               div {
                 classes = Seq("app-sidebar__footer")
-                text(i18n"Design inherited from JFX2, content rebuilt for scalajs-jfx.") {}
+                text(i18n"JFX 3 · Scala.js and TypeScript · one runtime.") {}
+                hbox {
+                  classes = Seq("app-sidebar__project-links")
+                  routerLink() {
+                    href = "https://anjunar.github.io/scalajs-jfx/"
+                    text("Showcase") {}
+                  }
+                  routerLink() {
+                    href = "https://anjunar.github.io/scalajs-jfx/typescript/"
+                    text("TypeScript") {}
+                  }
+                  routerLink() {
+                    href = "https://github.com/anjunar/scalajs-jfx#quick-start"
+                    text("Quick Start") {}
+                  }
+                }
               }
             }
           }
@@ -254,6 +269,7 @@ class App(
 
                   image {
                     src = publicAssetPath("GitHub_Invertocat_Black.svg")
+                    alt = "GitHub repository"
                     style {
                       height = "32px"
                       width = "32px"
@@ -285,9 +301,12 @@ class App(
                   }
                 }
 
-                div {
+                routerLink("v3.0.0") {
                   classes = Seq("app-toolbar__version")
-                  text("v1 demo") {}
+                  href = "https://repo1.maven.org/maven2/com/anjunar/scalajs-jfx-core_sjs1_3/3.0.0/"
+                  target = "_blank"
+                  rel = "noopener noreferrer"
+                  text("v3.0.0") {}
                 }
               }
 

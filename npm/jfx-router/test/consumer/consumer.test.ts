@@ -72,7 +72,7 @@ beforeAll(() => {
   if (!existsSync(linkedArtifact)) {
     throw new Error(
       "The Scala.js bridge is not linked. Run:\n\n" +
-        '    sbtn "scalajs-jfx-bridge/fullLinkJS"\n\n' +
+        '    sbt --server "scalajs-jfx-bridge/fullLinkJS"\n\n' +
         "Expected: " +
         linkedArtifact
     );

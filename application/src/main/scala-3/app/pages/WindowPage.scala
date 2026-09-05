@@ -25,7 +25,7 @@ object WindowPage {
         sectionIntro(
           i18n"Space management",
           i18n"The viewport is the stage for things that live above the page.",
-          i18n"Notifications, windows, and overlays need a central order. JFX2 gathers those concerns in the viewport so pages do not have to manage global UI layers on their own."
+          i18n"Notifications, windows, and overlays need a central order. JFX 3 gathers those concerns in the viewport so pages do not have to manage global UI layers on their own."
         )
 
         metricStrip(

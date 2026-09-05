@@ -70,9 +70,9 @@ $bundleDir = Join-Path $repoRoot "target\sona-staging"
 $bundleZip = Join-Path $repoRoot "target\central-bundle-$Version.zip"
 
 if (-not $SkipPublishSigned) {
-    & sbtn "publishSigned"
+    & sbt --server "publishSigned"
     if ($LASTEXITCODE -ne 0) {
-        throw "sbtn publishSigned failed."
+        throw "sbt --server publishSigned failed."
     }
 }
 

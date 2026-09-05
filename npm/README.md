@@ -1,6 +1,6 @@
-# JFX3 TypeScript packages
+# JFX 3 TypeScript packages
 
-The `npm/` workspace contains the TypeScript API for JFX3. These packages provide typed, idiomatic entry points for applications written in TypeScript while the Scala.js JFX runtime remains responsible for rendering, hydration, component lifecycle, and library behavior.
+The `npm/` workspace contains the TypeScript API for JFX 3. These packages provide typed, idiomatic entry points for applications written in TypeScript while the Scala.js JFX runtime remains responsible for rendering, hydration, component lifecycle, and library behavior.
 
 ## Architecture
 
@@ -36,7 +36,7 @@ import "@anjunar/scalajs-jfx-bridge";
 The bridge package is generated from the `jfx-bridge` Scala.js module. It must be linked while developing this repository:
 
 ```bash
-sbtn "scalajs-jfx-bridge/fullLinkJS"
+sbt --server "scalajs-jfx-bridge/fullLinkJS"
 ```
 
 ## First page

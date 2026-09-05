@@ -61,7 +61,7 @@ export function homePage(): void {
     heading(1, () => text(translated("@anjunar/jfx")));
     paragraph(() => {
       classes("home-page__intro");
-      text(translated("A TypeScript facade over JFX3 -- one route per capability, the running component next to the source that produced it."));
+      text(translated("A TypeScript facade over JFX 3 -- one route per capability, the running component next to the source that produced it."));
     });
     div(() => {
       classes("home-page__grid");

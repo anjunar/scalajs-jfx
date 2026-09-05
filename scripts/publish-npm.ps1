@@ -12,9 +12,10 @@ Set-Location $repoRoot
 $npmCache = Join-Path $repoRoot "target\npm-publish-cache"
 New-Item -ItemType Directory -Force -Path $npmCache | Out-Null
 
-# Keep the order dependency-aware. jfx-demo and the standalone scalajs-jfx CSS
-# package are intentionally not part of this publishing set.
+# Keep the order dependency-aware. The CSS package comes first because jfx-core
+# declares its matching major as a peer dependency. jfx-demo stays private.
 $packageDirectories = @(
+    "scalajs-jfx",
     "jfx-core",
     "scalajs-jfx-bridge",
     "jfx-json",
@@ -24,6 +25,7 @@ $packageDirectories = @(
     "jfx-forms",
     "jfx-editor"
 )
+$releaseVersion = $null
 
 function Invoke-CheckedCommand {
     param(
@@ -49,14 +51,23 @@ foreach ($packageDirectory in $packageDirectories) {
     if ($manifest.private -eq $true) {
         throw "Refusing to publish private package '$($manifest.name)'."
     }
-    if ($manifest.name -notlike "@anjunar/jfx-*" -and $manifest.name -ne "@anjunar/scalajs-jfx-bridge") {
+    if (
+        $manifest.name -notlike "@anjunar/jfx-*" -and
+        $manifest.name -ne "@anjunar/scalajs-jfx" -and
+        $manifest.name -ne "@anjunar/scalajs-jfx-bridge"
+    ) {
         throw "Unexpected package name '$($manifest.name)' in $manifestPath."
+    }
+    if ($null -eq $releaseVersion) {
+        $releaseVersion = $manifest.version
+    } elseif ($manifest.version -ne $releaseVersion) {
+        throw "Release set contains mixed versions: $releaseVersion and $($manifest.version)."
     }
 }
 
 if (-not $SkipLinkBridge) {
     Write-Host "Linking the Scala.js bridge..."
-    Invoke-CheckedCommand -Command "sbtn" -Arguments @("scalajs-jfx-bridge/fullLinkJS")
+    Invoke-CheckedCommand -Command "sbt" -Arguments @("--server", "scalajs-jfx-bridge/fullLinkJS")
 }
 
 if ($InstallDependencies) {
@@ -71,26 +82,35 @@ foreach ($packageDirectory in $packageDirectories) {
     $manifestPath = Join-Path $repoRoot "npm\$packageDirectory\package.json"
     $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
 
-    Write-Host "Processing $($manifest.name)@$($manifest.version)..."
-
     if (-not $SkipVerify) {
-        Write-Host "  Running verification..."
+        Write-Host "Verifying $($manifest.name)@$($manifest.version)..."
         Invoke-CheckedCommand -Command "npm" -Arguments @("--cache", $npmCache, "run", "verify", "--workspace", $workspace)
     }
+}
 
-    $publishArguments = @("--cache", $npmCache, "publish", "--workspace", $workspace, "--access", "public")
-    if ($DryRun) {
-        $publishArguments += "--dry-run"
-        Write-Host "  Packing $($manifest.name) (dry run)..."
-    } else {
-        Write-Host "  Publishing $($manifest.name)..."
-    }
+foreach ($packageDirectory in $packageDirectories) {
+    $workspace = "npm/$packageDirectory"
+    $manifestPath = Join-Path $repoRoot "npm\$packageDirectory\package.json"
+    $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
 
-    Invoke-CheckedCommand -Command "npm" -Arguments $publishArguments
+    Write-Host "Packing $($manifest.name)@$($manifest.version) (release preflight)..."
+    Invoke-CheckedCommand -Command "npm" -Arguments @("--cache", $npmCache, "publish", "--workspace", $workspace, "--access", "public", "--dry-run")
 }
 
 if ($DryRun) {
-    Write-Host "All selected npm packages were packed successfully (dry run)."
-} else {
-    Write-Host "All selected npm packages were published successfully."
+    Write-Host "The complete npm release set passed verification and packing."
+    return
 }
+
+foreach ($packageDirectory in $packageDirectories) {
+    $workspace = "npm/$packageDirectory"
+    $manifestPath = Join-Path $repoRoot "npm\$packageDirectory\package.json"
+    $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+
+    Write-Host "Publishing $($manifest.name)@$($manifest.version)..."
+    Invoke-CheckedCommand -Command "npm" -Arguments @("--cache", $npmCache, "publish", "--workspace", $workspace, "--access", "public")
+}
+
+Write-Host "Verifying the published release set from a clean registry consumer..."
+Invoke-CheckedCommand -Command "node" -Arguments @("scripts/verify-published-npm-set.mjs")
+Write-Host "All selected npm packages were published and installed successfully."

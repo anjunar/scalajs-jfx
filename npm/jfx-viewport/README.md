@@ -1,6 +1,6 @@
 # @anjunar/jfx-viewport
 
-TypeScript access to the JFX3 viewport layer: movable windows, anchor-following overlays, and self-dismissing notifications.
+TypeScript access to the JFX 3 viewport layer: movable windows, anchor-following overlays, and self-dismissing notifications.
 
 ## Overview
 

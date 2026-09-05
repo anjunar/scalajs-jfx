@@ -1,6 +1,6 @@
 # scalajs-jfx-forms
 
-Model-bound forms and controls for JFX3, including inputs, validation, field groups, nested and repeating forms, combo boxes, and image cropping.
+Model-bound forms and controls for JFX 3, including inputs, validation, field groups, nested and repeating forms, combo boxes, and image cropping.
 
 ## Overview
 

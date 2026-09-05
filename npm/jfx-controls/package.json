@@ -1,7 +1,7 @@
 {
   "name": "@anjunar/jfx-controls",
   "version": "3.0.0",
-  "description": "The TypeScript controls API of JFX3: tabs, carousel, and the virtualized table / data grid / list, projected onto the jfx.control components that run in the Scala.js runtime published as @anjunar/scalajs-jfx-bridge.",
+  "description": "The TypeScript controls API of JFX 3: tabs, carousel, and the virtualized table / data grid / list, projected onto the jfx.control components that run in the Scala.js runtime published as @anjunar/scalajs-jfx-bridge.",
   "type": "module",
   "types": "./dist/index.d.ts",
   "main": "./dist/index.js",

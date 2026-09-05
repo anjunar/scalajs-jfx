@@ -8,10 +8,15 @@ object OverviewPageTranslations {
   private val group = ""
 
   val entries: Seq[CatalogEntry] = Seq(
-    de(i18n"Welcome to JFX2", "Willkommen bei JFX2"),
+    de(i18n"Welcome to JFX 3", "Willkommen bei JFX 3"),
     de(
-      i18n"Your new home for reactive UIs in Scala.js.",
-      "Dein neues Zuhause für reaktive Benutzeroberflächen in Scala.js."
+      i18n"Reactive Scala.js interfaces with SSR and hydration built into the same component model.",
+      "Reaktive Scala.js-Oberflächen mit SSR und Hydration im selben Komponentenmodell."
+    ),
+    de(i18n"Start with working code", "Mit funktionierendem Code beginnen"),
+    de(
+      i18n"A Property drives the text, and the event updates that same state after hydration.",
+      "Eine Property steuert den Text und das Ereignis aktualisiert denselben Zustand nach der Hydration."
     ),
     de(i18n"Origin story", "Entstehungsgeschichte"),
     de(
@@ -19,8 +24,8 @@ object OverviewPageTranslations {
       "Nach 17 Jahren auf der Suche nach Klarheit fühlte sich das Projekt immer weniger wie eine Abschlussarbeit und immer mehr wie eine Erleichterung an."
     ),
     de(
-      i18n"JFX2 is the answer I wanted after living with frameworks that promised simplicity but quietly handed over control. It chooses explicit lifecycles, honest reactivity, and a DSL that stays readable when the codebase grows.",
-      "JFX2 ist die Antwort, die ich mir nach der Arbeit mit Frameworks gewünscht habe, die Einfachheit versprachen, aber stillschweigend die Kontrolle übernahmen. Es setzt auf explizite Lebenszyklen, ehrliche Reaktivität und eine DSL, die auch bei wachsender Codebasis lesbar bleibt."
+      i18n"JFX 3 is the answer I wanted after living with frameworks that promised simplicity but quietly handed over control. It chooses explicit lifecycles, honest reactivity, and a DSL that stays readable when the codebase grows.",
+      "JFX 3 ist die Antwort, die ich mir nach der Arbeit mit Frameworks gewünscht habe, die Einfachheit versprachen, aber stillschweigend die Kontrolle übernahmen. Es setzt auf explizite Lebenszyklen, ehrliche Reaktivität und eine DSL, die auch bei wachsender Codebasis lesbar bleibt."
     ),
     de(i18n"Vision", "Vision"),
     de(
@@ -28,8 +33,8 @@ object OverviewPageTranslations {
       "Eine Dokumentationsseite, die sich wie eine echte Werkbank anfühlt."
     ),
     de(
-      i18n"The showcase should not just prove that components render. It should show how JFX2 is meant to feel: declarative, server-stable, reactive in the browser, and readable enough that you can still nod to it six months later.",
-      "Die Showcase soll nicht nur beweisen, dass Komponenten rendern. Sie soll zeigen, wie sich JFX2 anfühlen soll: deklarativ, serverstabil, reaktiv im Browser und so lesbar, dass man auch sechs Monate später noch zustimmend nicken kann."
+      i18n"The showcase should not just prove that components render. It should show how JFX 3 is meant to feel: declarative, server-stable, reactive in the browser, and readable enough that you can still nod to it six months later.",
+      "Die Showcase soll nicht nur beweisen, dass Komponenten rendern. Sie soll zeigen, wie sich JFX 3 anfühlen soll: deklarativ, serverstabil, reaktiv im Browser und so lesbar, dass man auch sechs Monate später noch zustimmend nicken kann."
     ),
     de(i18n"SSR", "SSR"),
     de(
@@ -45,6 +50,15 @@ object OverviewPageTranslations {
     de(
       i18n"Every page shows a usable example instead of a dry API list.",
       "Jede Seite zeigt ein nutzbares Beispiel statt einer trockenen API-Liste."
+    ),
+    de(i18n"One component model", "Ein Komponentenmodell"),
+    de(
+      i18n"Render complete HTML on the server, then hydrate the same tree in the browser.",
+      "Vollständiges HTML auf dem Server rendern und anschließend denselben Baum im Browser hydrieren."
+    ),
+    de(
+      i18n"The declarative Scala DSL, reactive properties, router, forms, and lifecycle-aware components share one runtime. The TypeScript packages expose that runtime through a typed facade.",
+      "Die deklarative Scala-DSL, reaktive Properties, Router, Formulare und lebenszyklusgebundene Komponenten teilen sich eine Runtime. Die TypeScript-Pakete stellen sie über eine typisierte Fassade bereit."
     ),
     de(i18n"Message-centered I18n", "Nachrichtenzentrierte i18n"),
     de(

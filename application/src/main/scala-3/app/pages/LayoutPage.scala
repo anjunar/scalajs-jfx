@@ -37,7 +37,7 @@ object LayoutPage {
             classes = Seq("layout-shell-demo")
             vbox {
               classes = Seq("layout-shell-demo__rail")
-              div { classes = Seq("layout-shell-demo__brand"); text(i18n"JFX2") {} }
+              div { classes = Seq("layout-shell-demo__brand"); text(i18n"JFX 3") {} }
               div { classes = "layout-shell-demo__nav is-active"; text(i18n"Components") {} }
               div { classes = Seq("layout-shell-demo__nav"); text(i18n"Forms") {} }
               div { classes = Seq("layout-shell-demo__nav"); text(i18n"Data") {} }
@@ -69,13 +69,13 @@ object LayoutPage {
             style { gap = "10px" }
             hbox {
               style { gap = "10px" }
-              div { classes = Seq("demo-box"); text(i18n"H1") {} }
-              div { classes = Seq("demo-box"); text(i18n"H2") {} }
+              div { classes = Seq("demo-box"); text(i18n"Navigation") {} }
+              div { classes = Seq("demo-box"); text(i18n"Toolbar") {} }
             }
             vbox {
               style { gap = "5px" }
-              div { classes = Seq("demo-box"); text(i18n"V1") {} }
-              div { classes = Seq("demo-box"); text(i18n"V2") {} }
+              div { classes = Seq("demo-box"); text(i18n"Content") {} }
+              div { classes = Seq("demo-box"); text(i18n"Inspector") {} }
             }
           }
         }
@@ -105,11 +105,11 @@ object LayoutPage {
           codeBlock(
             "scala",
             """vbox {
-  style { gap = \"10px\" }
+  style { gap = "10px" }
 
   hbox {
-    div { text = DemoI18n.text(i18n\"Left\") }
-    div { text = DemoI18n.text(i18n\"Right\") }
+    div { text("Left") {} }
+    div { text("Right") {} }
   }
 }"""
           )

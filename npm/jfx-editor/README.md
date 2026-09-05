@@ -1,6 +1,6 @@
 # @anjunar/jfx-editor
 
-A Lexical-backed rich-text field for JFX3. Markdown is the public value; Lexical editor state remains inside the Scala.js runtime.
+A Lexical-backed rich-text field for JFX 3. Markdown is the public value; Lexical editor state remains inside the Scala.js runtime.
 
 ## Overview
 

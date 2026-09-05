@@ -11,7 +11,7 @@ export function controlsTableDoc(): void {
   docPage(
     {
       title: "TableView",
-      summary: "tableView(), column(): a virtualized table over a local ListProperty, with a sortable column and a crawlable SSR pager.",
+      summary: "tableView(), column(): a virtualized table over a local ListProperty, with a sortable column and a request-aware SSR pager.",
     },
     () => {
       example({ code: snippet }, () => {
@@ -19,7 +19,7 @@ export function controlsTableDoc(): void {
       });
 
       callout("note", () => {
-        text(translated("crawlable + crawlId render the page links in the footer on the server, so a crawler without JavaScript can still reach past the first screen."));
+        text(translated("crawlable + crawlId render page links in the server HTML. A request-aware SSR host can render those query URLs without JavaScript; the static GitHub Pages copy applies them after hydration."));
       });
     }
   );

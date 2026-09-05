@@ -1,6 +1,6 @@
 # @anjunar/jfx-forms
 
-Typed JFX3 forms for model-bound inputs, validators, field groups, nested and repeating forms, combo boxes, and image cropper fields.
+Typed JFX 3 forms for model-bound inputs, validators, field groups, nested and repeating forms, combo boxes, and image cropper fields.
 
 ## Overview
 

@@ -1,7 +1,7 @@
 {
   "name": "@anjunar/jfx-json",
   "version": "3.0.0",
-  "description": "Schema driven JSON mapping for JFX3 TypeScript models.",
+  "description": "Schema driven JSON mapping for JFX 3 TypeScript models.",
   "type": "module",
   "types": "./dist/index.d.ts",
   "main": "./dist/index.js",

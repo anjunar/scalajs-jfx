@@ -13,8 +13,8 @@ object ButtonPageTranslations {
       "Ein Button ist klein, trägt aber Verantwortung."
     ),
     de(
-      i18n"In JFX2 the action stays visible in the template: label, event, and surrounding context sit next to each other. That keeps simple buttons easy to read and leaves room for more complex workflows later.",
-      "In JFX2 bleibt die Aktion im Template sichtbar: Beschriftung, Ereignis und umgebender Kontext stehen direkt beieinander. Dadurch bleiben einfache Buttons leicht lesbar und es bleibt Raum für komplexere Abläufe."
+      i18n"In JFX 3 the action stays visible in the template: label, event, and surrounding context sit next to each other. That keeps simple buttons easy to read and leaves room for more complex workflows later.",
+      "In JFX 3 bleibt die Aktion im Template sichtbar: Beschriftung, Ereignis und umgebender Kontext stehen direkt beieinander. Dadurch bleiben einfache Buttons leicht lesbar und es bleibt Raum für komplexere Abläufe."
     ),
     de(i18n"Standard button", "Standard-Button"),
     de(

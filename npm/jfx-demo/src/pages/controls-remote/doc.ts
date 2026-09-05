@@ -24,7 +24,7 @@ export function controlsRemoteDoc(context?: RouteContext): void {
 
       callout("note", () => {
         text(
-          translated("The footer pager remains usable without JavaScript: its server-rendered links carry remote-rows.offset and remote-rows.limit, and RemoteSource.initialOffset renders the requested page directly on the server. Hydration then adds client-side navigation to those same links -- what sorting exists is not carried across pages, but sorting itself needs a click handler and so is unreachable without JavaScript in the first place.")
+          translated("On a request-aware Node deployment, the query links render the selected page without JavaScript. GitHub Pages serves a fixed prerendered snapshot, so its pager changes rows after hydration.")
         );
       });
     }

@@ -1,6 +1,6 @@
 # @anjunar/jfx-json
 
-Schema-driven JSON mapping for TypeScript models used with JFX3. It is the npm counterpart of `jfx-json` and keeps mapping explicit at the JavaScript boundary.
+Schema-driven JSON mapping for TypeScript models used with JFX 3. It is the npm counterpart of `jfx-json` and keeps mapping explicit at the JavaScript boundary.
 
 ## Overview
 

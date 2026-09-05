@@ -10,8 +10,8 @@ usage() {
   cat <<'EOF'
 Usage: scripts/publish-npm.sh [options]
 
-Publishes the jfx-* npm packages plus scalajs-jfx-bridge in dependency order.
-jfx-demo and the standalone scalajs-jfx CSS package are intentionally excluded.
+Publishes the JFX npm packages in dependency order, including the shared CSS.
+jfx-demo remains private and is not part of the release set.
 
 Options:
   --install-dependencies
@@ -61,9 +61,10 @@ cd "$REPO_ROOT"
 NPM_CACHE="${REPO_ROOT}/target/npm-publish-cache"
 mkdir -p "$NPM_CACHE"
 
-# Keep the order dependency-aware. jfx-demo and the standalone scalajs-jfx CSS
-# package are intentionally not part of this publishing set.
+# Keep the order dependency-aware. The CSS package comes first because jfx-core
+# declares its matching major as a peer dependency. jfx-demo stays private.
 PACKAGE_DIRECTORIES=(
+  scalajs-jfx
   jfx-core
   scalajs-jfx-bridge
   jfx-json
@@ -73,6 +74,7 @@ PACKAGE_DIRECTORIES=(
   jfx-forms
   jfx-editor
 )
+release_version=""
 
 for package_directory in "${PACKAGE_DIRECTORIES[@]}"; do
   manifest_path="${REPO_ROOT}/npm/${package_directory}/package.json"
@@ -87,15 +89,22 @@ for package_directory in "${PACKAGE_DIRECTORIES[@]}"; do
     echo "Refusing to publish private package '${package_name}'." >&2
     exit 1
   fi
-  if [[ "$package_name" != @anjunar/jfx-* && "$package_name" != "@anjunar/scalajs-jfx-bridge" ]]; then
+  if [[ "$package_name" != @anjunar/jfx-* && "$package_name" != "@anjunar/scalajs-jfx" && "$package_name" != "@anjunar/scalajs-jfx-bridge" ]]; then
     echo "Unexpected package name '${package_name}' in ${manifest_path}." >&2
+    exit 1
+  fi
+  package_version="$(node -p "require('./npm/${package_directory}/package.json').version")"
+  if [[ -z "$release_version" ]]; then
+    release_version="$package_version"
+  elif [[ "$package_version" != "$release_version" ]]; then
+    echo "Release set contains mixed versions: ${release_version} and ${package_version}." >&2
     exit 1
   fi
 done
 
 if [[ "$SKIP_LINK_BRIDGE" != "1" ]]; then
   echo "Linking the Scala.js bridge..."
-  sbtn "scalajs-jfx-bridge/fullLinkJS"
+  sbt --server "scalajs-jfx-bridge/fullLinkJS"
 fi
 
 if [[ "$INSTALL_DEPENDENCIES" == "1" ]]; then
@@ -110,26 +119,33 @@ for package_directory in "${PACKAGE_DIRECTORIES[@]}"; do
   workspace="npm/${package_directory}"
   package_name="$(node -p "require('./${workspace}/package.json').name")"
   package_version="$(node -p "require('./${workspace}/package.json').version")"
-  echo "Processing ${package_name}@${package_version}..."
-
   if [[ "$SKIP_VERIFY" != "1" ]]; then
-    echo "  Running verification..."
+    echo "Verifying ${package_name}@${package_version}..."
     npm --cache "$NPM_CACHE" run verify --workspace "$workspace"
   fi
+done
 
-  publish_arguments=(--cache "$NPM_CACHE" publish --workspace "$workspace" --access public)
-  if [[ "$DRY_RUN" == "1" ]]; then
-    publish_arguments+=(--dry-run)
-    echo "  Packing ${package_name} (dry run)..."
-  else
-    echo "  Publishing ${package_name}..."
-  fi
-
-  npm "${publish_arguments[@]}"
+for package_directory in "${PACKAGE_DIRECTORIES[@]}"; do
+  workspace="npm/${package_directory}"
+  package_name="$(node -p "require('./${workspace}/package.json').name")"
+  package_version="$(node -p "require('./${workspace}/package.json').version")"
+  echo "Packing ${package_name}@${package_version} (release preflight)..."
+  npm --cache "$NPM_CACHE" publish --workspace "$workspace" --access public --dry-run
 done
 
 if [[ "$DRY_RUN" == "1" ]]; then
-  echo "All selected npm packages were packed successfully (dry run)."
-else
-  echo "All selected npm packages were published successfully."
+  echo "The complete npm release set passed verification and packing."
+  exit 0
 fi
+
+for package_directory in "${PACKAGE_DIRECTORIES[@]}"; do
+  workspace="npm/${package_directory}"
+  package_name="$(node -p "require('./${workspace}/package.json').name")"
+  package_version="$(node -p "require('./${workspace}/package.json').version")"
+  echo "Publishing ${package_name}@${package_version}..."
+  npm --cache "$NPM_CACHE" publish --workspace "$workspace" --access public
+done
+
+echo "Verifying the published release set from a clean registry consumer..."
+node scripts/verify-published-npm-set.mjs
+echo "All selected npm packages were published and installed successfully."

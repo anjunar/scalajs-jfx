@@ -13,8 +13,8 @@ object EditorPageTranslations {
     de(i18n"Structured content", "Strukturierte Inhalte"),
     de(i18n"One Markdown value", "Ein Markdown-Wert"),
     de(
-      i18n"SSR renders Markdown as semantic HTML or a textarea; after hydration Lexical edits the same Markdown value.",
-      "SSR rendert Markdown als semantisches HTML oder Textarea; nach der Hydration bearbeitet Lexical denselben Markdown-Wert."
+      i18n"A request-aware SSR host renders Markdown as semantic HTML or a textarea. The static GitHub Pages snapshot starts read-only and changes mode after hydration.",
+      "Ein anfragebasierter SSR-Host rendert Markdown als semantisches HTML oder Textarea. Der statische GitHub-Pages-Snapshot startet schreibgeschützt und wechselt den Modus nach der Hydration."
     ),
     de(i18n"Full editor", "Vollständiger Editor"),
     de(

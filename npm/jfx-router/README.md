@@ -1,6 +1,6 @@
 # @anjunar/jfx-router
 
-Typed route tables, nested outlets, navigation links, and route failures for JFX3 TypeScript applications.
+Typed route tables, nested outlets, navigation links, and route failures for JFX 3 TypeScript applications.
 
 ## Overview
 

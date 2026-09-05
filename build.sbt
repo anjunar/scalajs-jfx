@@ -96,7 +96,7 @@ publishTo := {
 // bei *jedem* Lauf nach dem ersten im selben Server -- auch ohne Quelltext-
 // aenderung, weil packageBin jedes Mal laeuft. Nur ein Serverneustart half.
 // Mit Klassenverzeichnissen statt JARs entfaellt das Problem; drei
-// aufeinanderfolgende `sbtn test` im selben Server laufen gruen.
+// aufeinanderfolgende `sbt --server test` im selben Server laufen gruen.
 //
 // Entfaellt, sobald packageBin unter Windows ohne Rename auf eine offene Datei
 // auskommt oder der Server die Classpath-JARs wieder freigibt.

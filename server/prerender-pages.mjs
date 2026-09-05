@@ -10,7 +10,7 @@
 // Aufruf: npm run prerender (setzt einen Produktionsbuild voraus).
 
 import { existsSync } from "node:fs"
-import { cp, mkdir, rm, writeFile } from "node:fs/promises"
+import { cp, mkdir, readdir, rm, writeFile } from "node:fs/promises"
 import { dirname, resolve } from "node:path"
 import { pathToFileURL } from "node:url"
 
@@ -39,9 +39,9 @@ const assets = JSON.stringify(await productionAssets(clientDist))
 // production assets must be part of the prerendered artifact itself.
 await rm(outputDir, { recursive: true, force: true })
 await mkdir(outputDir, { recursive: true })
-await cp(resolve(clientDist, "assets"), resolve(outputDir, "assets"), { recursive: true })
+await copyClientOutput()
 
-const entries = [
+const seedEntries = [
   ...staticAppRoutes().map((path) => ({ path, priority: path === "/" ? "1.0" : "0.8" })),
   ...languages.flatMap((language) =>
     staticAppRoutes().map((path) => ({
@@ -51,12 +51,25 @@ const entries = [
   )
 ]
 
-for (const entry of entries) {
+const entries = []
+const queuedPaths = new Set(seedEntries.map(({ path }) => path))
+const queue = [...seedEntries]
+
+while (queue.length > 0) {
+  const entry = queue.shift()
   const rendered = await render(entry.path, "GET", JSON.stringify({}), assets)
   const outputPath = outputPathFor(entry.path)
   await mkdir(dirname(outputPath), { recursive: true })
   await writeFile(outputPath, rendered.html, "utf8")
+  entries.push(entry)
   console.log(`prerendered ${entry.path}`)
+
+  for (const path of discoverLinkedRoutes(rendered.html)) {
+    if (!queuedPaths.has(path)) {
+      queuedPaths.add(path)
+      queue.push({ path, priority: "0.6" })
+    }
+  }
 }
 
 const fallback = await render(notFoundPath, "GET", JSON.stringify({}), assets)
@@ -68,6 +81,47 @@ console.log(`${entries.length} Seiten nach ${outputDir} geschrieben`)
 function outputPathFor(path) {
   if (path === "/") return resolve(outputDir, "index.html")
   return resolve(outputDir, path.slice(1), "index.html")
+}
+
+/** Copy Vite's complete public client output while keeping its private manifest private. */
+async function copyClientOutput() {
+  for (const entry of await readdir(clientDist, { withFileTypes: true })) {
+    if (entry.name === ".vite") continue
+    await cp(resolve(clientDist, entry.name), resolve(outputDir, entry.name), { recursive: true })
+  }
+}
+
+/**
+ * Static top-level routes come from AppRoutes.scala. Nested parameter examples are
+ * discovered from real links in their rendered parent, keeping the public URL and
+ * the route demonstration in one source of truth.
+ */
+function discoverLinkedRoutes(html) {
+  const paths = []
+  const basePath = siteConfig.basePath.replace(/\/+$/, "")
+  const hrefPattern = /<a\b[^>]*\bhref=["']([^"']+)["']/gi
+
+  for (const match of html.matchAll(hrefPattern)) {
+    const href = decodeHtmlAttribute(match[1])
+    if (!href.startsWith(`${basePath}/`) && href !== basePath) continue
+    const withoutBase = href.slice(basePath.length) || "/"
+    const path = withoutBase.split(/[?#]/, 1)[0]
+    if (!/\.[a-z0-9]+$/i.test(path)) {
+      paths.push(path || "/")
+
+      // The default-locale UI emits /en/... links even when the visitor entered
+      // through the locale-neutral route. Ship that neutral alias as well so the
+      // URL named by the demo remains directly reloadable on GitHub Pages.
+      const localizedPrefix = languages.find((language) => path.startsWith(`/${language}/`))
+      if (localizedPrefix) paths.push(path.slice(localizedPrefix.length + 1) || "/")
+    }
+  }
+
+  return paths
+}
+
+function decodeHtmlAttribute(value) {
+  return value.replaceAll("&amp;", "&").replaceAll("&#39;", "'").replaceAll("&quot;", '"')
 }
 
 function assertBuilt() {

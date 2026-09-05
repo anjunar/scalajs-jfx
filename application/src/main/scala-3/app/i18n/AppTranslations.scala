@@ -7,7 +7,7 @@ object AppTranslations {
   val entries: Seq[CatalogEntry] = Seq(
     de(i18n"Welcome", "Willkommen"),
     de(i18n"Discover", "Entdecken"),
-    de(i18n"The JFX2 vision", "Die JFX2-Vision"),
+    de(i18n"JFX 3 at a glance", "JFX 3 auf einen Blick"),
     de(i18n"Interaction", "Interaktion"),
     de(i18n"Actions", "Aktionen"),
     de(i18n"The pulse of the app", "Der Puls der App"),
@@ -52,8 +52,8 @@ object AppTranslations {
     de(i18n"Notifications and windows", "Benachrichtigungen und Fenster"),
     de(i18n"JFX API", "JFX API"),
     de(
-      i18n"Design inherited from JFX2, content rebuilt for scalajs-jfx.",
-      "Design aus JFX2 übernommen, Inhalte für scalajs-jfx neu aufgebaut."
+      i18n"JFX 3 · Scala.js and TypeScript · one runtime.",
+      "JFX 3 · Scala.js und TypeScript · eine Runtime."
     ),
     de(i18n"Light", "Hell"),
     de(i18n"Dark", "Dunkel"),

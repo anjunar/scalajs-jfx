@@ -1,0 +1,54 @@
+name: verify
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up sbt
+        uses: sbt/setup-sbt@v1
+
+      - name: Cache Coursier and sbt
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cache/coursier
+            ~/.sbt
+            ~/.ivy2/cache
+          key: ${{ runner.os }}-sbt-${{ hashFiles('project/build.properties', 'project/plugins.sbt', 'build.sbt') }}
+          restore-keys: |
+            ${{ runner.os }}-sbt-
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Scala test suite
+        run: sbt --server "Test/testOnly *"
+
+      - name: Link the production Scala.js bridge
+        run: sbt --server "scalajs-jfx-bridge/fullLinkJS"
+
+      - name: Install npm workspace
+        run: npm ci --no-audit --no-fund
+
+      - name: Verify every npm package and demo
+        run: npm run verify --workspaces --if-present
+
+      - name: Build and validate GitHub Pages output
+        run: node tools/build-pages.mjs

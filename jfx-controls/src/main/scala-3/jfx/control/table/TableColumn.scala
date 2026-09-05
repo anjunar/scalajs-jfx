@@ -63,7 +63,7 @@ object TableColumn {
   def cellValueFactory[S, T](using
       tableColumn: TableColumn[S, T]
   ): CellDataFeatures[S, T] => ReadOnlyProperty[T] | Null =
-    throw new UnsupportedOperationException("Not implemented in JFX2 yet")
+    throw new UnsupportedOperationException("Not implemented in JFX 3 yet")
 
   def sortable[S, T](using column: TableColumn[S, T]): Boolean =
     column.sortableProperty.get

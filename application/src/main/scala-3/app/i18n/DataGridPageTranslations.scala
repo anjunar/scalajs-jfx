@@ -21,8 +21,8 @@ object DataGridPageTranslations {
     ),
     de(i18n"Remote card grid", "Entferntes Karten-Grid"),
     de(
-      i18n"The scrolling header and every card are composed through contextual JFX3 DSL renderers.",
-      "Der mitscrollende Header und jede Karte werden durch kontextbezogene JFX3-DSL-Renderer aufgebaut."
+      i18n"The scrolling header and every card are composed through contextual JFX 3 DSL renderers.",
+      "Der mitscrollende Header und jede Karte werden durch kontextbezogene JFX-3-DSL-Renderer aufgebaut."
     ),
     de(
       i18n"180 remote cards · the header scrolls with the virtual surface",
@@ -41,11 +41,11 @@ object DataGridPageTranslations {
       i18n"Unloaded positions remain stable placeholder cells while nearby data is requested.",
       "Ungeladene Positionen bleiben stabile Platzhalterzellen, während nahe Daten angefordert werden."
     ),
-    de(i18n"SSR", "SSR"),
-    de(i18n"Crawlers receive real windows", "Crawler erhalten echte Fenster"),
+    de(i18n"SSR hosting", "SSR-Hosting"),
+    de(i18n"Query-aware servers render real windows", "Query-fähige Server rendern echte Fenster"),
     de(
-      i18n"offset and limit select deterministic HTML and a real next-page link.",
-      "offset und limit wählen deterministisches HTML und einen echten Link zur nächsten Seite aus."
+      i18n"offset and limit select deterministic HTML on a request-aware server. The GitHub Pages snapshot applies query changes after hydration.",
+      "offset und limit wählen auf einem anfragebasierten Server deterministisches HTML aus. Der GitHub-Pages-Snapshot wendet Query-Änderungen nach der Hydration an."
     ),
     de(i18n"DataGrid DSL", "DataGrid-DSL"),
     de(

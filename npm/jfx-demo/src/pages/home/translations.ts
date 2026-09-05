@@ -3,7 +3,7 @@ import { catalogEntry, i18n, type CatalogEntry } from "@anjunar/jfx-core";
 export const entries: readonly CatalogEntry[] = [
   catalogEntry(i18n`Overview`, { de: "Übersicht" }),
   catalogEntry(i18n`What @anjunar/jfx-* is and where to start.`, { de: "Was @anjunar/jfx-* ist und wo du startest." }),
-  catalogEntry(i18n`A TypeScript facade over JFX3 -- one route per capability, the running component next to the source that produced it.`, { de: "Eine TypeScript-Fassade über JFX3 – eine Route pro Fähigkeit, die laufende Komponente neben ihrem Quelltext." }),
+  catalogEntry(i18n`A TypeScript facade over JFX 3 -- one route per capability, the running component next to the source that produced it.`, { de: "Eine TypeScript-Fassade über JFX 3 – eine Route pro Fähigkeit, die laufende Komponente neben ihrem Quelltext." }),
   catalogEntry(i18n`The ambient-scope DSL: reactive state, control flow, elements, lifecycle.`, { de: "Die DSL mit Ambient-Scope: reaktiver Zustand, Kontrollfluss, Elemente und Lebenszyklus." }),
   catalogEntry(i18n`Tabs, tables, carousels, a virtualized grid and list, remote data sources.`, { de: "Tabs, Tabellen, Karussells, virtualisiertes Grid und Listen sowie entfernte Datenquellen." }),
   catalogEntry(i18n`Validated forms, sub-forms, repeating fields, a combo box, an image cropper.`, { de: "Validierte Formulare, Unterformulare, wiederholende Felder, eine ComboBox und ein Bildzuschnitt." }),

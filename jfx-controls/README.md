@@ -1,6 +1,6 @@
 # scalajs-jfx-controls
 
-Higher-level JFX3 controls for tabs, carousels, and virtualized collections: `TableView`, `DataGrid`, and `VirtualListView`.
+Higher-level JFX 3 controls for tabs, carousels, and virtualized collections: `TableView`, `DataGrid`, and `VirtualListView`.
 
 ## Overview
 

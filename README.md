@@ -1,10 +1,10 @@
-# JFX3
+# JFX 3
 
-JFX3 is a Scala 3 and Scala.js UI library for server-rendered applications. It combines a component DSL, synchronous reactive state, lifecycle-aware rendering, typed forms, routing, controls, and browser integrations in one Scala.js runtime.
+JFX 3 is a Scala 3 and Scala.js UI library for server-rendered applications. It combines a component DSL, synchronous reactive state, lifecycle-aware rendering, typed forms, routing, controls, and browser integrations in one Scala.js runtime.
 
 ## Overview
 
-JFX3 keeps the component tree as the source of truth. The same component code can render HTML on the server, be claimed during browser hydration, and continue with reactive updates and event handling. Component disposal owns subscriptions, event listeners, timers, and other resources created below that component.
+JFX 3 keeps the component tree as the source of truth. The same component code can render HTML on the server, be claimed during browser hydration, and continue with reactive updates and event handling. Component disposal owns subscriptions, event listeners, timers, and other resources created below that component.
 
 The runtime is available directly from Scala or through the TypeScript packages. TypeScript is a typed facade over the Scala.js runtime; it is not a second UI implementation.
 
@@ -28,51 +28,101 @@ Use the Scala modules when the application, model, and server integration are wr
 
 Use the npm packages when the application is written in TypeScript. `@anjunar/jfx-core` contains the TypeScript contract and DSL. `@anjunar/scalajs-jfx-bridge` installs the linked Scala.js runtime that performs rendering, hydration, state propagation, and library component mounting.
 
-## Scala quick start
+## Quick start
+
+### Scala / Scala.js
+
+Enable Scala.js in `project/plugins.sbt`:
 
 ```scala
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.22.0")
+```
+
+Add JFX 3 in `build.sbt` (sbt 2 uses `%%` for the Scala.js platform suffix):
+
+```scala
+enablePlugins(ScalaJSPlugin)
+scalaVersion := "3.3.8"
+scalaJSUseMainModuleInitializer := true
+libraryDependencies += "com.anjunar" %% "scalajs-jfx-core" % "3.0.0"
+```
+
+Add a host element to `index.html`:
+
+```html
+<div id="root"></div>
+<script type="module" src="./target/scala-3.3.8/example-fastopt/main.js"></script>
+```
+
+Compose and mount the counter:
+
+```scala
+import jfx.core.component.{AbstractComponent, Runtime}
 import jfx.core.dsl.ClassDsl.classes
 import jfx.core.dsl.EventDsl.onClick
 import jfx.core.layout.{Button, Div, TextComponent, VBox}
+import jfx.core.render.{Cursor, DomCursor}
 import jfx.core.state.Property
+import org.scalajs.dom
 
 import Button.button
 import Div.div
 import TextComponent.text
 import VBox.vbox
 
-def page(using jfx.core.component.AbstractComponent, jfx.core.render.Cursor): Unit = {
-  val count = Property(0)
-  vbox {
-    classes = Seq("counter")
-    div { text(count.map(value => s"Count: $value")) {} }
-    button("Increment") { onClick(_ => count.set(count.get + 1)) }
+final class CounterApp extends AbstractComponent {
+  val tagName = "main"
+
+  override def compose(cursor: Cursor): Unit = {
+    val count = Property(0)
+    vbox {
+      classes = Seq("counter")
+      div { text(count.map(value => s"Count: $value")) {} }
+      button("Increment") { onClick(_ => count.set(count.get + 1)) }
+    }
   }
+}
+
+object Main {
+  def main(args: Array[String]): Unit =
+    Runtime.mount(new CounterApp, DomCursor.root(dom.document.getElementById("root")))
 }
 ```
 
-The runtime entry points are `Runtime.renderToString` or `Runtime.renderToStringAsync` on the server and `Runtime.mount` or `Runtime.hydrate` in the browser. A Scala.js application must enable the Scala.js plugin and use the module dependency shown in the relevant module README.
+Run `sbt --server fastLinkJS`, then serve the project directory with an HTTP server. For SSR, `Runtime.renderToString` and `Runtime.renderToStringAsync` use an `SsrCursor`. Browser hydration creates a `HydratingCursor.root(...)` and mounts the same component tree through `Runtime.mount`, as demonstrated by [`application/src/main/scala-3/app/Main.scala`](application/src/main/scala-3/app/Main.scala).
 
-## TypeScript quick start
+### TypeScript / npm
 
 ```bash
-npm install @anjunar/jfx-core @anjunar/scalajs-jfx-bridge @anjunar/scalajs-jfx
+npm install @anjunar/jfx-core @anjunar/scalajs-jfx-bridge @anjunar/scalajs-jfx @anjunar/ui
 ```
 
-```ts
-import { button, div, onClick, property, text, vbox } from "@anjunar/jfx-core";
-import "@anjunar/scalajs-jfx-bridge";
+Create `index.html`:
 
-export function page(): void {
+```html
+<div id="root"></div>
+<script type="module" src="/src/main.ts"></script>
+```
+
+Create `src/main.ts`:
+
+```ts
+import { button, div, mount, onClick, property, text, vbox } from "@anjunar/jfx-core";
+import "@anjunar/scalajs-jfx-bridge";
+import "@anjunar/scalajs-jfx/index.css";
+
+function page(): void {
   const count = property(0);
   vbox(() => {
     div(() => text(count.map((value) => `Count: ${value}`)));
     button("Increment", {}, () => onClick(() => count.set(count.get + 1)));
   });
 }
+
+mount(document.getElementById("root")!, page);
 ```
 
-Call `renderToString` on the server, `hydrate` against the resulting document in the browser, or `mount` into an empty element. Rendering bodies are synchronous; asynchronous data belongs in the core `fetchInto` primitive so SSR can wait for it.
+Run it with a TypeScript-aware bundler such as Vite. Call `renderToString` on the server, `hydrate` against the resulting document in the browser, or `mount` into an empty element. Rendering bodies are synchronous; asynchronous data belongs in the core `fetchInto` primitive so SSR can wait for it.
 
 ## SSR, hydration, and non-JavaScript behavior
 
@@ -97,20 +147,24 @@ The runnable examples are in [`application`](application) for Scala and [`npm/jf
 
 ## Build and tests
 
-Use `sbtn`, not `sbt`:
+Use sbt 2 through the `sbt` runner:
 
 ```bash
-sbtn "Test/testOnly *"
+sbt --server "Test/testOnly *"
 ```
 
 This runs the complete Scala test suite. For the npm packages, link the bridge first and then run the package's verification command:
 
 ```bash
-sbtn "scalajs-jfx-bridge/fullLinkJS"
+sbt --server "scalajs-jfx-bridge/fullLinkJS"
 npm run verify --workspace npm/jfx-core
 ```
 
-The repository is currently versioned as `3.0.0` and licensed under MIT.
+## Project status and license
+
+The repository is on the `3.0.0` release line and under active development. The complete Scala suite and every npm workspace verification run in CI for pushes and pull requests. Source, releases, and issue tracking live in the [GitHub repository](https://github.com/anjunar/scalajs-jfx).
+
+JFX 3 is available under the [MIT License](LICENSE).
 
 ## Related documentation
 

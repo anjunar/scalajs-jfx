@@ -25,7 +25,7 @@ object ButtonPage {
         sectionIntro(
           i18n"Interaction",
           i18n"A button is small, but it carries responsibility.",
-          i18n"In JFX2 the action stays visible in the template: label, event, and surrounding context sit next to each other. That keeps simple buttons easy to read and leaves room for more complex workflows later."
+          i18n"In JFX 3 the action stays visible in the template: label, event, and surrounding context sit next to each other. That keeps simple buttons easy to read and leaves room for more complex workflows later."
         )
 
         componentShowcase(

@@ -1,7 +1,7 @@
 {
   "name": "@anjunar/jfx-editor",
   "version": "3.0.0",
-  "description": "The TypeScript editor API of JFX3: a Lexical-backed rich-text control, bound by name like input, projected onto the jfx.editor components that run in the Scala.js runtime published as @anjunar/scalajs-jfx-bridge.",
+  "description": "The TypeScript editor API of JFX 3: a Lexical-backed rich-text control, bound by name like input, projected onto the jfx.editor components that run in the Scala.js runtime published as @anjunar/scalajs-jfx-bridge.",
   "type": "module",
   "types": "./dist/index.d.ts",
   "main": "./dist/index.js",

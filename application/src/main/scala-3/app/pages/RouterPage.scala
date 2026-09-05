@@ -3,12 +3,12 @@ package app.pages
 import app.components.Showcase
 import jfx.core.component.AbstractComponent
 import jfx.core.dsl.ClassDsl.classes
-import jfx.core.dsl.EventDsl.onClick
-import jfx.core.layout.Button.button
+import jfx.core.layout.TextComponent.text
 import jfx.core.layout.VBox.vbox
 import jfx.core.render.Cursor
 import jfx.core.i18n.i18n
 import jfx.router.Router
+import jfx.router.RouterLink.routerLink
 
 object RouterPage {
   def render()(using AbstractComponent, Cursor): Unit = {
@@ -53,9 +53,9 @@ object RouterPage {
         vbox {
           classes = Seq("router-nested-demo")
 
-          button(i18n"Open /router/user/42") {
+          routerLink("/router/user/42") {
             classes = Seq("calm-action", "calm-action--primary")
-            onClick { _ => Router.navigate("/router/user/42") }
+            text(i18n"Open /router/user/42") {}
           }
 
           Router.routerOutlet()

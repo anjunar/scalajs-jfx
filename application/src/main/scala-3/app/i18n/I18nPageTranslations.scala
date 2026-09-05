@@ -37,10 +37,10 @@ object I18nPageTranslations {
       i18n"The repository already contains a richer i18n model that can replace the lightweight demo copy step by step.",
       "Das Repository enthält bereits ein umfassenderes i18n-Modell, das die einfachen Demo-Texte Schritt für Schritt ersetzen kann."
     ),
-    de(i18n"Lightweight demo copy", "Leichtgewichtige Demo-Texte"),
+    de(i18n"Message-based copy", "Nachrichtenbasierte Texte"),
     de(
-      i18n"The visual design is ported first; the full message catalog can grow from here.",
-      "Zuerst wurde das visuelle Design portiert; von hier aus kann der vollständige Nachrichtenkatalog wachsen."
+      i18n"Messages are resolved from the I18nRuntime supplied to the component tree.",
+      "Nachrichten werden aus der I18nRuntime aufgelöst, die dem Komponentenbaum bereitgestellt wird."
     )
   )
 }

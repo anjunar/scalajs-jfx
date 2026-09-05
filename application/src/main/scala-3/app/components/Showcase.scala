@@ -3,6 +3,8 @@ package app.components
 import jfx.core.component.AbstractComponent
 import jfx.core.dsl.ClassDsl.classes
 import jfx.core.dsl.DslLayer.{render, renderInto}
+import jfx.core.dsl.EventDsl.onClick
+import jfx.core.layout.Button.button
 import jfx.core.layout.Div
 import jfx.core.layout.Div.div
 import jfx.core.layout.TextComponent.text
@@ -10,8 +12,12 @@ import jfx.core.layout.VBox.vbox
 import jfx.core.render.Cursor
 import jfx.core.state.{Property, ReadOnlyProperty}
 import jfx.core.i18n.RuntimeMessage
+import org.scalajs.dom
 
 import scala.annotation.targetName
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.scalajs.js.JSConverters.*
+import scala.util.{Failure, Success}
 
 object Showcase {
 
@@ -249,9 +255,29 @@ object Showcase {
   }
 
   def codeBlock(language: String, code: String)(using AbstractComponent, Cursor): Unit = {
+    val copyLabel = Property("Copy")
+
     vbox {
       classes = Seq("code-block")
-      div { classes = Seq("code-block__lang"); text(language) {} }
+      div {
+        classes = Seq("code-block__header")
+        div { classes = Seq("code-block__lang"); text(language) {} }
+        button(copyLabel) {
+          classes = Seq("code-block__copy")
+          onClick { _ =>
+            if (Cursor.isBrowser) {
+              try {
+                dom.window.navigator.clipboard.writeText(code).toFuture.onComplete {
+                  case Success(_) => copyLabel.set("Copied")
+                  case Failure(_) => copyLabel.set("Copy failed")
+                }
+              } catch {
+                case _: Throwable => copyLabel.set("Copy failed")
+              }
+            }
+          }
+        }
+      }
       div { classes = Seq("code-block__content"); text(code) {} }
     }
   }

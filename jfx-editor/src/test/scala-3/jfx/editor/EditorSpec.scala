@@ -374,7 +374,7 @@ final class EditorSpec extends AnyFlatSpec with Matchers {
     html should include("Plugin content")
   }
 
-  "Editor dialog bridge" should "mount Lexical dialog content through the JFX3 Viewport" in {
+  "Editor dialog bridge" should "mount Lexical dialog content through the JFX 3 Viewport" in {
     val cursor                    = new SsrCursor()
     var mountedViewport: Viewport = null
     val root                      = Runtime.mount(

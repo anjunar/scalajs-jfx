@@ -1,6 +1,6 @@
 # scalajs-jfx-editor
 
-Rich-text editing for JFX3, backed by Lexical in the browser and exposed as a regular `Control[String]`. Markdown is the public value in SSR and in the browser; Lexical editor state is an implementation detail.
+Rich-text editing for JFX 3, backed by Lexical in the browser and exposed as a regular `Control[String]`. Markdown is the public value in SSR and in the browser; Lexical editor state is an implementation detail.
 
 ## Overview
 

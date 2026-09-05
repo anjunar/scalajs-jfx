@@ -1,6 +1,6 @@
 # @anjunar/jfx-controls
 
-Typed JFX3 controls for tabs, carousels, and virtualized table, data-grid, and list views.
+Typed JFX 3 controls for tabs, carousels, and virtualized table, data-grid, and list views.
 
 ## Overview
 

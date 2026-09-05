@@ -90,7 +90,7 @@ BUNDLE_DIR="${REPO_ROOT}/target/sona-staging"
 BUNDLE_ZIP="${REPO_ROOT}/target/central-bundle-${VERSION}.zip"
 
 if [[ "$SKIP_PUBLISH_SIGNED" -eq 0 ]]; then
-  sbtn "publishSigned"
+  sbt --server "publishSigned"
 fi
 
 if [[ ! -d "$BUNDLE_DIR" ]]; then

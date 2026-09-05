@@ -1,5 +1,5 @@
 /**
- * The routing API of JFX3 in TypeScript.
+ * The routing API of JFX 3 in TypeScript.
  *
  * The routing itself -- matching, forwarding, history, localized URLs, error
  * routes with their own status -- stays in `jfx.router.Router`, the same Scala.js

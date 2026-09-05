@@ -45,12 +45,14 @@ object I18nPage {
       )
 
       Showcase.apiSection(
-        i18n"Lightweight demo copy",
-        i18n"The visual design is ported first; the full message catalog can grow from here."
+        i18n"Message-based copy",
+        i18n"Messages are resolved from the I18nRuntime supplied to the component tree."
       ) {
         Showcase.codeBlock(
           "scala",
-          """DemoI18n.text(i18n"Router", localeProperty)""".stripMargin
+          """I18nRuntime.provide(runtime) {
+  text(i18n"Router") {}
+}""".stripMargin
         )
       }
     }

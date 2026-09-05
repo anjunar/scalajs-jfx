@@ -15,23 +15,40 @@ import jfx.core.i18n.{I18nRuntime, RuntimeMessage, i18n}
 object OverviewPage {
   def render()(using AbstractComponent, Cursor): Unit = {
     val runtime = I18nRuntime.require
-    showcasePage(i18n"Welcome to JFX2", i18n"Your new home for reactive UIs in Scala.js.") {
+    showcasePage(i18n"Welcome to JFX 3", i18n"Reactive Scala.js interfaces with SSR and hydration built into the same component model.") {
       vbox {
         style { gap = "34px" }
-        sectionIntro(
-          i18n"Origin story",
-          i18n"After 17 years of looking for clarity, the project started to feel less like a thesis and more like relief.",
-          i18n"JFX2 is the answer I wanted after living with frameworks that promised simplicity but quietly handed over control. It chooses explicit lifecycles, honest reactivity, and a DSL that stays readable when the codebase grows."
-        )
-        sectionIntro(
-          i18n"Vision",
-          i18n"A documentation site that feels like a real workbench.",
-          i18n"The showcase should not just prove that components render. It should show how JFX2 is meant to feel: declarative, server-stable, reactive in the browser, and readable enough that you can still nod to it six months later."
-        )
+        componentShowcase(
+          i18n"Start with working code",
+          i18n"A Property drives the text, and the event updates that same state after hydration."
+        ) {
+          codeBlock(
+            "scala",
+            """import jfx.core.dsl.EventDsl.onClick
+import jfx.core.layout.Button.button
+import jfx.core.layout.TextComponent.text
+import jfx.core.layout.VBox.vbox
+import jfx.core.state.Property
+
+val count = Property(0)
+
+vbox {
+  text(count.map(n => s"Count: $n")) {}
+  button("Increment") {
+    onClick(_ => count.set(count.get + 1))
+  }
+}"""
+          )
+        }
         metricStrip(
           i18n"SSR"  -> i18n"Server HTML and client hydration share the same structure.",
           i18n"DSL"  -> i18n"Templates stay declarative and free of DOM handwork.",
           i18n"Live" -> i18n"Every page shows a usable example instead of a dry API list."
+        )
+        sectionIntro(
+          i18n"One component model",
+          i18n"Render complete HTML on the server, then hydrate the same tree in the browser.",
+          i18n"The declarative Scala DSL, reactive properties, router, forms, and lifecycle-aware components share one runtime. The TypeScript packages expose that runtime through a typed facade."
         )
         componentShowcase(
           i18n"Message-centered I18n",

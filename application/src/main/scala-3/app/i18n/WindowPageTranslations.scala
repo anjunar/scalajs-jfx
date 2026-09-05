@@ -13,8 +13,8 @@ object WindowPageTranslations {
       "Der Viewport ist die Bühne für Dinge, die über der Seite liegen."
     ),
     de(
-      i18n"Notifications, windows, and overlays need a central order. JFX2 gathers those concerns in the viewport so pages do not have to manage global UI layers on their own.",
-      "Benachrichtigungen, Fenster und Overlays brauchen eine zentrale Ordnung. JFX2 bündelt diese Belange im Viewport, sodass Seiten globale UI-Ebenen nicht selbst verwalten müssen."
+      i18n"Notifications, windows, and overlays need a central order. JFX 3 gathers those concerns in the viewport so pages do not have to manage global UI layers on their own.",
+      "Benachrichtigungen, Fenster und Overlays brauchen eine zentrale Ordnung. JFX 3 bündelt diese Belange im Viewport, sodass Seiten globale UI-Ebenen nicht selbst verwalten müssen."
     ),
     de(i18n"Notify", "Benachrichtigen"),
     de(

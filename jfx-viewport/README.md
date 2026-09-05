@@ -1,6 +1,6 @@
 # scalajs-jfx-viewport
 
-The global UI layer for JFX3: movable windows, anchor-following overlays, and timed notifications above the routed page.
+The global UI layer for JFX 3: movable windows, anchor-following overlays, and timed notifications above the routed page.
 
 ## Overview
 

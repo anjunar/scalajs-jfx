@@ -1,6 +1,6 @@
 # scalajs-jfx-router
 
-Route matching, asynchronous route loading, nested outlets, links, localized URLs, and SSR response status for JFX3 applications.
+Route matching, asynchronous route loading, nested outlets, links, localized URLs, and SSR response status for JFX 3 applications.
 
 ## Overview
 

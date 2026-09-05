@@ -82,6 +82,17 @@
     border-top: 1px solid var(--aj-line-soft);
 }
 
+.app-sidebar__project-links {
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.app-sidebar__project-links a {
+    color: var(--aj-accent-strong);
+    font-weight: 700;
+}
+
 /* Main Area */
 .app-main {
     display: flex;
@@ -451,6 +462,29 @@ html[data-theme="dark"] .code-block {
 
 .code-block__lang {
     color: var(--aj-ink-faint);
+}
+
+.code-block__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 10px;
+}
+
+.code-block__copy {
+    padding: 4px 10px;
+    border: 1px solid var(--aj-line);
+    border-radius: 999px;
+    background: transparent;
+    color: inherit;
+    font: 700 0.75rem/1.4 var(--font-sans, system-ui, sans-serif);
+    cursor: pointer;
+}
+
+.code-block__copy:hover,
+.code-block__copy:focus-visible {
+    border-color: var(--aj-accent-strong);
 }
 
 html[data-theme="dark"] .code-block__lang {

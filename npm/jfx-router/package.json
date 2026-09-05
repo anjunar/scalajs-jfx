@@ -1,7 +1,7 @@
 {
   "name": "@anjunar/jfx-router",
   "version": "3.0.0",
-  "description": "The TypeScript routing API of JFX3: route tables, nested outlets and navigating links, projected onto the jfx.router.Router that runs in the Scala.js runtime published as @anjunar/scalajs-jfx-bridge.",
+  "description": "The TypeScript routing API of JFX 3: route tables, nested outlets and navigating links, projected onto the jfx.router.Router that runs in the Scala.js runtime published as @anjunar/scalajs-jfx-bridge.",
   "type": "module",
   "types": "./dist/index.d.ts",
   "main": "./dist/index.js",

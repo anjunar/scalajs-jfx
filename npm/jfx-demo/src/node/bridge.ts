@@ -2,7 +2,7 @@
  * Renders every page that needs the real Scala.js bridge -- everything under
  * controls/, forms/ and viewport/, plus the six @anjunar/jfx-core pages
  * node/stub.ts also renders. Run with `npm run demo:bridge`. Needs
- * @anjunar/scalajs-jfx-bridge linked -- `sbtn "scalajs-jfx-bridge/fullLinkJS"`
+ * @anjunar/scalajs-jfx-bridge linked -- `sbt --server "scalajs-jfx-bridge/fullLinkJS"`
  * from the repo root.
  *
  * It uses the build-safe page manifest rather than `app/catalog.ts`: every

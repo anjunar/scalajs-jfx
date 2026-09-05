@@ -13,7 +13,7 @@
  *
  * It needs the linked artifact:
  *
- *     sbtn "scalajs-jfx-bridge/fullLinkJS"
+ *     sbt --server "scalajs-jfx-bridge/fullLinkJS"
  *
  * If it is missing the test fails loudly rather than skipping. A silently
  * skipped bridge test would leave the harness asserting only that the stub
@@ -55,7 +55,7 @@ beforeAll(() => {
   if (!existsSync(linkedArtifact)) {
     throw new Error(
       `The Scala.js bridge is not linked. Run:\n\n` +
-        `    sbtn "scalajs-jfx-bridge/fullLinkJS"\n\n` +
+        `    sbt --server "scalajs-jfx-bridge/fullLinkJS"\n\n` +
         `Expected: ${linkedArtifact}`
     );
   }

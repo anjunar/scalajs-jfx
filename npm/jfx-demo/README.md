@@ -11,7 +11,7 @@ The demo is not a published library package. Each page is a real consumer of the
 From the repository root:
 
 ```bash
-sbtn "scalajs-jfx-bridge/fullLinkJS"
+sbt --server "scalajs-jfx-bridge/fullLinkJS"
 npm install
 ```
 

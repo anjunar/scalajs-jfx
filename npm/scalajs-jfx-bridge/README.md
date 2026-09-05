@@ -1,6 +1,6 @@
 # @anjunar/scalajs-jfx-bridge
 
-The linked Scala.js runtime for the JFX3 TypeScript API. Import this package once at application startup to install the runtime used by `@anjunar/jfx-core` and the feature packages.
+The linked Scala.js runtime for the JFX 3 TypeScript API. Import this package once at application startup to install the runtime used by `@anjunar/jfx-core` and the feature packages.
 
 ## Overview
 
@@ -55,7 +55,7 @@ The package must be paired with matching versions of `@anjunar/jfx-core` and `@a
 From the repository root:
 
 ```bash
-sbtn "scalajs-jfx-bridge/fullLinkJS"
+sbt --server "scalajs-jfx-bridge/fullLinkJS"
 npm run verify --workspace npm/jfx-core
 ```
 

@@ -173,7 +173,7 @@ const catalogEntries: readonly DocEntry[] = [
   {
     path: "/controls/table",
     title: "TableView",
-    summary: "A virtualized table with a sortable column and a crawlable SSR pager.",
+    summary: "A virtualized table with a sortable column and a request-aware SSR pager.",
     pkg: "controls",
     keywords: ["table", "tableView", "column", "sortable", "crawlable"],
     doc: controlsTableDoc,

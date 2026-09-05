@@ -4,7 +4,7 @@
  * in this file rather than in the plugin itself so it is importable without
  * going through the plugin's resolution path -- see CLAUDE_DEMO_PLAN.md E-3.
  */
-import { button, classes, code, div, onClick, pre, span, text, when } from "@anjunar/jfx-core";
+import { button, classes, code, div, onClick, pre, property, span, text, when } from "@anjunar/jfx-core";
 import { hydratedProperty } from "../app/hydrated.js";
 import { translated } from "../app/i18n.js";
 
@@ -93,10 +93,19 @@ export function codeBlock(snippet: CodeSnippet): void {
     // entry-client.ts), so its absence without JavaScript is not a loading
     // state that never resolves -- it simply never appears, per E-6.
     when(hydratedProperty(), () => {
-      button(translated("Copy"), {}, () => {
+      const copyLabel = property(translated("Copy").get);
+      button(copyLabel, {}, () => {
         classes("docs-code-block__copy");
         onClick(() => {
-          void navigator.clipboard?.writeText(plainText(snippet));
+          const copy = navigator.clipboard?.writeText(plainText(snippet));
+          if (copy === undefined) {
+            copyLabel.set("Copy failed");
+          } else {
+            void copy.then(
+              () => copyLabel.set("Copied"),
+              () => copyLabel.set("Copy failed")
+            );
+          }
         });
       });
     });

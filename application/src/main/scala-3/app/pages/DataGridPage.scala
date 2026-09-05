@@ -127,7 +127,7 @@ object DataGridPage {
 
         componentShowcase(
           i18n"Remote card grid",
-          i18n"The scrolling header and every card are composed through contextual JFX3 DSL renderers."
+          i18n"The scrolling header and every card are composed through contextual JFX 3 DSL renderers."
         ) {
           vbox {
             style { gap = "16px" }
@@ -241,9 +241,9 @@ object DataGridPage {
             i18n"Unloaded positions remain stable placeholder cells while nearby data is requested."
           ),
           (
-            i18n"SSR",
-            i18n"Crawlers receive real windows",
-            i18n"offset and limit select deterministic HTML and a real next-page link."
+            i18n"SSR hosting",
+            i18n"Query-aware servers render real windows",
+            i18n"offset and limit select deterministic HTML on a request-aware server. The GitHub Pages snapshot applies query changes after hydration."
           )
         )
 

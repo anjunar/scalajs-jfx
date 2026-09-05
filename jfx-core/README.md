@@ -1,6 +1,6 @@
 # scalajs-jfx-core
 
-The core Scala.js runtime and DSL for JFX3. Use it to compose DOM components, bind reactive state, render on the server, hydrate in the browser, and manage component-owned resources.
+The core Scala.js runtime and DSL for JFX 3. Use it to compose DOM components, bind reactive state, render on the server, hydrate in the browser, and manage component-owned resources.
 
 ## Overview
 
@@ -45,7 +45,7 @@ def counter(using jfx.core.component.AbstractComponent, jfx.core.render.Cursor):
 
 `Condition.when` mounts its body while a boolean property is true. `Foreach` mounts one body per list item. `FetchComponent.fetch` registers asynchronous work with the render context so SSR can wait for it.
 
-`Runtime.renderToString` renders a fragment and `Runtime.renderToStringAsync` waits for async work. `Runtime.mount` renders into an empty host; `Runtime.hydrate` claims server-rendered nodes. `Head.head`, `DocumentHead`, and `jfx.core.i18n` provide document metadata and locale-aware messages.
+`Runtime.renderToString` renders a fragment and `Runtime.renderToStringAsync` waits for async work. `Runtime.mount` renders with the supplied cursor: use `DomCursor.root(...)` for an empty browser host and `HydratingCursor.root(...)` to claim server-rendered nodes. `Head.head`, `DocumentHead`, and `jfx.core.i18n` provide document metadata and locale-aware messages.
 
 ## SSR and hydration
 

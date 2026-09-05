@@ -60,6 +60,18 @@ textarea {
     text-decoration: none;
 }
 
+.app-shell__project-links,
+.app-shell__controls {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.app-shell__project-links a {
+    color: var(--aj-ink-soft);
+    font-size: 0.875rem;
+}
+
 .app-shell__theme-toggle,
 .app-shell__locale-toggle {
     padding: 0.4rem 0.75rem;
@@ -109,4 +121,18 @@ textarea {
 .app-shell__nav-group a.app-shell__nav-link--active {
     color: var(--aj-accent-strong);
     font-weight: 600;
+}
+
+@media (max-width: 800px) {
+    .app-shell__header {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .app-shell__project-links {
+        order: 3;
+        width: 100%;
+        overflow-x: auto;
+        padding-bottom: 0.25rem;
+    }
 }

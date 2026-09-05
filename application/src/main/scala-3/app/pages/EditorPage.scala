@@ -28,7 +28,7 @@ object EditorPage {
       Showcase.sectionIntro(
         i18n"Structured content",
         i18n"One Markdown value",
-        i18n"SSR renders Markdown as semantic HTML or a textarea; after hydration Lexical edits the same Markdown value."
+        i18n"A request-aware SSR host renders Markdown as semantic HTML or a textarea. The static GitHub Pages snapshot starts read-only and changes mode after hydration."
       )
 
       Showcase.componentShowcase(
@@ -95,7 +95,8 @@ object EditorPage {
       |This **Markdown** document is shared by forms, SSR and Lexical.
       |
       |- Semantic HTML without JavaScript
-      |- A textarea when `?article.editor=editable` is present
+      |- A textarea for `?article.editor=editable` on a request-aware SSR host
+      |- Post-hydration mode changes on the static GitHub Pages showcase
       |- Rich editing after hydration
       |""".stripMargin
 }

@@ -1,6 +1,6 @@
 # scalajs-jfx-bridge
 
-The Scala.js JavaScript boundary for JFX3. This module links the Scala.js runtime used by the TypeScript packages and exposes opaque handles for rendering, state, components, forms, routing, controls, viewport features, and i18n.
+The Scala.js JavaScript boundary for JFX 3. This module links the Scala.js runtime used by the TypeScript packages and exposes opaque handles for rendering, state, components, forms, routing, controls, viewport features, and i18n.
 
 ## Overview
 
@@ -9,7 +9,7 @@ The bridge is an integration module rather than a second UI framework. It depend
 ## Building the linked runtime
 
 ```bash
-sbtn "scalajs-jfx-bridge/fullLinkJS"
+sbt --server "scalajs-jfx-bridge/fullLinkJS"
 ```
 
 The output is written to `npm/scalajs-jfx-bridge/dist/fullopt` and is generated; it is not a source file to edit. The checked-in bridge entry point and TypeScript declarations live in the npm package.

@@ -33,7 +33,7 @@ object LayoutPageTranslations {
       i18n"A denser layout shows how navigation, content, and detail areas emerge from a few building blocks.",
       "Ein dichteres Layout zeigt, wie Navigation, Inhalt und Detailbereiche aus wenigen Bausteinen entstehen."
     ),
-    de(i18n"JFX2", "JFX2"),
+    de(i18n"JFX 3", "JFX 3"),
     de(i18n"Components", "Komponenten"),
     de(i18n"Forms", "Formulare"),
     de(i18n"Data", "Daten"),
@@ -50,10 +50,10 @@ object LayoutPageTranslations {
       i18n"The core idea stays small and legible: nest containers, set spacing, place content.",
       "Die Kernidee bleibt klein und gut lesbar: Container verschachteln, Abstände setzen, Inhalte platzieren."
     ),
-    de(i18n"H1", "H1"),
-    de(i18n"H2", "H2"),
-    de(i18n"V1", "V1"),
-    de(i18n"V2", "V2"),
+    de(i18n"Navigation", "Navigation"),
+    de(i18n"Toolbar", "Toolbar"),
+    de(i18n"Content", "Inhalt"),
+    de(i18n"Inspector", "Inspektor"),
     de(i18n"Readability", "Lesbarkeit"),
     de(
       i18n"The structure reads from the outside in",
