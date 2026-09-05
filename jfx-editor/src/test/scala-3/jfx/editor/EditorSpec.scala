@@ -3,9 +3,11 @@ package jfx.editor
 import jfx.core.component.{AbstractComponent, Runtime}
 import jfx.core.dsl.DslLayer.render
 import jfx.core.render.{Cursor, SsrCursor}
+import jfx.core.state.Property
 import jfx.editor.Editor.*
 import jfx.editor.plugins.*
 import jfx.forms.{Control, ErrorResponse, Form, FormController}
+import jfx.forms.Form.form
 import jfx.viewport.Viewport
 import jfx.viewport.Viewport.viewport
 import org.scalajs.dom.HTMLElement
@@ -206,6 +208,63 @@ final class EditorSpec extends AnyFlatSpec with Matchers {
     html should not include "<script>"
   }
 
+  it should "preserve the complete Markdown projection contract" in {
+    val html = Runtime.renderToString { cursor =>
+      Runtime.mount(
+        new EditorRoot {
+          override protected def content(using AbstractComponent, Cursor): Unit =
+            editor("contract", standalone = true) {
+              Editor.value = """# Heading
+                  |
+                  |> Quote with **bold**, *italic*, ++underline++, ~~strike~~, ==highlight== and `code`.
+                  |
+                  |- unordered
+                  |
+                  |![Sized](https://example.test/image.png){width=37}
+                  |""".stripMargin
+              editable = false
+            }
+        },
+        cursor
+      )
+    }
+
+    html should include("<blockquote")
+    html should include("<ul")
+    html should include("<strong>bold</strong>")
+    html should include("<em>italic</em>")
+    html should include("<u>underline</u>")
+    html should include("<s>strike</s>")
+    html should include("<mark>highlight</mark>")
+    html should include("<code>code</code>")
+    html should include("width=\"37\"")
+  }
+
+  it should "switch editable to readonly and back without changing Markdown" in {
+    val cursor          = new SsrCursor()
+    var control: Editor = null
+    val root            = Runtime.mount(
+      new EditorRoot {
+        override protected def content(using AbstractComponent, Cursor): Unit =
+          control = editor("mode", standalone = true) {
+            Editor.value = "## Stable"
+            editable = true
+          }
+      },
+      cursor
+    )
+
+    try {
+      cursor.collectHtml() should include("<textarea")
+      control.editableProperty.set(false)
+      cursor.collectHtml() should include("<h2")
+      cursor.collectHtml() should not include "<textarea"
+      control.editableProperty.set(true)
+      cursor.collectHtml() should include("<textarea")
+      control.valueProperty.get shouldBe "## Stable"
+    } finally Runtime.unmount(root)
+  }
+
   it should "compose the complete plugin set without changing the Markdown value type" in {
     val document        = "Plugin content"
     var control: Editor = null
@@ -290,6 +349,32 @@ final class EditorSpec extends AnyFlatSpec with Matchers {
     controller.controls shouldBe empty
   }
 
+  it should "bind Markdown bidirectionally and detach the binding on unmount" in {
+    val article         = new ArticleBody()
+    var control: Editor = null
+    article.body.set("Initial Markdown")
+
+    val root = Runtime.mount(
+      new EditorRoot {
+        override protected def content(using AbstractComponent, Cursor): Unit =
+          form(article) {
+            control = editor("body") {}
+          }
+      },
+      new SsrCursor()
+    )
+
+    control.valueProperty.get shouldBe "Initial Markdown"
+    article.body.set("From model")
+    control.valueProperty.get shouldBe "From model"
+    control.valueProperty.set("From editor")
+    article.body.get shouldBe "From editor"
+
+    Runtime.unmount(root)
+    article.body.set("After unmount")
+    control.valueProperty.get shouldBe "From editor"
+  }
+
 }
 
 private final class RecordingFormController extends FormController {
@@ -303,6 +388,8 @@ private final class RecordingFormController extends FormController {
   override def clearErrors(): Unit                                    = ()
   override def resetInteractionState(): Unit                          = ()
 }
+
+private final class ArticleBody(var body: Property[String] = Property(""))
 
 private abstract class EditorRoot extends AbstractComponent {
   override val tagName: String = "main"

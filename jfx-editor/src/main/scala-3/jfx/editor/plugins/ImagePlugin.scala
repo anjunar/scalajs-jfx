@@ -10,7 +10,7 @@ import jfx.core.dsl.StyleDsl.*
 import jfx.core.layout.TextComponent.text
 import jfx.core.render.{Cursor, DomHostElement}
 import jfx.core.state.Disposable
-import jfx.editor.Editor
+import jfx.editor.{Editor, MarkdownSecurity}
 import jfx.editor.plugins.DialogElement.element
 import lexical.{
   COMMAND_PRIORITY,
@@ -323,16 +323,16 @@ final class ImagePlugin extends EditorPlugin {
       .map(_.trim)
       .getOrElse("")
 
-    Option.when(src.nonEmpty)(
+    MarkdownSecurity.safeImageUrl(src).map { safeSrc =>
       ImageDialogPayload(
-        src = src,
+        src = safeSrc,
         altText = Option(alt).map(_.value.trim).filter(_.nonEmpty).orNull,
         maxWidth = math.max(
           1,
           Option(width).flatMap(_.value.toIntOption).getOrElse(defaultWidthPx)
         )
       )
-    )
+    }
   }
 }
 

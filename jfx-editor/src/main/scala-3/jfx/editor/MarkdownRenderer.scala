@@ -11,24 +11,22 @@ import jfx.core.render.Cursor
 import scala.collection.mutable
 import scala.util.matching.Regex
 
-/** Small, safe Markdown projection for the editor's server-rendered representation.
+/** Safe Markdown projection for the editor's server-rendered representation.
   *
   * It deliberately creates JFX nodes instead of injecting an HTML string. Text is therefore escaped
-  * by the normal renderer and Markdown cannot smuggle executable markup into SSR output. The
-  * supported blocks cover the article-shaped subset used by the editor PoC: headings, paragraphs,
-  * quotes, lists, fenced code, horizontal rules and pipe tables. Inline rendering supports
-  * emphasis, strong text, strike-through, code, links and images.
+  * by the normal renderer and Markdown cannot smuggle executable markup into SSR output. It covers
+  * the complete public Markdown contract documented by the editor module.
   */
-private[editor] final class MarkdownPreview(source: String) extends AbstractComponent {
+private[editor] final class MarkdownRenderer(source: String) extends AbstractComponent {
   override val tagName: String = ""
 
   override def compose(cursor: Cursor): Unit =
     render(this, cursor) {
-      MarkdownPreview.parseBlocks(source).foreach(MarkdownPreview.renderBlock)
+      MarkdownRenderer.parseBlocks(source).foreach(MarkdownRenderer.renderBlock)
     }
 }
 
-private object MarkdownPreview {
+private object MarkdownRenderer {
   private sealed trait Block
   private final case class Heading(level: Int, value: String)                      extends Block
   private final case class Paragraph(value: String)                                extends Block
@@ -84,7 +82,7 @@ private object MarkdownPreview {
       else {
         line match {
           case fencePattern(fence, language) =>
-            val content = mutable.ArrayBuffer.empty[String]
+            val content      = mutable.ArrayBuffer.empty[String]
             val closingFence = ("^\\s*" + Regex.quote(fence) + "\\s*$").r
             index += 1
             while (index < lines.length && !closingFence.matches(lines(index))) {
@@ -169,10 +167,11 @@ private object MarkdownPreview {
   private def startsBlock(lines: IndexedSeq[String], index: Int): Boolean = {
     val line = lines(index)
     line match {
-      case fencePattern(_, _) | headingPattern(_, _) | unorderedPattern(_) | orderedPattern(_) => true
-      case value if value.trim.startsWith(">") || isHorizontalRule(value)                   => true
-      case _ if isTableStart(lines, index)                                                  => true
-      case _                                                                                => false
+      case fencePattern(_, _) | headingPattern(_, _) | unorderedPattern(_) | orderedPattern(_) =>
+        true
+      case value if value.trim.startsWith(">") || isHorizontalRule(value) => true
+      case _ if isTableStart(lines, index)                                => true
+      case _                                                              => false
     }
   }
 
@@ -186,8 +185,8 @@ private object MarkdownPreview {
     }
 
   private def splitTableRow(line: String): Seq[String] = {
-    val source = line.trim.stripPrefix("|").stripSuffix("|")
-    val cells = mutable.ArrayBuffer.empty[String]
+    val source  = line.trim.stripPrefix("|").stripSuffix("|")
+    val cells   = mutable.ArrayBuffer.empty[String]
     val current = new StringBuilder
     var escaped = false
     source.foreach { character =>
@@ -211,26 +210,26 @@ private object MarkdownPreview {
     block match {
       case Heading(level, value) =>
         element(s"h$level") {
-          classes = Seq(s"lexical-heading-h$level")
+          classes = Seq(EditorStyles.heading(level))
           renderInline(value)
         }
       case Paragraph(value) =>
         element("p") {
-          classes = Seq("lexical-paragraph")
+          classes = Seq(EditorStyles.paragraph)
           renderInline(value)
         }
       case Quote(blocks) =>
         element("blockquote") {
-          classes = Seq("lexical-quote")
+          classes = Seq(EditorStyles.quote)
           blocks.foreach(renderBlock)
         }
       case ListBlock(ordered, items) =>
         val tag = if (ordered) "ol" else "ul"
         element(tag) {
-          classes = Seq(if (ordered) "lexical-list-ol" else "lexical-list-ul")
+          classes = Seq(if (ordered) EditorStyles.orderedList else EditorStyles.unorderedList)
           items.foreach { item =>
             element("li") {
-              classes = Seq("lexical-listitem")
+              classes = Seq(EditorStyles.listItem)
               renderInline(item)
             }
           }
@@ -259,7 +258,7 @@ private object MarkdownPreview {
             }
           }
         }
-      case HorizontalRule => element("hr") { classes = Seq("lexical-horizontal-rule") }
+      case HorizontalRule => element("hr") { classes = Seq(EditorStyles.horizontalRule) }
     }
 
   private def renderInline(value: String)(using AbstractComponent, Cursor): Unit = {
@@ -294,7 +293,7 @@ private object MarkdownPreview {
             case "code" => element("code") { text(matched.group(1)) {} }
             case "strong-star" | "strong-underscore" =>
               element("strong") { renderInline(matched.group(1)) }
-            case "strike" => element("s") { renderInline(matched.group(1)) }
+            case "strike"    => element("s") { renderInline(matched.group(1)) }
             case "highlight" => element("mark") { renderInline(matched.group(1)) }
             case "underline" => element("u") { renderInline(matched.group(1)) }
             case "emphasis-star" | "emphasis-underscore" =>
@@ -305,40 +304,4 @@ private object MarkdownPreview {
     }
   }
 
-}
-
-/** Shared URL policy for Markdown import/export and the server-side projection. */
-private[editor] object MarkdownSecurity {
-  private val safeImageData =
-    "(?i)^data:image/(?:png|jpeg|jpg|gif|webp|avif);base64,[a-z0-9+/=]+$".r
-
-  def safeLinkUrl(value: String): String = {
-    val url = Option(value).getOrElse("").trim
-    if (url.exists(_.isControl)) "#"
-    else
-      url.toLowerCase match {
-        case lower if lower.startsWith("javascript:") || lower.startsWith("vbscript:") => "#"
-        case lower if lower.startsWith("data:") || lower.startsWith("file:")         => "#"
-        case lower if lower.startsWith("http://") || lower.startsWith("https://")    => url
-        case lower if lower.startsWith("mailto:") || lower.startsWith("tel:")        => url
-        case _ if url.isEmpty                                                          => "#"
-        case _ if url.matches("^[A-Za-z][A-Za-z0-9+.-]*:.*")                          => "#"
-        case _                                                                         => url
-      }
-  }
-
-  def safeImageUrl(value: String): Option[String] = {
-    val url = Option(value).getOrElse("").trim
-    if (url.isEmpty || url.exists(_.isControl)) None
-    else if (safeImageData.matches(url)) Some(url)
-    else
-      url.toLowerCase match {
-        case lower if lower.startsWith("javascript:") || lower.startsWith("vbscript:") => None
-        case lower if lower.startsWith("data:") || lower.startsWith("file:")         => None
-        case lower if lower.startsWith("http://") || lower.startsWith("https://")    => Some(url)
-        case lower if lower.startsWith("blob:")                                      => None
-        case _ if url.matches("^[A-Za-z][A-Za-z0-9+.-]*:.*")                          => None
-        case _                                                                        => Some(url)
-      }
-  }
 }

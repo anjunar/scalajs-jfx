@@ -47,6 +47,11 @@ application-specific destinations.
 
 All editor/plugin registrations are tied to the component lifecycle.
 
+Internally, `Editor` owns the Markdown value, form/control state and rendering-mode orchestration.
+`MarkdownRenderer` is the Lexical-free semantic SSR/no-JavaScript projection, while
+`LexicalEditorAdapter` owns the complete browser-side Lexical lifecycle. Both helpers are
+package-internal; `Editor` remains the only public component.
+
 Link and image plugins use `DefaultDialogService` unless a service is assigned
 to the editor or provided through `Editor.DialogServiceContext`. The default
 service bridges Lexical's foreign `HTMLElement` dialog content into a JFX3

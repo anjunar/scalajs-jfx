@@ -7,7 +7,7 @@ import jfx.core.dsl.PropertyDsl.{setProperty as setDslProperty}
 import jfx.core.layout.Div.div
 import jfx.core.layout.TextComponent.text
 import jfx.core.render.Cursor
-import jfx.editor.Editor
+import jfx.editor.{Editor, MarkdownSecurity}
 import jfx.editor.plugins.DialogElement.element
 import lexical.{
   BaseSelection,
@@ -97,7 +97,12 @@ object LinkPlugin {
 
   def defaultConfirmDialog(context: LinkDialogContext, content: HTMLElement): Unit = {
     val input = content.querySelector("#link-url-input").asInstanceOf[HTMLInputElement | Null]
-    val url   = Option(input).map(_.value.trim).filter(_.nonEmpty).orNull
+    val url   = Option(input)
+      .map(_.value.trim)
+      .filter(_.nonEmpty)
+      .map(MarkdownSecurity.safeLinkUrl)
+      .filter(_ != "#")
+      .orNull
 
     context.editor.update(
       () => {

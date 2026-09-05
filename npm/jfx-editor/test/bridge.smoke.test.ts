@@ -121,6 +121,8 @@ describe("form + editor", () => {
     const root = document.createElement("div");
     root.innerHTML = rendered.html;
     document.body.appendChild(root);
+    const serverTextarea = root.querySelector("textarea");
+    const serverSurface = root.querySelector(".jfx-editor__surface");
 
     // Hydration first claims the textarea emitted by SSR. `afterCompose` then
     // progressively enhances it to Lexical without changing the Markdown
@@ -128,9 +130,119 @@ describe("form + editor", () => {
     const app = await hydrate(root, build);
 
     const surface = root.querySelector(".jfx-editor__surface");
+    expect(root.querySelector("textarea")).toBe(serverTextarea);
+    expect(surface).toBe(serverSurface);
+    expect(serverTextarea?.value).toBe("Hello **world**");
+    expect(serverTextarea?.isConnected).toBe(true);
     expect(surface?.textContent).toBe("Hello world");
 
     app.dispose();
+  });
+
+  it("binds Markdown textarea input back through the form model", () => {
+    const model = { body: property("Initial") };
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const app = mount(root, () => {
+      viewport(() => {
+        form(model, {}, () => editor("body"));
+      });
+    });
+
+    const textarea = root.querySelector("textarea") as HTMLTextAreaElement;
+    textarea.value = "## From textarea";
+    textarea.dispatchEvent(new Event("input", { bubbles: true }));
+
+    expect(model.body.get).toBe("## From textarea");
+    expect(root.querySelector(".jfx-editor__surface")?.textContent).toBe("From textarea");
+    app.dispose();
+  });
+
+  it("submits the editable SSR textarea without JavaScript", async () => {
+    const rendered = await renderToString(() => {
+      viewport(() =>
+        editor("body", {
+          standalone: true,
+          value: "## No-JS Markdown",
+          editable: true,
+        })
+      );
+    });
+    const root = document.createElement("form");
+    root.innerHTML = rendered.html;
+
+    expect(new FormData(root).get("body")).toBe("## No-JS Markdown");
+  });
+
+  it("keeps Markdown through editable, readonly, and editable remounts", () => {
+    let markdown = "## Persistent **Markdown**";
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const mountMode = (editable: boolean) =>
+      mount(root, () => {
+        viewport(() => editor("body", { standalone: true, value: markdown, editable }));
+      });
+
+    const editableApp = mountMode(true);
+    const firstSurface = root.querySelector(".jfx-editor__surface");
+    expect(firstSurface?.textContent).toBe("Persistent Markdown");
+    editableApp.dispose();
+    expect(firstSurface?.isConnected).toBe(false);
+
+    const readonlyApp = mountMode(false);
+    expect(root.querySelector("textarea")).toBeNull();
+    expect(root.querySelector("h2")?.textContent).toBe("Persistent Markdown");
+    readonlyApp.dispose();
+
+    markdown = "### Remounted";
+    const remountedApp = mountMode(true);
+    expect(root.querySelector(".jfx-editor__surface")?.textContent).toBe("Remounted");
+    remountedApp.dispose();
+  });
+
+  it("removes every listener registered on the Lexical root during unmount", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+    const added = new Map<string, number>();
+    const removed = new Map<string, number>();
+    const originalAdd = EventTarget.prototype.addEventListener;
+    const originalRemove = EventTarget.prototype.removeEventListener;
+
+    EventTarget.prototype.addEventListener = function (
+      type: string,
+      listener: EventListenerOrEventListenerObject | null,
+      options?: boolean | AddEventListenerOptions,
+    ): void {
+      if (this instanceof Element && this.classList.contains("jfx-editor__surface"))
+        added.set(type, (added.get(type) ?? 0) + 1);
+      originalAdd.call(this, type, listener, options);
+    };
+    EventTarget.prototype.removeEventListener = function (
+      type: string,
+      listener: EventListenerOrEventListenerObject | null,
+      options?: boolean | EventListenerOptions,
+    ): void {
+      if (this instanceof Element && this.classList.contains("jfx-editor__surface"))
+        removed.set(type, (removed.get(type) ?? 0) + 1);
+      originalRemove.call(this, type, listener, options);
+    };
+
+    try {
+      const app = mount(root, () => {
+        viewport(() => editor("body", { standalone: true, plugins: ["base", "image"] }));
+      });
+      expect(added.size).toBeGreaterThan(0);
+
+      app.dispose();
+
+      for (const [type, count] of added)
+        expect(removed.get(type) ?? 0, `listener ${type}`).toBeGreaterThanOrEqual(count);
+    } finally {
+      EventTarget.prototype.addEventListener = originalAdd;
+      EventTarget.prototype.removeEventListener = originalRemove;
+    }
   });
 
   it("round-trips the project nodes through the public Markdown value", () => {

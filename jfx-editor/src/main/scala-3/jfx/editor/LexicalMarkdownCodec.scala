@@ -10,7 +10,7 @@ import scala.scalajs.js.annotation.{JSImport, JSName}
 /** Facade for the browser-side Lexical/Markdown boundary. */
 @JSImport("@lexical/markdown", JSImport.Namespace)
 @js.native
-private[editor] object MarkdownRuntime extends js.Object {
+private[editor] object LexicalMarkdownRuntime extends js.Object {
   @JSName("$convertFromMarkdownString")
   def fromMarkdown(
       markdown: String,
@@ -27,18 +27,17 @@ private[editor] object MarkdownRuntime extends js.Object {
 
 }
 
-private[editor] object MarkdownInterop {
+private[editor] object LexicalMarkdownCodec {
   def fromMarkdown(
       markdown: String,
       transformers: js.Array[js.Any],
       node: ElementNode | Null = null
-  ): Unit = MarkdownRuntime.fromMarkdown(markdown, transformers, node)
+  ): Unit = LexicalMarkdownRuntime.fromMarkdown(markdown, transformers, node)
 
   def toMarkdown(transformers: js.Array[js.Any], node: LexicalNode | Null = null): String =
-    MarkdownRuntime.toMarkdown(transformers, node)
+    LexicalMarkdownRuntime.toMarkdown(transformers, node)
 
-  /**
-    * The public Markdown contract is CommonMark/GFM-shaped Markdown plus the small, explicit
+  /** The public Markdown contract is CommonMark/GFM-shaped Markdown plus the small, explicit
     * image-width extension documented by the editor. The standard Lexical transformers are kept
     * last so the project transformers can claim the nodes they own first.
     */
@@ -50,7 +49,7 @@ private[editor] object MarkdownInterop {
       codeMirrorTransformer,
       horizontalRuleTransformer,
       underlineTransformer
-    ) ++ MarkdownRuntime.standardTransformers
+    ) ++ LexicalMarkdownRuntime.standardTransformers
 
   private val safeLinkTransformer: js.Any = {
     val exportLink: js.Function3[
@@ -60,9 +59,9 @@ private[editor] object MarkdownInterop {
       String | Null
     ] = (node, exportChildren, _) =>
       if (node.getType() == "link") {
-        val link = node.asInstanceOf[js.Dynamic]
-        val url  = MarkdownSecurity.safeLinkUrl(link.getURL().asInstanceOf[String])
-        val text = exportChildren(node.asInstanceOf[ElementNode])
+        val link  = node.asInstanceOf[js.Dynamic]
+        val url   = MarkdownSecurity.safeLinkUrl(link.getURL().asInstanceOf[String])
+        val text  = exportChildren(node.asInstanceOf[ElementNode])
         val title = Option(link.getTitle().asInstanceOf[String | Null])
           .filter(_.nonEmpty)
           .map(escapeLinkTitle)
@@ -113,7 +112,8 @@ private[editor] object MarkdownInterop {
         if (src.isEmpty) null
         else {
           val alt   = escapeImageAlt(image.altText)
-          val width = if (image.maxWidth > 0 && image.maxWidth != 680) s"{width=${image.maxWidth}}" else ""
+          val width =
+            if (image.maxWidth > 0 && image.maxWidth != 680) s"{width=${image.maxWidth}}" else ""
           s"![$alt]($src)$width"
         }
       } else null
@@ -123,7 +123,8 @@ private[editor] object MarkdownInterop {
       src match {
         case Some(safeSrc) =>
           val width =
-            if (matches.length > 3 && matches(3) != null) matches(3).toIntOption.getOrElse(680) else 680
+            if (matches.length > 3 && matches(3) != null) matches(3).toIntOption.getOrElse(680)
+            else 680
           textNode.replace(new ImageNode(safeSrc, matches(1), math.max(1, width)), false)
         case None => textNode.replace(Lexical.$createTextNode(matches(1)), false)
       }
@@ -153,7 +154,8 @@ private[editor] object MarkdownInterop {
       String | Null
     ] = (node, _, _) => if (node.getType() == "horizontalrule") "---" else null
 
-    val replaceRule: js.Function4[ElementNode, js.Array[LexicalNode], js.Array[String], Boolean, Unit] =
+    val replaceRule
+        : js.Function4[ElementNode, js.Array[LexicalNode], js.Array[String], Boolean, Unit] =
       (parent, _, _, _) => parent.replace(new HorizontalRuleNode(), false)
 
     js.Dynamic.literal(
@@ -181,23 +183,23 @@ private[editor] object MarkdownInterop {
       String | Null
     ] = (node, _, _) =>
       if (node.getType() == "codemirror") {
-        val code = node.asInstanceOf[CodeMirrorNode].getCode()
-        val lang = node.asInstanceOf[CodeMirrorNode].getLanguage()
+        val code  = node.asInstanceOf[CodeMirrorNode].getCode()
+        val lang  = node.asInstanceOf[CodeMirrorNode].getLanguage()
         val fence = fenceFor(code)
         s"$fence$lang\n$code\n$fence"
       } else null
 
     val importCode: js.Function1[js.Dynamic, js.Any] = args => {
-      val lines        = args.lines.asInstanceOf[js.Array[String]]
-      val start        = args.startLineIndex.asInstanceOf[Int]
-      val startMatch   = args.startMatch.asInstanceOf[js.Array[String]]
-      val fence        = startMatch(1)
-      val endPattern   = new js.RegExp("^\\s*`{" + fence.length + ",}\\s*$")
-      var end          = start + 1
+      val lines      = args.lines.asInstanceOf[js.Array[String]]
+      val start      = args.startLineIndex.asInstanceOf[Int]
+      val startMatch = args.startMatch.asInstanceOf[js.Array[String]]
+      val fence      = startMatch(1)
+      val endPattern = new js.RegExp("^\\s*`{" + fence.length + ",}\\s*$")
+      var end        = start + 1
       while (end < lines.length && !endPattern.test(lines(end))) end += 1
-      val content      = lines.slice(start + 1, end).mkString("\n")
-      val language     = Option(startMatch(2)).getOrElse("").trim
-      val node         = new CodeMirrorNode(content, language)
+      val content  = lines.slice(start + 1, end).mkString("\n")
+      val language = Option(startMatch(2)).getOrElse("").trim
+      val node     = new CodeMirrorNode(content, language)
       args.rootNode.asInstanceOf[ElementNode].append(node)
       js.Array(true, math.min(end, lines.length - 1))
     }
@@ -247,15 +249,17 @@ private[editor] object MarkdownInterop {
         }
         if (rows.isEmpty || rows.head.isEmpty) null
         else {
-          val header = rows.head
+          val header    = rows.head
           val separator = header.map(_ => "---")
-          (header +: separator +: rows.drop(1)).map(row => s"| ${row.mkString(" | ")} |").mkString("\n")
+          (header +: separator +: rows.drop(1))
+            .map(row => s"| ${row.mkString(" | ")} |")
+            .mkString("\n")
         }
       } else null
 
     val importTable: js.Function1[js.Dynamic, js.Any] = args => {
-      val lines      = args.lines.asInstanceOf[js.Array[String]]
-      val start      = args.startLineIndex.asInstanceOf[Int]
+      val lines = args.lines.asInstanceOf[js.Array[String]]
+      val start = args.startLineIndex.asInstanceOf[Int]
       if (start + 1 >= lines.length || !isTableSeparator(lines(start + 1))) null
       else {
         val rows = mutable.ArrayBuffer(splitTableRow(lines(start)))
@@ -270,8 +274,8 @@ private[editor] object MarkdownInterop {
           val row = createTableRowNode()
           (0 until width).foreach { columnIndex =>
             val headerState = if (rowIndex == 0) 1 else 0
-            val cell         = createTableCellNode(headerState)
-            val value        = values.lift(columnIndex).getOrElse("")
+            val cell        = createTableCellNode(headerState)
+            val value       = values.lift(columnIndex).getOrElse("")
             fromMarkdown(value, inlineTransformers, cell)
             if (cell.getChildrenSize() == 0) {
               cell.append(Lexical.$createParagraphNode().append(Lexical.$createTextNode("")))
@@ -314,20 +318,27 @@ private[editor] object MarkdownInterop {
   }
 
   private def inlineTransformers: js.Array[js.Any] =
-    js.Array(safeLinkTransformer, imageTransformer, underlineTransformer) ++ MarkdownRuntime.standardTransformers
+    js.Array(
+      safeLinkTransformer,
+      imageTransformer,
+      underlineTransformer
+    ) ++ LexicalMarkdownRuntime.standardTransformers
 
   private def createTableNode(): ElementNode =
-    LexicalTable.asInstanceOf[js.Dynamic]
+    LexicalTable
+      .asInstanceOf[js.Dynamic]
       .selectDynamic("$createTableNode")
       .asInstanceOf[js.Function0[ElementNode]]()
 
   private def createTableRowNode(): ElementNode =
-    LexicalTable.asInstanceOf[js.Dynamic]
+    LexicalTable
+      .asInstanceOf[js.Dynamic]
       .selectDynamic("$createTableRowNode")
       .asInstanceOf[js.Function0[ElementNode]]()
 
   private def createTableCellNode(headerState: Int): ElementNode =
-    LexicalTable.asInstanceOf[js.Dynamic]
+    LexicalTable
+      .asInstanceOf[js.Dynamic]
       .selectDynamic("$createTableCellNode")
       .asInstanceOf[js.Function1[Int, ElementNode]](headerState)
 
@@ -337,8 +348,8 @@ private[editor] object MarkdownInterop {
     splitTableRow(line).nonEmpty && splitTableRow(line).forall(_.trim.matches(":?-{3,}:?"))
 
   private def splitTableRow(line: String): Seq[String] = {
-    val source = line.trim.stripPrefix("|").stripSuffix("|")
-    val cells  = mutable.ArrayBuffer.empty[String]
+    val source  = line.trim.stripPrefix("|").stripSuffix("|")
+    val cells   = mutable.ArrayBuffer.empty[String]
     val current = new StringBuilder
     var escaped = false
     source.foreach { character =>
@@ -368,7 +379,8 @@ private[editor] object MarkdownInterop {
     Option(value).getOrElse("").replace("\\", "\\\\").replace("|", "\\|").replace("\n", " ")
 
   private def fenceFor(code: String): String = {
-    val longest = "`{3,}".r.findAllIn(Option(code).getOrElse("")).map(_.length).maxOption.getOrElse(2)
+    val longest =
+      "`{3,}".r.findAllIn(Option(code).getOrElse("")).map(_.length).maxOption.getOrElse(2)
     "`" * math.max(3, longest + 1)
   }
 }
