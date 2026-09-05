@@ -1,0 +1,20 @@
+{
+  "tools/landing/client.mjs": {
+    "file": "assets/client-C005PpDk.js",
+    "name": "client",
+    "src": "tools/landing/client.mjs",
+    "isEntry": true,
+    "dynamicImports": [
+      "tools/landing/hydrate.mjs"
+    ],
+    "css": [
+      "assets/client-VPyDIWkV.css"
+    ]
+  },
+  "tools/landing/hydrate.mjs": {
+    "file": "assets/hydrate-CBxmgznP.js",
+    "name": "hydrate",
+    "src": "tools/landing/hydrate.mjs",
+    "isDynamicEntry": true
+  }
+}

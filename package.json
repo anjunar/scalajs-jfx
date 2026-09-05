@@ -7,6 +7,9 @@
   ],
   "type": "module",
   "scripts": {
+    "build:landing": "node tools/landing/build.mjs",
+    "preview:landing": "node tools/landing/serve.mjs",
+    "verify:landing": "node tools/landing/verify.mjs docs",
     "dev": "node server/server.mjs",
     "build:client": "vite build",
     "build:server": "vite build --ssr src/entry-server.js",
