@@ -103,6 +103,26 @@ async function validatePages() {
     throw new Error(`Pages build is incomplete. Missing: ${missing.join(", ")}`);
   }
 
+  const assetDirectories = ["scala/assets", "typescript/assets"];
+  const resolvedMissingAssetDirectories = (
+    await Promise.all(
+      assetDirectories.map(async (directory) => {
+        let files;
+        try {
+          files = await filesUnder(resolve(pagesDir, directory));
+        } catch {
+          return directory;
+        }
+        return files.some((file) => file.endsWith(".css")) ? null : directory;
+      })
+    )
+  ).filter(Boolean);
+  if (resolvedMissingAssetDirectories.length > 0) {
+    throw new Error(
+      `Pages build does not contain the production stylesheet: ${resolvedMissingAssetDirectories.join(", ")}`
+    );
+  }
+
   const htmlFiles = (await filesUnder(pagesDir)).filter((file) => file.endsWith(".html"));
   const wrongAssetUrls = [];
   for (const file of htmlFiles) {

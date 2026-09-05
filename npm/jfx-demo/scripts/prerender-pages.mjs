@@ -3,7 +3,7 @@
 // script has no second route list to keep in sync with app/catalog.ts.
 
 import { existsSync } from "node:fs";
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, rm, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -22,6 +22,11 @@ const assetsModule = await import(
   pathToFileURL(resolve(projectRoot, "tools", "client-assets.mjs")).href
 );
 const assets = await assetsModule.productionAssets(clientDist);
+
+// SSR emits the hashed client asset URLs into the document head. A static
+// deployment has no Express/Vite asset server behind those URLs, so the
+// production assets must be part of the prerendered artifact itself.
+await cp(resolve(clientDist, "assets"), resolve(outputDir, "assets"), { recursive: true });
 
 const routes = routeManifest.filter(({ status }) => status < 400);
 const entries = [

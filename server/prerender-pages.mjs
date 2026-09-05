@@ -10,7 +10,7 @@
 // Aufruf: npm run prerender (setzt einen Produktionsbuild voraus).
 
 import { existsSync } from "node:fs"
-import { mkdir, writeFile } from "node:fs/promises"
+import { cp, mkdir, rm, writeFile } from "node:fs/promises"
 import { dirname, resolve } from "node:path"
 import { pathToFileURL } from "node:url"
 
@@ -33,6 +33,13 @@ assertBuilt()
 
 const { render } = await import(pathToFileURL(serverEntry).href)
 const assets = JSON.stringify(await productionAssets(clientDist))
+
+// SSR emits the hashed client asset URLs into the document head. A static
+// deployment has no Express/Vite asset server behind those URLs, so the
+// production assets must be part of the prerendered artifact itself.
+await rm(outputDir, { recursive: true, force: true })
+await mkdir(outputDir, { recursive: true })
+await cp(resolve(clientDist, "assets"), resolve(outputDir, "assets"), { recursive: true })
 
 const entries = [
   ...staticAppRoutes().map((path) => ({ path, priority: path === "/" ? "1.0" : "0.8" })),
