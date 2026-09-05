@@ -27,9 +27,3 @@ bzw. die Client-/SSR-Builds samt Eine-Runtime-Nachweis. Braucht vorher
 
 `.github/workflows/verify.yml` fährt beide Gates bei jedem Push nach `master`
 und jedem Pull Request.
-
-## Architektur
-
-Die Regeln — Modulgraph, Paketwurzeln, Async-Modell, Zustand im SSR-Prozess,
-Styling-Zuständigkeiten — stehen in [`ARCHITECTURE.md`](ARCHITECTURE.md). Vor
-einem neuen Modul oder einer neuen Modulkante dort nachsehen.
