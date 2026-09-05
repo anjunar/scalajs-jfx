@@ -1,6 +1,6 @@
 {
   "name": "@anjunar/scalajs-jfx-bridge",
-  "version": "3.0.0-SNAPSHOT",
+  "version": "3.0.0",
   "description": "The Scala.js implementation of @anjunar/jfx-core's contract -- the jfx-bridge sbt module, linked to an ES module.",
   "type": "module",
   "main": "./index.js",
@@ -34,7 +34,7 @@
   },
   "types": "./types/index.d.ts",
   "peerDependencies": {
-    "@anjunar/jfx-core": "^3.0.0-SNAPSHOT"
+    "@anjunar/jfx-core": "^3.0.0"
   },
   "dependencies": {
     "@anjunar/scalajs-lexical": "^1.0.9",

@@ -9,7 +9,7 @@ This module is independent of the JFX component runtime. It handles the browser 
 ## Installation
 
 ```scala
-libraryDependencies += "com.anjunar" %% "scalajs-jfx-webauthn" % "3.0.0-SNAPSHOT"
+libraryDependencies += "com.anjunar" %% "scalajs-jfx-webauthn" % "3.0.0"
 ```
 
 ## Quick start

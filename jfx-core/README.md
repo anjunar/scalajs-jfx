@@ -9,7 +9,7 @@ The core Scala.js runtime and DSL for JFX3. Use it to compose DOM components, bi
 ## Installation
 
 ```scala
-libraryDependencies += "com.anjunar" %% "scalajs-jfx-core" % "3.0.0-SNAPSHOT"
+libraryDependencies += "com.anjunar" %% "scalajs-jfx-core" % "3.0.0"
 ```
 
 Enable the Scala.js sbt plugin in the consuming project. In this repository the module is built with Scala 3.3.8 and sbt 2; `%%` supplies the Scala.js platform suffix in this build.

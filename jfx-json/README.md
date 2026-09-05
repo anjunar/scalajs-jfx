@@ -9,7 +9,7 @@ Schema-driven JSON mapping for reflected Scala models and JFX properties. The ma
 ## Installation
 
 ```scala
-libraryDependencies += "com.anjunar" %% "scalajs-jfx-json" % "3.0.0-SNAPSHOT"
+libraryDependencies += "com.anjunar" %% "scalajs-jfx-json" % "3.0.0"
 ```
 
 ## Quick start

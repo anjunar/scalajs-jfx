@@ -110,7 +110,7 @@ sbtn "scalajs-jfx-bridge/fullLinkJS"
 npm run verify --workspace npm/jfx-core
 ```
 
-The repository is currently versioned as `3.0.0-SNAPSHOT` and licensed under MIT.
+The repository is currently versioned as `3.0.0` and licensed under MIT.
 
 ## Related documentation
 

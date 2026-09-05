@@ -9,7 +9,7 @@ Rich-text editing for JFX3, backed by Lexical in the browser and exposed as a re
 ## Installation
 
 ```scala
-libraryDependencies += "com.anjunar" %% "scalajs-jfx-editor" % "3.0.0-SNAPSHOT"
+libraryDependencies += "com.anjunar" %% "scalajs-jfx-editor" % "3.0.0"
 ```
 
 The module also uses the repository's `scalajs-lexical` dependency and the viewport for default plugin dialogs.
