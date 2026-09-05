@@ -1,4 +1,4 @@
-- Immer `sbtn` verwenden, niemals `sbt`.
+- Immer `sbt` verwenden, niemals `sbtn`.
 - Projekte liegen in Nachbarverzeichnissen. Bei Bedarf dort nachsehen.
 - Keine Workarounds. Ursachen sauber verstehen und richtig lösen.
 - Keine kompilierten JavaScript-Sourcen durchsuchen oder bearbeiten.

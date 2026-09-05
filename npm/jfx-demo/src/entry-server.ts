@@ -13,6 +13,7 @@ import { i18nProvider, providerConfig } from "./app/i18n.js";
 // instead of importing app/catalog.ts's source. See the note on
 // `routeManifest` in app/catalog.ts for why that import would otherwise fail.
 export { routeManifest } from "./app/catalog.js";
+export { supportedLocales } from "./app/i18n.js";
 
 /**
  * Renders the complete document for `path`. `assets` carries the bundler's

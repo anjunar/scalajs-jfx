@@ -1,7 +1,13 @@
 import org.scalajs.linker.interface.{ESVersion, ModuleKind}
 import org.scalajs.sbtplugin.ScalaJSPlugin
 import sbt.url
-import ScalaJsViteSupport.*
+
+val siteConfigBasePathOverride = settingKey[Option[String]](
+  "Optional build-time base path override for the generated Scala site config."
+)
+val siteConfigUrlOverride = settingKey[Option[String]](
+  "Optional build-time site URL override for the generated Scala site config."
+)
 
 // ---------------------------------------------------------------------------
 // sbt 2.x
@@ -18,13 +24,7 @@ import ScalaJsViteSupport.*
 //    Achtung beim Ergaenzen: ein blankes Setting gilt jetzt ueberall, nicht nur
 //    fuer das Root-Projekt. Root-spezifisches gehoert an `LocalRootProject /`.
 //
-// 3. Tasks sind in sbt 2 standardmaessig gecached. Ein Task-Ergebnistyp ohne
-//    `sjsonnew.JsonFormat` laesst den Build beim Laden scheitern. `Attributed[Report]`
-//    von Scala.js hat keinen — deshalb steht `viteFullLinkJS` in
-//    `Def.uncached { ... }`. Das ist hier ohnehin richtig: der Task hat
-//    Seiteneffekte auf dem Dateisystem (Sourcemap-Sanitizing).
-//
-// 4. Slash-Syntax ist Pflicht, 0.13-Syntax ist entfernt. War hier schon so.
+// 3. Slash-Syntax ist Pflicht, 0.13-Syntax ist entfernt. War hier schon so.
 // ---------------------------------------------------------------------------
 
 version              := "3.0.0"
@@ -122,7 +122,7 @@ lazy val commonJsSettings = Seq(
   //   `scalaJSLinkerConfig.value` umgeht diese Delegation und liest den
   //   unskopierten Projektwert -- ohne optimierte Semantik, ohne Minifizierung.
   //   `fullLinkJS` lieferte dadurch ein zu `fastLinkJS` *byteidentisches* Bundle,
-  //   fuer alle neun Module, inklusive `application`s viteFullLinkJS.
+  //   fuer alle neun Module, inklusive der application.
   //
   // Gemessen an scalajs-jfx-bridge: 1 705 389 -> 981 614 B roh, 217 700 ->
   // 155 380 B gzip. Wer diese Zeilen anfasst, prueft das mit einem md5-Vergleich
@@ -224,7 +224,7 @@ lazy val jfxBridge = Project(id = "scalajs-jfx-bridge", base = file("jfx-bridge"
     name       := "scalajs-jfx-bridge",
     moduleName := "scalajs-jfx-bridge",
     // "gelinktes ES-Modul" (JAVASCRIPT_API.md §7) -- linked straight into the npm package that
-    // ships it, the same way `app`'s viteFullLinkJS lands in target/vite for vite to pick up.
+    // ships it, the same way the app's fullLinkJS lands in target/vite for Vite to pick up.
     // fastLinkJS is what a TypeScript consumer's dev loop uses; fullLinkJS is step 4 of §9
     // ("Bundle-Größe messen"), not yet wired into a production build of its own.
     Compile / fastLinkJS / scalaJSLinkerOutputDirectory :=
@@ -300,24 +300,16 @@ lazy val app = Project(id = "scalajs-jfx-demo", base = file("application"))
     // site.config.json ist die einzige Quelle fuer Deploy-Pfad und Site-Metadaten.
     // Sie speist sitemap.xml/robots.txt (tools/) und ueber diesen Generator den
     // Scala-Code, der das vollstaendige Dokument inklusive Head rendert.
+    siteConfigBasePathOverride := sys.env.get("JFX_BASE_PATH"),
+    siteConfigUrlOverride := sys.env.get("JFX_SITE_URL"),
     Compile / sourceGenerators += Def.task {
       SiteConfigGenerator(
         (LocalRootProject / baseDirectory).value / "site.config.json",
-        (Compile / sourceManaged).value
+        (Compile / sourceManaged).value,
+        siteConfigBasePathOverride.value,
+        siteConfigUrlOverride.value
       )
     }.taskValue,
-    // Def.uncached: `Attributed[Report]` hat keinen JsonFormat, und der Task
-    // schreibt ausserdem am Dateisystem. Ohne die Huelle scheitert sbt 2 beim
-    // Laden des Builds.
-    viteFullLinkJS := Def.uncached {
-      val linked = (Compile / fullLinkJS).value
-      sanitizeScalaJsSourceMap(
-        (LocalRootProject / baseDirectory).value,
-        (Compile / fullLinkJS / scalaJSLinkerOutputDirectory).value,
-        streams.value.log
-      )
-      linked
-    },
     // sbt 2 vereinheitlicht `target/` auf ein Verzeichnis in der Build-Wurzel.
     // Diese beiden expliziten Ueberschreibungen halten die Linker-Ausgabe dort,
     // wo vite.config.js sie erwartet — jetzt umso wichtiger.

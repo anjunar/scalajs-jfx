@@ -6,6 +6,12 @@ import { jfxCode } from "./tools/vite-plugin-jfx-code.js";
 const clientEntry = fileURLToPath(new URL("./src/entry-client.ts", import.meta.url));
 const stylesheetEntry = fileURLToPath(new URL("./src/styles/style.css", import.meta.url));
 
+function viteBasePath(value: string | undefined): string {
+  if (!value || value === "/") return "/";
+  const withLeadingSlash = value.startsWith("/") ? value : `/${value}`;
+  return `${withLeadingSlash.replace(/\/+$/, "")}/`;
+}
+
 // npm workspaces hoist every package in npm/* into the repo root's node_modules,
 // so `@anjunar/jfx-core` resolves through a symlink into the source tree. Vite's
 // default server.fs.allow stops at the workspace root it auto-detects, which
@@ -14,6 +20,7 @@ const stylesheetEntry = fileURLToPath(new URL("./src/styles/style.css", import.m
 const monorepoRoot = fileURLToPath(new URL("../..", import.meta.url));
 
 export default defineConfig(({ isSsrBuild }) => ({
+  base: viteBasePath(process.env.JFX_BASE_PATH),
   plugins: [tailwindcss(), jfxCode()],
   resolve: {
     // The one-runtime invariant, enforced at the bundler.

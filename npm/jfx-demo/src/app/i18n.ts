@@ -10,6 +10,7 @@ import {
   type RuntimeMessage,
 } from "@anjunar/jfx-core";
 import { entries as app } from "./translations.js";
+import { basePath } from "./base-path.js";
 
 import { entries as home } from "../pages/home/translations.js";
 import { entries as notFound } from "../pages/not-found/translations.js";
@@ -98,6 +99,7 @@ export function providerConfig(initialUrl?: string): I18nProviderConfig {
     catalog,
     supportedLocales,
     defaultLocale,
+    basePath,
     ...(initialUrl === undefined ? {} : { initialUrl }),
   };
 }
@@ -112,9 +114,18 @@ export function switchLocale(next: string): void {
   }
 
   const url = new URL(window.location.href);
-  const parts = url.pathname.split("/").filter(Boolean);
+  const appPath =
+    basePath === ""
+      ? url.pathname
+      : url.pathname === basePath
+        ? "/"
+        : url.pathname.startsWith(`${basePath}/`)
+          ? url.pathname.slice(basePath.length)
+          : url.pathname;
+  const parts = appPath.split("/").filter(Boolean);
   if (supportedLocales.includes(parts[0] as (typeof supportedLocales)[number])) parts.shift();
-  url.pathname = `/${[next, ...parts].join("/")}`;
+  const localizedPath = `/${[next, ...parts].join("/")}`;
+  url.pathname = `${basePath}${localizedPath}`;
   setLocale(next);
   window.history.replaceState(null, "", url.href);
   window.dispatchEvent(new PopStateEvent("popstate"));

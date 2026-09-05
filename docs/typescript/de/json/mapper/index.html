@@ -1,0 +1,83 @@
+<!doctype html><html lang="de"><!--jfx:I18nProviderRoot:start--><head><meta data-jfx-head="meta:charset" charset="UTF-8"><base data-jfx-head="base" href="/scalajs-jfx/typescript/"><title data-jfx-head="title">@anjunar/jfx demo</title><meta data-jfx-head="meta:name=viewport" name="viewport" content="width=device-width, initial-scale=1"><link data-jfx-head="link:stylesheet" rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons"><script data-jfx-head="theme-init">
+(function () {
+  try {
+    var stored = localStorage.getItem("jfx-demo.theme");
+    var mode =
+      stored === "light" || stored === "dark"
+        ? stored
+        : window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light";
+    document.documentElement.setAttribute("data-theme", mode);
+  } catch (error) {
+    /* localStorage can throw in a locked-down browser context; the CSS
+       default (light) is a fine fallback. */
+  }
+})();
+</script><link data-jfx-head="asset:stylesheet" rel="stylesheet" crossorigin="" href="/scalajs-jfx/typescript/assets/styles-BHefGen-.css"><script data-jfx-head="asset:script" type="module" crossorigin="" src="/scalajs-jfx/typescript/assets/main-Bh-7GJcZ.js"></script></head><body><div id="root"><div class="jfx-viewport"><div class="jfx-viewport__content" style="min-height: 100%"><!--jfx:RouterViewRoot:start--><div class="app-shell__header"><a class="jfx-link" href="/scalajs-jfx/typescript">@anjunar/jfx</a><a class="jfx-link" href="/scalajs-jfx/typescript/search">Suche</a><button class="app-shell__theme-toggle">Dunkler Modus</button><button class="app-shell__locale-toggle">EN</button></div><nav class="app-shell__nav"><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-core</div><a class="jfx-link" href="/scalajs-jfx/typescript/core/state">Property</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/derived">Abgeleiteter Zustand</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/control-flow">when und forEach</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/async">fetchInto</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/elements">DSL erweitern</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/lifecycle">Lebensdauer und Hydration</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/todos">Alles zusammen</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-controls</div><a class="jfx-link" href="/scalajs-jfx/typescript/controls/tabs">Tabs</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/table">TableView</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/carousel">Carousel</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/data-grid">DataGrid</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/virtual-list">VirtualListView</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/remote">RemoteSource</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-forms</div><a class="jfx-link" href="/scalajs-jfx/typescript/forms/basics">Formular und Modell</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/composition">Formulare komponieren</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/combo-box">ComboBox</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/image-cropper">ImageCropper</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/validation">Validatoren</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-editor</div><a class="jfx-link" href="/scalajs-jfx/typescript/editor/basics">Editor</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-viewport</div><a class="jfx-link" href="/scalajs-jfx/typescript/viewport/notification">Benachrichtigung</a><a class="jfx-link" href="/scalajs-jfx/typescript/viewport/window">Fenster</a><a class="jfx-link" href="/scalajs-jfx/typescript/viewport/overlay">Overlay</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-router</div><a class="jfx-link" href="/scalajs-jfx/typescript/router/links">routerLink</a><a class="jfx-link" href="/scalajs-jfx/typescript/router/nested">Verschachtelte Route</a><a class="jfx-link" href="/scalajs-jfx/typescript/router/params">Kontext und Nebenläufigkeit</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-json</div><a class="jfx-link app-shell__nav-link--active" href="/scalajs-jfx/typescript/json/mapper">Schema-basiertes JSON-Mapping</a></div></nav><!--jfx:Router:start--><!--jfx:DynamicComponentRenderer:start--><!--jfx:RoutedComponent:start--><!--jfx:BlockComponent:start--><article class="docs-page"><div class="docs-page__header"><h1>Schema-basiertes JSON-Mapping</h1><p class="docs-page__summary">Decoratoren und JsonMapper bilden eine TypeScript-Klasse mit umbenannten Feldern, IDs und ListProperty-Werten ab.</p></div><div class="docs-page__body"><div class="docs-example"><div class="docs-example__live"><div class="flex flex-col gap-3"><h2>Schema-basiertes JSON-Mapping</h2>Decoratoren benennen displayName, behalten id als Kennung und bilden eine ListProperty ab. Der Mapper leitet das Klassenschema zur Laufzeit ab.<div class="hbox gap-2"><button class="px-3 py-1.5">Aktuelles Modell serialisieren</button><button class="px-3 py-1.5">Beispiel deserialisieren</button></div><!--jfx:text--><pre class="rounded-control p-3 overflow-auto bg-surface-muted">{
+  "id": "user-42",
+  "displayName": "Ada Lovelace",
+  "roles": [
+    "admin"
+  ]
+}</pre></div></div><div class="docs-code-block"><pre class="docs-code"><code><span class="tok-kw">import</span> { <span class="tok-id">button</span>, <span class="tok-id">classes</span>, <span class="tok-id">div</span>, <span class="tok-id">element</span>, <span class="tok-id">heading</span>, <span class="tok-id">hbox</span>, <span class="tok-id">onClick</span>, <span class="tok-id">property</span>, <span class="tok-id">listProperty</span>, <span class="tok-id">text</span> } <span class="tok-kw">from</span> <span class="tok-str">"@anjunar/jfx-core"</span>;
+<span class="tok-kw">import</span> { <span class="tok-typ">JsonId</span>, <span class="tok-typ">JsonMapper</span>, <span class="tok-typ">JsonProperty</span> } <span class="tok-kw">from</span> <span class="tok-str">"@anjunar/jfx-json"</span>;
+<span class="tok-kw">import</span> <span class="tok-kw">type</span> { <span class="tok-typ">ListProperty</span>, <span class="tok-typ">Property</span> } <span class="tok-kw">from</span> <span class="tok-str">"@anjunar/jfx-core"</span>;
+<span class="tok-kw">import</span> { <span class="tok-id">translated</span> } <span class="tok-kw">from</span> <span class="tok-str">"../../app/i18n.js"</span>;
+
+<span class="tok-kw">class</span> <span class="tok-typ">Profile</span> {
+  @<span class="tok-typ">JsonId</span> <span class="tok-kw">readonly</span> <span class="tok-id">id</span>: <span class="tok-typ">Property</span>&lt;<span class="tok-kw">string</span>&gt; = <span class="tok-id">property</span>(<span class="tok-str">""</span>);
+  @<span class="tok-typ">JsonProperty</span>(<span class="tok-str">"displayName"</span>) <span class="tok-kw">readonly</span> <span class="tok-id">name</span>: <span class="tok-typ">Property</span>&lt;<span class="tok-kw">string</span>&gt; = <span class="tok-id">property</span>(<span class="tok-str">""</span>);
+  @<span class="tok-typ">JsonProperty</span>(<span class="tok-str">"roles"</span>) <span class="tok-kw">readonly</span> <span class="tok-id">roles</span>: <span class="tok-typ">ListProperty</span>&lt;<span class="tok-kw">string</span>&gt; = <span class="tok-id">listProperty</span>&lt;<span class="tok-kw">string</span>&gt;([]);
+}
+
+<span class="tok-kw">export</span> <span class="tok-kw">function</span> <span class="tok-id">jsonMapperPage</span>(): <span class="tok-kw">void</span> {
+  <span class="tok-kw">const</span> <span class="tok-id">profile</span> = <span class="tok-kw">new</span> <span class="tok-typ">Profile</span>();
+  <span class="tok-id">profile</span>.<span class="tok-id">id</span>.<span class="tok-kw">set</span>(<span class="tok-str">"user-42"</span>);
+  <span class="tok-id">profile</span>.<span class="tok-id">name</span>.<span class="tok-kw">set</span>(<span class="tok-str">"Ada Lovelace"</span>);
+  <span class="tok-id">profile</span>.<span class="tok-id">roles</span>.<span class="tok-id">add</span>(<span class="tok-str">"admin"</span>);
+
+  <span class="tok-kw">const</span> <span class="tok-id">output</span> = <span class="tok-id">property</span>(<span class="tok-str">""</span>);
+  <span class="tok-kw">const</span> <span class="tok-id">status</span> = <span class="tok-id">property</span>(<span class="tok-str">""</span>);
+  <span class="tok-kw">const</span> <span class="tok-id">refresh</span> = (<span class="tok-id">message</span> = <span class="tok-str">""</span>): <span class="tok-kw">void</span> =&gt; {
+    <span class="tok-id">output</span>.<span class="tok-kw">set</span>(<span class="tok-typ">JSON</span>.<span class="tok-id">stringify</span>(<span class="tok-typ">JsonMapper</span>.<span class="tok-id">serialize</span>(<span class="tok-id">profile</span>), <span class="tok-kw">null</span>, <span class="tok-num">2</span>));
+    <span class="tok-id">status</span>.<span class="tok-kw">set</span>(<span class="tok-id">message</span>);
+  };
+  <span class="tok-kw">const</span> <span class="tok-id">loadSample</span> = (): <span class="tok-kw">void</span> =&gt; {
+    <span class="tok-kw">const</span> <span class="tok-id">restored</span> = <span class="tok-typ">JsonMapper</span>.<span class="tok-id">deserialize</span>(
+      { <span class="tok-id">id</span>: <span class="tok-str">"user-7"</span>, <span class="tok-id">displayName</span>: <span class="tok-str">"Grace Hopper"</span>, <span class="tok-id">roles</span>: [<span class="tok-str">"author"</span>, <span class="tok-str">"reviewer"</span>] },
+      <span class="tok-typ">Profile</span>,
+    );
+    <span class="tok-kw">if</span> (!(<span class="tok-id">restored</span> <span class="tok-kw">instanceof</span> <span class="tok-typ">Profile</span>)) {
+      <span class="tok-kw">throw</span> <span class="tok-kw">new</span> <span class="tok-typ">Error</span>(<span class="tok-str">"JsonMapper returned the wrong model class"</span>);
+    }
+    <span class="tok-id">profile</span>.<span class="tok-id">id</span>.<span class="tok-kw">set</span>(<span class="tok-id">restored</span>.<span class="tok-id">id</span>.<span class="tok-kw">get</span>);
+    <span class="tok-id">profile</span>.<span class="tok-id">name</span>.<span class="tok-kw">set</span>(<span class="tok-id">restored</span>.<span class="tok-id">name</span>.<span class="tok-kw">get</span>);
+    <span class="tok-id">profile</span>.<span class="tok-id">roles</span>.<span class="tok-id">setAll</span>(<span class="tok-id">restored</span>.<span class="tok-id">roles</span>.<span class="tok-kw">get</span>);
+    <span class="tok-id">refresh</span>(<span class="tok-str">"Sample deserialized into Profile"</span>);
+  };
+  <span class="tok-id">refresh</span>();
+
+  <span class="tok-id">div</span>(() =&gt; {
+    <span class="tok-id">classes</span>(<span class="tok-str">"flex"</span>, <span class="tok-str">"flex-col"</span>, <span class="tok-str">"gap-3"</span>);
+    <span class="tok-id">heading</span>(<span class="tok-num">2</span>, () =&gt; <span class="tok-id">text</span>(<span class="tok-id">translated</span>(<span class="tok-str">"Schema-driven JSON mapping"</span>)));
+    <span class="tok-id">text</span>(<span class="tok-id">translated</span>(<span class="tok-str">"Decorators name displayName, keep id as an identifier and map a ListProperty. The mapper infers the class schema at runtime."</span>));
+    <span class="tok-id">hbox</span>(() =&gt; {
+      <span class="tok-id">classes</span>(<span class="tok-str">"gap-2"</span>);
+      <span class="tok-id">button</span>(<span class="tok-id">translated</span>(<span class="tok-str">"Serialize current model"</span>), {}, () =&gt; {
+        <span class="tok-id">classes</span>(<span class="tok-str">"px-3"</span>, <span class="tok-str">"py-1.5"</span>);
+        <span class="tok-id">onClick</span>(() =&gt; <span class="tok-id">refresh</span>(<span class="tok-str">"Current Profile serialized"</span>));
+      });
+      <span class="tok-id">button</span>(<span class="tok-id">translated</span>(<span class="tok-str">"Deserialize sample"</span>), {}, () =&gt; {
+        <span class="tok-id">classes</span>(<span class="tok-str">"px-3"</span>, <span class="tok-str">"py-1.5"</span>);
+        <span class="tok-id">onClick</span>(<span class="tok-id">loadSample</span>);
+      });
+    });
+    <span class="tok-id">text</span>(<span class="tok-id">status</span>);
+    <span class="tok-id">element</span>(<span class="tok-str">"pre"</span>)(() =&gt; {
+      <span class="tok-id">classes</span>(<span class="tok-str">"rounded-control"</span>, <span class="tok-str">"p-3"</span>, <span class="tok-str">"overflow-auto"</span>, <span class="tok-str">"bg-surface-muted"</span>);
+      <span class="tok-id">text</span>(<span class="tok-id">output</span>);
+    });
+  });
+}
+</code></pre><!--jfx:Condition:start--><!--jfx:Condition:end--></div></div></div></article><!--jfx:BlockComponent:end--><!--jfx:RoutedComponent:end--><!--jfx:DynamicComponentRenderer:end--><!--jfx:Router:end--><!--jfx:RouterViewRoot:end--></div><!--jfx:Foreach:start--><!--jfx:Foreach:end--><!--jfx:Foreach:start--><!--jfx:Foreach:end--><div class="jfx-viewport-notification-host"><!--jfx:Foreach:start--><!--jfx:Foreach:end--></div></div></div></body><!--jfx:I18nProviderRoot:end--></html>

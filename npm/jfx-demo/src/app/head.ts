@@ -15,7 +15,8 @@
  * inside this `head()` call rather than `document.ts`'s top level, which has
  * no composing element of its own to tie their disposal to.
  */
-import { charset, disposeWith, documentHead, head, type HeadEntry, inlineScript, link, locale, meta, title } from "@anjunar/jfx-core";
+import { base, charset, disposeWith, documentHead, head, type HeadEntry, inlineScript, link, locale, meta, title } from "@anjunar/jfx-core";
+import { basePath } from "./base-path.js";
 
 /** Runs before anything paints so the first frame already carries the right
  * `data-theme` -- otherwise the page would flash light before a stored
@@ -49,6 +50,7 @@ export function appHead(assets: readonly HeadEntry[] = []): void {
     disposeWith(activeLocale.observeWithoutInitial((code) => documentHeadHandle.htmlAttribute("lang", code)));
 
     disposeWith(documentHeadHandle.push(charset()));
+    disposeWith(documentHeadHandle.push(base(basePath === "" ? "/" : `${basePath}/`)));
     disposeWith(documentHeadHandle.push(title("@anjunar/jfx demo")));
     disposeWith(documentHeadHandle.push(meta("viewport", "width=device-width, initial-scale=1")));
     // The editor toolbar's buttons render Material Icons ligatures (e.g.

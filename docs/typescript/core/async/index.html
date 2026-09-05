@@ -1,0 +1,82 @@
+<!doctype html><html lang="en"><!--jfx:I18nProviderRoot:start--><head><meta data-jfx-head="meta:charset" charset="UTF-8"><base data-jfx-head="base" href="/scalajs-jfx/typescript/"><title data-jfx-head="title">@anjunar/jfx demo</title><meta data-jfx-head="meta:name=viewport" name="viewport" content="width=device-width, initial-scale=1"><link data-jfx-head="link:stylesheet" rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons"><script data-jfx-head="theme-init">
+(function () {
+  try {
+    var stored = localStorage.getItem("jfx-demo.theme");
+    var mode =
+      stored === "light" || stored === "dark"
+        ? stored
+        : window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light";
+    document.documentElement.setAttribute("data-theme", mode);
+  } catch (error) {
+    /* localStorage can throw in a locked-down browser context; the CSS
+       default (light) is a fine fallback. */
+  }
+})();
+</script><link data-jfx-head="asset:stylesheet" rel="stylesheet" crossorigin="" href="/scalajs-jfx/typescript/assets/styles-BHefGen-.css"><script data-jfx-head="asset:script" type="module" crossorigin="" src="/scalajs-jfx/typescript/assets/main-Bh-7GJcZ.js"></script></head><body><div id="root"><div class="jfx-viewport"><div class="jfx-viewport__content" style="min-height: 100%"><!--jfx:RouterViewRoot:start--><div class="app-shell__header"><a class="jfx-link" href="/scalajs-jfx/typescript">@anjunar/jfx</a><a class="jfx-link" href="/scalajs-jfx/typescript/search">Search</a><button class="app-shell__theme-toggle">Dark mode</button><button class="app-shell__locale-toggle">DE</button></div><nav class="app-shell__nav"><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-core</div><a class="jfx-link" href="/scalajs-jfx/typescript/core/state">Property</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/derived">Derived state</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/control-flow">when and forEach</a><a class="jfx-link app-shell__nav-link--active" href="/scalajs-jfx/typescript/core/async">fetchInto</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/elements">Extending the DSL</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/lifecycle">Lifetime and hydration</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/todos">Everything together</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-controls</div><a class="jfx-link" href="/scalajs-jfx/typescript/controls/tabs">Tabs</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/table">TableView</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/carousel">Carousel</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/data-grid">DataGrid</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/virtual-list">VirtualListView</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/remote">RemoteSource</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-forms</div><a class="jfx-link" href="/scalajs-jfx/typescript/forms/basics">Form and model</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/composition">Composing forms</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/combo-box">ComboBox</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/image-cropper">ImageCropper</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/validation">Validators</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-editor</div><a class="jfx-link" href="/scalajs-jfx/typescript/editor/basics">Editor</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-viewport</div><a class="jfx-link" href="/scalajs-jfx/typescript/viewport/notification">Notification</a><a class="jfx-link" href="/scalajs-jfx/typescript/viewport/window">Window</a><a class="jfx-link" href="/scalajs-jfx/typescript/viewport/overlay">Overlay</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-router</div><a class="jfx-link" href="/scalajs-jfx/typescript/router/links">routerLink</a><a class="jfx-link" href="/scalajs-jfx/typescript/router/nested">Nested route</a><a class="jfx-link" href="/scalajs-jfx/typescript/router/params">Context and concurrency</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-json</div><a class="jfx-link" href="/scalajs-jfx/typescript/json/mapper">Schema-driven JSON mapping</a></div></nav><!--jfx:Router:start--><!--jfx:DynamicComponentRenderer:start--><!--jfx:RoutedComponent:start--><!--jfx:BlockComponent:start--><article class="docs-page"><div class="docs-page__header"><h1>fetchInto</h1><p class="docs-page__summary">Renders asynchronously loaded data in place: SSR waits for the promise, hydration tolerates it still being in flight.</p></div><div class="docs-page__body"><div class="docs-example"><div class="docs-example__live"><div class="flex flex-col gap-2"><!--jfx:FetchComponent:start--><div class="flex flex-col gap-1"><!--jfx:Foreach:start--><!--jfx:ForeachItem:start--><div>1. Structure and Interpretation — Abelson</div><!--jfx:ForeachItem:end--><!--jfx:ForeachItem:start--><div>2. A Discipline of Programming — Dijkstra</div><!--jfx:ForeachItem:end--><!--jfx:Foreach:end--></div><!--jfx:FetchComponent:end--></div></div><div class="docs-code-block"><pre class="docs-code"><code><span class="tok-kw">import</span> { <span class="tok-id">classes</span>, <span class="tok-id">div</span>, <span class="tok-id">forEach</span>, <span class="tok-id">text</span> } <span class="tok-kw">from</span> <span class="tok-str">"@anjunar/jfx-core"</span>;
+<span class="tok-kw">import</span> { <span class="tok-id">fetchInto</span>, <span class="tok-id">listProperty</span> } <span class="tok-kw">from</span> <span class="tok-str">"@anjunar/jfx-core"</span>;
+<span class="tok-kw">import</span> { <span class="tok-id">translated</span> } <span class="tok-kw">from</span> <span class="tok-str">"../../app/i18n.js"</span>;
+
+<span class="tok-kw">export</span> <span class="tok-kw">interface</span> <span class="tok-typ">Book</span> {
+  <span class="tok-kw">readonly</span> <span class="tok-id">title</span>: <span class="tok-kw">string</span>;
+  <span class="tok-kw">readonly</span> <span class="tok-id">author</span>: <span class="tok-kw">string</span>;
+}
+
+<span class="tok-kw">export</span> <span class="tok-kw">function</span> <span class="tok-id">loadBooks</span>(): <span class="tok-typ">Promise</span>&lt;<span class="tok-kw">readonly</span> <span class="tok-typ">Book</span>[]&gt; {
+  <span class="tok-kw">return</span> <span class="tok-kw">new</span> <span class="tok-typ">Promise</span>((<span class="tok-id">resolve</span>) =&gt;
+    <span class="tok-id">setTimeout</span>(
+      () =&gt;
+        <span class="tok-id">resolve</span>([
+          { <span class="tok-id">title</span>: <span class="tok-str">"Structure and Interpretation"</span>, <span class="tok-id">author</span>: <span class="tok-str">"Abelson"</span> },
+          { <span class="tok-id">title</span>: <span class="tok-str">"A Discipline of Programming"</span>, <span class="tok-id">author</span>: <span class="tok-str">"Dijkstra"</span> },
+        ]),
+      <span class="tok-num">20</span>
+    )
+  );
+}
+
+<span class="tok-kw">export</span> <span class="tok-kw">function</span> <span class="tok-id">coreAsyncPage</span>(): <span class="tok-kw">void</span> {
+  <span class="tok-kw">const</span> <span class="tok-id">books</span> = <span class="tok-id">listProperty</span>&lt;<span class="tok-typ">Book</span>&gt;([]);
+
+  <span class="tok-id">div</span>(() =&gt; {
+    <span class="tok-id">classes</span>(<span class="tok-str">"flex"</span>, <span class="tok-str">"flex-col"</span>, <span class="tok-str">"gap-2"</span>);
+
+    <span class="tok-com">// NOT `when(books.map(v =&gt; v.length === 0), ...)` next to fetchInto, on</span>
+    <span class="tok-com">// purpose: that combination does not hydrate. `renderToString` only ever</span>
+    <span class="tok-com">// serializes the *settled* SSR state -- by the time it serializes, this</span>
+    <span class="tok-com">// Condition has already toggled true -&gt; false as a side effect of</span>
+    <span class="tok-com">// `books.setAll` inside the loader below, so its anchors reach the wire</span>
+    <span class="tok-com">// empty. Hydration replays the render from scratch, though, so the</span>
+    <span class="tok-com">// client's *first* synchronous pass evaluates the Condition at `true`</span>
+    <span class="tok-com">// again and tries to claim a DOM node for the "empty" branch that the</span>
+    <span class="tok-com">// server, having already moved past it, never sent -- a hydration fault</span>
+    <span class="tok-com">// ("There is no further DOM node"), not a build error, so nothing catches</span>
+    <span class="tok-com">// it before a real browser does. This is a real gap in `when()`/`Condition`</span>
+    <span class="tok-com">// hydration, not specific to this demo -- see the callout on this page.</span>
+    <span class="tok-com">// The branch below reaches the same UI by choosing once, synchronously,</span>
+    <span class="tok-com">// at the one point server and client are guaranteed to agree: when the</span>
+    <span class="tok-com">// loader itself resolves.</span>
+    <span class="tok-id">fetchInto</span>(<span class="tok-id">loadBooks</span>, (<span class="tok-id">loaded</span>) =&gt; {
+      <span class="tok-id">books</span>.<span class="tok-id">setAll</span>(<span class="tok-id">loaded</span>);
+
+      <span class="tok-kw">if</span> (<span class="tok-id">loaded</span>.<span class="tok-id">length</span> === <span class="tok-num">0</span>) {
+        <span class="tok-id">div</span>(() =&gt; {
+          <span class="tok-id">classes</span>(<span class="tok-str">"text-ink-muted"</span>, <span class="tok-str">"italic"</span>);
+          <span class="tok-id">text</span>(<span class="tok-id">translated</span>(<span class="tok-str">"Nothing loaded yet."</span>));
+        });
+        <span class="tok-kw">return</span>;
+      }
+
+      <span class="tok-id">div</span>(() =&gt; {
+        <span class="tok-id">classes</span>(<span class="tok-str">"flex"</span>, <span class="tok-str">"flex-col"</span>, <span class="tok-str">"gap-1"</span>);
+        <span class="tok-id">forEach</span>(<span class="tok-id">books</span>, (<span class="tok-id">book</span>, <span class="tok-id">index</span>) =&gt; {
+          <span class="tok-id">div</span>(() =&gt; {
+            <span class="tok-id">text</span>(<span class="tok-str">`${</span><span class="tok-id">index</span> + <span class="tok-num">1</span><span class="tok-str">}. ${</span><span class="tok-id">book</span>.<span class="tok-id">title</span><span class="tok-str">} — ${</span><span class="tok-id">book</span>.<span class="tok-id">author</span><span class="tok-str">}`</span>);
+          });
+        });
+      });
+    });
+  });
+}
+</code></pre><!--jfx:Condition:start--><!--jfx:Condition:end--></div></div><div class="docs-callout docs-callout--library-bug"><div class="docs-callout__label">Known library issue</div><div class="docs-callout__body">when() next to fetchInto() does not hydrate: renderToString only serializes the settled state, but the client's first pass re-evaluates the condition from scratch and expects a DOM node the server never sent. page.ts on this route sidesteps it by branching once, inside the loader, instead of next to it -- see the comment there. Not fixed here; it is a gap in Condition/fetchInto interaction in the library itself.</div></div></div></article><!--jfx:BlockComponent:end--><!--jfx:RoutedComponent:end--><!--jfx:DynamicComponentRenderer:end--><!--jfx:Router:end--><!--jfx:RouterViewRoot:end--></div><!--jfx:Foreach:start--><!--jfx:Foreach:end--><!--jfx:Foreach:start--><!--jfx:Foreach:end--><div class="jfx-viewport-notification-host"><!--jfx:Foreach:start--><!--jfx:Foreach:end--></div></div></div></body><!--jfx:I18nProviderRoot:end--></html>

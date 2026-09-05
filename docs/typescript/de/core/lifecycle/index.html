@@ -1,0 +1,81 @@
+<!doctype html><html lang="de"><!--jfx:I18nProviderRoot:start--><head><meta data-jfx-head="meta:charset" charset="UTF-8"><base data-jfx-head="base" href="/scalajs-jfx/typescript/"><title data-jfx-head="title">@anjunar/jfx demo</title><meta data-jfx-head="meta:name=viewport" name="viewport" content="width=device-width, initial-scale=1"><link data-jfx-head="link:stylesheet" rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons"><script data-jfx-head="theme-init">
+(function () {
+  try {
+    var stored = localStorage.getItem("jfx-demo.theme");
+    var mode =
+      stored === "light" || stored === "dark"
+        ? stored
+        : window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light";
+    document.documentElement.setAttribute("data-theme", mode);
+  } catch (error) {
+    /* localStorage can throw in a locked-down browser context; the CSS
+       default (light) is a fine fallback. */
+  }
+})();
+</script><link data-jfx-head="asset:stylesheet" rel="stylesheet" crossorigin="" href="/scalajs-jfx/typescript/assets/styles-BHefGen-.css"><script data-jfx-head="asset:script" type="module" crossorigin="" src="/scalajs-jfx/typescript/assets/main-Bh-7GJcZ.js"></script></head><body><div id="root"><div class="jfx-viewport"><div class="jfx-viewport__content" style="min-height: 100%"><!--jfx:RouterViewRoot:start--><div class="app-shell__header"><a class="jfx-link" href="/scalajs-jfx/typescript">@anjunar/jfx</a><a class="jfx-link" href="/scalajs-jfx/typescript/search">Suche</a><button class="app-shell__theme-toggle">Dunkler Modus</button><button class="app-shell__locale-toggle">EN</button></div><nav class="app-shell__nav"><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-core</div><a class="jfx-link" href="/scalajs-jfx/typescript/core/state">Property</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/derived">Abgeleiteter Zustand</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/control-flow">when und forEach</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/async">fetchInto</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/elements">DSL erweitern</a><a class="jfx-link app-shell__nav-link--active" href="/scalajs-jfx/typescript/core/lifecycle">Lebensdauer und Hydration</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/todos">Alles zusammen</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-controls</div><a class="jfx-link" href="/scalajs-jfx/typescript/controls/tabs">Tabs</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/table">TableView</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/carousel">Carousel</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/data-grid">DataGrid</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/virtual-list">VirtualListView</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/remote">RemoteSource</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-forms</div><a class="jfx-link" href="/scalajs-jfx/typescript/forms/basics">Formular und Modell</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/composition">Formulare komponieren</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/combo-box">ComboBox</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/image-cropper">ImageCropper</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/validation">Validatoren</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-editor</div><a class="jfx-link" href="/scalajs-jfx/typescript/editor/basics">Editor</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-viewport</div><a class="jfx-link" href="/scalajs-jfx/typescript/viewport/notification">Benachrichtigung</a><a class="jfx-link" href="/scalajs-jfx/typescript/viewport/window">Fenster</a><a class="jfx-link" href="/scalajs-jfx/typescript/viewport/overlay">Overlay</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-router</div><a class="jfx-link" href="/scalajs-jfx/typescript/router/links">routerLink</a><a class="jfx-link" href="/scalajs-jfx/typescript/router/nested">Verschachtelte Route</a><a class="jfx-link" href="/scalajs-jfx/typescript/router/params">Kontext und Nebenläufigkeit</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-json</div><a class="jfx-link" href="/scalajs-jfx/typescript/json/mapper">Schema-basiertes JSON-Mapping</a></div></nav><!--jfx:Router:start--><!--jfx:DynamicComponentRenderer:start--><!--jfx:RoutedComponent:start--><!--jfx:BlockComponent:start--><article class="docs-page"><div class="docs-page__header"><h1>Lebensdauer und Hydration</h1><p class="docs-page__summary">isBrowser() und isHydrating() melden die Umgebung; capture() setzt Komposition später fort, daher muss der Render-Body synchron sein.</p></div><div class="docs-page__body"><div class="docs-example"><div class="docs-example__live"><div class="flex flex-col gap-3"><div>Auf dem Server gerendert. hasScope() hier: true.</div><div class="flex flex-col gap-1"><div>Einen Microtask später komponiert, weiterhin im selben Render-Vorgang.</div></div><div id="core-lifecycle-mount-target" class="border border-dashed border-line rounded-control p-3 min-h-12"></div><button class="px-3 py-1.5">Ein Widget in die Box oben mounten</button></div></div><div class="docs-code-block"><pre class="docs-code"><code><span class="tok-kw">import</span> { <span class="tok-id">attr</span>, <span class="tok-id">button</span>, <span class="tok-id">capture</span>, <span class="tok-id">classes</span>, <span class="tok-id">div</span>, <span class="tok-id">isBrowser</span>, <span class="tok-id">isHydrating</span>, <span class="tok-id">mount</span>, <span class="tok-id">onClick</span>, <span class="tok-id">self</span>, <span class="tok-id">text</span> } <span class="tok-kw">from</span> <span class="tok-str">"@anjunar/jfx-core"</span>;
+<span class="tok-kw">import</span> { <span class="tok-id">translated</span> } <span class="tok-kw">from</span> <span class="tok-str">"../../app/i18n.js"</span>;
+
+<span class="tok-kw">export</span> <span class="tok-kw">function</span> <span class="tok-id">coreLifecyclePage</span>(): <span class="tok-kw">void</span> {
+  <span class="tok-kw">let</span> <span class="tok-id">count</span> = <span class="tok-num">0</span>;
+
+  <span class="tok-id">div</span>(() =&gt; {
+    <span class="tok-id">classes</span>(<span class="tok-str">"flex"</span>, <span class="tok-str">"flex-col"</span>, <span class="tok-str">"gap-3"</span>);
+
+    <span class="tok-id">div</span>(() =&gt; {
+      <span class="tok-com">// hasScope() is what a hand-rolled deferral (a raw setTimeout/fetch</span>
+      <span class="tok-com">// callback, not one of the DSL's own async helpers) checks before</span>
+      <span class="tok-com">// composing -- true here because this whole function already runs</span>
+      <span class="tok-com">// inside an active render pass.</span>
+      <span class="tok-kw">const</span> <span class="tok-id">status</span> = <span class="tok-id">isBrowser</span>()
+        ? <span class="tok-id">isHydrating</span>()
+          ? <span class="tok-str">"Rendered on the browser, while hydrating. hasScope() here: true."</span>
+          : <span class="tok-str">"Rendered on the browser. hasScope() here: true."</span>
+        : <span class="tok-str">"Rendered on the server. hasScope() here: true."</span>;
+      <span class="tok-id">text</span>(<span class="tok-id">translated</span>(<span class="tok-id">status</span>));
+    });
+
+    <span class="tok-id">div</span>(() =&gt; {
+      <span class="tok-id">classes</span>(<span class="tok-str">"flex"</span>, <span class="tok-str">"flex-col"</span>, <span class="tok-str">"gap-1"</span>);
+
+      <span class="tok-com">// capture() bookmarks this position so composition can resume here</span>
+      <span class="tok-com">// from a later, disconnected turn -- safe here because the microtask</span>
+      <span class="tok-com">// runs before this render is serialised (capture itself registers no</span>
+      <span class="tok-com">// async work), and the client's hydration pass reaches it</span>
+      <span class="tok-com">// the same way, so server and client agree on the result. This is the</span>
+      <span class="tok-com">// exact shape node/scope-rules.ts's third demo uses (`npm run</span>
+      <span class="tok-com">// demo:scope`), and it is how onClick() itself is built internally</span>
+      <span class="tok-com">// (dsl.ts's `on()`: capture at registration time, restore at event</span>
+      <span class="tok-com">// time) -- but see the callout below for where that stops being safe.</span>
+      <span class="tok-kw">const</span> <span class="tok-id">restore</span> = <span class="tok-id">capture</span>();
+      <span class="tok-id">queueMicrotask</span>(() =&gt;
+        <span class="tok-id">restore</span>(() =&gt; {
+          <span class="tok-id">div</span>(() =&gt; <span class="tok-id">text</span>(<span class="tok-id">translated</span>(<span class="tok-str">"Composed one microtask later, still inside the same render."</span>)));
+        })
+      );
+    });
+
+    <span class="tok-com">// mount() is hydrate()'s non-claiming sibling: a fresh render into an</span>
+    <span class="tok-com">// empty element instead of claiming server-rendered nodes -- what</span>
+    <span class="tok-com">// entry-client.ts would call if this element had never been server</span>
+    <span class="tok-com">// rendered at all. It needs a real DOM Element, so unlike everything</span>
+    <span class="tok-com">// else on this page it only makes sense from a browser event.</span>
+    <span class="tok-id">div</span>(() =&gt; {
+      <span class="tok-id">attr</span>(<span class="tok-str">"id"</span>, <span class="tok-str">"core-lifecycle-mount-target"</span>);
+      <span class="tok-id">classes</span>(<span class="tok-str">"border"</span>, <span class="tok-str">"border-dashed"</span>, <span class="tok-str">"border-line"</span>, <span class="tok-str">"rounded-control"</span>, <span class="tok-str">"p-3"</span>, <span class="tok-str">"min-h-12"</span>);
+    });
+
+    <span class="tok-id">button</span>(<span class="tok-id">translated</span>(<span class="tok-str">"mount() a widget into the box above"</span>), {}, () =&gt; {
+      <span class="tok-id">classes</span>(<span class="tok-str">"px-3"</span>, <span class="tok-str">"py-1.5"</span>);
+      <span class="tok-kw">const</span> <span class="tok-id">trigger</span> = <span class="tok-id">self</span>();
+      <span class="tok-id">onClick</span>(() =&gt; {
+        <span class="tok-kw">const</span> <span class="tok-id">target</span> = <span class="tok-id">document</span>.<span class="tok-id">getElementById</span>(<span class="tok-str">"core-lifecycle-mount-target"</span>);
+        <span class="tok-kw">if</span> (<span class="tok-id">target</span> === <span class="tok-kw">null</span>) <span class="tok-kw">return</span>;
+        <span class="tok-id">mount</span>(<span class="tok-id">target</span>, () =&gt; <span class="tok-id">text</span>(<span class="tok-id">translated</span>(<span class="tok-str">"Mounted independently -- a fresh render, no hydration involved."</span>)));
+        <span class="tok-id">trigger</span>.<span class="tok-id">setDomProperty</span>(<span class="tok-str">"disabled"</span>, <span class="tok-kw">true</span>);
+      });
+    });
+  });
+}
+</code></pre><!--jfx:Condition:start--><!--jfx:Condition:end--></div></div><div class="docs-callout docs-callout--library-bug"><div class="docs-callout__label">Bekanntes Bibliotheksproblem</div><div class="docs-callout__body">capture() bewahrt die Komponentenposition und erstellt für spätere Callbacks einen aktiven Append-Cursor. Das Wiederherstellen aus dem onClick eines Buttons ist nach der Hydration daher sicher; der verbrauchte Hydration-Cursor wird nie wiederverwendet. SSR wartet dadurch trotzdem nicht – verwende fetchInto(), wenn das Ergebnis im HTML vorhanden sein muss.</div></div></div></article><!--jfx:BlockComponent:end--><!--jfx:RoutedComponent:end--><!--jfx:DynamicComponentRenderer:end--><!--jfx:Router:end--><!--jfx:RouterViewRoot:end--></div><!--jfx:Foreach:start--><!--jfx:Foreach:end--><!--jfx:Foreach:start--><!--jfx:Foreach:end--><div class="jfx-viewport-notification-host"><!--jfx:Foreach:start--><!--jfx:Foreach:end--></div></div></div></body><!--jfx:I18nProviderRoot:end--></html>

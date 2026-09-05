@@ -1,0 +1,59 @@
+<!doctype html><html lang="en"><!--jfx:I18nProviderRoot:start--><head><meta data-jfx-head="meta:charset" charset="UTF-8"><base data-jfx-head="base" href="/scalajs-jfx/typescript/"><title data-jfx-head="title">@anjunar/jfx demo</title><meta data-jfx-head="meta:name=viewport" name="viewport" content="width=device-width, initial-scale=1"><link data-jfx-head="link:stylesheet" rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons"><script data-jfx-head="theme-init">
+(function () {
+  try {
+    var stored = localStorage.getItem("jfx-demo.theme");
+    var mode =
+      stored === "light" || stored === "dark"
+        ? stored
+        : window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light";
+    document.documentElement.setAttribute("data-theme", mode);
+  } catch (error) {
+    /* localStorage can throw in a locked-down browser context; the CSS
+       default (light) is a fine fallback. */
+  }
+})();
+</script><link data-jfx-head="asset:stylesheet" rel="stylesheet" crossorigin="" href="/scalajs-jfx/typescript/assets/styles-BHefGen-.css"><script data-jfx-head="asset:script" type="module" crossorigin="" src="/scalajs-jfx/typescript/assets/main-Bh-7GJcZ.js"></script></head><body><div id="root"><div class="jfx-viewport"><div class="jfx-viewport__content" style="min-height: 100%"><!--jfx:RouterViewRoot:start--><div class="app-shell__header"><a class="jfx-link" href="/scalajs-jfx/typescript">@anjunar/jfx</a><a class="jfx-link" href="/scalajs-jfx/typescript/search">Search</a><button class="app-shell__theme-toggle">Dark mode</button><button class="app-shell__locale-toggle">DE</button></div><nav class="app-shell__nav"><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-core</div><a class="jfx-link" href="/scalajs-jfx/typescript/core/state">Property</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/derived">Derived state</a><a class="jfx-link app-shell__nav-link--active" href="/scalajs-jfx/typescript/core/control-flow">when and forEach</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/async">fetchInto</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/elements">Extending the DSL</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/lifecycle">Lifetime and hydration</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/todos">Everything together</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-controls</div><a class="jfx-link" href="/scalajs-jfx/typescript/controls/tabs">Tabs</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/table">TableView</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/carousel">Carousel</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/data-grid">DataGrid</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/virtual-list">VirtualListView</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/remote">RemoteSource</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-forms</div><a class="jfx-link" href="/scalajs-jfx/typescript/forms/basics">Form and model</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/composition">Composing forms</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/combo-box">ComboBox</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/image-cropper">ImageCropper</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/validation">Validators</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-editor</div><a class="jfx-link" href="/scalajs-jfx/typescript/editor/basics">Editor</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-viewport</div><a class="jfx-link" href="/scalajs-jfx/typescript/viewport/notification">Notification</a><a class="jfx-link" href="/scalajs-jfx/typescript/viewport/window">Window</a><a class="jfx-link" href="/scalajs-jfx/typescript/viewport/overlay">Overlay</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-router</div><a class="jfx-link" href="/scalajs-jfx/typescript/router/links">routerLink</a><a class="jfx-link" href="/scalajs-jfx/typescript/router/nested">Nested route</a><a class="jfx-link" href="/scalajs-jfx/typescript/router/params">Context and concurrency</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-json</div><a class="jfx-link" href="/scalajs-jfx/typescript/json/mapper">Schema-driven JSON mapping</a></div></nav><!--jfx:Router:start--><!--jfx:DynamicComponentRenderer:start--><!--jfx:RoutedComponent:start--><!--jfx:BlockComponent:start--><article class="docs-page"><div class="docs-page__header"><h1>when and forEach</h1><p class="docs-page__summary">when() mounts a body while a condition holds; forEach() reconciles a body per item of a listProperty; classIf() toggles one class reactively.</p></div><div class="docs-page__body"><div class="docs-example"><div class="docs-example__live"><div class="flex flex-col gap-3"><div class="flex gap-2"><button class="px-3 py-1.5">Add item</button><button class="px-3 py-1.5">Toggle highlight</button></div><!--jfx:Condition:start--><!--jfx:Condition:end--><div class="flex flex-col gap-1"><!--jfx:Foreach:start--><!--jfx:ForeachItem:start--><div class="px-2 py-1 rounded-control">1. Alpha</div><!--jfx:ForeachItem:end--><!--jfx:ForeachItem:start--><div class="px-2 py-1 rounded-control">2. Beta</div><!--jfx:ForeachItem:end--><!--jfx:Foreach:end--></div></div></div><div class="docs-code-block"><pre class="docs-code"><code><span class="tok-kw">import</span> { <span class="tok-id">button</span>, <span class="tok-id">classes</span>, <span class="tok-id">classIf</span>, <span class="tok-id">div</span>, <span class="tok-id">forEach</span>, <span class="tok-id">listProperty</span>, <span class="tok-id">onClick</span>, <span class="tok-id">property</span>, <span class="tok-id">text</span>, <span class="tok-id">when</span> } <span class="tok-kw">from</span> <span class="tok-str">"@anjunar/jfx-core"</span>;
+<span class="tok-kw">import</span> { <span class="tok-id">translated</span> } <span class="tok-kw">from</span> <span class="tok-str">"../../app/i18n.js"</span>;
+
+<span class="tok-kw">export</span> <span class="tok-kw">function</span> <span class="tok-id">coreControlFlowPage</span>(): <span class="tok-kw">void</span> {
+  <span class="tok-kw">const</span> <span class="tok-id">items</span> = <span class="tok-id">listProperty</span>&lt;<span class="tok-kw">string</span>&gt;([<span class="tok-str">"Alpha"</span>, <span class="tok-str">"Beta"</span>]);
+  <span class="tok-kw">const</span> <span class="tok-id">isEmpty</span> = <span class="tok-id">items</span>.<span class="tok-id">map</span>((<span class="tok-id">values</span>) =&gt; <span class="tok-id">values</span>.<span class="tok-id">length</span> === <span class="tok-num">0</span>);
+  <span class="tok-kw">const</span> <span class="tok-id">highlight</span> = <span class="tok-id">property</span>(<span class="tok-kw">false</span>);
+
+  <span class="tok-id">div</span>(() =&gt; {
+    <span class="tok-id">classes</span>(<span class="tok-str">"flex"</span>, <span class="tok-str">"flex-col"</span>, <span class="tok-str">"gap-3"</span>);
+
+    <span class="tok-id">div</span>(() =&gt; {
+      <span class="tok-id">classes</span>(<span class="tok-str">"flex"</span>, <span class="tok-str">"gap-2"</span>);
+      <span class="tok-id">button</span>(<span class="tok-id">translated</span>(<span class="tok-str">"Add item"</span>), {}, () =&gt; {
+        <span class="tok-id">classes</span>(<span class="tok-str">"px-3"</span>, <span class="tok-str">"py-1.5"</span>);
+        <span class="tok-id">onClick</span>(() =&gt; <span class="tok-id">items</span>.<span class="tok-id">add</span>(<span class="tok-str">`Item ${</span><span class="tok-id">items</span>.<span class="tok-kw">get</span>.<span class="tok-id">length</span> + <span class="tok-num">1</span><span class="tok-str">}`</span>));
+      });
+      <span class="tok-id">button</span>(<span class="tok-id">translated</span>(<span class="tok-str">"Toggle highlight"</span>), {}, () =&gt; {
+        <span class="tok-id">classes</span>(<span class="tok-str">"px-3"</span>, <span class="tok-str">"py-1.5"</span>);
+        <span class="tok-id">onClick</span>(() =&gt; <span class="tok-id">highlight</span>.<span class="tok-kw">set</span>(!<span class="tok-id">highlight</span>.<span class="tok-kw">get</span>));
+      });
+    });
+
+    <span class="tok-id">when</span>(<span class="tok-id">isEmpty</span>, () =&gt; {
+      <span class="tok-id">div</span>(() =&gt; {
+        <span class="tok-id">classes</span>(<span class="tok-str">"text-ink-muted"</span>, <span class="tok-str">"italic"</span>);
+        <span class="tok-id">text</span>(<span class="tok-id">translated</span>(<span class="tok-str">"No items -- add one above."</span>));
+      });
+    });
+
+    <span class="tok-id">div</span>(() =&gt; {
+      <span class="tok-id">classes</span>(<span class="tok-str">"flex"</span>, <span class="tok-str">"flex-col"</span>, <span class="tok-str">"gap-1"</span>);
+      <span class="tok-id">forEach</span>(<span class="tok-id">items</span>, (<span class="tok-id">item</span>, <span class="tok-id">index</span>) =&gt; {
+        <span class="tok-id">div</span>(() =&gt; {
+          <span class="tok-id">classes</span>(<span class="tok-str">"px-2"</span>, <span class="tok-str">"py-1"</span>, <span class="tok-str">"rounded-control"</span>);
+          <span class="tok-id">classIf</span>(<span class="tok-str">"bg-accent-muted"</span>, <span class="tok-id">highlight</span>);
+          <span class="tok-id">text</span>(<span class="tok-str">`${</span><span class="tok-id">index</span> + <span class="tok-num">1</span><span class="tok-str">}. ${</span><span class="tok-id">item</span><span class="tok-str">}`</span>);
+        });
+      });
+    });
+  });
+}
+</code></pre><!--jfx:Condition:start--><!--jfx:Condition:end--></div></div></div></article><!--jfx:BlockComponent:end--><!--jfx:RoutedComponent:end--><!--jfx:DynamicComponentRenderer:end--><!--jfx:Router:end--><!--jfx:RouterViewRoot:end--></div><!--jfx:Foreach:start--><!--jfx:Foreach:end--><!--jfx:Foreach:start--><!--jfx:Foreach:end--><div class="jfx-viewport-notification-host"><!--jfx:Foreach:start--><!--jfx:Foreach:end--></div></div></div></body><!--jfx:I18nProviderRoot:end--></html>

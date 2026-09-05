@@ -1,0 +1,60 @@
+<!doctype html><html lang="de"><!--jfx:I18nProviderRoot:start--><head><meta data-jfx-head="meta:charset" charset="UTF-8"><base data-jfx-head="base" href="/scalajs-jfx/typescript/"><title data-jfx-head="title">@anjunar/jfx demo</title><meta data-jfx-head="meta:name=viewport" name="viewport" content="width=device-width, initial-scale=1"><link data-jfx-head="link:stylesheet" rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons"><script data-jfx-head="theme-init">
+(function () {
+  try {
+    var stored = localStorage.getItem("jfx-demo.theme");
+    var mode =
+      stored === "light" || stored === "dark"
+        ? stored
+        : window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light";
+    document.documentElement.setAttribute("data-theme", mode);
+  } catch (error) {
+    /* localStorage can throw in a locked-down browser context; the CSS
+       default (light) is a fine fallback. */
+  }
+})();
+</script><link data-jfx-head="asset:stylesheet" rel="stylesheet" crossorigin="" href="/scalajs-jfx/typescript/assets/styles-BHefGen-.css"><script data-jfx-head="asset:script" type="module" crossorigin="" src="/scalajs-jfx/typescript/assets/main-Bh-7GJcZ.js"></script></head><body><div id="root"><div class="jfx-viewport"><div class="jfx-viewport__content" style="min-height: 100%"><!--jfx:RouterViewRoot:start--><div class="app-shell__header"><a class="jfx-link" href="/scalajs-jfx/typescript">@anjunar/jfx</a><a class="jfx-link" href="/scalajs-jfx/typescript/search">Suche</a><button class="app-shell__theme-toggle">Dunkler Modus</button><button class="app-shell__locale-toggle">EN</button></div><nav class="app-shell__nav"><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-core</div><a class="jfx-link" href="/scalajs-jfx/typescript/core/state">Property</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/derived">Abgeleiteter Zustand</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/control-flow">when und forEach</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/async">fetchInto</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/elements">DSL erweitern</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/lifecycle">Lebensdauer und Hydration</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/todos">Alles zusammen</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-controls</div><a class="jfx-link" href="/scalajs-jfx/typescript/controls/tabs">Tabs</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/table">TableView</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/carousel">Carousel</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/data-grid">DataGrid</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/virtual-list">VirtualListView</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/remote">RemoteSource</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-forms</div><a class="jfx-link" href="/scalajs-jfx/typescript/forms/basics">Formular und Modell</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/composition">Formulare komponieren</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/combo-box">ComboBox</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/image-cropper">ImageCropper</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/validation">Validatoren</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-editor</div><a class="jfx-link app-shell__nav-link--active" href="/scalajs-jfx/typescript/editor/basics">Editor</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-viewport</div><a class="jfx-link" href="/scalajs-jfx/typescript/viewport/notification">Benachrichtigung</a><a class="jfx-link" href="/scalajs-jfx/typescript/viewport/window">Fenster</a><a class="jfx-link" href="/scalajs-jfx/typescript/viewport/overlay">Overlay</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-router</div><a class="jfx-link" href="/scalajs-jfx/typescript/router/links">routerLink</a><a class="jfx-link" href="/scalajs-jfx/typescript/router/nested">Verschachtelte Route</a><a class="jfx-link" href="/scalajs-jfx/typescript/router/params">Kontext und Nebenläufigkeit</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-json</div><a class="jfx-link" href="/scalajs-jfx/typescript/json/mapper">Schema-basiertes JSON-Mapping</a></div></nav><!--jfx:Router:start--><!--jfx:DynamicComponentRenderer:start--><!--jfx:RoutedComponent:start--><!--jfx:BlockComponent:start--><article class="docs-page"><div class="docs-page__header"><h1>Editor</h1><p class="docs-page__summary">editor(), plugins: ein Lexical-basiertes Rich-Text-Feld, wie input() per Namen gebunden.</p></div><div class="docs-page__body"><div class="docs-example"><div class="docs-example__live"><form><div class="flex flex-col gap-3"><div class="jfx-input-container"><div class="jfx-input-container__label"><div class="placeholder jfx-input-container__placeholder">Titel</div></div><div class="jfx-input-container__control"><input name="title" value="Erste Schritte" placeholder="Titel"></div><div class="jfx-input-container__divider"></div><div class="jfx-input-container__errors"><!--jfx:text--></div></div><div aria-disabled="false" class="jfx-editor-host jfx-editor-host--markdown" name="body" role="group" data-jfx-editor-format="markdown" data-jfx-editor-loading="false"><div class="jfx-editor"><div class="jfx-editor__shell"><div class="jfx-editor__toolbar" aria-label="Editor toolbar" style="display: none"></div><div class="jfx-editor__markdown-actions"><!--jfx:DynamicComponentRenderer:start--><a class="jfx-editor__mode-toggle jfx-editor__edit-link jfx-editor__readonly-link" href="/scalajs-jfx/typescript/de/editor/basics?body.editor=readonly">Readonly</a><!--jfx:DynamicComponentRenderer:end--></div><div class="jfx-editor__surface-wrap"><div class="jfx-editor__fallback"><!--jfx:DynamicComponentRenderer:start--><textarea class="jfx-editor__markdown-textarea" name="body" aria-label="body" aria-multiline="true" spellcheck="true" placeholder="Artikel schreiben …">## Markdown editor
+
+The public value stays **Markdown**.
+
+| Feature | Representation |
+| --- | --- |
+| Tables | GFM pipe table |
+| Code | Fenced block |
+
+```scala
+val publicValue = "Markdown"
+```
+
+---</textarea><!--jfx:DynamicComponentRenderer:end--></div><div class="jfx-editor__surface lexical-editor-container lexical-editor-input" role="textbox" aria-multiline="true" contenteditable="true" aria-readonly="false" spellcheck="true" style="display: none; opacity: 0"></div><div class="jfx-editor__placeholder" style="display: none"><!--jfx:Condition:start--><!--jfx:ConditionalBody:start-->Artikel schreiben …<!--jfx:ConditionalBody:end--><!--jfx:Condition:end--></div></div></div></div></div></div></form></div><div class="docs-code-block"><pre class="docs-code"><code><span class="tok-kw">import</span> { <span class="tok-id">classes</span>, <span class="tok-id">div</span>, <span class="tok-id">property</span> } <span class="tok-kw">from</span> <span class="tok-str">"@anjunar/jfx-core"</span>;
+<span class="tok-kw">import</span> { <span class="tok-id">form</span>, <span class="tok-id">inputContainer</span>, <span class="tok-id">input</span> } <span class="tok-kw">from</span> <span class="tok-str">"@anjunar/jfx-forms"</span>;
+<span class="tok-kw">import</span> { <span class="tok-id">editor</span> } <span class="tok-kw">from</span> <span class="tok-str">"@anjunar/jfx-editor"</span>;
+<span class="tok-kw">import</span> { <span class="tok-id">translated</span> } <span class="tok-kw">from</span> <span class="tok-str">"../../app/i18n.js"</span>;
+
+<span class="tok-kw">export</span> <span class="tok-kw">function</span> <span class="tok-id">editorBasicsPage</span>(): <span class="tok-kw">void</span> {
+  <span class="tok-kw">const</span> <span class="tok-id">model</span> = {
+    <span class="tok-id">title</span>: <span class="tok-id">property</span>(<span class="tok-id">translated</span>(<span class="tok-str">"Getting started"</span>).<span class="tok-kw">get</span>),
+    <span class="tok-id">body</span>: <span class="tok-id">property</span>(
+      <span class="tok-str">"## Markdown editor\n\nThe public value stays **Markdown**.\n\n"</span> +
+        <span class="tok-str">"| Feature | Representation |\n| --- | --- |\n| Tables | GFM pipe table |\n| Code | Fenced block |\n\n"</span> +
+        <span class="tok-str">"```scala\nval publicValue = \"Markdown\"\n```\n\n---"</span>
+    ),
+  };
+
+  <span class="tok-id">form</span>(<span class="tok-id">model</span>, {}, () =&gt; {
+    <span class="tok-id">div</span>(() =&gt; {
+      <span class="tok-id">classes</span>(<span class="tok-str">"flex"</span>, <span class="tok-str">"flex-col"</span>, <span class="tok-str">"gap-3"</span>);
+
+      <span class="tok-id">inputContainer</span>({ <span class="tok-id">label</span>: <span class="tok-id">translated</span>(<span class="tok-str">"Title"</span>).<span class="tok-kw">get</span> }, () =&gt; {
+        <span class="tok-id">input</span>(<span class="tok-str">"title"</span>);
+      });
+
+      <span class="tok-id">editor</span>(<span class="tok-str">"body"</span>, {
+        <span class="tok-id">placeholder</span>: <span class="tok-id">translated</span>(<span class="tok-str">"Write the article..."</span>).<span class="tok-kw">get</span>,
+        <span class="tok-id">plugins</span>: [<span class="tok-str">"base"</span>, <span class="tok-str">"heading"</span>, <span class="tok-str">"list"</span>, <span class="tok-str">"link"</span>, <span class="tok-str">"image"</span>, <span class="tok-str">"table"</span>, <span class="tok-str">"code"</span>, <span class="tok-str">"horizontalRule"</span>],
+      });
+    });
+  });
+}
+</code></pre><!--jfx:Condition:start--><!--jfx:Condition:end--></div></div><div class="docs-callout docs-callout--note"><div class="docs-callout__label">Hinweis</div><div class="docs-callout__body">plugins ist eine Namensliste, kein Optionsobjekt: basePlugin()/headingPlugin()/... sind Scala-Funktionen und keine Werte, daher ruft jfx-bridge die passende Funktion für jeden Namen auf. Ein Editor ohne Plugins bearbeitet weiterhin Rich Text – er rendert nur keine Toolbar. Die Link- und Bild-Plugins öffnen ihre Dialoge als @anjunar/jfx-viewport-Fenster; dafür braucht der Editor einen Viewport-Vorfahren. entry-client.ts und entry-server.ts umschließen bereits die gesamte Anwendung damit.</div></div></div></article><!--jfx:BlockComponent:end--><!--jfx:RoutedComponent:end--><!--jfx:DynamicComponentRenderer:end--><!--jfx:Router:end--><!--jfx:RouterViewRoot:end--></div><!--jfx:Foreach:start--><!--jfx:Foreach:end--><!--jfx:Foreach:start--><!--jfx:Foreach:end--><div class="jfx-viewport-notification-host"><!--jfx:Foreach:start--><!--jfx:Foreach:end--></div></div></div></body><!--jfx:I18nProviderRoot:end--></html>

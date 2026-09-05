@@ -1,0 +1,60 @@
+<!doctype html><html lang="de"><!--jfx:I18nProviderRoot:start--><head><meta data-jfx-head="meta:charset" charset="UTF-8"><base data-jfx-head="base" href="/scalajs-jfx/typescript/"><title data-jfx-head="title">@anjunar/jfx demo</title><meta data-jfx-head="meta:name=viewport" name="viewport" content="width=device-width, initial-scale=1"><link data-jfx-head="link:stylesheet" rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons"><script data-jfx-head="theme-init">
+(function () {
+  try {
+    var stored = localStorage.getItem("jfx-demo.theme");
+    var mode =
+      stored === "light" || stored === "dark"
+        ? stored
+        : window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light";
+    document.documentElement.setAttribute("data-theme", mode);
+  } catch (error) {
+    /* localStorage can throw in a locked-down browser context; the CSS
+       default (light) is a fine fallback. */
+  }
+})();
+</script><link data-jfx-head="asset:stylesheet" rel="stylesheet" crossorigin="" href="/scalajs-jfx/typescript/assets/styles-BHefGen-.css"><script data-jfx-head="asset:script" type="module" crossorigin="" src="/scalajs-jfx/typescript/assets/main-Bh-7GJcZ.js"></script></head><body><div id="root"><div class="jfx-viewport"><div class="jfx-viewport__content" style="min-height: 100%"><!--jfx:RouterViewRoot:start--><div class="app-shell__header"><a class="jfx-link" href="/scalajs-jfx/typescript">@anjunar/jfx</a><a class="jfx-link" href="/scalajs-jfx/typescript/search">Suche</a><button class="app-shell__theme-toggle">Dunkler Modus</button><button class="app-shell__locale-toggle">EN</button></div><nav class="app-shell__nav"><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-core</div><a class="jfx-link" href="/scalajs-jfx/typescript/core/state">Property</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/derived">Abgeleiteter Zustand</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/control-flow">when und forEach</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/async">fetchInto</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/elements">DSL erweitern</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/lifecycle">Lebensdauer und Hydration</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/todos">Alles zusammen</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-controls</div><a class="jfx-link" href="/scalajs-jfx/typescript/controls/tabs">Tabs</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/table">TableView</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/carousel">Carousel</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/data-grid">DataGrid</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/virtual-list">VirtualListView</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/remote">RemoteSource</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-forms</div><a class="jfx-link" href="/scalajs-jfx/typescript/forms/basics">Formular und Modell</a><a class="jfx-link app-shell__nav-link--active" href="/scalajs-jfx/typescript/forms/composition">Formulare komponieren</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/combo-box">ComboBox</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/image-cropper">ImageCropper</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/validation">Validatoren</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-editor</div><a class="jfx-link" href="/scalajs-jfx/typescript/editor/basics">Editor</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-viewport</div><a class="jfx-link" href="/scalajs-jfx/typescript/viewport/notification">Benachrichtigung</a><a class="jfx-link" href="/scalajs-jfx/typescript/viewport/window">Fenster</a><a class="jfx-link" href="/scalajs-jfx/typescript/viewport/overlay">Overlay</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-router</div><a class="jfx-link" href="/scalajs-jfx/typescript/router/links">routerLink</a><a class="jfx-link" href="/scalajs-jfx/typescript/router/nested">Verschachtelte Route</a><a class="jfx-link" href="/scalajs-jfx/typescript/router/params">Kontext und Nebenläufigkeit</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-json</div><a class="jfx-link" href="/scalajs-jfx/typescript/json/mapper">Schema-basiertes JSON-Mapping</a></div></nav><!--jfx:Router:start--><!--jfx:DynamicComponentRenderer:start--><!--jfx:RoutedComponent:start--><!--jfx:BlockComponent:start--><article class="docs-page"><div class="docs-page__header"><h1>Formulare komponieren</h1><p class="docs-page__summary">subForm() und arrayForm(): ein verschachteltes Modellobjekt und ein wiederholendes Feld im übergeordneten Formular.</p></div><div class="docs-page__body"><div class="docs-example"><div class="docs-example__live"><form><div class="flex flex-col gap-4"><div class="flex flex-col gap-2"><fieldset><!--jfx:Foreach:start--><!--jfx:ForeachItem:start--><input name="tags-0" value="typescript"><!--jfx:ForeachItem:end--><!--jfx:Foreach:end--></fieldset><button class="px-3 py-1.5">Tag hinzufügen</button></div><fieldset><div class="jfx-input-container empty"><div class="jfx-input-container__label"><div class="placeholder jfx-input-container__placeholder">Stadt</div></div><div class="jfx-input-container__control"><input name="city" value="" placeholder="Stadt"></div><div class="jfx-input-container__divider"></div><div class="jfx-input-container__errors"><!--jfx:text--></div></div></fieldset></div></form></div><div class="docs-code-block"><pre class="docs-code"><code><span class="tok-kw">import</span> { <span class="tok-id">button</span>, <span class="tok-id">classes</span>, <span class="tok-id">div</span>, <span class="tok-id">listProperty</span>, <span class="tok-id">onClick</span>, <span class="tok-id">property</span> } <span class="tok-kw">from</span> <span class="tok-str">"@anjunar/jfx-core"</span>;
+<span class="tok-kw">import</span> { <span class="tok-id">arrayForm</span>, <span class="tok-id">form</span>, <span class="tok-id">input</span>, <span class="tok-id">inputContainer</span>, <span class="tok-typ">Size</span>, <span class="tok-id">subForm</span> } <span class="tok-kw">from</span> <span class="tok-str">"@anjunar/jfx-forms"</span>;
+<span class="tok-kw">import</span> { <span class="tok-id">translated</span> } <span class="tok-kw">from</span> <span class="tok-str">"../../app/i18n.js"</span>;
+
+<span class="tok-kw">class</span> <span class="tok-typ">AddressModel</span> {
+  @<span class="tok-typ">Size</span>(<span class="tok-num">1</span>, <span class="tok-num">60</span>)
+  <span class="tok-kw">readonly</span> <span class="tok-id">city</span> = <span class="tok-id">property</span>(<span class="tok-str">""</span>);
+}
+
+<span class="tok-kw">class</span> <span class="tok-typ">CompositionModel</span> {
+  <span class="tok-kw">readonly</span> <span class="tok-id">tags</span> = <span class="tok-id">listProperty</span>&lt;<span class="tok-kw">string</span>&gt;([<span class="tok-str">"typescript"</span>]);
+  <span class="tok-kw">readonly</span> <span class="tok-id">address</span> = <span class="tok-id">property</span>(<span class="tok-kw">new</span> <span class="tok-typ">AddressModel</span>());
+}
+
+<span class="tok-kw">export</span> <span class="tok-kw">function</span> <span class="tok-id">formsCompositionPage</span>(): <span class="tok-kw">void</span> {
+  <span class="tok-kw">const</span> <span class="tok-id">model</span> = <span class="tok-kw">new</span> <span class="tok-typ">CompositionModel</span>();
+
+  <span class="tok-id">form</span>(<span class="tok-id">model</span>, () =&gt; {
+    <span class="tok-id">div</span>(() =&gt; {
+      <span class="tok-id">classes</span>(<span class="tok-str">"flex"</span>, <span class="tok-str">"flex-col"</span>, <span class="tok-str">"gap-4"</span>);
+
+      <span class="tok-com">// arrayForm must be a direct child of form/subForm so it can bind to the</span>
+      <span class="tok-com">// parent's ListProperty. A fieldSet intentionally creates a new form</span>
+      <span class="tok-com">// context for its children and would therefore hide model.tags.</span>
+      <span class="tok-id">div</span>(() =&gt; {
+        <span class="tok-id">classes</span>(<span class="tok-str">"flex"</span>, <span class="tok-str">"flex-col"</span>, <span class="tok-str">"gap-2"</span>);
+        <span class="tok-id">arrayForm</span>(<span class="tok-str">"tags"</span>, (<span class="tok-id">index</span>) =&gt; {
+          <span class="tok-id">input</span>(<span class="tok-str">`tags-${</span><span class="tok-id">index</span><span class="tok-str">}`</span>);
+        });
+        <span class="tok-id">button</span>(<span class="tok-id">translated</span>(<span class="tok-str">"Add tag"</span>), {}, () =&gt; {
+          <span class="tok-id">classes</span>(<span class="tok-str">"px-3"</span>, <span class="tok-str">"py-1.5"</span>);
+          <span class="tok-id">onClick</span>(() =&gt; <span class="tok-id">model</span>.<span class="tok-id">tags</span>.<span class="tok-id">add</span>(<span class="tok-str">""</span>));
+        });
+      });
+
+      <span class="tok-id">subForm</span>(<span class="tok-str">"address"</span>, <span class="tok-id">model</span>.<span class="tok-id">address</span>.<span class="tok-kw">get</span>, () =&gt; {
+        <span class="tok-id">inputContainer</span>({ <span class="tok-id">label</span>: <span class="tok-id">translated</span>(<span class="tok-str">"City"</span>).<span class="tok-kw">get</span> }, () =&gt; {
+          <span class="tok-id">input</span>(<span class="tok-str">"city"</span>);
+        });
+      });
+    });
+  });
+}
+</code></pre><!--jfx:Condition:start--><!--jfx:Condition:end--></div></div><div class="docs-callout docs-callout--note"><div class="docs-callout__label">Hinweis</div><div class="docs-callout__body">arrayForm muss direkt unter form oder subForm gemountet werden. fieldSet stellt für seine Kinder absichtlich einen eigenen Gruppierungskontext bereit; arrayForm darin zu platzieren würde das Array statt beim übergeordneten Modell beim fieldSet registrieren, sodass Änderungen an model.tags keine neuen Elemente erzeugen könnten. arrayForm rendert selbst ein fieldset und bleibt hier die richtige Gruppierungsgrenze.</div></div></div></article><!--jfx:BlockComponent:end--><!--jfx:RoutedComponent:end--><!--jfx:DynamicComponentRenderer:end--><!--jfx:Router:end--><!--jfx:RouterViewRoot:end--></div><!--jfx:Foreach:start--><!--jfx:Foreach:end--><!--jfx:Foreach:start--><!--jfx:Foreach:end--><div class="jfx-viewport-notification-host"><!--jfx:Foreach:start--><!--jfx:Foreach:end--></div></div></div></body><!--jfx:I18nProviderRoot:end--></html>

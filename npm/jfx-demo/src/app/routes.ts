@@ -6,6 +6,7 @@
 import { errorRoute, view } from "@anjunar/jfx-router";
 import type { RouteDefinition, RouterConfig } from "@anjunar/jfx-router";
 import { catalog } from "./catalog.js";
+import { basePath } from "./base-path.js";
 
 export { appShell } from "./shell.js";
 
@@ -21,6 +22,7 @@ export const appRoutes: readonly RouteDefinition[] = catalog.map((entry) => {
 
 /** Shared by both entry points; the server adds `url` per request. */
 export const routerConfig: RouterConfig = {
+  basePath,
   onFailure: () => "/404",
   renderErrorsOnServer: true,
 };

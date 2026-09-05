@@ -1,0 +1,64 @@
+<!doctype html><html lang="en"><!--jfx:I18nProviderRoot:start--><head><meta data-jfx-head="meta:charset" charset="UTF-8"><base data-jfx-head="base" href="/scalajs-jfx/typescript/"><title data-jfx-head="title">@anjunar/jfx demo</title><meta data-jfx-head="meta:name=viewport" name="viewport" content="width=device-width, initial-scale=1"><link data-jfx-head="link:stylesheet" rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons"><script data-jfx-head="theme-init">
+(function () {
+  try {
+    var stored = localStorage.getItem("jfx-demo.theme");
+    var mode =
+      stored === "light" || stored === "dark"
+        ? stored
+        : window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light";
+    document.documentElement.setAttribute("data-theme", mode);
+  } catch (error) {
+    /* localStorage can throw in a locked-down browser context; the CSS
+       default (light) is a fine fallback. */
+  }
+})();
+</script><link data-jfx-head="asset:stylesheet" rel="stylesheet" crossorigin="" href="/scalajs-jfx/typescript/assets/styles-BHefGen-.css"><script data-jfx-head="asset:script" type="module" crossorigin="" src="/scalajs-jfx/typescript/assets/main-Bh-7GJcZ.js"></script></head><body><div id="root"><div class="jfx-viewport"><div class="jfx-viewport__content" style="min-height: 100%"><!--jfx:RouterViewRoot:start--><div class="app-shell__header"><a class="jfx-link" href="/scalajs-jfx/typescript">@anjunar/jfx</a><a class="jfx-link" href="/scalajs-jfx/typescript/search">Search</a><button class="app-shell__theme-toggle">Dark mode</button><button class="app-shell__locale-toggle">DE</button></div><nav class="app-shell__nav"><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-core</div><a class="jfx-link" href="/scalajs-jfx/typescript/core/state">Property</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/derived">Derived state</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/control-flow">when and forEach</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/async">fetchInto</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/elements">Extending the DSL</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/lifecycle">Lifetime and hydration</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/todos">Everything together</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-controls</div><a class="jfx-link" href="/scalajs-jfx/typescript/controls/tabs">Tabs</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/table">TableView</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/carousel">Carousel</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/data-grid">DataGrid</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/virtual-list">VirtualListView</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/remote">RemoteSource</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-forms</div><a class="jfx-link" href="/scalajs-jfx/typescript/forms/basics">Form and model</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/composition">Composing forms</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/combo-box">ComboBox</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/image-cropper">ImageCropper</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/validation">Validators</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-editor</div><a class="jfx-link" href="/scalajs-jfx/typescript/editor/basics">Editor</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-viewport</div><a class="jfx-link" href="/scalajs-jfx/typescript/viewport/notification">Notification</a><a class="jfx-link" href="/scalajs-jfx/typescript/viewport/window">Window</a><a class="jfx-link" href="/scalajs-jfx/typescript/viewport/overlay">Overlay</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-router</div><a class="jfx-link" href="/scalajs-jfx/typescript/router/links">routerLink</a><a class="jfx-link" href="/scalajs-jfx/typescript/router/nested">Nested route</a><a class="jfx-link app-shell__nav-link--active" href="/scalajs-jfx/typescript/router/params">Context and concurrency</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-json</div><a class="jfx-link" href="/scalajs-jfx/typescript/json/mapper">Schema-driven JSON mapping</a></div></nav><!--jfx:Router:start--><!--jfx:DynamicComponentRenderer:start--><!--jfx:RoutedComponent:start--><!--jfx:BlockComponent:start--><article class="docs-page"><div class="docs-page__header"><h1>Context and concurrency</h1><p class="docs-page__summary">An asynchronous RouteLoad, RouteContext.params/queryParams/failure, and a digits-only constraint that falls back to onFailure.</p></div><div class="docs-page__body"><div class="docs-example"><div class="docs-example__live"><div class="flex flex-col gap-3"><p>Both links below hit /router/params/:id. Only one matches its digits-only constraint -- the other falls back to onFailure, i.e. /404.</p><div class="flex gap-3"><a class="jfx-link" href="/scalajs-jfx/typescript/en/router/params/42">Valid: /router/params/42</a><a class="jfx-link" href="/scalajs-jfx/typescript/en/router/params/abc">Invalid: /router/params/abc</a></div><!--jfx:RouterOutlet:start--><!--jfx:DynamicComponentRenderer:start--><!--jfx:anon$2:start--><!--jfx:anon$2:end--><!--jfx:DynamicComponentRenderer:end--><!--jfx:RouterOutlet:end--></div></div><div class="docs-code-block"><pre class="docs-code"><code><span class="tok-kw">import</span> { <span class="tok-id">classes</span>, <span class="tok-id">div</span>, <span class="tok-id">paragraph</span>, <span class="tok-id">text</span> } <span class="tok-kw">from</span> <span class="tok-str">"@anjunar/jfx-core"</span>;
+<span class="tok-kw">import</span> { <span class="tok-id">routerLink</span>, <span class="tok-id">routerOutlet</span> } <span class="tok-kw">from</span> <span class="tok-str">"@anjunar/jfx-router"</span>;
+<span class="tok-kw">import</span> { <span class="tok-id">translated</span> } <span class="tok-kw">from</span> <span class="tok-str">"../../app/i18n.js"</span>;
+
+<span class="tok-kw">export</span> <span class="tok-kw">function</span> <span class="tok-id">routerParamsPage</span>(): <span class="tok-kw">void</span> {
+  <span class="tok-id">div</span>(() =&gt; {
+    <span class="tok-id">classes</span>(<span class="tok-str">"flex"</span>, <span class="tok-str">"flex-col"</span>, <span class="tok-str">"gap-3"</span>);
+    <span class="tok-id">paragraph</span>(() =&gt; {
+      <span class="tok-id">text</span>(<span class="tok-id">translated</span>(<span class="tok-str">"Both links below hit /router/params/:id. Only one matches its digits-only constraint -- the other falls back to onFailure, i.e. /404."</span>));
+    });
+    <span class="tok-id">div</span>(() =&gt; {
+      <span class="tok-id">classes</span>(<span class="tok-str">"flex"</span>, <span class="tok-str">"gap-3"</span>);
+      <span class="tok-id">routerLink</span>(<span class="tok-str">"/router/params/42"</span>, <span class="tok-id">translated</span>(<span class="tok-str">"Valid: /router/params/42"</span>));
+      <span class="tok-id">routerLink</span>(<span class="tok-str">"/router/params/abc"</span>, <span class="tok-id">translated</span>(<span class="tok-str">"Invalid: /router/params/abc"</span>));
+    });
+    <span class="tok-id">routerOutlet</span>();
+  });
+}
+</code></pre><!--jfx:Condition:start--><!--jfx:Condition:end--></div></div><h3>The child route's loader (detail.ts)</h3><div class="docs-code-block"><pre class="docs-code"><code><span class="tok-com">/**</span>
+<span class="tok-com"> * The child route mounted at /router/params/:id. Its loader is genuinely</span>
+<span class="tok-com"> * asynchronous (`Promise&lt;PageBody&gt;`, not a function returning one) -- SSR</span>
+<span class="tok-com"> * waits for it, hydration tolerates it still being in flight, the same</span>
+<span class="tok-com"> * contract fetchInto() is built on (see /core/async). `context.params.id`</span>
+<span class="tok-com"> * only exists because :id matched the digits-only constraint declared next</span>
+<span class="tok-com"> * to this route in app/catalog.ts -- RouteMatcher never calls this loader</span>
+<span class="tok-com"> * for a segment the constraint rejects; the router forwards to onFailure</span>
+<span class="tok-com"> * instead.</span>
+<span class="tok-com"> */</span>
+<span class="tok-kw">import</span> { <span class="tok-id">div</span>, <span class="tok-id">heading</span>, <span class="tok-id">i18n</span>, <span class="tok-id">named</span>, <span class="tok-id">paragraph</span>, <span class="tok-id">t</span>, <span class="tok-id">text</span> } <span class="tok-kw">from</span> <span class="tok-str">"@anjunar/jfx-core"</span>;
+<span class="tok-kw">import</span> { <span class="tok-id">routerLink</span> } <span class="tok-kw">from</span> <span class="tok-str">"@anjunar/jfx-router"</span>;
+<span class="tok-kw">import</span> <span class="tok-kw">type</span> { <span class="tok-typ">PageBody</span>, <span class="tok-typ">RouteContext</span> } <span class="tok-kw">from</span> <span class="tok-str">"@anjunar/jfx-router"</span>;
+<span class="tok-kw">import</span> { <span class="tok-id">translated</span> } <span class="tok-kw">from</span> <span class="tok-str">"../../app/i18n.js"</span>;
+
+<span class="tok-kw">export</span> <span class="tok-kw">function</span> <span class="tok-id">routerParamsDetailLoad</span>(<span class="tok-id">context</span>: <span class="tok-typ">RouteContext</span>): <span class="tok-typ">Promise</span>&lt;<span class="tok-typ">PageBody</span>&gt; {
+  <span class="tok-kw">return</span> <span class="tok-kw">new</span> <span class="tok-typ">Promise</span>((<span class="tok-id">resolve</span>) =&gt; {
+    <span class="tok-id">setTimeout</span>(() =&gt; {
+      <span class="tok-id">resolve</span>(() =&gt; {
+        <span class="tok-id">div</span>(() =&gt; {
+          <span class="tok-id">heading</span>(<span class="tok-num">3</span>, () =&gt; <span class="tok-id">text</span>(<span class="tok-id">i18n</span><span class="tok-str">`Loaded id: ${</span><span class="tok-id">named</span>(<span class="tok-str">"id"</span>, <span class="tok-id">context</span>.<span class="tok-id">params</span>.<span class="tok-id">id</span>)<span class="tok-str">}`</span>));
+          <span class="tok-id">paragraph</span>(() =&gt; <span class="tok-id">text</span>(<span class="tok-id">t</span>(<span class="tok-id">i18n</span><span class="tok-str">`queryParams: ${</span><span class="tok-id">named</span>(<span class="tok-str">"params"</span>, <span class="tok-typ">JSON</span>.<span class="tok-id">stringify</span>(<span class="tok-id">context</span>.<span class="tok-id">queryParams</span>))<span class="tok-str">}`</span>)));
+          <span class="tok-id">paragraph</span>(() =&gt; <span class="tok-id">text</span>(<span class="tok-id">t</span>(<span class="tok-id">i18n</span><span class="tok-str">`failure: ${</span><span class="tok-id">named</span>(<span class="tok-str">"reason"</span>, <span class="tok-id">context</span>.<span class="tok-id">failure</span> ?? <span class="tok-str">"none"</span>)<span class="tok-str">}`</span>)));
+          <span class="tok-id">routerLink</span>(<span class="tok-str">"/router/params"</span>, <span class="tok-id">translated</span>(<span class="tok-str">"Back"</span>));
+        });
+      });
+    }, <span class="tok-num">20</span>);
+  });
+}
+</code></pre><!--jfx:Condition:start--><!--jfx:Condition:end--></div></div></article><!--jfx:BlockComponent:end--><!--jfx:RoutedComponent:end--><!--jfx:DynamicComponentRenderer:end--><!--jfx:Router:end--><!--jfx:RouterViewRoot:end--></div><!--jfx:Foreach:start--><!--jfx:Foreach:end--><!--jfx:Foreach:start--><!--jfx:Foreach:end--><div class="jfx-viewport-notification-host"><!--jfx:Foreach:start--><!--jfx:Foreach:end--></div></div></div></body><!--jfx:I18nProviderRoot:end--></html>

@@ -12,7 +12,12 @@ import sbt._
   */
 object SiteConfigGenerator {
 
-  def apply(configFile: File, sourceManagedDir: File): Seq[File] = {
+  def apply(
+      configFile: File,
+      sourceManagedDir: File,
+      basePathOverride: Option[String] = None,
+      siteUrlOverride: Option[String] = None
+  ): Seq[File] = {
     val values = parse(IO.read(configFile))
 
     def required(key: String): String =
@@ -21,8 +26,17 @@ object SiteConfigGenerator {
         sys.error(s"${configFile.getName} braucht den Schluessel \"$key\".")
       )
 
-    val basePath = normalizeBasePath(required("basePath"))
-    val siteUrl  = required("siteUrl").stripSuffix("/")
+    // The checked-in JSON remains the default for local development. The Pages
+    // orchestrator sets these variables while building one demo below its own
+    // URL prefix, so Scala SSR and Vite receive the same configuration without
+    // rewriting site.config.json.
+    val basePath = normalizeBasePath(
+      basePathOverride.filter(_.nonEmpty).getOrElse(required("basePath"))
+    )
+    val siteUrl = siteUrlOverride
+      .filter(_.nonEmpty)
+      .getOrElse(required("siteUrl"))
+      .stripSuffix("/")
 
     val target = sourceManagedDir / "app" / "SiteConfig.scala"
 

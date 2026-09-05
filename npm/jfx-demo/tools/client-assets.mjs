@@ -59,7 +59,7 @@ export async function productionAssets(clientDist) {
       attributes: [
         ["rel", "stylesheet"],
         ["crossorigin", ""],
-        ["href", `/${stylesheetFile}`],
+        ["href", publicAssetUrl(stylesheetFile)],
       ],
     },
     {
@@ -68,7 +68,7 @@ export async function productionAssets(clientDist) {
       attributes: [
         ["type", "module"],
         ["crossorigin", ""],
-        ["src", `/${scriptEntry.file}`],
+        ["src", publicAssetUrl(scriptEntry.file)],
       ],
     },
   ];
@@ -82,4 +82,15 @@ function requiredEntry(manifest, entryId, manifestPath) {
     `${manifestPath} does not know the entry "${entryId}". ` +
       `Present: ${Object.keys(manifest).join(", ")}`
   );
+}
+
+function publicBasePath() {
+  const value = process.env.JFX_BASE_PATH;
+  if (!value || value === "/") return "";
+  const withLeadingSlash = value.startsWith("/") ? value : `/${value}`;
+  return withLeadingSlash.replace(/\/+$/, "");
+}
+
+function publicAssetUrl(file) {
+  return `${publicBasePath()}/${file}`.replace(/\/{2,}/g, "/");
 }

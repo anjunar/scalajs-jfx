@@ -253,7 +253,7 @@ class App(
                   rel = "noopener noreferrer"
 
                   image {
-                    src = "/GitHub_Invertocat_Black.svg"
+                    src = publicAssetPath("GitHub_Invertocat_Black.svg")
                     style {
                       height = "32px"
                       width = "32px"
@@ -343,5 +343,8 @@ class App(
       replace = true
     )
   }
+
+  private def publicAssetPath(name: String): String =
+    if (SiteConfig.basePath.isEmpty) s"/$name" else s"${SiteConfig.basePath}/$name"
 
 }

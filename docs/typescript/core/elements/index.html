@@ -1,0 +1,103 @@
+<!doctype html><html lang="en"><!--jfx:I18nProviderRoot:start--><head><meta data-jfx-head="meta:charset" charset="UTF-8"><base data-jfx-head="base" href="/scalajs-jfx/typescript/"><title data-jfx-head="title">@anjunar/jfx demo</title><meta data-jfx-head="meta:name=viewport" name="viewport" content="width=device-width, initial-scale=1"><link data-jfx-head="link:stylesheet" rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons"><script data-jfx-head="theme-init">
+(function () {
+  try {
+    var stored = localStorage.getItem("jfx-demo.theme");
+    var mode =
+      stored === "light" || stored === "dark"
+        ? stored
+        : window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light";
+    document.documentElement.setAttribute("data-theme", mode);
+  } catch (error) {
+    /* localStorage can throw in a locked-down browser context; the CSS
+       default (light) is a fine fallback. */
+  }
+})();
+</script><link data-jfx-head="asset:stylesheet" rel="stylesheet" crossorigin="" href="/scalajs-jfx/typescript/assets/styles-BHefGen-.css"><script data-jfx-head="asset:script" type="module" crossorigin="" src="/scalajs-jfx/typescript/assets/main-Bh-7GJcZ.js"></script></head><body><div id="root"><div class="jfx-viewport"><div class="jfx-viewport__content" style="min-height: 100%"><!--jfx:RouterViewRoot:start--><div class="app-shell__header"><a class="jfx-link" href="/scalajs-jfx/typescript">@anjunar/jfx</a><a class="jfx-link" href="/scalajs-jfx/typescript/search">Search</a><button class="app-shell__theme-toggle">Dark mode</button><button class="app-shell__locale-toggle">DE</button></div><nav class="app-shell__nav"><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-core</div><a class="jfx-link" href="/scalajs-jfx/typescript/core/state">Property</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/derived">Derived state</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/control-flow">when and forEach</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/async">fetchInto</a><a class="jfx-link app-shell__nav-link--active" href="/scalajs-jfx/typescript/core/elements">Extending the DSL</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/lifecycle">Lifetime and hydration</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/todos">Everything together</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-controls</div><a class="jfx-link" href="/scalajs-jfx/typescript/controls/tabs">Tabs</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/table">TableView</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/carousel">Carousel</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/data-grid">DataGrid</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/virtual-list">VirtualListView</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/remote">RemoteSource</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-forms</div><a class="jfx-link" href="/scalajs-jfx/typescript/forms/basics">Form and model</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/composition">Composing forms</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/combo-box">ComboBox</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/image-cropper">ImageCropper</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/validation">Validators</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-editor</div><a class="jfx-link" href="/scalajs-jfx/typescript/editor/basics">Editor</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-viewport</div><a class="jfx-link" href="/scalajs-jfx/typescript/viewport/notification">Notification</a><a class="jfx-link" href="/scalajs-jfx/typescript/viewport/window">Window</a><a class="jfx-link" href="/scalajs-jfx/typescript/viewport/overlay">Overlay</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-router</div><a class="jfx-link" href="/scalajs-jfx/typescript/router/links">routerLink</a><a class="jfx-link" href="/scalajs-jfx/typescript/router/nested">Nested route</a><a class="jfx-link" href="/scalajs-jfx/typescript/router/params">Context and concurrency</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-json</div><a class="jfx-link" href="/scalajs-jfx/typescript/json/mapper">Schema-driven JSON mapping</a></div></nav><!--jfx:Router:start--><!--jfx:DynamicComponentRenderer:start--><!--jfx:RoutedComponent:start--><!--jfx:BlockComponent:start--><article class="docs-page"><div class="docs-page__header"><h1>Extending the DSL</h1><p class="docs-page__summary">element() builds a tag wrapper in one line; attr/style/domProperty/on/addClass/self are the settings every wrapper is made from.</p></div><div class="docs-page__body"><div class="docs-example"><div class="docs-example__live"><article class="flex flex-col gap-3"><section><p>A <span style="font-weight: 600">span</span> and a <mark class="core-elements-mark px-1 rounded-control cursor-pointer" title="Click to toggle" style="background-color: transparent">mark</mark> -- element() builds both from the one-line pattern div/span/anchor are themselves built from.</p></section><div class="hbox gap-3 items-center"><a href="https://developer.mozilla.org/docs/Web/HTML/Element/a">anchor()</a><button class="px-3 py-1.5">Disable me</button><button class="px-3 py-1.5">Double-click me (0)</button></div><ul class="list-disc pl-5"><li>attr() sets a plain HTML attribute</li><li>style() sets a plain CSS property, constant or reactive</li><li>domProperty() sets a DOM property directly, once at composition time</li><li>on() is the generic event entry point onClick/onInput/onDoubleClick are themselves built from</li><li>addClass() adds one class without touching whatever classes() already set</li></ul></article></div><div class="docs-code-block"><pre class="docs-code"><code><span class="tok-kw">import</span> {
+  <span class="tok-id">addClass</span>,
+  <span class="tok-id">anchor</span>,
+  <span class="tok-id">article</span>,
+  <span class="tok-id">attr</span>,
+  <span class="tok-id">button</span>,
+  <span class="tok-id">classes</span>,
+  <span class="tok-id">domProperty</span>,
+  <span class="tok-id">element</span>,
+  <span class="tok-id">hbox</span>,
+  <span class="tok-id">li</span>,
+  <span class="tok-id">on</span>,
+  <span class="tok-id">onClick</span>,
+  <span class="tok-id">onDoubleClick</span>,
+  <span class="tok-id">paragraph</span>,
+  <span class="tok-id">property</span>,
+  <span class="tok-id">section</span>,
+  <span class="tok-id">self</span>,
+  <span class="tok-id">span</span>,
+  <span class="tok-id">style</span>,
+  <span class="tok-id">text</span>,
+  <span class="tok-id">ul</span>,
+} <span class="tok-kw">from</span> <span class="tok-str">"@anjunar/jfx-core"</span>;
+<span class="tok-kw">import</span> { <span class="tok-id">translated</span> } <span class="tok-kw">from</span> <span class="tok-str">"../../app/i18n.js"</span>;
+
+<span class="tok-kw">const</span> <span class="tok-id">mark</span> = <span class="tok-id">element</span>(<span class="tok-str">"mark"</span>);
+
+<span class="tok-kw">export</span> <span class="tok-kw">function</span> <span class="tok-id">coreElementsPage</span>(): <span class="tok-kw">void</span> {
+  <span class="tok-kw">const</span> <span class="tok-id">highlighted</span> = <span class="tok-id">property</span>(<span class="tok-kw">false</span>);
+  <span class="tok-kw">const</span> <span class="tok-id">doubleClicks</span> = <span class="tok-id">property</span>(<span class="tok-num">0</span>);
+
+  <span class="tok-id">article</span>(() =&gt; {
+    <span class="tok-id">classes</span>(<span class="tok-str">"flex"</span>, <span class="tok-str">"flex-col"</span>, <span class="tok-str">"gap-3"</span>);
+
+    <span class="tok-id">section</span>(() =&gt; {
+      <span class="tok-id">paragraph</span>(() =&gt; {
+        <span class="tok-id">text</span>(<span class="tok-id">translated</span>(<span class="tok-str">"A "</span>));
+        <span class="tok-id">span</span>(() =&gt; {
+          <span class="tok-id">style</span>(<span class="tok-str">"font-weight"</span>, <span class="tok-str">"600"</span>);
+          <span class="tok-id">text</span>(<span class="tok-id">translated</span>(<span class="tok-str">"span"</span>));
+        });
+        <span class="tok-id">text</span>(<span class="tok-id">translated</span>(<span class="tok-str">" and a "</span>));
+        <span class="tok-id">mark</span>(() =&gt; {
+          <span class="tok-id">classes</span>(<span class="tok-str">"px-1"</span>, <span class="tok-str">"rounded-control"</span>, <span class="tok-str">"cursor-pointer"</span>);
+          <span class="tok-id">addClass</span>(<span class="tok-str">"core-elements-mark"</span>);
+          <span class="tok-id">domProperty</span>(<span class="tok-str">"title"</span>, <span class="tok-id">translated</span>(<span class="tok-str">"Click to toggle"</span>).<span class="tok-kw">get</span>);
+          <span class="tok-id">style</span>(<span class="tok-str">"background-color"</span>, <span class="tok-id">highlighted</span>.<span class="tok-id">map</span>((<span class="tok-id">value</span>) =&gt; (<span class="tok-id">value</span> ? <span class="tok-str">"var(--aj-accent-muted)"</span> : <span class="tok-str">"transparent"</span>)));
+          <span class="tok-id">on</span>(<span class="tok-str">"click"</span>, () =&gt; <span class="tok-id">highlighted</span>.<span class="tok-kw">set</span>(!<span class="tok-id">highlighted</span>.<span class="tok-kw">get</span>));
+          <span class="tok-id">text</span>(<span class="tok-id">translated</span>(<span class="tok-str">"mark"</span>));
+        });
+        <span class="tok-id">text</span>(<span class="tok-id">translated</span>(<span class="tok-str">" -- element() builds both from the one-line pattern div/span/anchor are themselves built from."</span>));
+      });
+    });
+
+    <span class="tok-id">hbox</span>(() =&gt; {
+      <span class="tok-id">classes</span>(<span class="tok-str">"gap-3"</span>, <span class="tok-str">"items-center"</span>);
+      <span class="tok-id">anchor</span>(() =&gt; {
+        <span class="tok-id">attr</span>(<span class="tok-str">"href"</span>, <span class="tok-str">"https://developer.mozilla.org/docs/Web/HTML/Element/a"</span>);
+        <span class="tok-id">text</span>(<span class="tok-id">translated</span>(<span class="tok-str">"anchor()"</span>));
+      });
+      <span class="tok-id">button</span>(<span class="tok-id">translated</span>(<span class="tok-str">"Disable me"</span>), {}, () =&gt; {
+        <span class="tok-id">classes</span>(<span class="tok-str">"px-3"</span>, <span class="tok-str">"py-1.5"</span>);
+        <span class="tok-com">// Captured during render, then referenced (not re-called) inside the</span>
+        <span class="tok-com">// handler -- self() itself only resolves while a scope is active,</span>
+        <span class="tok-com">// which a later click is not. See core-lifecycle for the general form.</span>
+        <span class="tok-kw">const</span> <span class="tok-id">handle</span> = <span class="tok-id">self</span>();
+        <span class="tok-id">onClick</span>(() =&gt; {
+          <span class="tok-id">handle</span>.<span class="tok-id">setDomProperty</span>(<span class="tok-str">"disabled"</span>, <span class="tok-kw">true</span>);
+        });
+      });
+      <span class="tok-id">button</span>(<span class="tok-id">doubleClicks</span>.<span class="tok-id">map</span>((<span class="tok-id">count</span>) =&gt; <span class="tok-str">`Double-click me (${</span><span class="tok-id">count</span><span class="tok-str">})`</span>), {}, () =&gt; {
+        <span class="tok-id">classes</span>(<span class="tok-str">"px-3"</span>, <span class="tok-str">"py-1.5"</span>);
+        <span class="tok-id">onDoubleClick</span>(() =&gt; <span class="tok-id">doubleClicks</span>.<span class="tok-kw">set</span>(<span class="tok-id">doubleClicks</span>.<span class="tok-kw">get</span> + <span class="tok-num">1</span>));
+      });
+    });
+
+    <span class="tok-id">ul</span>(() =&gt; {
+      <span class="tok-id">classes</span>(<span class="tok-str">"list-disc"</span>, <span class="tok-str">"pl-5"</span>);
+      <span class="tok-id">li</span>(() =&gt; <span class="tok-id">text</span>(<span class="tok-id">translated</span>(<span class="tok-str">"attr() sets a plain HTML attribute"</span>)));
+      <span class="tok-id">li</span>(() =&gt; <span class="tok-id">text</span>(<span class="tok-id">translated</span>(<span class="tok-str">"style() sets a plain CSS property, constant or reactive"</span>)));
+      <span class="tok-id">li</span>(() =&gt; <span class="tok-id">text</span>(<span class="tok-id">translated</span>(<span class="tok-str">"domProperty() sets a DOM property directly, once at composition time"</span>)));
+      <span class="tok-id">li</span>(() =&gt; <span class="tok-id">text</span>(<span class="tok-id">translated</span>(<span class="tok-str">"on() is the generic event entry point onClick/onInput/onDoubleClick are themselves built from"</span>)));
+      <span class="tok-id">li</span>(() =&gt; <span class="tok-id">text</span>(<span class="tok-id">translated</span>(<span class="tok-str">"addClass() adds one class without touching whatever classes() already set"</span>)));
+    });
+  });
+}
+</code></pre><!--jfx:Condition:start--><!--jfx:Condition:end--></div></div></div></article><!--jfx:BlockComponent:end--><!--jfx:RoutedComponent:end--><!--jfx:DynamicComponentRenderer:end--><!--jfx:Router:end--><!--jfx:RouterViewRoot:end--></div><!--jfx:Foreach:start--><!--jfx:Foreach:end--><!--jfx:Foreach:start--><!--jfx:Foreach:end--><div class="jfx-viewport-notification-host"><!--jfx:Foreach:start--><!--jfx:Foreach:end--></div></div></div></body><!--jfx:I18nProviderRoot:end--></html>

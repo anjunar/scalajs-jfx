@@ -1,0 +1,192 @@
+<!doctype html><html lang="en"><!--jfx:I18nProviderRoot:start--><head><meta data-jfx-head="meta:charset" charset="UTF-8"><base data-jfx-head="base" href="/scalajs-jfx/typescript/"><title data-jfx-head="title">@anjunar/jfx demo</title><meta data-jfx-head="meta:name=viewport" name="viewport" content="width=device-width, initial-scale=1"><link data-jfx-head="link:stylesheet" rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons"><script data-jfx-head="theme-init">
+(function () {
+  try {
+    var stored = localStorage.getItem("jfx-demo.theme");
+    var mode =
+      stored === "light" || stored === "dark"
+        ? stored
+        : window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light";
+    document.documentElement.setAttribute("data-theme", mode);
+  } catch (error) {
+    /* localStorage can throw in a locked-down browser context; the CSS
+       default (light) is a fine fallback. */
+  }
+})();
+</script><link data-jfx-head="asset:stylesheet" rel="stylesheet" crossorigin="" href="/scalajs-jfx/typescript/assets/styles-BHefGen-.css"><script data-jfx-head="asset:script" type="module" crossorigin="" src="/scalajs-jfx/typescript/assets/main-Bh-7GJcZ.js"></script></head><body><div id="root"><div class="jfx-viewport"><div class="jfx-viewport__content" style="min-height: 100%"><!--jfx:RouterViewRoot:start--><div class="app-shell__header"><a class="jfx-link" href="/scalajs-jfx/typescript">@anjunar/jfx</a><a class="jfx-link" href="/scalajs-jfx/typescript/search">Search</a><button class="app-shell__theme-toggle">Dark mode</button><button class="app-shell__locale-toggle">DE</button></div><nav class="app-shell__nav"><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-core</div><a class="jfx-link" href="/scalajs-jfx/typescript/core/state">Property</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/derived">Derived state</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/control-flow">when and forEach</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/async">fetchInto</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/elements">Extending the DSL</a><a class="jfx-link" href="/scalajs-jfx/typescript/core/lifecycle">Lifetime and hydration</a><a class="jfx-link app-shell__nav-link--active" href="/scalajs-jfx/typescript/core/todos">Everything together</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-controls</div><a class="jfx-link" href="/scalajs-jfx/typescript/controls/tabs">Tabs</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/table">TableView</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/carousel">Carousel</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/data-grid">DataGrid</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/virtual-list">VirtualListView</a><a class="jfx-link" href="/scalajs-jfx/typescript/controls/remote">RemoteSource</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-forms</div><a class="jfx-link" href="/scalajs-jfx/typescript/forms/basics">Form and model</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/composition">Composing forms</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/combo-box">ComboBox</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/image-cropper">ImageCropper</a><a class="jfx-link" href="/scalajs-jfx/typescript/forms/validation">Validators</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-editor</div><a class="jfx-link" href="/scalajs-jfx/typescript/editor/basics">Editor</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-viewport</div><a class="jfx-link" href="/scalajs-jfx/typescript/viewport/notification">Notification</a><a class="jfx-link" href="/scalajs-jfx/typescript/viewport/window">Window</a><a class="jfx-link" href="/scalajs-jfx/typescript/viewport/overlay">Overlay</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-router</div><a class="jfx-link" href="/scalajs-jfx/typescript/router/links">routerLink</a><a class="jfx-link" href="/scalajs-jfx/typescript/router/nested">Nested route</a><a class="jfx-link" href="/scalajs-jfx/typescript/router/params">Context and concurrency</a></div><div class="app-shell__nav-group"><div class="app-shell__nav-group-title">@anjunar/jfx-json</div><a class="jfx-link" href="/scalajs-jfx/typescript/json/mapper">Schema-driven JSON mapping</a></div></nav><!--jfx:Router:start--><!--jfx:DynamicComponentRenderer:start--><!--jfx:RoutedComponent:start--><!--jfx:BlockComponent:start--><article class="docs-page"><div class="docs-page__header"><h1>Everything together</h1><p class="docs-page__summary">A small todo list -- property, listProperty, forEach, when, classIf and disposeWith in one page.</p></div><div class="docs-page__body"><div class="docs-example"><div class="docs-example__live"><div class="flex flex-col gap-3"><div class="flex gap-2"><input class="px-3 py-1.5 border border-line rounded-control flex-1" type="text" placeholder="Add a todo…"><button class="px-3 py-1.5">Add</button></div><!--jfx:Condition:start--><!--jfx:ConditionalBody:start--><div class="text-ink-muted italic">Nothing to do yet — add one above.</div><!--jfx:ConditionalBody:end--><!--jfx:Condition:end--><!--jfx:Condition:start--><!--jfx:Condition:end--></div></div><div class="docs-code-block"><pre class="docs-code"><code><span class="tok-kw">import</span> {
+  <span class="tok-id">attr</span>,
+  <span class="tok-id">button</span>,
+  <span class="tok-id">classes</span>,
+  <span class="tok-id">classIf</span>,
+  <span class="tok-id">disposeWith</span>,
+  <span class="tok-id">div</span>,
+  <span class="tok-id">element</span>,
+  <span class="tok-id">forEach</span>,
+  <span class="tok-id">listProperty</span>,
+  <span class="tok-id">on</span>,
+  <span class="tok-id">onClick</span>,
+  <span class="tok-id">onInput</span>,
+  <span class="tok-id">property</span>,
+  <span class="tok-id">self</span>,
+  <span class="tok-id">text</span>,
+  <span class="tok-id">when</span>,
+} <span class="tok-kw">from</span> <span class="tok-str">"@anjunar/jfx-core"</span>;
+<span class="tok-kw">import</span> { <span class="tok-id">i18n</span>, <span class="tok-id">locale</span>, <span class="tok-id">named</span>, <span class="tok-id">t</span> } <span class="tok-kw">from</span> <span class="tok-str">"@anjunar/jfx-core"</span>;
+<span class="tok-kw">import</span> <span class="tok-kw">type</span> { <span class="tok-typ">ComponentHandle</span>, <span class="tok-typ">Disposable</span>, <span class="tok-typ">Property</span>, <span class="tok-typ">UiEvent</span> } <span class="tok-kw">from</span> <span class="tok-str">"@anjunar/jfx-core"</span>;
+<span class="tok-kw">import</span> { <span class="tok-id">translated</span> } <span class="tok-kw">from</span> <span class="tok-str">"../../app/i18n.js"</span>;
+
+<span class="tok-com">/**</span>
+<span class="tok-com"> * `input` has no typed wrapper in dsl.ts -- there is no `vbox`/`hbox`/`button`</span>
+<span class="tok-com"> * for it, the way jfx-core deliberately keeps the wrapper set small.</span>
+<span class="tok-com"> * `element("input")` is the same one-line extension point `div`/`span`/`anchor`</span>
+<span class="tok-com"> * are themselves built from, so reaching for it here is the ordinary way to</span>
+<span class="tok-com"> * grow the DSL, not a workaround.</span>
+<span class="tok-com"> */</span>
+<span class="tok-kw">const</span> <span class="tok-id">input</span> = <span class="tok-id">element</span>(<span class="tok-str">"input"</span>);
+
+<span class="tok-com">/**</span>
+<span class="tok-com"> * Each todo carries its own `Property&lt;boolean&gt;`, not a plain `boolean`. That</span>
+<span class="tok-com"> * is what lets `classIf` below observe one item's done-state without</span>
+<span class="tok-com"> * re-rendering the row it belongs to, and it is why toggling one item never</span>
+<span class="tok-com"> * disturbs another's -- `todos.setAll(...)` (in "Clear completed") replaces</span>
+<span class="tok-com"> * the *array*, not the objects still in it, so a `Todo` that survives a</span>
+<span class="tok-com"> * filter keeps the exact `Property` instance any live subscription is</span>
+<span class="tok-com"> * watching.</span>
+<span class="tok-com"> */</span>
+<span class="tok-kw">export</span> <span class="tok-kw">interface</span> <span class="tok-typ">Todo</span> {
+  <span class="tok-kw">readonly</span> <span class="tok-id">label</span>: <span class="tok-kw">string</span>;
+  <span class="tok-kw">readonly</span> <span class="tok-id">done</span>: <span class="tok-typ">Property</span>&lt;<span class="tok-kw">boolean</span>&gt;;
+}
+
+<span class="tok-kw">function</span> <span class="tok-id">inputValue</span>(<span class="tok-id">event</span>: <span class="tok-typ">UiEvent</span>): <span class="tok-kw">string</span> {
+  <span class="tok-kw">return</span> (<span class="tok-id">event</span>.<span class="tok-id">target</span> <span class="tok-kw">as</span> <span class="tok-typ">HTMLInputElement</span> | <span class="tok-kw">null</span>)?.<span class="tok-id">value</span> ?? <span class="tok-str">""</span>;
+}
+
+<span class="tok-kw">export</span> <span class="tok-kw">function</span> <span class="tok-id">coreTodosPage</span>(): <span class="tok-kw">void</span> {
+  <span class="tok-kw">const</span> <span class="tok-id">draft</span> = <span class="tok-id">property</span>(<span class="tok-str">""</span>);
+  <span class="tok-kw">const</span> <span class="tok-id">todos</span> = <span class="tok-id">listProperty</span>&lt;<span class="tok-typ">Todo</span>&gt;([]);
+  <span class="tok-kw">const</span> <span class="tok-id">isEmpty</span> = <span class="tok-id">todos</span>.<span class="tok-id">map</span>((<span class="tok-id">items</span>) =&gt; <span class="tok-id">items</span>.<span class="tok-id">length</span> === <span class="tok-num">0</span>);
+  <span class="tok-kw">const</span> <span class="tok-id">hasTodos</span> = <span class="tok-id">todos</span>.<span class="tok-id">map</span>((<span class="tok-id">items</span>) =&gt; <span class="tok-id">items</span>.<span class="tok-id">length</span> &gt; <span class="tok-num">0</span>);
+
+  <span class="tok-com">// `remaining` cannot be `todos.map(items =&gt; items.filter(...).length)`: a</span>
+  <span class="tok-com">// `ListProperty` only notifies when the *array itself* changes -- add,</span>
+  <span class="tok-com">// insert, removeAt, setAll, clear. Toggling one item's `done` never touches</span>
+  <span class="tok-com">// the array, so a `.map()` derived that way would show the count from</span>
+  <span class="tok-com">// whenever an item was last added or removed, not the count that matches</span>
+  <span class="tok-com">// what's on screen right now (this shipped once, briefly, exactly that</span>
+  <span class="tok-com">// broken; caught by clicking the toggle and watching the footer not move).</span>
+  <span class="tok-com">//</span>
+  <span class="tok-com">// What is actually needed is a value derived from *two* independent</span>
+  <span class="tok-com">// sources -- the list, and every item's own `done` -- and the contract has</span>
+  <span class="tok-com">// no combinator for that (`ReadOnlyProperty.map` takes one source). So this</span>
+  <span class="tok-com">// builds it by hand: resubscribe to every item's `done` whenever the list</span>
+  <span class="tok-com">// itself changes, and recompute on either kind of event. `disposeWith` is</span>
+  <span class="tok-com">// what makes that safe to do inside a render body -- both the list</span>
+  <span class="tok-com">// subscription and the current crop of per-item subscriptions are torn</span>
+  <span class="tok-com">// down when this page's `MountedApp` is disposed, the same as any binding</span>
+  <span class="tok-com">// `attr`/`classIf` set up.</span>
+  <span class="tok-kw">const</span> <span class="tok-id">remaining</span> = <span class="tok-id">property</span>(<span class="tok-num">0</span>);
+  <span class="tok-kw">const</span> <span class="tok-id">activeLocale</span> = <span class="tok-id">locale</span>();
+  <span class="tok-kw">const</span> <span class="tok-id">remainingLabel</span> = <span class="tok-id">property</span>(<span class="tok-str">""</span>);
+  <span class="tok-kw">const</span> <span class="tok-id">updateRemainingLabel</span> = (): <span class="tok-kw">void</span> =&gt; {
+    <span class="tok-kw">const</span> <span class="tok-id">count</span> = <span class="tok-id">remaining</span>.<span class="tok-kw">get</span>;
+    <span class="tok-kw">const</span> <span class="tok-id">message</span> =
+      <span class="tok-id">count</span> === <span class="tok-num">1</span> ? <span class="tok-id">i18n</span><span class="tok-str">`${</span><span class="tok-id">named</span>(<span class="tok-str">"count"</span>, <span class="tok-id">count</span>)<span class="tok-str">} item left`</span> : <span class="tok-id">i18n</span><span class="tok-str">`${</span><span class="tok-id">named</span>(<span class="tok-str">"count"</span>, <span class="tok-id">count</span>)<span class="tok-str">} items left`</span>;
+    <span class="tok-id">remainingLabel</span>.<span class="tok-kw">set</span>(<span class="tok-id">t</span>(<span class="tok-id">message</span>).<span class="tok-kw">get</span>);
+  };
+  <span class="tok-id">updateRemainingLabel</span>();
+  <span class="tok-id">disposeWith</span>(<span class="tok-id">remaining</span>.<span class="tok-id">observeWithoutInitial</span>(<span class="tok-id">updateRemainingLabel</span>));
+  <span class="tok-id">disposeWith</span>(<span class="tok-id">activeLocale</span>.<span class="tok-id">observeWithoutInitial</span>(<span class="tok-id">updateRemainingLabel</span>));
+  <span class="tok-kw">let</span> <span class="tok-id">itemSubscriptions</span>: <span class="tok-typ">Disposable</span>[] = [];
+
+  <span class="tok-kw">function</span> <span class="tok-id">recomputeRemaining</span>(<span class="tok-id">items</span>: <span class="tok-kw">readonly</span> <span class="tok-typ">Todo</span>[]): <span class="tok-kw">void</span> {
+    <span class="tok-id">remaining</span>.<span class="tok-kw">set</span>(<span class="tok-id">items</span>.<span class="tok-id">filter</span>((<span class="tok-id">item</span>) =&gt; !<span class="tok-id">item</span>.<span class="tok-id">done</span>.<span class="tok-kw">get</span>).<span class="tok-id">length</span>);
+  }
+
+  <span class="tok-kw">function</span> <span class="tok-id">subscribeToItems</span>(<span class="tok-id">items</span>: <span class="tok-kw">readonly</span> <span class="tok-typ">Todo</span>[]): <span class="tok-kw">void</span> {
+    <span class="tok-kw">for</span> (<span class="tok-kw">const</span> <span class="tok-id">subscription</span> <span class="tok-kw">of</span> <span class="tok-id">itemSubscriptions</span>.<span class="tok-id">splice</span>(<span class="tok-num">0</span>)) <span class="tok-id">subscription</span>.<span class="tok-id">dispose</span>();
+    <span class="tok-id">itemSubscriptions</span> = <span class="tok-id">items</span>.<span class="tok-id">map</span>((<span class="tok-id">item</span>) =&gt;
+      <span class="tok-id">item</span>.<span class="tok-id">done</span>.<span class="tok-id">observeWithoutInitial</span>(() =&gt; <span class="tok-id">recomputeRemaining</span>(<span class="tok-id">todos</span>.<span class="tok-kw">get</span>))
+    );
+    <span class="tok-id">recomputeRemaining</span>(<span class="tok-id">items</span>);
+  }
+
+  <span class="tok-kw">let</span> <span class="tok-id">draftField</span>: <span class="tok-typ">ComponentHandle</span> | <span class="tok-kw">null</span> = <span class="tok-kw">null</span>;
+
+  <span class="tok-kw">function</span> <span class="tok-id">addTodo</span>(): <span class="tok-kw">void</span> {
+    <span class="tok-kw">const</span> <span class="tok-id">label</span> = <span class="tok-id">draft</span>.<span class="tok-kw">get</span>.<span class="tok-id">trim</span>();
+    <span class="tok-kw">if</span> (<span class="tok-id">label</span> === <span class="tok-str">""</span>) <span class="tok-kw">return</span>;
+    <span class="tok-id">todos</span>.<span class="tok-id">add</span>({ <span class="tok-id">label</span>, <span class="tok-id">done</span>: <span class="tok-id">property</span>(<span class="tok-kw">false</span>) });
+    <span class="tok-id">draft</span>.<span class="tok-kw">set</span>(<span class="tok-str">""</span>);
+    <span class="tok-id">draftField</span>?.<span class="tok-id">setDomProperty</span>(<span class="tok-str">"value"</span>, <span class="tok-str">""</span>);
+  }
+
+  <span class="tok-id">div</span>(() =&gt; {
+    <span class="tok-id">classes</span>(<span class="tok-str">"flex"</span>, <span class="tok-str">"flex-col"</span>, <span class="tok-str">"gap-3"</span>);
+    <span class="tok-id">disposeWith</span>(<span class="tok-id">todos</span>.<span class="tok-id">observe</span>(<span class="tok-id">subscribeToItems</span>));
+
+    <span class="tok-id">div</span>(() =&gt; {
+      <span class="tok-id">classes</span>(<span class="tok-str">"flex"</span>, <span class="tok-str">"gap-2"</span>);
+      <span class="tok-id">input</span>(() =&gt; {
+        <span class="tok-id">draftField</span> = <span class="tok-id">self</span>();
+        <span class="tok-id">classes</span>(<span class="tok-str">"px-3"</span>, <span class="tok-str">"py-1.5"</span>, <span class="tok-str">"border"</span>, <span class="tok-str">"border-line"</span>, <span class="tok-str">"rounded-control"</span>, <span class="tok-str">"flex-1"</span>);
+        <span class="tok-id">attr</span>(<span class="tok-str">"type"</span>, <span class="tok-str">"text"</span>);
+        <span class="tok-id">attr</span>(<span class="tok-str">"placeholder"</span>, <span class="tok-id">translated</span>(<span class="tok-str">"Add a todo…"</span>).<span class="tok-kw">get</span>);
+        <span class="tok-id">onInput</span>((<span class="tok-id">event</span>) =&gt; <span class="tok-id">draft</span>.<span class="tok-kw">set</span>(<span class="tok-id">inputValue</span>(<span class="tok-id">event</span>)));
+        <span class="tok-id">on</span>(<span class="tok-str">"keydown"</span>, (<span class="tok-id">event</span>) =&gt; {
+          <span class="tok-kw">if</span> ((<span class="tok-id">event</span>.<span class="tok-id">native</span> <span class="tok-kw">as</span> <span class="tok-typ">KeyboardEvent</span> | <span class="tok-kw">null</span>)?.<span class="tok-id">key</span> === <span class="tok-str">"Enter"</span>) <span class="tok-id">addTodo</span>();
+        });
+      });
+      <span class="tok-id">button</span>(<span class="tok-id">translated</span>(<span class="tok-str">"Add"</span>), {}, () =&gt; {
+        <span class="tok-id">classes</span>(<span class="tok-str">"px-3"</span>, <span class="tok-str">"py-1.5"</span>);
+        <span class="tok-id">onClick</span>(<span class="tok-id">addTodo</span>);
+      });
+    });
+
+    <span class="tok-id">when</span>(<span class="tok-id">isEmpty</span>, () =&gt; {
+      <span class="tok-id">div</span>(() =&gt; {
+        <span class="tok-id">classes</span>(<span class="tok-str">"text-ink-muted"</span>, <span class="tok-str">"italic"</span>);
+        <span class="tok-id">text</span>(<span class="tok-id">translated</span>(<span class="tok-str">"Nothing to do yet — add one above."</span>));
+      });
+    });
+
+    <span class="tok-id">when</span>(<span class="tok-id">hasTodos</span>, () =&gt; {
+      <span class="tok-id">div</span>(() =&gt; {
+        <span class="tok-id">classes</span>(<span class="tok-str">"flex"</span>, <span class="tok-str">"flex-col"</span>, <span class="tok-str">"gap-1.5"</span>);
+        <span class="tok-id">forEach</span>(<span class="tok-id">todos</span>, (<span class="tok-id">todo</span>, <span class="tok-id">index</span>) =&gt; {
+          <span class="tok-id">div</span>(() =&gt; {
+            <span class="tok-id">classes</span>(<span class="tok-str">"flex"</span>, <span class="tok-str">"items-center"</span>, <span class="tok-str">"gap-3"</span>, <span class="tok-str">"px-3"</span>, <span class="tok-str">"py-2"</span>, <span class="tok-str">"border"</span>, <span class="tok-str">"border-line"</span>, <span class="tok-str">"rounded-control"</span>);
+            <span class="tok-id">classIf</span>(<span class="tok-str">"line-through"</span>, <span class="tok-id">todo</span>.<span class="tok-id">done</span>);
+
+            <span class="tok-id">button</span>(<span class="tok-str">"✓"</span>, {}, () =&gt; {
+              <span class="tok-id">classes</span>(<span class="tok-str">"w-7"</span>, <span class="tok-str">"h-7"</span>, <span class="tok-str">"rounded-full"</span>, <span class="tok-str">"border"</span>, <span class="tok-str">"border-line"</span>);
+              <span class="tok-id">attr</span>(<span class="tok-str">"aria-pressed"</span>, <span class="tok-id">todo</span>.<span class="tok-id">done</span>.<span class="tok-id">map</span>((<span class="tok-id">done</span>) =&gt; <span class="tok-typ">String</span>(<span class="tok-id">done</span>)));
+              <span class="tok-id">onClick</span>(() =&gt; <span class="tok-id">todo</span>.<span class="tok-id">done</span>.<span class="tok-kw">set</span>(!<span class="tok-id">todo</span>.<span class="tok-id">done</span>.<span class="tok-kw">get</span>));
+            });
+
+            <span class="tok-id">div</span>(() =&gt; {
+              <span class="tok-id">classes</span>(<span class="tok-str">"flex-1"</span>);
+              <span class="tok-id">text</span>(<span class="tok-id">todo</span>.<span class="tok-id">label</span>);
+            });
+
+            <span class="tok-id">button</span>(<span class="tok-id">translated</span>(<span class="tok-str">"Remove"</span>), {}, () =&gt; {
+              <span class="tok-id">classes</span>(<span class="tok-str">"text-ink-muted"</span>);
+              <span class="tok-id">onClick</span>(() =&gt; <span class="tok-id">todos</span>.<span class="tok-id">removeAt</span>(<span class="tok-id">index</span>));
+            });
+          });
+        });
+      });
+
+      <span class="tok-id">div</span>(() =&gt; {
+        <span class="tok-id">classes</span>(<span class="tok-str">"flex"</span>, <span class="tok-str">"items-center"</span>, <span class="tok-str">"justify-between"</span>, <span class="tok-str">"text-ink-soft"</span>);
+        <span class="tok-id">text</span>(<span class="tok-id">remainingLabel</span>);
+        <span class="tok-id">button</span>(<span class="tok-id">translated</span>(<span class="tok-str">"Clear completed"</span>), {}, () =&gt; {
+          <span class="tok-id">classes</span>(<span class="tok-str">"underline"</span>);
+          <span class="tok-id">onClick</span>(() =&gt; <span class="tok-id">todos</span>.<span class="tok-id">setAll</span>(<span class="tok-id">todos</span>.<span class="tok-kw">get</span>.<span class="tok-id">filter</span>((<span class="tok-id">todo</span>) =&gt; !<span class="tok-id">todo</span>.<span class="tok-id">done</span>.<span class="tok-kw">get</span>)));
+        });
+      });
+    });
+  });
+}
+</code></pre><!--jfx:Condition:start--><!--jfx:Condition:end--></div><p class="docs-example__note">remaining is derived from two independent sources (the list and every item's own done) by hand-subscribing, not with a single map() -- see the comment in the source.</p></div></div></article><!--jfx:BlockComponent:end--><!--jfx:RoutedComponent:end--><!--jfx:DynamicComponentRenderer:end--><!--jfx:Router:end--><!--jfx:RouterViewRoot:end--></div><!--jfx:Foreach:start--><!--jfx:Foreach:end--><!--jfx:Foreach:start--><!--jfx:Foreach:end--><div class="jfx-viewport-notification-host"><!--jfx:Foreach:start--><!--jfx:Foreach:end--></div></div></div></body><!--jfx:I18nProviderRoot:end--></html>

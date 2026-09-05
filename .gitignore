@@ -1,4 +1,5 @@
-config.toml
+.claude/
+.codex/
 .bloop
 .metals
 node_modules

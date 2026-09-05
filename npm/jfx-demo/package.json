@@ -9,6 +9,8 @@
     "build": "npm run build:client && npm run build:server",
     "build:client": "vite build --outDir dist/client",
     "build:server": "vite build --outDir dist/server --ssr src/entry-server.ts",
+    "build:pages": "node scripts/build-pages.mjs",
+    "prerender": "node scripts/prerender-pages.mjs",
     "build:node": "tsc -p tsconfig.node.json",
     "start": "cross-env NODE_ENV=production node server.mjs",
     "typecheck": "tsc -p tsconfig.json",
