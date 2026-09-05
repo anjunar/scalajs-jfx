@@ -7,7 +7,7 @@
   margin-bottom: 6px;
 }
 
-.jfx-input-container__label span.placeholder {
+.jfx-input-container__placeholder {
   display: inline;
   font-size: 11px;
   letter-spacing: 0.08em;
@@ -15,7 +15,7 @@
   opacity: 0.72;
 }
 
-.jfx-input-container.empty .jfx-input-container__label span.placeholder {
+.jfx-input-container.empty:not(:has(input:is([type="date"], [type="time"], [type="datetime-local"]))) .jfx-input-container__placeholder {
   display: none;
 }
 

@@ -63,7 +63,7 @@
     margin-bottom: 6px;
 }
 
-.form-page__form .jfx-input-container.empty .jfx-input-container__label {
+.form-page__form .jfx-input-container.empty:not(:has(input:is([type="date"], [type="time"], [type="datetime-local"]))) .jfx-input-container__label {
     min-height: 0;
     margin-bottom: 0;
 }
