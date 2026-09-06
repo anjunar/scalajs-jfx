@@ -167,7 +167,7 @@ const catalogEntries: readonly DocEntry[] = [
   {
     path: "/controls/tabs",
     title: "Tabs",
-    summary: "A strip of panels, one mounted at a time.",
+    summary: "Compare disposable active-only panels with stateful keep-mounted panels.",
     pkg: "controls",
     keywords: ["tabs", "tab"],
     doc: controlsTabsDoc,
@@ -176,7 +176,7 @@ const catalogEntries: readonly DocEntry[] = [
   {
     path: "/controls/table",
     title: "TableView",
-    summary: "A virtualized table with a sortable column and a request-aware SSR pager.",
+    summary: "A virtualized remote catalogue with sortable columns and request-aware SSR ranges.",
     pkg: "controls",
     keywords: ["table", "tableView", "column", "sortable", "crawlable"],
     doc: controlsTableDoc,
@@ -185,7 +185,7 @@ const catalogEntries: readonly DocEntry[] = [
   {
     path: "/controls/carousel",
     title: "Carousel",
-    summary: "A looping slide show over a ListProperty.",
+    summary: "A looping slide show with explicit selection, live autoplay controls, and stable SSR states.",
     pkg: "controls",
     keywords: ["carousel", "slides", "autoAdvance"],
     doc: controlsCarouselDoc,
@@ -194,7 +194,7 @@ const catalogEntries: readonly DocEntry[] = [
   {
     path: "/controls/data-grid",
     title: "DataGrid",
-    summary: "Fixed-size cells in a responsive column count, virtualized over a local source.",
+    summary: "A selectable 180-card collection with responsive columns and a virtualized viewport.",
     pkg: "controls",
     keywords: ["dataGrid", "grid", "virtualized"],
     doc: controlsDataGridDoc,
@@ -222,7 +222,7 @@ const catalogEntries: readonly DocEntry[] = [
   {
     path: "/forms/basics",
     title: "Form and model",
-    summary: "A decorated FormModel of Property fields, bound to controls by name.",
+    summary: "A decorated FormModel with live values, validation, and reversible sample states.",
     pkg: "forms",
     keywords: ["form", "input", "inputContainer", "model"],
     doc: formsBasicsDoc,
@@ -267,7 +267,7 @@ const catalogEntries: readonly DocEntry[] = [
   {
     path: "/editor/basics",
     title: "Editor",
-    summary: "A Lexical-backed rich-text field, bound by name like input.",
+    summary: "A Lexical-backed rich-text field with Markdown output, a complete toolbar, and live value feedback.",
     pkg: "editor",
     keywords: ["editor", "lexical", "richtext", "plugins"],
     doc: editorBasicsDoc,

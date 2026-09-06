@@ -62,6 +62,7 @@ class App(
       NavEntry(i18n"Interaction", i18n"Images", i18n"Visual identity", "/image"),
       NavEntry(i18n"Architecture", i18n"Layout", i18n"Room for design", "/layout"),
       NavEntry(i18n"Architecture", i18n"Windows", i18n"Room for focus", "/window"),
+      NavEntry(i18n"Architecture", i18n"Viewport", i18n"Notifications and windows", "/viewport"),
       NavEntry(i18n"Foundation", i18n"Router", i18n"Paths, locale and loaders", "/router"),
       NavEntry(i18n"Foundation", i18n"i18n", i18n"Toolbar locale meets URL locale", "/i18n"),
       NavEntry(
@@ -71,19 +72,6 @@ class App(
         "/rendering"
       ),
       NavEntry(i18n"Runtime", i18n"State", i18n"Reactive properties in plain sight", "/state"),
-      NavEntry(i18n"Composition", i18n"Forms", i18n"Control registration and context", "/forms"),
-      NavEntry(
-        i18n"Composition",
-        i18n"Image cropper",
-        i18n"Upload, crop and thumbnail binding",
-        "/image-cropper"
-      ),
-      NavEntry(
-        i18n"Composition",
-        i18n"Editor",
-        i18n"Markdown values and composable plugins",
-        "/editor"
-      ),
       NavEntry(
         i18n"Composition",
         i18n"Tabs",
@@ -96,26 +84,38 @@ class App(
         i18n"Looping slides and lifecycle-bound autoplay",
         "/carousel"
       ),
+      NavEntry(i18n"Forms", i18n"Forms", i18n"Control registration and context", "/forms"),
       NavEntry(
-        i18n"Composition",
+        i18n"Forms",
+        i18n"Image cropper",
+        i18n"Upload, crop and thumbnail binding",
+        "/image-cropper"
+      ),
+      NavEntry(
+        i18n"Forms",
         i18n"ComboBox",
         i18n"Typed selection and stable identity",
         "/combo-box"
       ),
-      NavEntry(i18n"Composition", i18n"Table", i18n"Reactive rows and remote ranges", "/table"),
+      NavEntry(i18n"Data", i18n"Table", i18n"Reactive rows and remote ranges", "/table"),
       NavEntry(
-        i18n"Composition",
+        i18n"Data",
         i18n"DataGrid",
         i18n"Virtual cards and remote ranges",
         "/data-grid"
       ),
       NavEntry(
-        i18n"Composition",
+        i18n"Data",
         i18n"VirtualList",
         i18n"Variable-height visible ranges",
         "/virtual-list"
       ),
-      NavEntry(i18n"Composition", i18n"Viewport", i18n"Notifications and windows", "/viewport")
+      NavEntry(
+        i18n"Editor",
+        i18n"Editor",
+        i18n"Markdown values and composable plugins",
+        "/editor"
+      )
     )
 
   private def toolbarTitle =
@@ -245,6 +245,18 @@ class App(
                   classes = Seq("spacer")
                   style {
                     flex = "1"
+                  }
+                }
+
+                hbox {
+                  classes = Seq("app-toolbar__api-switch")
+                  div {
+                    classes = Seq("is-active")
+                    text("Scala") {}
+                  }
+                  routerLink() {
+                    href = "https://anjunar.github.io/scalajs-jfx/typescript/"
+                    text("TypeScript") {}
                   }
                 }
 

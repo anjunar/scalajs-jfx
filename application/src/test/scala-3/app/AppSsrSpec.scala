@@ -236,6 +236,20 @@ class AppSsrSpec extends AsyncFlatSpec with Matchers {
     cursor.collectHtml() should not include ">Foundation<"
   }
 
+  it should "organize navigation by the shared product capabilities" in {
+    Runtime
+      .renderToStringAsync(cursor => Runtime.mount(documentFor(desktopRequest, "/"), cursor))
+      .map { html =>
+        val zones = Seq("Welcome", "Interaction", "Architecture", "Foundation", "Runtime", "Composition", "Forms", "Data", "Editor")
+        val positions = zones.map(zone => html.indexOf(s">$zone<"))
+
+        all(positions) should be >= 0
+        positions shouldBe positions.sorted
+        html should include("app-toolbar__api-switch")
+        html should include("href=\"https://anjunar.github.io/scalajs-jfx/typescript/\"")
+      }
+  }
+
   "The router" should "change the rendered tree on navigation" in {
     val async    = new AsyncRenderContext()
     val cursor   = new SsrCursor(async)

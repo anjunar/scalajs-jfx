@@ -8,7 +8,7 @@ export function controlsCarouselDoc(): void {
   docPage(
     {
       title: "Carousel",
-      summary: "carousel(): a looping slide show over a ListProperty, with ssrShowAllStates so every slide reaches the initial HTML.",
+      summary: "carousel(): a looping slide show with reactive activeIndex and autoAdvanceMs properties; ssrShowAllStates brings every slide into the initial HTML.",
     },
     () => {
       example({ code: snippet }, () => {

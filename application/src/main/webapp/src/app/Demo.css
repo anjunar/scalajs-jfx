@@ -522,6 +522,37 @@ html[data-theme="dark"] .code-block__lang {
     flex-wrap: wrap;
 }
 
+.app-toolbar__api-switch,
+.showcase-page__api-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid var(--aj-line-soft);
+    border-radius: 999px;
+    background: var(--aj-surface-muted);
+}
+
+.app-toolbar__api-switch a,
+.app-toolbar__api-switch span,
+.app-toolbar__api-switch > div,
+.showcase-page__api-switch a,
+.showcase-page__api-switch span {
+    padding: 6px 10px;
+    border-radius: 999px;
+    color: var(--aj-ink-soft);
+    font-size: 0.76rem;
+    font-weight: 800;
+    line-height: 1;
+    text-decoration: none;
+}
+
+.app-toolbar__api-switch .is-active,
+.showcase-page__api-switch .is-active {
+    background: var(--aj-accent);
+    color: var(--aj-ink-inverse);
+}
+
 .data-grid-showcase-card {
     border: 1px solid var(--aj-line-soft);
     background: var(--aj-surface-overlay);
@@ -684,7 +715,8 @@ div.hbox.layout-shell-demo {
     }
 
     .app-toolbar__title,
-    .app-toolbar__version {
+    .app-toolbar__version,
+    .app-toolbar__api-switch {
         display: none;
     }
 

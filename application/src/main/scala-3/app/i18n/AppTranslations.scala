@@ -30,6 +30,8 @@ object AppTranslations {
     de(i18n"Reactive properties in plain sight", "Reaktive Properties auf einen Blick"),
     de(i18n"Composition", "Komposition"),
     de(i18n"Forms", "Formulare"),
+    de(i18n"Data", "Daten"),
+    de(i18n"Editor", "Editor"),
     de(i18n"Control registration and context", "Control-Registrierung und Kontext"),
     de(i18n"Upload, crop and thumbnail binding", "Upload, Zuschnitt und Thumbnail-Bindung"),
     de(i18n"Markdown values and composable plugins", "Markdown-Werte und komponierbare Plugins"),

@@ -143,7 +143,7 @@ async function main() {
     check(
       "/controls/table -- package and import stay visible as secondary metadata",
       tablePresentationHtml.includes("@anjunar/jfx-controls") &&
-        tablePresentationHtml.includes("import { tableView, column }"),
+        tablePresentationHtml.includes("import { tableView, column, remoteSource }"),
       "TableView does not identify its npm package and TypeScript import"
     );
     check(
@@ -157,6 +157,55 @@ async function main() {
         tablePresentationHtml.includes(copy)
       ),
       "one or more shared-runtime architecture cards are missing"
+    );
+    check(
+      "/controls/table -- rich remote catalogue is server-rendered",
+      tablePresentationHtml.includes("50 initial rows · 1,000 total") &&
+        tablePresentationHtml.includes("The Long Route 1") &&
+        tablePresentationHtml.includes("Remote catalogue · visible rows load on demand"),
+      "the richer remote TableView example is missing from SSR"
+    );
+
+    const tabsHtml = await (await fetch(`http://localhost:${port}/controls/tabs`)).text();
+    check(
+      "/controls/tabs -- both lifecycle modes are demonstrated",
+      tabsHtml.includes("Active-only panels") &&
+        tabsHtml.includes("Keep-mounted panels") &&
+        tabsHtml.includes("Draft state survives tab changes"),
+      "active-only and keep-mounted examples are not both present"
+    );
+
+    const carouselHtml = await (await fetch(`http://localhost:${port}/controls/carousel`)).text();
+    check(
+      "/controls/carousel -- controls and all SSR slide states are present",
+      ["Previous", "Fast autoplay", "Stop timer", "Architecture that keeps moving", "Wrap-around is part of the contract"]
+        .every((copy) => carouselHtml.includes(copy)),
+      "the controlled carousel or one of its SSR slide states is missing"
+    );
+
+    const gridHtml = await (await fetch(`http://localhost:${port}/controls/data-grid`)).text();
+    check(
+      "/controls/data-grid -- rich selectable cards are server-rendered",
+      gridHtml.includes("180 cards · only the visible rows are mounted") &&
+        gridHtml.includes("Atlas Memo 1") &&
+        gridHtml.includes("Select a card to inspect its reactive state."),
+      "the richer virtualized card example is missing"
+    );
+
+    const formHtml = await (await fetch(`http://localhost:${port}/forms/basics`)).text();
+    check(
+      "/forms/basics -- validation actions and live model values are present",
+      ["Validate", "Clear sample", "Restore sample", "Ada Lovelace", "Model email"]
+        .every((copy) => formHtml.includes(copy)),
+      "the interactive model and validation example is incomplete"
+    );
+
+    const editorHtml = await (await fetch(`http://localhost:${port}/editor/basics`)).text();
+    check(
+      "/editor/basics -- Markdown value feedback and sample actions are present",
+      ["Load article", "Clear editor", "Markdown value", "characters"]
+        .every((copy) => editorHtml.includes(copy)),
+      "the richer editor example is incomplete"
     );
 
     const germanResponse = await fetch(`http://localhost:${port}/de/core/derived`);

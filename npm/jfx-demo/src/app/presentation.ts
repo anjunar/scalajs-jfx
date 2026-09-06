@@ -80,7 +80,7 @@ const pagePresentation: Readonly<Record<string, PagePresentation>> = {
   "Everything together": { pkg: "core", symbols: "property, listProperty, forEach", scalaPath: "/state" },
   "Schema-driven JSON mapping": { pkg: "json", symbols: "JsonMapper, JsonSchema" },
   Tabs: { pkg: "controls", symbols: "tabs, tab", scalaPath: "/tabs" },
-  TableView: { pkg: "controls", symbols: "tableView, column", scalaPath: "/table" },
+  TableView: { pkg: "controls", symbols: "tableView, column, remoteSource", scalaPath: "/table" },
   Carousel: { pkg: "controls", symbols: "carousel", scalaPath: "/carousel" },
   DataGrid: { pkg: "controls", symbols: "dataGrid", scalaPath: "/data-grid" },
   VirtualListView: { pkg: "controls", symbols: "virtualList", scalaPath: "/virtual-list" },
@@ -108,4 +108,3 @@ export function presentationForTitle(title: string): PagePresentation {
 export function packageName(pkg: PackageId): string {
   return pkg === "frame" ? "" : `@anjunar/jfx-${pkg}`;
 }
-

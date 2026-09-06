@@ -6,7 +6,7 @@ import snippet from "./page.ts?jfx-code";
 
 export function controlsTabsDoc(): void {
   docPage(
-    { title: "Tabs", summary: "tabs() and tab(): a strip of panels, one of them mounted at a time." },
+    { title: "Tabs", summary: "tabs() and tab(): compare active-only lifecycle disposal with state that survives in keep-mounted panels." },
     () => {
       example({ code: snippet }, () => {
         controlsTabsPage();

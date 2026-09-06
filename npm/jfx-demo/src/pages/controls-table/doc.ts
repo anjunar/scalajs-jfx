@@ -11,7 +11,7 @@ export function controlsTableDoc(): void {
   docPage(
     {
       title: "TableView",
-      summary: "tableView(), column(): a virtualized table over a local ListProperty, with a sortable column and a request-aware SSR pager.",
+      summary: "tableView(), column(), remoteSource(): a virtualized table over 1,000 rows, with sortable columns and request-aware SSR ranges.",
     },
     () => {
       example({ code: snippet }, () => {

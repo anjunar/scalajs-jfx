@@ -11,7 +11,7 @@ export function editorBasicsDoc(): void {
   docPage(
     {
       title: "Editor",
-      summary: "editor(), plugins: a Lexical-backed rich-text field bound by name, like input().",
+      summary: "editor(), plugins: a model-bound Lexical editor whose public Markdown value remains observable and replaceable.",
     },
     () => {
       example({ code: snippet }, () => {
