@@ -1,6 +1,6 @@
 {
   "tools/landing/client.mjs": {
-    "file": "assets/client-o1n9_0HW.js",
+    "file": "assets/client-Ckz0AreE.js",
     "name": "client",
     "src": "tools/landing/client.mjs",
     "isEntry": true,
@@ -8,7 +8,7 @@
       "tools/landing/hydrate.mjs"
     ],
     "css": [
-      "assets/client-BW_IrUDE.css"
+      "assets/client-DMuSpNaY.css"
     ]
   },
   "tools/landing/hydrate.mjs": {
