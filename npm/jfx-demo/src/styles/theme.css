@@ -1,44 +1,152 @@
-/* The only place in this project that sets a design-token *value*, and it
- * only sets tokens `@anjunar/ui` does not define at all -- everything the
- * library CSS already reads (--aj-ink, --aj-accent, --aj-surface, ...) keeps
- * its @anjunar/ui default. See CLAUDE_DEMO_PLAN.md E-1.
- *
- * `--aj-code-*` is one such gap: the syntax-highlighted code block
- * (src/docs/code-block.ts) needs a token per token kind, and neither
- * @anjunar/ui nor @anjunar/scalajs-jfx defines one. Values below mirror the
- * pairing application/src/main/webapp/src/theme.css already uses for the
- * same purpose, adjusted to this project's own accent.
+/* Shared demo palette. Keep these values in sync with
+ * application/src/main/webapp/src/theme.css and tools/landing/style.css.
  */
 
 :root,
 html[data-theme="light"] {
-    --aj-code-keyword: #7c5f22;
-    --aj-code-constant: #8a4a56;
-    --aj-code-number: #9a5c18;
-    --aj-code-string: #2f6f58;
-    --aj-code-comment: #7f867d;
-    --aj-code-type: #315f85;
-    --aj-code-function: #6b4da2;
-    --aj-code-variable: #3a4440;
-    --aj-code-operator: #6e786d;
-    --aj-code-punctuation: var(--aj-ink-soft);
-    --aj-code-bg: var(--aj-surface-muted);
-    --aj-code-gutter-bg: rgb(74 54 31 / 0.04);
-    --aj-code-selection: var(--aj-accent-muted);
+    color-scheme: light;
+
+    --aj-accent: #a84426;
+    --aj-accent-strong: #8f3b22;
+    --aj-accent-soft: #e7c9be;
+    --aj-accent-muted: rgba(168, 68, 38, 0.14);
+    --aj-accent-shimmer: rgba(168, 68, 38, 0.22);
+    --aj-accent-ring: rgba(168, 68, 38, 0.18);
+
+    --aj-success: #386454;
+    --aj-warning: #b17b42;
+    --aj-danger: #a84426;
+    --aj-info: #386454;
+
+    --aj-canvas: #f4f1eb;
+    --aj-canvas-raised: #fffdf9;
+    --aj-surface: #fffdf9;
+    --aj-surface-raised: rgba(255, 253, 249, 0.78);
+    --aj-surface-muted: rgba(32, 37, 34, 0.06);
+    --aj-surface-overlay: rgba(255, 253, 249, 0.92);
+    --aj-surface-hover: rgba(32, 37, 34, 0.08);
+    --aj-surface-scrim: rgba(32, 37, 34, 0.12);
+    --aj-surface-backdrop: rgba(32, 37, 34, 0.28);
+    --aj-scrollbar-thumb: rgba(168, 68, 38, 0.34);
+
+    --aj-ink: #202522;
+    --aj-ink-soft: #4d514b;
+    --aj-ink-muted: #65665e;
+    --aj-ink-faint: rgba(32, 37, 34, 0.58);
+    --aj-ink-inverse: #fffaf5;
+
+    --aj-line: #d8d6cc;
+    --aj-line-strong: #c4c1b5;
+    --aj-line-soft: rgba(32, 37, 34, 0.08);
+
+    --aj-shadow-medium: rgba(32, 37, 34, 0.12);
+    --aj-shadow-strong: rgba(32, 37, 34, 0.18);
+    --aj-shadow-panel: 0 10px 32px rgba(32, 37, 34, 0.12);
+    --aj-shadow-float: 0 18px 48px rgba(32, 37, 34, 0.18);
+    --aj-shadow-focus: 0 0 0 3px rgba(168, 68, 38, 0.18);
+
+    --aj-glass-bg: rgba(255, 253, 249, 0.62);
+    --aj-glass-bg-soft: rgba(255, 253, 249, 0.48);
+    --aj-glass-bg-medium: rgba(255, 253, 249, 0.62);
+    --aj-glass-bg-dense: rgba(255, 253, 249, 0.82);
+    --aj-glass-border: rgba(32, 37, 34, 0.08);
+    --aj-glass-shadow: rgba(32, 37, 34, 0.12);
+    --aj-glass-blur: 18px;
+
+    --aj-gradient-canvas: linear-gradient(180deg, #f4f1eb 0%, #eae7df 100%);
+    --aj-gradient-canvas-mobile: linear-gradient(180deg, #f4f1eb 0%, #eae7df 100%);
+    --aj-gradient-surface-soft: linear-gradient(180deg, rgba(255, 253, 249, 0.72), rgba(234, 231, 223, 0.92));
+    --aj-gradient-surface-strong: linear-gradient(180deg, rgba(255, 253, 249, 0.96), rgba(234, 231, 223, 0.94));
+    --aj-gradient-chrome-top: linear-gradient(180deg, rgba(255, 253, 249, 0.76), rgba(244, 241, 235, 0.92));
+    --aj-gradient-chrome-bottom: linear-gradient(180deg, rgba(234, 231, 223, 0.96), rgba(255, 253, 249, 0.98));
+
+    --aj-code-keyword: #8c3d77;
+    --aj-code-constant: #8c3d77;
+    --aj-code-number: #a84426;
+    --aj-code-string: #386454;
+    --aj-code-comment: #65665e;
+    --aj-code-type: #386454;
+    --aj-code-function: #8c3d77;
+    --aj-code-variable: #202522;
+    --aj-code-operator: #65665e;
+    --aj-code-punctuation: #65665e;
+    --aj-code-accent: #a84426;
+    --aj-code-bg: rgba(255, 253, 249, 0.88);
+    --aj-code-gutter-bg: rgba(32, 37, 34, 0.04);
+    --aj-code-selection: rgba(168, 68, 38, 0.18);
+    --aj-code-caret: #8f3b22;
 }
 
 html[data-theme="dark"] {
-    --aj-code-keyword: #d8b36d;
-    --aj-code-constant: #f09aa4;
-    --aj-code-number: #e0a960;
-    --aj-code-string: #89c9a8;
-    --aj-code-comment: #7f9184;
-    --aj-code-type: #8fc2e6;
-    --aj-code-function: #c9a8ff;
-    --aj-code-variable: #e6ebe3;
-    --aj-code-operator: #9aa69b;
-    --aj-code-punctuation: var(--aj-ink-soft);
-    --aj-code-bg: rgb(0 0 0 / 0.22);
-    --aj-code-gutter-bg: rgb(255 255 255 / 0.03);
-    --aj-code-selection: var(--aj-accent-muted);
+    color-scheme: dark;
+
+    --aj-accent: #ed9b76;
+    --aj-accent-strong: #ed9b76;
+    --aj-accent-soft: #6b4135;
+    --aj-accent-muted: rgba(237, 155, 118, 0.16);
+    --aj-accent-shimmer: rgba(237, 155, 118, 0.2);
+    --aj-accent-ring: rgba(237, 155, 118, 0.18);
+
+    --aj-success: #a1cbb1;
+    --aj-warning: #d7b06f;
+    --aj-danger: #ed9b76;
+    --aj-info: #a1cbb1;
+
+    --aj-canvas: #171b19;
+    --aj-canvas-raised: #202622;
+    --aj-surface: #202622;
+    --aj-surface-raised: rgba(32, 38, 34, 0.78);
+    --aj-surface-muted: rgba(255, 255, 255, 0.05);
+    --aj-surface-overlay: rgba(32, 38, 34, 0.94);
+    --aj-surface-hover: rgba(255, 255, 255, 0.08);
+    --aj-surface-scrim: rgba(0, 0, 0, 0.26);
+    --aj-surface-backdrop: rgba(0, 0, 0, 0.4);
+    --aj-scrollbar-thumb: rgba(237, 155, 118, 0.36);
+
+    --aj-ink: #f4f1eb;
+    --aj-ink-soft: #d1d8cf;
+    --aj-ink-muted: #b1b9af;
+    --aj-ink-faint: rgba(244, 241, 235, 0.62);
+    --aj-ink-inverse: #171b19;
+
+    --aj-line: #3a433c;
+    --aj-line-strong: #4b574e;
+    --aj-line-soft: rgba(255, 255, 255, 0.06);
+
+    --aj-shadow-medium: rgba(0, 0, 0, 0.34);
+    --aj-shadow-strong: rgba(0, 0, 0, 0.44);
+    --aj-shadow-panel: 0 10px 32px rgba(0, 0, 0, 0.34);
+    --aj-shadow-float: 0 18px 48px rgba(0, 0, 0, 0.44);
+    --aj-shadow-focus: 0 0 0 3px rgba(237, 155, 118, 0.18);
+
+    --aj-glass-bg: rgba(32, 38, 34, 0.74);
+    --aj-glass-bg-soft: rgba(32, 38, 34, 0.48);
+    --aj-glass-bg-medium: rgba(32, 38, 34, 0.62);
+    --aj-glass-bg-dense: rgba(32, 38, 34, 0.84);
+    --aj-glass-border: rgba(255, 255, 255, 0.08);
+    --aj-glass-shadow: rgba(0, 0, 0, 0.34);
+    --aj-glass-blur: 18px;
+
+    --aj-gradient-canvas: linear-gradient(180deg, #171b19 0%, #202622 100%);
+    --aj-gradient-canvas-mobile: linear-gradient(180deg, #171b19 0%, #202622 100%);
+    --aj-gradient-surface-soft: linear-gradient(180deg, rgba(32, 38, 34, 0.94), rgba(40, 47, 41, 0.98));
+    --aj-gradient-surface-strong: linear-gradient(180deg, rgba(37, 44, 39, 0.96), rgba(24, 29, 26, 0.98));
+    --aj-gradient-chrome-top: linear-gradient(180deg, rgba(32, 38, 34, 0.94), rgba(23, 27, 25, 0.98));
+    --aj-gradient-chrome-bottom: linear-gradient(180deg, rgba(23, 27, 25, 0.98), rgba(32, 38, 34, 0.98));
+
+    --aj-code-keyword: #d7acd0;
+    --aj-code-constant: #d7acd0;
+    --aj-code-number: #ed9b76;
+    --aj-code-string: #a1cbb1;
+    --aj-code-comment: #b1b9af;
+    --aj-code-type: #a1cbb1;
+    --aj-code-function: #d7acd0;
+    --aj-code-variable: #f4f1eb;
+    --aj-code-operator: #b1b9af;
+    --aj-code-punctuation: #b1b9af;
+    --aj-code-accent: #ed9b76;
+    --aj-code-bg: rgba(23, 27, 25, 0.92);
+    --aj-code-gutter-bg: rgba(255, 255, 255, 0.03);
+    --aj-code-selection: rgba(237, 155, 118, 0.24);
+    --aj-code-caret: #ed9b76;
 }

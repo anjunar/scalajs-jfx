@@ -261,7 +261,7 @@ class App(
                   }
                 }
 
-                routerLink("GitHub") {
+                routerLink() {
                   classes = Seq("app-toolbar__github")
                   href = "https://github.com/anjunar/scalajs-jfx"
                   target = "_blank"
@@ -271,8 +271,8 @@ class App(
                     src = publicAssetPath("GitHub_Invertocat_Black.svg")
                     alt = "GitHub repository"
                     style {
-                      height = "32px"
-                      width = "32px"
+                      height = "20px"
+                      width = "20px"
                     }
                   }
                 }

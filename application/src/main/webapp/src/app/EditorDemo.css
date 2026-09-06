@@ -126,28 +126,28 @@
 }
 
 .hljs-keyword {
-    color: #b15c00;
+    color: var(--aj-code-keyword);
     font-weight: 800;
 }
 
 html[data-theme="dark"] .hljs-keyword {
-    color: var(--aj-accent-strong);
+    color: var(--aj-code-keyword);
 }
 
 .hljs-string {
-    color: #436d3d;
+    color: var(--aj-code-string);
 }
 
 html[data-theme="dark"] .hljs-string {
-    color: var(--aj-warning);
+    color: var(--aj-code-string);
 }
 
 .hljs-number {
-    color: #2b5b82;
+    color: var(--aj-code-number);
 }
 
 html[data-theme="dark"] .hljs-number {
-    color: var(--aj-info);
+    color: var(--aj-code-number);
 }
 
 .hljs-comment {

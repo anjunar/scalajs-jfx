@@ -1,56 +1,64 @@
-/* Design tokens for the demo. Overrides the `--aj-*` grammar from
- * `@anjunar/ui` — the only place a token value is set.
+/* Design tokens for the demo. The core palette mirrors tools/landing/style.css
+ * so the Scala.js demo, npm demo and landing page feel like one product.
  */
 
 :root,
 html[data-theme="light"] {
     color-scheme: light;
 
-    --aj-accent: #6d7b63;
-    --aj-accent-strong: #5b6953;
-    --aj-accent-soft: #d6ddd0;
-    --aj-accent-muted: rgba(109, 123, 99, 0.14);
-    --aj-accent-shimmer: rgba(109, 123, 99, 0.22);
-    --aj-accent-ring: rgba(109, 123, 99, 0.18);
+    --aj-accent: #a84426;
+    --aj-accent-strong: #8f3b22;
+    --aj-accent-soft: #e7c9be;
+    --aj-accent-muted: rgba(168, 68, 38, 0.14);
+    --aj-accent-shimmer: rgba(168, 68, 38, 0.22);
+    --aj-accent-ring: rgba(168, 68, 38, 0.18);
 
-    --aj-warning: #aa7b44;
-    --aj-danger: #af5f58;
-    --aj-info: #5f7891;
+    --aj-success: #386454;
+    --aj-warning: #b17b42;
+    --aj-danger: #a84426;
+    --aj-info: #386454;
 
-    --aj-canvas: #eee9e1;
-    --aj-surface: #f7f3ec;
-    --aj-surface-raised: rgba(255, 252, 247, 0.76);
-    --aj-surface-overlay: rgba(253, 249, 242, 0.92);
-    --aj-surface-muted: rgba(62, 66, 58, 0.06);
-    --aj-surface-hover: rgba(62, 66, 58, 0.1);
-    --aj-surface-scrim: rgba(52, 47, 40, 0.16);
-    --aj-surface-backdrop: rgba(34, 31, 27, 0.28);
+    --aj-canvas: #f4f1eb;
+    --aj-canvas-raised: #fffdf9;
+    --aj-surface: #fffdf9;
+    --aj-surface-raised: rgba(255, 253, 249, 0.78);
+    --aj-surface-muted: rgba(32, 37, 34, 0.06);
+    --aj-surface-overlay: rgba(255, 253, 249, 0.92);
+    --aj-surface-hover: rgba(32, 37, 34, 0.08);
+    --aj-surface-scrim: rgba(32, 37, 34, 0.12);
+    --aj-surface-backdrop: rgba(32, 37, 34, 0.28);
+    --aj-scrollbar-thumb: rgba(168, 68, 38, 0.34);
 
-    --aj-ink: #262b25;
-    --aj-ink-soft: #596259;
-    --aj-ink-muted: #788076;
-    --aj-ink-faint: rgba(38, 43, 37, 0.58);
-    --aj-ink-inverse: rgba(255, 255, 255, 0.95);
+    --aj-ink: #202522;
+    --aj-ink-soft: #4d514b;
+    --aj-ink-muted: #65665e;
+    --aj-ink-faint: rgba(32, 37, 34, 0.58);
+    --aj-ink-inverse: #fffaf5;
 
-    --aj-line-soft: rgba(38, 43, 37, 0.07);
-    --aj-line: rgba(38, 43, 37, 0.11);
-    --aj-line-strong: rgba(38, 43, 37, 0.16);
+    --aj-line: #d8d6cc;
+    --aj-line-strong: #c4c1b5;
+    --aj-line-soft: rgba(32, 37, 34, 0.08);
 
-    --aj-shadow-medium: rgba(35, 31, 27, 0.12);
-    --aj-shadow-strong: rgba(35, 31, 27, 0.18);
-    --aj-shadow-panel: 0 10px 32px rgba(35, 31, 27, 0.12);
-    --aj-shadow-float: 0 18px 48px rgba(35, 31, 27, 0.18);
-    --aj-shadow-focus: 0 0 0 3px rgba(109, 123, 99, 0.18);
+    --aj-shadow-medium: rgba(32, 37, 34, 0.12);
+    --aj-shadow-strong: rgba(32, 37, 34, 0.18);
+    --aj-shadow-panel: 0 10px 32px rgba(32, 37, 34, 0.12);
+    --aj-shadow-float: 0 18px 48px rgba(32, 37, 34, 0.18);
+    --aj-shadow-focus: 0 0 0 3px rgba(168, 68, 38, 0.18);
 
-    --aj-glass-bg: rgba(255, 252, 248, 0.62);
-    --aj-glass-border: rgba(38, 43, 37, 0.08);
-    --aj-glass-shadow: rgba(35, 31, 27, 0.12);
+    --aj-glass-bg: rgba(255, 253, 249, 0.62);
+    --aj-glass-bg-soft: rgba(255, 253, 249, 0.48);
+    --aj-glass-bg-medium: rgba(255, 253, 249, 0.62);
+    --aj-glass-bg-dense: rgba(255, 253, 249, 0.82);
+    --aj-glass-border: rgba(32, 37, 34, 0.08);
+    --aj-glass-shadow: rgba(32, 37, 34, 0.12);
     --aj-glass-blur: 18px;
 
-    --aj-gradient-surface-soft: linear-gradient(180deg, rgba(255, 252, 248, 0.72), rgba(239, 233, 224, 0.92));
-    --aj-gradient-surface-strong: linear-gradient(180deg, rgba(253, 248, 241, 0.96), rgba(235, 229, 220, 0.94));
-    --aj-gradient-chrome-top: linear-gradient(180deg, rgba(255, 252, 248, 0.76), rgba(244, 239, 232, 0.92));
-    --aj-gradient-chrome-bottom: linear-gradient(180deg, rgba(238, 232, 224, 0.96), rgba(247, 243, 236, 0.98));
+    --aj-gradient-canvas: linear-gradient(180deg, #f4f1eb 0%, #eae7df 100%);
+    --aj-gradient-canvas-mobile: linear-gradient(180deg, #f4f1eb 0%, #eae7df 100%);
+    --aj-gradient-surface-soft: linear-gradient(180deg, rgba(255, 253, 249, 0.72), rgba(234, 231, 223, 0.92));
+    --aj-gradient-surface-strong: linear-gradient(180deg, rgba(255, 253, 249, 0.96), rgba(234, 231, 223, 0.94));
+    --aj-gradient-chrome-top: linear-gradient(180deg, rgba(255, 253, 249, 0.76), rgba(244, 241, 235, 0.92));
+    --aj-gradient-chrome-bottom: linear-gradient(180deg, rgba(234, 231, 223, 0.96), rgba(255, 253, 249, 0.98));
 
     --app-raw: var(--aj-warning);
     --app-raw-soft: color-mix(in srgb, var(--aj-warning) 16%, transparent);
@@ -62,8 +70,8 @@ html[data-theme="light"] {
     --app-archived-soft: color-mix(in srgb, var(--aj-ink-muted) 16%, transparent);
 
     --app-shell-bg:
-        radial-gradient(circle at top left, color-mix(in srgb, var(--aj-accent) 14%, transparent), transparent 18%),
-        radial-gradient(circle at bottom right, color-mix(in srgb, var(--aj-info) 10%, transparent), transparent 18%),
+        radial-gradient(circle at top left, color-mix(in srgb, var(--aj-accent) 10%, transparent), transparent 18%),
+        radial-gradient(circle at bottom right, color-mix(in srgb, var(--aj-info) 8%, transparent), transparent 18%),
         linear-gradient(180deg, var(--aj-canvas) 0%, var(--aj-surface-muted) 100%);
     --app-shell-control-bg: var(--aj-surface-raised);
     --app-shell-control-hover-bg: var(--aj-surface-overlay);
@@ -73,70 +81,78 @@ html[data-theme="light"] {
     --app-shell-card-shadow: 0 12px 28px var(--aj-shadow-medium);
     --app-shell-card-active-bg: linear-gradient(180deg, var(--aj-surface-overlay), var(--aj-accent-muted));
 
-    --aj-code-keyword: #7c5f22;
-    --aj-code-constant: #8a4a56;
-    --aj-code-number: #9a5c18;
-    --aj-code-string: #2f6f58;
-    --aj-code-comment: #7f867d;
-    --aj-code-type: #315f85;
-    --aj-code-function: #6b4da2;
-    --aj-code-variable: #3a4440;
-    --aj-code-operator: #6e786d;
-    --aj-code-accent: #7b6750;
-    --aj-code-bg: rgba(255, 250, 243, 0.88);
-    --aj-code-gutter-bg: rgba(62, 66, 58, 0.04);
-    --aj-code-selection: rgba(109, 123, 99, 0.18);
-    --aj-code-caret: #5b6953;
+    --aj-code-keyword: #8c3d77;
+    --aj-code-constant: #8c3d77;
+    --aj-code-number: #a84426;
+    --aj-code-string: #386454;
+    --aj-code-comment: #65665e;
+    --aj-code-type: #386454;
+    --aj-code-function: #8c3d77;
+    --aj-code-variable: #202522;
+    --aj-code-operator: #65665e;
+    --aj-code-accent: #a84426;
+    --aj-code-bg: rgba(255, 253, 249, 0.88);
+    --aj-code-gutter-bg: rgba(32, 37, 34, 0.04);
+    --aj-code-selection: rgba(168, 68, 38, 0.18);
+    --aj-code-caret: #8f3b22;
 }
 
 html[data-theme="dark"] {
     color-scheme: dark;
 
-    --aj-accent: #98a78c;
-    --aj-accent-strong: #b1bf9f;
-    --aj-accent-soft: #708064;
-    --aj-accent-muted: rgba(152, 167, 140, 0.16);
-    --aj-accent-shimmer: rgba(152, 167, 140, 0.2);
-    --aj-accent-ring: rgba(152, 167, 140, 0.18);
+    --aj-accent: #ed9b76;
+    --aj-accent-strong: #ed9b76;
+    --aj-accent-soft: #6b4135;
+    --aj-accent-muted: rgba(237, 155, 118, 0.16);
+    --aj-accent-shimmer: rgba(237, 155, 118, 0.2);
+    --aj-accent-ring: rgba(237, 155, 118, 0.18);
 
-    --aj-warning: #c8a06a;
-    --aj-danger: #d08a83;
-    --aj-info: #8ea9c1;
+    --aj-success: #a1cbb1;
+    --aj-warning: #d7b06f;
+    --aj-danger: #ed9b76;
+    --aj-info: #a1cbb1;
 
-    --aj-canvas: #171918;
-    --aj-surface: #1d201f;
-    --aj-surface-raised: rgba(29, 32, 31, 0.78);
-    --aj-surface-overlay: rgba(23, 26, 25, 0.94);
+    --aj-canvas: #171b19;
+    --aj-canvas-raised: #202622;
+    --aj-surface: #202622;
+    --aj-surface-raised: rgba(32, 38, 34, 0.78);
     --aj-surface-muted: rgba(255, 255, 255, 0.05);
+    --aj-surface-overlay: rgba(32, 38, 34, 0.94);
     --aj-surface-hover: rgba(255, 255, 255, 0.08);
     --aj-surface-scrim: rgba(0, 0, 0, 0.26);
     --aj-surface-backdrop: rgba(0, 0, 0, 0.4);
+    --aj-scrollbar-thumb: rgba(237, 155, 118, 0.36);
 
-    --aj-ink: #edf0ea;
-    --aj-ink-soft: #c6cdc3;
-    --aj-ink-muted: #98a098;
-    --aj-ink-faint: rgba(237, 240, 234, 0.62);
-    --aj-ink-inverse: rgba(18, 21, 20, 0.94);
+    --aj-ink: #f4f1eb;
+    --aj-ink-soft: #d1d8cf;
+    --aj-ink-muted: #b1b9af;
+    --aj-ink-faint: rgba(244, 241, 235, 0.62);
+    --aj-ink-inverse: #171b19;
 
-    --aj-line-soft: rgba(255, 255, 255, 0.05);
-    --aj-line: rgba(255, 255, 255, 0.08);
-    --aj-line-strong: rgba(255, 255, 255, 0.18);
+    --aj-line: #3a433c;
+    --aj-line-strong: #4b574e;
+    --aj-line-soft: rgba(255, 255, 255, 0.06);
 
     --aj-shadow-medium: rgba(0, 0, 0, 0.34);
     --aj-shadow-strong: rgba(0, 0, 0, 0.44);
     --aj-shadow-panel: 0 10px 32px rgba(0, 0, 0, 0.34);
     --aj-shadow-float: 0 18px 48px rgba(0, 0, 0, 0.44);
-    --aj-shadow-focus: 0 0 0 3px rgba(152, 167, 140, 0.18);
+    --aj-shadow-focus: 0 0 0 3px rgba(237, 155, 118, 0.18);
 
-    --aj-glass-bg: rgba(24, 27, 26, 0.74);
+    --aj-glass-bg: rgba(32, 38, 34, 0.74);
+    --aj-glass-bg-soft: rgba(32, 38, 34, 0.48);
+    --aj-glass-bg-medium: rgba(32, 38, 34, 0.62);
+    --aj-glass-bg-dense: rgba(32, 38, 34, 0.84);
     --aj-glass-border: rgba(255, 255, 255, 0.08);
     --aj-glass-shadow: rgba(0, 0, 0, 0.34);
     --aj-glass-blur: 18px;
 
-    --aj-gradient-surface-soft: linear-gradient(180deg, rgba(31, 35, 34, 0.94), rgba(22, 24, 24, 0.98));
-    --aj-gradient-surface-strong: linear-gradient(180deg, rgba(37, 41, 39, 0.96), rgba(24, 27, 26, 0.98));
-    --aj-gradient-chrome-top: linear-gradient(180deg, rgba(30, 33, 32, 0.94), rgba(21, 23, 23, 0.98));
-    --aj-gradient-chrome-bottom: linear-gradient(180deg, rgba(18, 20, 20, 0.98), rgba(25, 28, 27, 0.98));
+    --aj-gradient-canvas: linear-gradient(180deg, #171b19 0%, #202622 100%);
+    --aj-gradient-canvas-mobile: linear-gradient(180deg, #171b19 0%, #202622 100%);
+    --aj-gradient-surface-soft: linear-gradient(180deg, rgba(32, 38, 34, 0.94), rgba(40, 47, 41, 0.98));
+    --aj-gradient-surface-strong: linear-gradient(180deg, rgba(37, 44, 39, 0.96), rgba(24, 29, 26, 0.98));
+    --aj-gradient-chrome-top: linear-gradient(180deg, rgba(32, 38, 34, 0.94), rgba(23, 27, 25, 0.98));
+    --aj-gradient-chrome-bottom: linear-gradient(180deg, rgba(23, 27, 25, 0.98), rgba(32, 38, 34, 0.98));
 
     --app-raw: var(--aj-warning);
     --app-raw-soft: color-mix(in srgb, var(--aj-warning) 18%, transparent);
@@ -148,8 +164,8 @@ html[data-theme="dark"] {
     --app-archived-soft: color-mix(in srgb, var(--aj-ink-muted) 18%, transparent);
 
     --app-shell-bg:
-        radial-gradient(circle at top left, color-mix(in srgb, var(--aj-accent) 12%, transparent), transparent 18%),
-        radial-gradient(circle at bottom right, color-mix(in srgb, var(--aj-info) 10%, transparent), transparent 18%),
+        radial-gradient(circle at top left, color-mix(in srgb, var(--aj-accent) 10%, transparent), transparent 18%),
+        radial-gradient(circle at bottom right, color-mix(in srgb, var(--aj-info) 8%, transparent), transparent 18%),
         linear-gradient(180deg, var(--aj-canvas) 0%, var(--aj-surface-muted) 100%);
     --app-shell-control-bg: var(--aj-surface-raised);
     --app-shell-control-hover-bg: var(--aj-surface-overlay);
@@ -159,18 +175,18 @@ html[data-theme="dark"] {
     --app-shell-card-shadow: 0 12px 28px var(--aj-shadow-medium);
     --app-shell-card-active-bg: linear-gradient(180deg, var(--aj-surface-overlay), var(--aj-accent-muted));
 
-    --aj-code-keyword: #d8b36d;
-    --aj-code-constant: #f09aa4;
-    --aj-code-number: #e0a960;
-    --aj-code-string: #89c9a8;
-    --aj-code-comment: #7f9184;
-    --aj-code-type: #8fc2e6;
-    --aj-code-function: #c9a8ff;
-    --aj-code-variable: #e6ebe3;
-    --aj-code-operator: #9aa69b;
-    --aj-code-accent: #d7c1a0;
-    --aj-code-bg: rgba(17, 20, 19, 0.92);
+    --aj-code-keyword: #d7acd0;
+    --aj-code-constant: #d7acd0;
+    --aj-code-number: #ed9b76;
+    --aj-code-string: #a1cbb1;
+    --aj-code-comment: #b1b9af;
+    --aj-code-type: #a1cbb1;
+    --aj-code-function: #d7acd0;
+    --aj-code-variable: #f4f1eb;
+    --aj-code-operator: #b1b9af;
+    --aj-code-accent: #ed9b76;
+    --aj-code-bg: rgba(23, 27, 25, 0.92);
     --aj-code-gutter-bg: rgba(255, 255, 255, 0.03);
-    --aj-code-selection: rgba(152, 167, 140, 0.24);
-    --aj-code-caret: #b1bf9f;
+    --aj-code-selection: rgba(237, 155, 118, 0.24);
+    --aj-code-caret: #ed9b76;
 }
