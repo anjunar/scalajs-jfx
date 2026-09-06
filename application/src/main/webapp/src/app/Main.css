@@ -209,6 +209,13 @@
         display: block !important;
     }
 
+    div.jfx-drawer.app-shell-drawer > .jfx-drawer__panel-shell > .jfx-drawer__panel,
+    .app-shell .jfx-drawer__navigation {
+        background: var(--aj-surface);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
     div.jfx-drawer.app-shell-drawer > .jfx-drawer__panel-shell,
     div.jfx-drawer.app-shell-drawer.jfx-drawer--open > .jfx-drawer__panel-shell {
         position: absolute !important;
