@@ -15,7 +15,11 @@
 @import "@anjunar/scalajs-lexical/index.css";
 @import "@anjunar/scalajs-jfx/index.css";
 
-@import "./theme.css";
+/* The Scala.js showcase is the design source of truth for both API entrances. */
+@import "../../../../application/src/main/webapp/src/theme.css";
 @import "./base.css";
+@import "../../../../application/src/main/webapp/src/app/Demo.css";
+@import "../../../../application/src/main/webapp/src/app/Showcase.css";
+@import "./shell.css";
 @import "./docs/index.css";
 @import "./pages/index.css";

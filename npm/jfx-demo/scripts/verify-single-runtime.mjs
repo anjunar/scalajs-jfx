@@ -126,7 +126,7 @@ async function devServer() {
     check("dev server responds 200", response.status === 200, `status ${response.status}`);
     check(
       "dev server returns server-rendered markup",
-      html.includes("A TypeScript facade over JFX 3"),
+      html.includes("The TypeScript API is a language-level entrance"),
       "the SSR outlet was not filled -- with two runtime slots, renderToString throws instead"
     );
     const stylesheetHref = html.match(

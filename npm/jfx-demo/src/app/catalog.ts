@@ -39,6 +39,7 @@ import { routerParamsDoc } from "../pages/router-params/doc.js";
 import { routerParamsDetailLoad } from "../pages/router-params/detail.js";
 import { searchDoc } from "../pages/search/doc.js";
 import { pageManifest } from "./page-manifest.js";
+import { sectionForPath, type ShowcaseSectionId } from "./presentation.js";
 
 /**
  * "frame" covers the pages that aren't about one library package (the
@@ -69,6 +70,8 @@ export interface DocEntry {
   readonly title: string;
   readonly summary: string;
   readonly pkg: PackageId;
+  /** Product capability used by the showcase navigation. npm package is secondary metadata. */
+  readonly section?: ShowcaseSectionId;
   readonly keywords: readonly string[];
   readonly doc: () => void;
   /** Optional route loader for pages whose SSR body depends on the request URL. */
@@ -92,7 +95,7 @@ const catalogEntries: readonly DocEntry[] = [
   {
     path: "/",
     title: "Overview",
-    summary: "What @anjunar/jfx-* is and where to start.",
+    summary: "One runtime, two APIs: explore JFX capabilities through TypeScript.",
     pkg: "frame",
     keywords: ["overview", "home", "start", "packages"],
     doc: homeDoc,
@@ -373,10 +376,11 @@ const pageByPath = new Map(pageManifest.map((page) => [page.path, page] as const
  */
 export const catalog: readonly DocEntry[] = catalogEntries.map((entry) => {
   const page = pageByPath.get(entry.path);
+  const presented = { ...entry, section: sectionForPath(entry.path) ?? undefined };
   return page === undefined
-    ? entry
+    ? presented
     : {
-        ...entry,
+        ...presented,
         path: page.path,
         title: page.title,
         pkg: page.pkg,

@@ -1,0 +1,167 @@
+/* TypeScript's router emits shell and page as siblings. This small adapter places
+ * those existing nodes into the same sidebar / toolbar / content geometry as the
+ * Scala showcase, whose visual rules are imported by style.css. */
+#root > .jfx-viewport,
+#root > .jfx-viewport > .jfx-viewport__content {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+}
+
+#root > .jfx-viewport > .jfx-viewport__content {
+    position: relative;
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    grid-template-rows: 64px minmax(0, 1fr) auto;
+    overflow: hidden;
+    background: var(--aj-canvas);
+}
+
+.app-sidebar {
+    grid-column: 1;
+    grid-row: 1 / 4;
+    min-height: 0;
+    z-index: 30;
+}
+
+.app-toolbar {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.docs-page {
+    grid-column: 2;
+    grid-row: 2;
+    min-width: 0;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.app-footer {
+    grid-column: 2;
+    grid-row: 3;
+}
+
+.app-sidebar__logo.jfx-link,
+.app-nav-link.jfx-link {
+    text-decoration: none;
+}
+
+.app-sidebar__logo.jfx-link {
+    display: block;
+}
+
+.app-sidebar__nav .app-nav-link {
+    flex: 0 0 auto;
+}
+
+.app-sidebar__project-links {
+    display: flex;
+}
+
+.app-nav-link__sub {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.app-sidebar__backdrop {
+    display: none;
+}
+
+.app-toolbar__api-switch,
+.showcase-page__api-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid var(--aj-line-soft);
+    border-radius: 999px;
+    background: var(--aj-surface-muted);
+}
+
+.app-toolbar__api-switch a,
+.app-toolbar__api-switch span,
+.showcase-page__api-switch a,
+.showcase-page__api-switch span {
+    padding: 6px 10px;
+    border-radius: 999px;
+    color: var(--aj-ink-soft);
+    font-size: 0.76rem;
+    font-weight: 800;
+    line-height: 1;
+    text-decoration: none;
+}
+
+.app-toolbar__api-switch .is-active,
+.showcase-page__api-switch .is-active {
+    background: var(--aj-accent);
+    color: var(--aj-ink-inverse);
+}
+
+.app-toolbar__text-link {
+    color: var(--aj-ink-soft);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.app-toolbar__text-link:hover,
+.app-toolbar__text-link:focus-visible {
+    color: var(--aj-accent-strong);
+}
+
+@media (max-width: 1024px) {
+    #root > .jfx-viewport > .jfx-viewport__content {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-sidebar {
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: min(92vw, 280px);
+        transform: translateX(-102%);
+        transition: transform 180ms ease;
+        box-shadow: var(--aj-shadow-float);
+    }
+
+    .app-sidebar.is-open {
+        transform: translateX(0);
+    }
+
+    .app-sidebar__backdrop {
+        position: absolute;
+        inset: 0;
+        z-index: 20;
+        display: block;
+        border: 0;
+        padding: 0;
+        background: var(--aj-surface-backdrop);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 180ms ease;
+    }
+
+    .app-sidebar__backdrop.is-open {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .app-toolbar,
+    .docs-page,
+    .app-footer {
+        grid-column: 1;
+    }
+}
+
+@media (max-width: 720px) {
+    .app-toolbar__api-switch,
+    .app-toolbar__text-link--optional {
+        display: none;
+    }
+
+    .app-footer {
+        padding: 16px;
+    }
+}

@@ -131,6 +131,34 @@ async function main() {
       );
     }
 
+    check(
+      "/ -- capability navigation replaces package navigation",
+      ["Interaction", "Architecture", "Foundation", "Runtime", "Forms", "Data", "Editor"]
+        .every((label) => homeHtml.includes(label)),
+      "one or more product capability sections are missing from the server-rendered sidebar"
+    );
+
+    const tablePresentation = await fetch(`http://localhost:${port}/controls/table`);
+    const tablePresentationHtml = await tablePresentation.text();
+    check(
+      "/controls/table -- package and import stay visible as secondary metadata",
+      tablePresentationHtml.includes("@anjunar/jfx-controls") &&
+        tablePresentationHtml.includes("import { tableView, column }"),
+      "TableView does not identify its npm package and TypeScript import"
+    );
+    check(
+      "/controls/table -- corresponding Scala page is linked",
+      tablePresentationHtml.includes('href="../scala/table"'),
+      "TableView has no link to its Scala counterpart"
+    );
+    check(
+      "/controls/table -- shared runtime, SSR and hydration are explained",
+      ["Shared engine", "Server first", "Same structure"].every((copy) =>
+        tablePresentationHtml.includes(copy)
+      ),
+      "one or more shared-runtime architecture cards are missing"
+    );
+
     const germanResponse = await fetch(`http://localhost:${port}/de/core/derived`);
     const germanHtml = await germanResponse.text();
     check(

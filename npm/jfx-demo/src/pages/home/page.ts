@@ -57,22 +57,108 @@ export const packageTiles: readonly PackageTile[] = [
 
 export function homePage(): void {
   div(() => {
-    classes("home-page");
-    heading(1, () => text(translated("@anjunar/jfx")));
-    paragraph(() => {
-      classes("home-page__intro");
-      text(translated("A TypeScript facade over JFX 3 -- one route per capability, the running component next to the source that produced it."));
-    });
+    classes("home-page", "clarity-page", "clarity-page--home");
+
     div(() => {
-      classes("home-page__grid");
+      classes("home-hero");
+      div(() => {
+        classes("home-hero__content");
+        div(() => {
+          classes("home-eyebrow");
+          text(translated("One runtime. Two APIs."));
+        });
+        heading(2, () => {
+          classes("home-hero__title");
+          text(translated("Build with TypeScript. Run on JFX."));
+        });
+        paragraph(() => {
+          classes("home-hero__copy");
+          text(translated("The TypeScript API is a language-level entrance to the same reactive, SSR-capable runtime as the Scala.js DSL."));
+        });
+        div(() => {
+          classes("home-hero__actions");
+          routerLink("/core/state", "", {}, () => {
+            classes("calm-action", "calm-action--primary");
+            text(translated("Explore the runtime"));
+          });
+        });
+      });
+
+      div(() => {
+        classes("home-hero__metrics");
+        metric("01", "Shared runtime", "The bridge installs the Scala.js runtime once.");
+        metric("02", "TypeScript API", "Typed functions expose the same component model.");
+        metric("03", "SSR + hydration", "One deterministic tree runs on server and client.");
+      });
+    });
+
+    sectionHeading(
+      "Capabilities",
+      "Start with the product model",
+      "Navigation follows interaction, architecture, runtime, forms, data and editor capabilities. Package ownership stays visible on every page."
+    );
+
+    div(() => {
+      classes("home-demo-grid");
+      capability("Runtime", "Reactive state, control flow and hydration boundaries.", "/core/state");
+      capability("Interaction", "Tabs, carousel and extensible DOM composition.", "/controls/tabs");
+      capability("Forms", "Typed models, validation and composed fields.", "/forms/basics");
+      capability("Data", "Tables, grids, lists and remote ranges.", "/controls/table");
+    });
+
+    sectionHeading(
+      "Packages",
+      "Packages support the product structure",
+      "Each capability still identifies its npm package and exact import; packages are reference metadata rather than the primary navigation."
+    );
+
+    div(() => {
+      classes("home-page__package-grid");
       for (const pkg of packageTiles) {
         div(() => {
-          classes("home-page__tile");
+          classes("home-page__package-tile");
           heading(2, () => text(pkg.name));
           paragraph(() => text(translated(pkg.blurb)));
-          routerLink(pkg.entryPath, translated("Explore →"));
+          routerLink(pkg.entryPath, "", {}, () => {
+            classes("calm-action", "calm-action--quiet");
+            text(translated("Explore →"));
+          });
         });
       }
+    });
+  });
+}
+
+function metric(index: string, title: string, body: string): void {
+  div(() => {
+    classes("home-metric");
+    div(() => { classes("home-metric__index"); text(index); });
+    div(() => { classes("home-metric__title"); text(translated(title)); });
+    div(() => { classes("home-metric__body"); text(translated(body)); });
+  });
+}
+
+function sectionHeading(label: string, title: string, copy: string): void {
+  div(() => {
+    classes("home-section", "home-section--intro");
+    div(() => {
+      classes("home-section-heading");
+      div(() => { classes("home-eyebrow"); text(translated(label)); });
+      heading(2, () => { classes("home-section-heading__title"); text(translated(title)); });
+      paragraph(() => { classes("home-section-heading__copy"); text(translated(copy)); });
+    });
+  });
+}
+
+function capability(title: string, body: string, path: string): void {
+  div(() => {
+    classes("home-demo-card");
+    div(() => { classes("home-demo-card__meta"); text(translated("Capability")); });
+    div(() => { classes("home-demo-card__title"); text(translated(title)); });
+    div(() => { classes("home-demo-card__body"); text(translated(body)); });
+    routerLink(path, "", {}, () => {
+      classes("calm-action", "calm-action--secondary");
+      text(translated("Open showcase"));
     });
   });
 }

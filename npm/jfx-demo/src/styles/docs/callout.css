@@ -1,6 +1,9 @@
 .docs-callout {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
     border-left: 3px solid var(--aj-line-strong);
-    border-radius: 0 var(--radius-control) var(--radius-control) 0;
+    border-radius: 8px;
     background: var(--aj-surface-muted);
     padding: 0.75rem 1rem;
 }
@@ -10,7 +13,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0;
     color: var(--aj-ink-muted);
 }
 

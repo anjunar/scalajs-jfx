@@ -56,7 +56,41 @@ function isWhitespaceOnly(value: string): boolean {
  */
 export function codeBlock(snippet: CodeSnippet): void {
   div(() => {
-    classes("docs-code-block");
+    classes("docs-code-block", "code-block");
+
+    div(() => {
+      classes("code-block__header");
+      div(() => {
+        classes("code-block__identity");
+        div(() => {
+          classes("code-block__lang");
+          text("TypeScript API");
+        });
+        div(() => {
+          classes("code-block__file");
+          text(snippet.file);
+        });
+      });
+
+      // Mounted only after hydration so the server and first client pass stay identical.
+      when(hydratedProperty(), () => {
+        const copyLabel = property(translated("Copy").get);
+        button(copyLabel, {}, () => {
+          classes("docs-code-block__copy", "code-block__copy");
+          onClick(() => {
+            const copy = navigator.clipboard?.writeText(plainText(snippet));
+            if (copy === undefined) {
+              copyLabel.set("Copy failed");
+            } else {
+              void copy.then(
+                () => copyLabel.set("Copied"),
+                () => copyLabel.set("Copy failed")
+              );
+            }
+          });
+        });
+      });
+    });
 
     pre(() => {
       classes("docs-code");
@@ -89,26 +123,6 @@ export function codeBlock(snippet: CodeSnippet): void {
       });
     });
 
-    // Mounted only once hydration has settled (hydratedProperty(), set in
-    // entry-client.ts), so its absence without JavaScript is not a loading
-    // state that never resolves -- it simply never appears, per E-6.
-    when(hydratedProperty(), () => {
-      const copyLabel = property(translated("Copy").get);
-      button(copyLabel, {}, () => {
-        classes("docs-code-block__copy");
-        onClick(() => {
-          const copy = navigator.clipboard?.writeText(plainText(snippet));
-          if (copy === undefined) {
-            copyLabel.set("Copy failed");
-          } else {
-            void copy.then(
-              () => copyLabel.set("Copied"),
-              () => copyLabel.set("Copy failed")
-            );
-          }
-        });
-      });
-    });
   });
 }
 

@@ -4,7 +4,7 @@ import { homePage } from "./page.js";
 
 export function homeDoc(): void {
   docPage(
-    { title: "Overview", summary: "What @anjunar/jfx-* is and where to start." },
+    { title: "Overview", summary: "One runtime, two APIs: explore JFX capabilities through TypeScript." },
     () => {
       homePage();
     }

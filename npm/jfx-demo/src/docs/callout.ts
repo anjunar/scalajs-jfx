@@ -17,7 +17,7 @@ const LABEL: Record<CalloutKind, string> = {
 
 export function callout(kind: CalloutKind, body: () => void): void {
   div(() => {
-    classes("docs-callout", `docs-callout--${kind}`);
+    classes("docs-callout", `docs-callout--${kind}`, "showcase-note");
     div(() => {
       classes("docs-callout__label");
       text(translated(LABEL[kind]));
