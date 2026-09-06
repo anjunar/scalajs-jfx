@@ -91,6 +91,9 @@
         position: absolute;
         inset: 0 auto 0 0;
         width: min(92vw, 280px);
+        background: var(--aj-surface);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
         transform: translateX(-102%);
         transition: transform 150ms ease;
         box-shadow: var(--aj-shadow-float);
