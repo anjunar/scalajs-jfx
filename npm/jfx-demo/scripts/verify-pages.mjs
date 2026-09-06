@@ -111,6 +111,27 @@ async function main() {
     // browser with JavaScript disabled never requests any CSS.
     const homeResponse = await fetch(`http://localhost:${port}/`);
     const homeHtml = await homeResponse.text();
+    check(
+      "/ -- one semantic H1 introduces the TypeScript API",
+      (homeHtml.match(/<h1\b/g) ?? []).length === 1 &&
+        homeHtml.includes("JFX 3 · TypeScript") &&
+        homeHtml.includes("Build with TypeScript. Run on JFX."),
+      "the home route does not expose the requested TypeScript hero hierarchy"
+    );
+    const homeSequence = [
+      "Start with working code",
+      "Typed API",
+      "Same runtime",
+      "SSR + hydration",
+      "One component model",
+      "Packages support the product structure",
+    ].map((copy) => homeHtml.indexOf(copy));
+    check(
+      "/ -- working code and runtime model precede package reference",
+      homeSequence.every((position) => position >= 0) &&
+        homeSequence.every((position, index) => index === 0 || position > homeSequence[index - 1]),
+      "the TypeScript entry does not follow the code → runtime → component model → packages sequence"
+    );
     const stylesheetHref = homeHtml.match(
       /<link[^>]+rel="stylesheet"[^>]+href="([^"]+\.css)"/
     )?.[1];

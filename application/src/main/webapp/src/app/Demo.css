@@ -51,7 +51,7 @@
     border-radius: 12px;
     text-decoration: none;
     color: var(--aj-ink-soft);
-    transition: all 180ms ease;
+    transition: color 150ms ease, background-color 150ms ease;
 }
 
 .app-nav-link:hover {
@@ -685,6 +685,15 @@ div.hbox.layout-shell-demo {
         font-size: 2.35rem;
     }
 
+    .showcase-page__eyebrow,
+    .showcase-section-intro__kicker,
+    .component-showcase__title,
+    .showcase-insight__label,
+    .showcase-pattern-list__title,
+    .code-block__lang {
+        font-size: 0.78rem;
+    }
+
     .showcase-metric-strip,
     .showcase-insight-grid,
     .showcase-pattern-list__items {
@@ -715,8 +724,16 @@ div.hbox.layout-shell-demo {
     }
 
     .app-toolbar__title,
-    .app-toolbar__version,
+    .app-toolbar__version {
+        display: none;
+    }
+
     .app-toolbar__api-switch {
+        display: none !important;
+    }
+
+    .app-toolbar__scala-link,
+    .app-toolbar__github {
         display: none;
     }
 
@@ -725,18 +742,10 @@ div.hbox.layout-shell-demo {
         padding: 0 9px;
     }
 
-    .app-toolbar__github {
-        min-height: 30px;
-        padding: 0 10px;
-    }
+}
 
-    .app-toolbar__scala-link {
-        height: 30px;
-        padding: 0 6px;
-    }
-
-    .app-toolbar__scala-badge {
-        width: 112px;
-        height: 18px;
+@media (prefers-reduced-motion: reduce) {
+    .app-nav-link {
+        transition: none;
     }
 }

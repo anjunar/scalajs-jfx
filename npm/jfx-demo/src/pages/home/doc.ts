@@ -4,7 +4,12 @@ import { homePage } from "./page.js";
 
 export function homeDoc(): void {
   docPage(
-    { title: "Overview", summary: "One runtime, two APIs: explore JFX capabilities through TypeScript." },
+    {
+      title: "Build with TypeScript. Run on JFX.",
+      summary: "The TypeScript API is a language-level entrance to the same reactive, SSR-capable runtime as the Scala.js DSL.",
+      eyebrow: "JFX 3 · TypeScript",
+      scalaPath: "/",
+    },
     () => {
       homePage();
     }

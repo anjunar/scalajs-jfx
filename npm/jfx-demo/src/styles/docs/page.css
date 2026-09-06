@@ -70,6 +70,10 @@
     .showcase-page__metadata {
         grid-template-columns: minmax(0, 1fr);
     }
+
+    .showcase-page__metadata-label {
+        font-size: 0.76rem;
+    }
 }
 
 @media (max-width: 480px) {

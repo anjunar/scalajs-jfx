@@ -51,6 +51,8 @@ class AppSsrSpec extends AsyncFlatSpec with Matchers {
     } yield {
       first should include("class=\"app-shell\"")
       first should include("Welcome to")
+      first should include("<h1 class=\"showcase-page__title\">Welcome to")
+      first should not include "jfx-drawer--open"
       second shouldBe first
     }
   }

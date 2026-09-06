@@ -2,11 +2,12 @@ package app.components
 
 import jfx.core.component.AbstractComponent
 import jfx.core.dsl.ClassDsl.classes
-import jfx.core.dsl.DslLayer.{render, renderInto}
+import jfx.core.dsl.DslLayer.{child, render, renderInto}
 import jfx.core.dsl.EventDsl.onClick
 import jfx.core.layout.Button.button
 import jfx.core.layout.Div
 import jfx.core.layout.Div.div
+import jfx.core.layout.Heading
 import jfx.core.layout.TextComponent.text
 import jfx.core.layout.VBox.vbox
 import jfx.core.render.Cursor
@@ -41,7 +42,7 @@ object Showcase {
       vbox {
         classes = Seq("showcase-page__header")
         div { classes = Seq("showcase-page__eyebrow"); text("scalajs-jfx") {} }
-        div { classes = Seq("showcase-page__title"); text(title) {} }
+        child(new Heading(1)) { classes = Seq("showcase-page__title"); text(title) {} }
         div { classes = Seq("showcase-page__subtitle"); text(subtitle) {} }
       }
 
@@ -303,7 +304,7 @@ object Showcase {
       vbox {
         classes = Seq("showcase-page__header")
         div { classes = Seq("showcase-page__eyebrow"); text("scalajs-jfx") {} }
-        div { classes = Seq("showcase-page__title"); text(title) {} }
+        child(new Heading(1)) { classes = Seq("showcase-page__title"); text(title) {} }
         div { classes = Seq("showcase-page__subtitle"); text(subtitle) {} }
       }
 

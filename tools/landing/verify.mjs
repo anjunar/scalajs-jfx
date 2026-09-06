@@ -10,15 +10,37 @@ const source = name => readFile(resolve(output, "starters", name), "utf8");
 
 assert.equal(document.querySelectorAll("h1").length, 1);
 assert.equal(document.querySelector("h1").textContent, "One runtime. Two APIs.");
+assert.equal(document.querySelector("#same-code").textContent, "Same UI. Two languages.");
 assert(!/JFX\s*[23]|production.ready|fastest/i.test(document.title));
 assert.equal(document.querySelector("#scala-main").textContent.trim(), (await source("Counter.scala")).trim());
 assert.equal(document.querySelector("#ts-main").textContent.trim(), (await source("main.ts")).trim());
 assert(document.querySelector("#counter-root").textContent.includes("Count: 0"));
 assert(document.querySelector("#counter-root").innerHTML.includes("jfx:BridgeRoot:start"));
+assert(document.querySelector("#counter-root > .vbox"), "Landing proof must target the VBox class emitted by SSR.");
+assert.equal(document.querySelectorAll(".hero-actions > .action.primary").length, 2, "Both API demos must have equal CTA weight.");
 assert(document.querySelector(".preview input[name=name][value=Mira]"));
 assert(document.querySelector(".jfx-table-view").textContent.includes("Workspace"));
 assert(document.querySelector(".jfx-editor__readonly h2"));
 assert(!document.querySelector(".preview textarea"), "Readonly editor must render semantic HTML.");
+assert.deepEqual(
+  [...document.querySelector("main").children].map(section => section.querySelector("h1, h2")?.textContent.trim()),
+  [
+    "One runtime. Two APIs.",
+    "Same UI. Two languages.",
+    "What you get",
+    "Application building blocks",
+    "A different trade-off",
+    "Get started",
+    "Two ways in.One implementation.",
+    "Go beyond the first example",
+    "Why JFX exists",
+    "Explore JFX",
+  ],
+  "Landing sections must present product proof before setup instructions."
+);
+for (const cell of document.querySelectorAll(".comparison tbody td")) {
+  assert(cell.dataset.label, "Responsive comparison cells need visible mobile labels.");
+}
 
 for (const button of document.querySelectorAll("[data-copy]")) {
   assert(document.getElementById(button.dataset.copy), `Missing copy target: ${button.dataset.copy}`);

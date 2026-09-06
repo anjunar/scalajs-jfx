@@ -14,6 +14,8 @@ import { packageName, presentationForTitle } from "../app/presentation.js";
 export interface DocPageMeta {
   readonly title: string;
   readonly summary: string;
+  readonly eyebrow?: string;
+  readonly scalaPath?: string;
 }
 
 export function docPage(meta: DocPageMeta, body: () => void): void {
@@ -40,16 +42,17 @@ export function docPage(meta: DocPageMeta, body: () => void): void {
     div(() => {
       classes("docs-page__header", "showcase-page__header");
       div(() => {
-        classes("showcase-page__header-topline");
+      classes("showcase-page__header-topline");
         div(() => {
           classes("showcase-page__eyebrow");
-          text("scalajs-jfx");
+          text(meta.eyebrow ?? "scalajs-jfx");
         });
         div(() => {
           classes("showcase-page__api-switch");
-          if (presentation.scalaPath !== undefined) {
+          const scalaPath = meta.scalaPath ?? presentation.scalaPath;
+          if (scalaPath !== undefined) {
             anchor(() => {
-              attr("href", `../scala${presentation.scalaPath}`);
+              attr("href", `../scala${scalaPath}`);
               text("Scala");
             });
           }

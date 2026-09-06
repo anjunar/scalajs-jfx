@@ -2,6 +2,9 @@
 import { classes, div, heading, paragraph, text } from "@anjunar/jfx-core";
 import { routerLink } from "@anjunar/jfx-router";
 import { translated } from "../../app/i18n.js";
+import { example } from "../../docs/example.js";
+import { homeCounter } from "./counter.js";
+import counterSnippet from "./counter.ts?jfx-code";
 
 export interface PackageTile {
   readonly id: "core" | "controls" | "forms" | "editor" | "viewport" | "router" | "json";
@@ -59,52 +62,22 @@ export function homePage(): void {
   div(() => {
     classes("home-page", "clarity-page", "clarity-page--home");
 
-    div(() => {
-      classes("home-hero");
-      div(() => {
-        classes("home-hero__content");
-        div(() => {
-          classes("home-eyebrow");
-          text(translated("One runtime. Two APIs."));
-        });
-        heading(2, () => {
-          classes("home-hero__title");
-          text(translated("Build with TypeScript. Run on JFX."));
-        });
-        paragraph(() => {
-          classes("home-hero__copy");
-          text(translated("The TypeScript API is a language-level entrance to the same reactive, SSR-capable runtime as the Scala.js DSL."));
-        });
-        div(() => {
-          classes("home-hero__actions");
-          routerLink("/core/state", "", {}, () => {
-            classes("calm-action", "calm-action--primary");
-            text(translated("Explore the runtime"));
-          });
-        });
-      });
+    example({ title: "Start with working code", code: counterSnippet }, () => {
+      homeCounter();
+    });
 
-      div(() => {
-        classes("home-hero__metrics");
-        metric("01", "Shared runtime", "The bridge installs the Scala.js runtime once.");
-        metric("02", "TypeScript API", "Typed functions expose the same component model.");
-        metric("03", "SSR + hydration", "One deterministic tree runs on server and client.");
-      });
+    div(() => {
+      classes("showcase-metric-strip");
+      metric("Typed API", "Typed functions expose the same component model.");
+      metric("Same runtime", "The bridge installs the Scala.js runtime once.");
+      metric("SSR + hydration", "One deterministic tree runs on server and client.");
     });
 
     sectionHeading(
-      "Capabilities",
-      "Start with the product model",
-      "Navigation follows interaction, architecture, runtime, forms, data and editor capabilities. Package ownership stays visible on every page."
+      "One component model",
+      "Server HTML and browser interaction share one tree",
+      "Properties, components and lifecycle ownership stay the same across SSR and hydration. TypeScript calls the Scala.js runtime through the typed bridge."
     );
-
-    div(() => {
-      classes("home-demo-grid");
-      capability("Runtime", "Reactive state, control flow and hydration boundaries.", "/core/state");
-      capability("Interaction", "Tabs, carousel and extensible DOM composition.", "/controls/tabs");
-      capability("Forms", "Typed models, validation and composed fields.", "/forms/basics");
-      capability("Data", "Tables, grids, lists and remote ranges.", "/controls/table");
-    });
 
     sectionHeading(
       "Packages",
@@ -129,12 +102,11 @@ export function homePage(): void {
   });
 }
 
-function metric(index: string, title: string, body: string): void {
+function metric(title: string, body: string): void {
   div(() => {
-    classes("home-metric");
-    div(() => { classes("home-metric__index"); text(index); });
-    div(() => { classes("home-metric__title"); text(translated(title)); });
-    div(() => { classes("home-metric__body"); text(translated(body)); });
+    classes("showcase-metric");
+    div(() => { classes("showcase-metric__value"); text(translated(title)); });
+    div(() => { classes("showcase-metric__label"); text(translated(body)); });
   });
 }
 
@@ -146,19 +118,6 @@ function sectionHeading(label: string, title: string, copy: string): void {
       div(() => { classes("home-eyebrow"); text(translated(label)); });
       heading(2, () => { classes("home-section-heading__title"); text(translated(title)); });
       paragraph(() => { classes("home-section-heading__copy"); text(translated(copy)); });
-    });
-  });
-}
-
-function capability(title: string, body: string, path: string): void {
-  div(() => {
-    classes("home-demo-card");
-    div(() => { classes("home-demo-card__meta"); text(translated("Capability")); });
-    div(() => { classes("home-demo-card__title"); text(translated(title)); });
-    div(() => { classes("home-demo-card__body"); text(translated(body)); });
-    routerLink(path, "", {}, () => {
-      classes("calm-action", "calm-action--secondary");
-      text(translated("Open showcase"));
     });
   });
 }

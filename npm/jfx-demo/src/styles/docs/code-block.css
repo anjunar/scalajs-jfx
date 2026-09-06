@@ -47,3 +47,9 @@
 .tok-com { color: var(--aj-code-comment); font-style: italic; }
 .tok-id { color: var(--aj-code-variable); }
 .tok-typ { color: var(--aj-code-type); }
+
+@media (max-width: 768px) {
+    .code-block__file {
+        font-size: 0.76rem;
+    }
+}

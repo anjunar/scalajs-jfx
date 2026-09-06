@@ -1,7 +1,20 @@
 .home-page {
     display: flex;
     flex-direction: column;
-    gap: 34px;
+    gap: 44px;
+}
+
+div.vbox.home-counter {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    height: auto;
+}
+
+.home-counter button {
+    min-height: 40px;
+    padding: 8px 14px;
 }
 
 .home-page__package-grid {
@@ -44,20 +57,6 @@
 }
 
 @media (max-width: 720px) {
-    .home-hero {
-        min-height: auto;
-        padding: 34px 24px 24px;
-    }
-
-    .home-hero__title {
-        font-size: clamp(2.5rem, 14vw, 3.9rem);
-    }
-
-    .home-hero__metrics,
-    .home-demo-grid {
-        grid-template-columns: minmax(0, 1fr);
-    }
-
     .home-section-heading {
         grid-template-columns: minmax(0, 1fr);
     }

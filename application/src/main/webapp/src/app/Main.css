@@ -191,7 +191,20 @@
     }
 }
 
-@media (max-width: 720px) {
+/* The showcase uses the drawer as persistent navigation on wide screens and as an
+ * overlay everywhere the menu trigger is visible. Keeping that distinction in CSS
+ * also gives prerendered, non-hydrated pages the correct responsive first frame. */
+@media (min-width: 1025px) {
+    div.jfx-drawer.app-shell-drawer > .jfx-drawer__panel-shell {
+        width: min(92vw, 280px) !important;
+    }
+
+    div.jfx-drawer.app-shell-drawer > .jfx-drawer__panel-shell > .jfx-drawer__panel {
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+@media (max-width: 1024px) {
     div.jfx-drawer.app-shell-drawer {
         display: block !important;
     }
@@ -217,7 +230,9 @@
     .app-shell .jfx-drawer__navigation {
         padding: 18px 14px 22px;
     }
+}
 
+@media (max-width: 720px) {
     .app-content {
         padding: 16px;
     }

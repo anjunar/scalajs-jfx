@@ -151,7 +151,7 @@ class App(
 
         drawer {
           classes = Seq("app-shell-drawer")
-          open = true
+          open = false
 
           drawerNavigation {
             div {
