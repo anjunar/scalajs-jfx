@@ -25,6 +25,9 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
   capture,
   button,
+  drawer,
+  drawerContent,
+  drawerNavigation,
   element,
   forEach,
   hbox,
@@ -127,6 +130,30 @@ describe("mount", () => {
 
     element.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     expect(root.textContent).toContain("n=2");
+
+    app.dispose();
+  });
+
+  it("mounts Drawer slots and exposes its toggle to TypeScript", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const app = mount(root, () =>
+      drawer({ open: false }, (handle) => {
+        drawerNavigation(() => text("Navigation"));
+        drawerContent(() =>
+          button("Menu", {}, () => onClick(() => handle.toggle()))
+        );
+      })
+    );
+
+    const element = root.querySelector(".jfx-drawer")!;
+    expect(element.textContent).toContain("Navigation");
+    expect(element.textContent).toContain("Menu");
+    expect(element.classList.contains("jfx-drawer--open")).toBe(false);
+
+    root.querySelector("button")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(element.classList.contains("jfx-drawer--open")).toBe(true);
 
     app.dispose();
   });

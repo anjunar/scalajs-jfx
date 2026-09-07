@@ -51,7 +51,8 @@ mount(document.getElementById("empty-root")!, build); // browser, empty host
 
 - `property` creates a synchronous `Property`; `listProperty` creates a reactive list.
 - Element builders include `div`, `span`, `section`, `article`, `paragraph`, `nav`, `ul`, `li`, `pre`, `code`, `anchor`, and `heading`.
-- `button`, `vbox`, and `hbox` are registered library components.
+- `button`, `vbox`, `hbox`, and `drawer` are registered library components;
+  `drawerNavigation` and `drawerContent` fill the Drawer's two slots.
 - `classes`, `attr`, `style`, `on`, `onClick`, and `onDoubleClick` configure the current component.
 - `when`, `forEach`, and `fetchInto` compose dynamic content with lifecycle ownership.
 - `head`, `documentHead`, `i18nProvider`, `i18n`, `i18nc`, and `t` cover metadata and translations.
@@ -64,7 +65,8 @@ SSR creates readable HTML. Hydration claims the same tree and adds event handler
 
 - Runtime: `mount`, `hydrate`, `renderToString`, `installRuntime`, `runtime`.
 - State: `property`, `listProperty`, `Property`, `ListProperty`, `ReadOnlyProperty`.
-- DSL: element builders, `component`, `button`, `classes`, `attr`, `style`, `onClick`.
+- DSL: element builders, `component`, `button`, `drawer`, `drawerNavigation`,
+  `drawerContent`, `classes`, `attr`, `style`, `onClick`.
 - Scope: `capture`, `currentComponent`, `currentScope`, `withScope`.
 - Document and i18n: `head`, `documentHead`, `title`, `meta`, `link`, `i18nProvider`, `i18n`.
 

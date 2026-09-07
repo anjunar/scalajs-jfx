@@ -139,27 +139,43 @@ private[bridge] object RouterFactories {
     }
 }
 
-/** The component `router()` mounts: it owns one `jfx.router.Router` and puts the application shell
-  * around it.
+/** The component `router()` mounts: it owns one `jfx.router.Router` and lets the application shell
+  * place it.
   *
   * This is what `app.App.compose` assembles by hand on the Scala side --
   * `Router.provide(appRouter)`, then a sidebar of `routerLink`s, then `child(appRouter)`. A Scala
   * user writes that directly; a TypeScript user goes through `router(routes, config, shell)`, so
-  * the assembly lives here. The shell body runs with the router in context, so its `routerLink`s
-  * resolve; the routed page renders straight after it. An empty shell (`router(routes, config)`
-  * with no third argument) just renders the routed page.
+  * the assembly lives here. The shell body runs with the router in context and receives a scoped
+  * outlet body that can mount the routed page inside a Drawer, Viewport or other layout. Raw bridge
+  * callers without that layout callback retain the original sibling rendering order.
   */
 private[bridge] final class RouterViewRoot(
     routerComponent: Router,
-    shell: js.Function2[ComponentHandleBridge, ScopeHandleBridge, Unit]
+    shell: js.Function2[ComponentHandleBridge, ScopeHandleBridge, Unit],
+    layout: Option[
+      js.Function2[js.Function1[ScopeHandleBridge, Unit], ScopeHandleBridge, Unit]
+    ]
 ) extends AbstractCustomComponent {
 
   override def compose(cursor: Cursor): Unit = {
     Router.provide(routerComponent)(using this)
 
     DslLayer.render(this, cursor) {
-      shell(new ComponentHandleBridge(this), new ScopeHandleBridge(this, cursor))
-      DslLayer.child(routerComponent) {}
+      layout match {
+        case Some(composeLayout) =>
+          val outlet: js.Function1[ScopeHandleBridge, Unit] = { scope =>
+            given AbstractComponent = scope.parent
+            given Cursor            = scope.cursor
+            DslLayer.child(routerComponent) {}
+            ()
+          }
+          composeLayout(outlet, new ScopeHandleBridge(this, cursor))
+
+        case None =>
+          // Raw bridge callers predating the layout callback keep the original sibling shape.
+          shell(new ComponentHandleBridge(this), new ScopeHandleBridge(this, cursor))
+          DslLayer.child(routerComponent) {}
+      }
     }
   }
 }
@@ -175,6 +191,11 @@ private[bridge] object RouterFactory extends ComponentFactory {
 
     val routes = options("routes").asInstanceOf[js.Array[RouteFacade]]
     val config = options.get("config").map(_.asInstanceOf[RouterConfigFacade]).orUndefined
+    val layout = options.get("layout").map(
+      _.asInstanceOf[
+        js.Function2[js.Function1[ScopeHandleBridge, Unit], ScopeHandleBridge, Unit]
+      ]
+    )
 
     val startUrl =
       config.toOption
@@ -192,7 +213,7 @@ private[bridge] object RouterFactory extends ComponentFactory {
     // which never open a slot.
     SsrStatus.current.foreach(_.bind(() => routerComponent.responseStatus.get))
 
-    DslLayer.child(new RouterViewRoot(routerComponent, body)) {}
+    DslLayer.child(new RouterViewRoot(routerComponent, body, layout)) {}
   }
 }
 

@@ -1,28 +1,43 @@
-/** Shared showcase chrome. The DOM class vocabulary intentionally mirrors
- * application/src/main/scala-3/app/App.scala so both API entrances consume the
- * same visual implementation from the Scala showcase CSS. */
+/**
+ * Shared showcase chrome. The ownership hierarchy intentionally mirrors
+ * application/src/main/scala-3/app/App.scala: router -> app shell -> drawer ->
+ * navigation/content -> viewport -> routed page.
+ */
 import {
   anchor,
   attr,
   button,
   classes,
-  classIf,
   div,
   disposeWith,
+  drawer,
+  drawerContent,
+  drawerNavigation,
+  isBrowser,
   locale,
   onClick,
   property,
   span,
+  style,
   text,
+  type DrawerHandle,
 } from "@anjunar/jfx-core";
-import { routerLink } from "@anjunar/jfx-router";
+import {
+  router,
+  routerLink,
+  type RouteDefinition,
+  type RouterConfig,
+} from "@anjunar/jfx-router";
+import { viewport } from "@anjunar/jfx-viewport";
 import { catalog } from "./catalog.js";
 import { showcaseSections } from "./presentation.js";
 import { themeProperty, toggleTheme } from "./theme.js";
 import { switchLocale, translated } from "./i18n.js";
 
-export function appShell(): void {
-  const mobileNavigationOpen = property(false);
+export function appShell(
+  routes: readonly RouteDefinition[],
+  config: RouterConfig = {}
+): void {
   const activeLocale = locale();
   const theme = themeProperty();
   const themeLabel = property("");
@@ -33,9 +48,49 @@ export function appShell(): void {
   disposeWith(theme.observeWithoutInitial(updateThemeLabel));
   disposeWith(activeLocale.observeWithoutInitial(() => updateThemeLabel()));
 
+  router(routes, config, (outlet) => {
+    div(() => {
+      classes("app-shell");
+
+      drawer({ open: false }, (drawerHandle) => {
+        classes("app-shell-drawer");
+
+        drawerNavigation(() => renderNavigation(drawerHandle));
+
+        drawerContent(() => {
+          div(() => {
+            classes("app-main");
+            renderToolbar(drawerHandle, activeLocale, themeLabel);
+
+            viewport(() => {
+              style("flex", "1");
+              style("overflow", "auto");
+
+              div(() => {
+                classes("app-content-viewport");
+                outlet();
+              });
+            });
+
+            div(() => {
+              classes("app-footer");
+              div(() => {
+                classes("app-footer__text");
+                text(
+                  translated("One runtime. Two APIs. Choose the language, keep the capabilities.")
+                );
+              });
+            });
+          });
+        });
+      });
+    });
+  });
+}
+
+function renderNavigation(drawerHandle: DrawerHandle): void {
   div(() => {
     classes("app-sidebar");
-    classIf("is-open", mobileNavigationOpen);
 
     div(() => {
       classes("app-sidebar__header");
@@ -59,7 +114,9 @@ export function appShell(): void {
         for (const entry of entries) {
           routerLink(entry.path, "", { activeClass: "active" }, () => {
             classes("app-nav-link");
-            onClick(() => mobileNavigationOpen.set(false));
+            onClick(() => {
+              if (isBrowser() && window.innerWidth <= 720) drawerHandle.setOpen(false);
+            });
             div(() => {
               classes("app-nav-link__label");
               text(translated(entry.title));
@@ -84,27 +141,29 @@ export function appShell(): void {
       });
     });
   });
+}
 
-  button("", {}, () => {
-    classes("app-sidebar__backdrop");
-    classIf("is-open", mobileNavigationOpen);
-    attr("aria-label", translated("Close navigation"));
-    onClick(() => mobileNavigationOpen.set(false));
-  });
-
+function renderToolbar(
+  drawerHandle: DrawerHandle,
+  activeLocale: ReturnType<typeof locale>,
+  themeLabel: ReturnType<typeof property<string>>
+): void {
   div(() => {
     classes("app-toolbar");
     button("menu", {}, () => {
       classes("app-toolbar__menu-toggle", "material-icons");
       attr("aria-label", translated("Open navigation"));
-      onClick(() => mobileNavigationOpen.set(!mobileNavigationOpen.get));
+      onClick(() => drawerHandle.toggle());
     });
 
     div(() => {
       classes("app-toolbar__title");
       text(translated("TypeScript Showcase"));
     });
-    div(() => classes("spacer"));
+    div(() => {
+      classes("spacer");
+      style("flex", "1");
+    });
 
     div(() => {
       classes("app-toolbar__api-switch");
@@ -119,7 +178,11 @@ export function appShell(): void {
       classes("app-toolbar__text-link", "app-toolbar__text-link--optional");
       text(translated("Search"));
     });
-    externalLink("GitHub", "https://github.com/anjunar/scalajs-jfx", "app-toolbar__text-link app-toolbar__text-link--optional");
+    externalLink(
+      "GitHub",
+      "https://github.com/anjunar/scalajs-jfx",
+      "app-toolbar__text-link app-toolbar__text-link--optional"
+    );
 
     div(() => {
       classes("app-toolbar__chooser", "app-toolbar__language");
@@ -140,14 +203,6 @@ export function appShell(): void {
       "https://www.npmjs.com/package/@anjunar/jfx-core/v/3.0.1",
       "app-toolbar__version"
     );
-  });
-
-  div(() => {
-    classes("app-footer");
-    div(() => {
-      classes("app-footer__text");
-      text(translated("One runtime. Two APIs. Choose the language, keep the capabilities."));
-    });
   });
 }
 

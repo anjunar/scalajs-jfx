@@ -17,6 +17,9 @@ object BridgeRuntime {
   ComponentRegistry.register("vbox", VBoxFactory)
   ComponentRegistry.register("hbox", HBoxFactory)
   ComponentRegistry.register("button", ButtonFactory)
+  ComponentRegistry.register("drawer", DrawerFactory)
+  ComponentRegistry.register("drawer-navigation", DrawerNavigationFactory)
+  ComponentRegistry.register("drawer-content", DrawerContentFactory)
 
   // Step 7 of JAVASCRIPT_API.md §9: the i18n facade. `jfx.core.i18n` lives in `jfx-core` itself
   // (§3), so -- unlike router/controls/viewport/forms/editor below -- registering it here adds no

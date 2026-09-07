@@ -30,7 +30,12 @@ const routes = [
   }),
 ];
 
-router(routes, {}, () => routerLink("/", "Home"));
+router(routes, {}, (outlet) => {
+  div(() => {
+    routerLink("/", "Home");
+    div(() => outlet());
+  });
+});
 ```
 
 `view(path, load, options?)` loaders return a `PageBody`, a synchronous body that composes through the core DSL. `errorRoute(path, status, load)` declares a route with a 4xx or 5xx status.
@@ -50,7 +55,7 @@ const server = await renderToString(() => router(routes, {
 await hydrate(document.getElementById("root")!, () => router(routes, {}, appShell));
 ```
 
-The server resolves the first request and returns the matched route status. `routerLink` remains an ordinary anchor without JavaScript; hydration enhances it with client-side navigation. Nested routes render only where a parent calls `routerOutlet()`.
+The server resolves the first request and returns the matched route status. `routerLink` remains an ordinary anchor without JavaScript; hydration enhances it with client-side navigation. A shell receives `outlet`, so it can place the root route inside its own Drawer or Viewport. Existing zero-argument shell callbacks remain supported and receive the routed page as their next sibling. Nested routes render only where a parent calls `routerOutlet()`.
 
 ## API overview
 

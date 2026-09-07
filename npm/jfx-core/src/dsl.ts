@@ -5,6 +5,7 @@ import type {
   Reactive,
   ReadOnlyProperty,
   RuntimeMessage,
+  ScopeHandle,
   UiEvent,
 } from "./contract.js";
 import { t } from "./i18n.js";
@@ -128,6 +129,63 @@ export function button(
   body: Body = noBody
 ): ComponentHandle {
   return component("button", { label: resolveTextLike(label), ...options }, body);
+}
+
+/** Imperative view of the nearest Drawer, handed to its composition body. */
+export interface DrawerHandle {
+  isOpen(): boolean;
+  setOpen(value: boolean): void;
+  toggle(): void;
+}
+
+export interface DrawerOptions {
+  readonly open?: boolean;
+  readonly side?: "start" | "end";
+  readonly drawerWidth?: string;
+  readonly closeOnScrimClick?: boolean;
+}
+
+export type DrawerBody = (drawer: DrawerHandle) => void;
+
+/**
+ * Mounts a Drawer. Its navigation and content slots are filled with
+ * {@link drawerNavigation} and {@link drawerContent} from inside `body`.
+ */
+export function drawer(body: DrawerBody): ComponentHandle;
+export function drawer(options: DrawerOptions, body: DrawerBody): ComponentHandle;
+export function drawer(
+  optionsOrBody: DrawerOptions | DrawerBody,
+  maybeBody?: DrawerBody
+): ComponentHandle {
+  const options = typeof optionsOrBody === "function" ? {} : optionsOrBody;
+  const body = typeof optionsOrBody === "function" ? optionsOrBody : maybeBody;
+  if (body === undefined) throw new Error("drawer() needs a composition body.");
+
+  const projected: Record<string, unknown> = {
+    compose: (
+      handle: DrawerHandle,
+      self: ComponentHandle,
+      scope: ScopeHandle
+    ): void => withScope(scope, self, () => body(handle)),
+  };
+  if (options.open !== undefined) projected["open"] = options.open;
+  if (options.side !== undefined) projected["side"] = options.side;
+  if (options.drawerWidth !== undefined) projected["drawerWidth"] = options.drawerWidth;
+  if (options.closeOnScrimClick !== undefined) {
+    projected["closeOnScrimClick"] = options.closeOnScrimClick;
+  }
+
+  return component("drawer", projected);
+}
+
+/** Fills the current Drawer's navigation slot. */
+export function drawerNavigation(body: Body): void {
+  component("drawer-navigation", {}, body);
+}
+
+/** Fills the current Drawer's content slot. */
+export function drawerContent(body: Body): void {
+  component("drawer-content", {}, body);
 }
 
 /* ---------------------------------------------------------- element settings */

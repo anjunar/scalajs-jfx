@@ -18,6 +18,7 @@
 /* The Scala.js showcase is the design source of truth for both API entrances. */
 @import "../../../../application/src/main/webapp/src/theme.css";
 @import "./base.css";
+@import "../../../../application/src/main/webapp/src/app/Main.css";
 @import "../../../../application/src/main/webapp/src/app/Demo.css";
 @import "../../../../application/src/main/webapp/src/app/Showcase.css";
 @import "./shell.css";

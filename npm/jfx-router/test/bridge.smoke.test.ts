@@ -26,7 +26,7 @@ import {
   resetRuntime,
   runtime,
 } from "@anjunar/jfx-core";
-import { div, heading, text } from "@anjunar/jfx-core";
+import { classes, div, heading, text } from "@anjunar/jfx-core";
 import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";
 import { errorRoute, router, routerLink, routerOutlet, view } from "../src/index.js";
 
@@ -195,6 +195,29 @@ describe("mount", () => {
     expect(root.textContent).toContain("library page");
     expect(root.textContent).not.toContain("counter page");
 
+    app.dispose();
+  });
+
+  it("lets the shell place the routed page inside its own layout", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const app = mount(root, () =>
+      router(
+        [view("/", () => () => div(() => text("placed page")))],
+        {},
+        (outlet) =>
+          div(() => {
+            classes("frame");
+            div(() => {
+              classes("outlet");
+              outlet();
+            });
+          })
+      )
+    );
+
+    expect(root.querySelector(".frame > .outlet")?.textContent).toContain("placed page");
     app.dispose();
   });
 });

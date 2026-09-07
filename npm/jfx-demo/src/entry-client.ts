@@ -7,10 +7,9 @@
 // vite.config.ts's `resolve.dedupe`, at the cause; see CLAUDE_REVIEW_3.md §7.1.
 import { hydrate } from "@anjunar/jfx-core";
 import "@anjunar/scalajs-jfx-bridge";
-import { router } from "@anjunar/jfx-router";
-import { viewport } from "@anjunar/jfx-viewport";
 import { appDocument } from "./app/document.js";
-import { appRoutes, appShell, routerConfig } from "./app/routes.js";
+import { appRoutes, routerConfig } from "./app/routes.js";
+import { appShell } from "./app/shell.js";
 import { i18nProvider, providerConfig } from "./app/i18n.js";
 import { hydratedProperty } from "./app/hydrated.js";
 import { syncThemeFromDocument } from "./app/theme.js";
@@ -25,13 +24,9 @@ import { syncThemeFromDocument } from "./app/theme.js";
 // the browser head sink leaves server-rendered entries it never managed alone
 // (mirrors `Main.boot`'s note on the same point).
 //
-// `viewport(...)` wraps the routed page, exactly the shape `Viewport.notify`'s own
-// doc comment recommends on the Scala side (`viewport { router(routes) }`, see
-// `WindowPage.scala`) -- one host for windows, overlays and notifications any
-// routed page can reach through `@anjunar/jfx-viewport`.
 await hydrate(document, () =>
   i18nProvider(providerConfig(), () =>
-    appDocument([], () => viewport(() => router(appRoutes, routerConfig, appShell)))
+    appDocument([], () => appShell(appRoutes, routerConfig))
   )
 );
 

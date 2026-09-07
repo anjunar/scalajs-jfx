@@ -8,8 +8,6 @@ import type { RouteDefinition, RouterConfig } from "@anjunar/jfx-router";
 import { catalog } from "./catalog.js";
 import { basePath } from "./base-path.js";
 
-export { appShell } from "./shell.js";
-
 export const appRoutes: readonly RouteDefinition[] = catalog.map((entry) => {
   const children = entry.children?.map((child) =>
     view(child.path, child.doc, child.constraints ? { constraints: child.constraints } : {})

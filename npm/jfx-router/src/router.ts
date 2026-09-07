@@ -15,7 +15,7 @@
  * DSL. {@link toFacadeRoute} bridges the two by resolving the page body into a
  * `(scope) => void` the bridge can turn into a component.
  */
-import { component, withScope } from "@anjunar/jfx-core";
+import { component, currentScope, withScope } from "@anjunar/jfx-core";
 import type { ReadOnlyProperty, ScopeHandle } from "@anjunar/jfx-core";
 
 export interface RouteContext {
@@ -102,16 +102,20 @@ export interface RouterConfig {
  * Mounts a router with `routes` under the current scope.
  *
  * `shell` is the application chrome around the routed page -- a navigation bar of
- * `routerLink`s, a header, a footer. It runs with the router in context, so its
- * `routerLink`s resolve, and the matched page renders straight after it. Omit it
- * and only the page renders. This is the assembly `app.App.compose` does by hand
- * on the Scala side (`Router.provide`, a sidebar, `child(appRouter)`).
+ * `routerLink`s, a header, a footer. It runs with the router in context and receives
+ * an `outlet` callback, the TypeScript equivalent of placing `child(appRouter)` in
+ * Scala. A legacy zero-argument shell remains valid; when it does not place the
+ * outlet itself, the matched page renders directly after it.
  */
+export type RouterShell = (outlet: PageBody) => void;
+
 export function router(
   routes: readonly RouteDefinition[],
   config: RouterConfig = {},
-  shell: () => void = () => {}
+  shell: RouterShell = (outlet) => outlet()
 ): void {
+  type ScopeBody = (scope: ScopeHandle) => void;
+
   component(
     "router",
     {
@@ -122,8 +126,20 @@ export function router(
         onFailure: config.onFailure,
         renderErrorsOnServer: config.renderErrorsOnServer,
       },
-    },
-    shell
+      layout: (outlet: ScopeBody, scope: ScopeHandle): void =>
+        withScope(scope, null, () => {
+          let placed = false;
+          shell(() => {
+            if (placed) throw new Error("A router shell can place its outlet only once.");
+            placed = true;
+            outlet(currentScope());
+          });
+
+          // Backwards compatibility for existing zero-argument shell callbacks:
+          // their page remains the next sibling after the chrome.
+          if (!placed) outlet(currentScope());
+        }),
+    }
   );
 }
 

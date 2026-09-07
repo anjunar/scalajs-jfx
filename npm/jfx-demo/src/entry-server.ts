@@ -2,10 +2,9 @@
 // vite.config.ts's `resolve.dedupe`, which is what makes it safe.
 import { renderToString, type HeadEntry } from "@anjunar/jfx-core";
 import "@anjunar/scalajs-jfx-bridge";
-import { router } from "@anjunar/jfx-router";
-import { viewport } from "@anjunar/jfx-viewport";
 import { appDocument } from "./app/document.js";
-import { appRoutes, appShell, routerConfig } from "./app/routes.js";
+import { appRoutes, routerConfig } from "./app/routes.js";
+import { appShell } from "./app/shell.js";
 import { i18nProvider, providerConfig } from "./app/i18n.js";
 
 // Re-exported so scripts/verify-pages.mjs -- a plain Node script, not part of
@@ -30,13 +29,10 @@ export async function render(
   // `url: path` is how the complete request target reaches `jfx.router.Router` on the
   // server -- there is no browser `location` here. The client omits it.
   //
-  // `viewport(...)` wraps the routed page -- see `entry-client.ts`'s note on why.
   const result = await renderToString(
     () =>
       i18nProvider(providerConfig(path), () =>
-        appDocument(assets, () =>
-          viewport(() => router(appRoutes, { ...routerConfig, url: path }, appShell))
-        )
+        appDocument(assets, () => appShell(appRoutes, { ...routerConfig, url: path }))
       ),
     { document: true }
   );
