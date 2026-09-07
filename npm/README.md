@@ -24,7 +24,7 @@ Install the packages used by the application. Most component packages also need 
 
 ```bash
 npm install @anjunar/jfx-core @anjunar/scalajs-jfx-bridge @anjunar/scalajs-jfx
-npm install @anjunar/jfx-router @anjunar/jfx-viewport @anjunar/jfx-controls @anjunar/jfx-forms @anjunar/jfx-editor @anjunar/jfx-json
+npm install @anjunar/jfx-router @anjunar/jfx-viewport @anjunar/jfx-controls @anjunar/jfx-forms @anjunar/jfx-editor @anjunar/jfx-json @anjunar/jfx-webauthn
 ```
 
 Import the bridge once from the application entry point:
@@ -68,6 +68,7 @@ Bodies are synchronous. Use `fetchInto` for asynchronous work registered with th
 - [`@anjunar/jfx-forms`](jfx-forms/README.md) — model-bound controls and validators.
 - [`@anjunar/jfx-editor`](jfx-editor/README.md) — Markdown editor with optional Lexical plugins.
 - [`@anjunar/jfx-json`](jfx-json/README.md) — schema and decorator based JSON mapping.
+- [`@anjunar/jfx-webauthn`](jfx-webauthn/README.md) — browser WebAuthn and passkey ceremonies.
 - [`@anjunar/scalajs-jfx-bridge`](scalajs-jfx-bridge/README.md) — the linked Scala.js runtime entry point.
 - [`@anjunar/scalajs-jfx`](scalajs-jfx/README.md) — CSS for classes emitted by the Scala.js components.
 - [`jfx-demo`](jfx-demo/README.md) — private documentation site and consumer test application.

@@ -139,7 +139,7 @@ SSR produces the initial readable HTML. Hydration claims that tree and adds brow
 | Forms | [`jfx-forms`](jfx-forms/README.md) | [`@anjunar/jfx-forms`](npm/jfx-forms/README.md) | Model binding, validation, nested forms, media |
 | Editor | [`jfx-editor`](jfx-editor/README.md) | [`@anjunar/jfx-editor`](npm/jfx-editor/README.md) | Markdown editor backed by Lexical |
 | JSON | [`jfx-json`](jfx-json/README.md) | [`@anjunar/jfx-json`](npm/jfx-json/README.md) | Explicit schema-based JSON mapping |
-| WebAuthn | [`jfx-webAuthn`](jfx-webAuthn/README.md) | — | Browser WebAuthn and passkey ceremonies |
+| WebAuthn | [`jfx-webAuthn`](jfx-webAuthn/README.md) | [`@anjunar/jfx-webauthn`](npm/jfx-webauthn/README.md) | Browser WebAuthn and passkey ceremonies |
 | Bridge | [`jfx-bridge`](jfx-bridge/README.md) | [`@anjunar/scalajs-jfx-bridge`](npm/scalajs-jfx-bridge/README.md) | JavaScript runtime boundary and linked bundle |
 | CSS | — | [`@anjunar/scalajs-jfx`](npm/scalajs-jfx/README.md) | Default styles for JFX-rendered classes |
 
