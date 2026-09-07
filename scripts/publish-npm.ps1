@@ -23,7 +23,8 @@ $packageDirectories = @(
     "jfx-controls",
     "jfx-viewport",
     "jfx-forms",
-    "jfx-editor"
+    "jfx-editor",
+    "jfx-webauthn"
 )
 $releaseVersion = $null
 

@@ -14,6 +14,7 @@ const packageDirectories = [
   "jfx-viewport",
   "jfx-forms",
   "jfx-editor",
+  "jfx-webauthn",
 ];
 
 const manifests = await Promise.all(

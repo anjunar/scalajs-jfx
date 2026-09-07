@@ -73,6 +73,7 @@ PACKAGE_DIRECTORIES=(
   jfx-viewport
   jfx-forms
   jfx-editor
+  jfx-webauthn
 )
 release_version=""
 
