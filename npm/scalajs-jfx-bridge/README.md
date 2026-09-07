@@ -46,6 +46,8 @@ The package must be paired with matching versions of `@anjunar/jfx-core` and `@a
 ## API overview
 
 - `bridgeRuntime` — the linked `JfxRuntime` instance.
+- `parseLocalDate`, `parseLocalDateTime`, `parseInstant` — stable TypeScript access to the real
+  `scala-java-time` values linked into the runtime.
 - `JfxRuntime` — the shared contract implemented by the linked bundle.
 - Component and property handles — opaque projections used by the core facade.
 - Registered factories — the Scala implementations behind router, controls, viewport, forms, and editor facades.

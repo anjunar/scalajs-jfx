@@ -34,7 +34,8 @@ const decoratedTypes = new WeakMap<Function, string>();
 function decorateField(target: object, propertyKey: string | symbol, field: JsonField): void {
   const constructor = (target as { constructor: Function }).constructor;
   const fields = decoratedFields.get(constructor) ?? new Map<string, JsonField>();
-  fields.set(String(propertyKey), field);
+  const key = String(propertyKey);
+  fields.set(key, { ...(fields.get(key) ?? {}), ...field });
   decoratedFields.set(constructor, fields);
 }
 
@@ -160,7 +161,11 @@ export function jsonSchema<T>(
       readonly fields?: Readonly<Record<string, JsonField>>;
     };
     const factory = modelOptions.factory ?? (() => new model());
-    const fields = modelOptions.fields ?? fieldsOf(model);
+    const annotatedFields = fieldsOf(model);
+    const fields: Record<string, JsonField> = { ...annotatedFields };
+    for (const [name, field] of Object.entries(modelOptions.fields ?? {})) {
+      fields[name] = { ...(annotatedFields[name] ?? {}), ...field };
+    }
     const { factory: _factory, fields: _fields, ...rest } = modelOptions;
     const typeName = rest.typeName ?? decoratedTypes.get(model);
     return new JsonSchema({
@@ -367,7 +372,7 @@ export class JsonMapper {
       selected = candidates.find((candidate) => candidate.typeName === typeName) ?? (() => {
         throw new Error(`Unknown @type '${typeName}'`);
       })();
-    } else if ("@type" in value && schema.typeName !== value["@type"]) {
+    } else if (schema.typeName !== undefined && "@type" in value && schema.typeName !== value["@type"]) {
       throw new Error(`Unknown @type '${String(value["@type"])}'`);
     }
     const instance = selected.factory();
@@ -386,8 +391,7 @@ export class JsonMapper {
       const current = target[key];
       if (isProperty(current)) {
         current.set(mapped);
-        const setDefault = (current as unknown as { setDefault?: (value: unknown) => void }).setDefault;
-        setDefault?.(mapped);
+        (current as unknown as { setDefault?: (value: unknown) => void }).setDefault?.(mapped);
       } else if (isListProperty(current)) {
         current.setAll(Array.isArray(mapped) ? mapped : []);
       } else {

@@ -1,6 +1,6 @@
 import { installRuntime, property, listProperty } from "@anjunar/jfx-core";
 import { stubRuntime } from "@anjunar/jfx-core/stub";
-import { JsonId, JsonMapper, JsonProperty, JsonSchema, JsonType, jsonField, jsonSchema } from "../src/index.js";
+import { JsonId, JsonIgnore, JsonMapper, JsonProperty, JsonSchema, JsonType, jsonField, jsonSchema } from "../src/index.js";
 import { describe, expect, it } from "vitest";
 
 installRuntime(stubRuntime);
@@ -46,6 +46,56 @@ describe("JsonMapper", () => {
     profile.name.set("Ada");
     expect(JsonMapper.serialize(profile)).toEqual({ "@type": "profile", id: "p-2", displayName: "Ada" });
     expect(JsonMapper.deserializeArray([{ id: "p-3", displayName: "Lin" }], InferredProfile)[0]).toBeInstanceOf(InferredProfile);
+  });
+
+  it("merges inherited decorators, stacked field metadata, and explicit nested fields", () => {
+    class Base {
+      @JsonId id = property("");
+      @JsonProperty("$links")
+      @JsonIgnore({ serialize: false, deserialize: true })
+      links = listProperty<string>([]);
+    }
+    class Nested { @JsonProperty("label") label = property(""); }
+    class Model extends Base {
+      @JsonProperty("displayName") name = property("");
+      nested = property(new Nested());
+    }
+    const nestedSchema = jsonSchema(Nested);
+    const schema = jsonSchema(Model, {
+      fields: {
+        links: jsonField(),
+        nested: jsonField({ schema: nestedSchema }),
+      },
+    });
+    const model = JsonMapper.deserialize(
+      { "@type": "server-model", id: "m-1", displayName: "Ada", nested: { label: "child" }, $links: ["self"] },
+      schema,
+    );
+    expect(model.name.get).toBe("Ada");
+    expect(model.nested.get).toBeInstanceOf(Nested);
+    expect(model.links.get).toEqual(["self"]);
+    model.name.set("Grace");
+    expect(JsonMapper.serialize(model, schema)).toEqual({
+      id: "m-1",
+      displayName: "Grace",
+      nested: { label: "child" },
+    });
+  });
+
+  it("invokes custom property defaults with their owner", () => {
+    class OwnerAwareProperty {
+      value = "";
+      defaultValue = "";
+      get get(): string { return this.value; }
+      get isDirty(): boolean { return this.value !== this.defaultValue; }
+      set(value: string): void { this.value = value; }
+      setDefault(value: string): void { this.defaultValue = value; }
+    }
+    class Model { @JsonProperty("value") value = new OwnerAwareProperty(); }
+
+    const model = JsonMapper.deserialize({ value: "hydrated" }, Model);
+    expect(model.value.get).toBe("hydrated");
+    expect(model.value.isDirty).toBe(false);
   });
 
   it("maps renamed fields and nested schemas", () => {

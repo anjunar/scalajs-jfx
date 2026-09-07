@@ -28,3 +28,33 @@ import type { JfxRuntime } from "@anjunar/jfx-core";
  * Importing the package automatically installs this instance in core.
  */
 export declare const bridgeRuntime: JfxRuntime;
+
+/** A stable TypeScript view over scala-java-time's real LocalDate value. */
+export interface ScalaLocalDate {
+  readonly year: number;
+  readonly monthValue: number;
+  readonly dayOfMonth: number;
+  toString(): string;
+  format(pattern: string, languageTag: string): string;
+}
+
+/** A stable TypeScript view over scala-java-time's real Instant value. */
+export interface ScalaInstant {
+  readonly epochMilli: number;
+  toString(): string;
+  format(pattern: string, languageTag: string, zoneId: string): string;
+}
+
+export interface ScalaLocalDateTime {
+  readonly year: number;
+  readonly monthValue: number;
+  readonly dayOfMonth: number;
+  readonly hour: number;
+  readonly minute: number;
+  toString(): string;
+  format(pattern: string, languageTag: string): string;
+}
+
+export declare function parseLocalDate(value: string): ScalaLocalDate;
+export declare function parseInstant(value: string): ScalaInstant;
+export declare function parseLocalDateTime(value: string): ScalaLocalDateTime;
