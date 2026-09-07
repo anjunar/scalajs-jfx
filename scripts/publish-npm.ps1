@@ -42,6 +42,18 @@ function Invoke-CheckedCommand {
     }
 }
 
+function Test-PackageVersionPublished {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$PackageName,
+        [Parameter(Mandatory = $true)]
+        [string]$PackageVersion
+    )
+
+    & npm --cache $npmCache view "$PackageName@$PackageVersion" version --json --prefer-online *> $null
+    return $LASTEXITCODE -eq 0
+}
+
 foreach ($packageDirectory in $packageDirectories) {
     $manifestPath = Join-Path $repoRoot "npm\$packageDirectory\package.json"
     if (-not (Test-Path $manifestPath)) {
@@ -108,8 +120,12 @@ foreach ($packageDirectory in $packageDirectories) {
     $manifestPath = Join-Path $repoRoot "npm\$packageDirectory\package.json"
     $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
 
-    Write-Host "Publishing $($manifest.name)@$($manifest.version)..."
-    Invoke-CheckedCommand -Command "npm" -Arguments @("--cache", $npmCache, "publish", "--workspace", $workspace, "--access", "public")
+    if (Test-PackageVersionPublished -PackageName $manifest.name -PackageVersion $manifest.version) {
+        Write-Host "Skipping $($manifest.name)@$($manifest.version): already published."
+    } else {
+        Write-Host "Publishing $($manifest.name)@$($manifest.version)..."
+        Invoke-CheckedCommand -Command "npm" -Arguments @("--cache", $npmCache, "publish", "--workspace", $workspace, "--access", "public")
+    }
 }
 
 Write-Host "Verifying the published release set from a clean registry consumer..."

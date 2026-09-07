@@ -143,8 +143,12 @@ for package_directory in "${PACKAGE_DIRECTORIES[@]}"; do
   workspace="npm/${package_directory}"
   package_name="$(node -p "require('./${workspace}/package.json').name")"
   package_version="$(node -p "require('./${workspace}/package.json').version")"
-  echo "Publishing ${package_name}@${package_version}..."
-  npm --cache "$NPM_CACHE" publish --workspace "$workspace" --access public
+  if npm --cache "$NPM_CACHE" view "${package_name}@${package_version}" version --json --prefer-online >/dev/null 2>&1; then
+    echo "Skipping ${package_name}@${package_version}: already published."
+  else
+    echo "Publishing ${package_name}@${package_version}..."
+    npm --cache "$NPM_CACHE" publish --workspace "$workspace" --access public
+  fi
 done
 
 echo "Verifying the published release set from a clean registry consumer..."
