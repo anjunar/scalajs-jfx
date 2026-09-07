@@ -136,8 +136,8 @@ export function appShell(): void {
       });
     });
     externalLink(
-      "v3.0.0",
-      "https://www.npmjs.com/package/@anjunar/jfx-core/v/3.0.0",
+      "v3.0.1",
+      "https://www.npmjs.com/package/@anjunar/jfx-core/v/3.0.1",
       "app-toolbar__version"
     );
   });

@@ -1,6 +1,6 @@
 {
   "name": "@anjunar/jfx-editor",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "The TypeScript editor API of JFX 3: a Lexical-backed rich-text control, bound by name like input, projected onto the jfx.editor components that run in the Scala.js runtime published as @anjunar/scalajs-jfx-bridge.",
   "type": "module",
   "types": "./dist/index.d.ts",
@@ -27,11 +27,11 @@
     "verify": "npm run typecheck && npm run test && npm run test:consumer"
   },
   "peerDependencies": {
-    "@anjunar/jfx-core": "^3.0.0",
-    "@anjunar/jfx-forms": "^3.0.0",
-    "@anjunar/jfx-viewport": "^3.0.0",
-    "@anjunar/scalajs-jfx": "^3.0.0",
-    "@anjunar/scalajs-jfx-bridge": "^3.0.0"
+    "@anjunar/jfx-core": "^3.0.1",
+    "@anjunar/jfx-forms": "^3.0.1",
+    "@anjunar/jfx-viewport": "^3.0.1",
+    "@anjunar/scalajs-jfx": "^3.0.1",
+    "@anjunar/scalajs-jfx-bridge": "^3.0.1"
   },
   "devDependencies": {
     "@anjunar/jfx-core": "*",

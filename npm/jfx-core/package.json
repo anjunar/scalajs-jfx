@@ -1,6 +1,6 @@
 {
   "name": "@anjunar/jfx-core",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "The declarative TypeScript API of JFX 3: the contract, the ambient-scope DSL and a stub runtime for tests. Rendering, hydration and state live in the Scala.js runtime published as @anjunar/scalajs-jfx-bridge.",
   "type": "module",
   "types": "./dist/index.d.ts",
@@ -31,7 +31,7 @@
     "verify": "npm run typecheck && npm run test && npm run test:consumer"
   },
   "peerDependencies": {
-    "@anjunar/scalajs-jfx": "^3.0.0"
+    "@anjunar/scalajs-jfx": "^3.0.1"
   },
   "devDependencies": {
     "@anjunar/scalajs-jfx": "*",

@@ -1,6 +1,6 @@
 {
   "name": "@anjunar/jfx-viewport",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "The TypeScript viewport API of JFX 3: windows, anchor-following overlays, and self-dismissing notifications, projected onto the jfx.viewport components that run in the Scala.js runtime published as @anjunar/scalajs-jfx-bridge.",
   "type": "module",
   "types": "./dist/index.d.ts",
@@ -27,9 +27,9 @@
     "verify": "npm run typecheck && npm run test && npm run test:consumer"
   },
   "peerDependencies": {
-    "@anjunar/jfx-core": "^3.0.0",
-    "@anjunar/scalajs-jfx": "^3.0.0",
-    "@anjunar/scalajs-jfx-bridge": "^3.0.0"
+    "@anjunar/jfx-core": "^3.0.1",
+    "@anjunar/scalajs-jfx": "^3.0.1",
+    "@anjunar/scalajs-jfx-bridge": "^3.0.1"
   },
   "devDependencies": {
     "@anjunar/jfx-core": "*",

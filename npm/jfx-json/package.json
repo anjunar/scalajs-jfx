@@ -1,6 +1,6 @@
 {
   "name": "@anjunar/jfx-json",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Schema driven JSON mapping for JFX 3 TypeScript models.",
   "type": "module",
   "types": "./dist/index.d.ts",
@@ -23,7 +23,7 @@
     "verify": "npm run typecheck && npm run test && npm run test:consumer"
   },
   "peerDependencies": {
-    "@anjunar/jfx-core": "^3.0.0"
+    "@anjunar/jfx-core": "^3.0.1"
   },
   "devDependencies": {
     "@anjunar/jfx-core": "*",

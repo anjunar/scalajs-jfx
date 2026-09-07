@@ -234,6 +234,16 @@ lazy val jfxBridge = Project(id = "scalajs-jfx-bridge", base = file("jfx-bridge"
   )
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
+  .settings(
+    // The Scala.js linker map contains sources from the complete multi-project
+    // build (including external libraries). Those sources are not part of the
+    // published bridge package, so shipping the map creates misleading source
+    // paths for npm consumers. Keep the npm runtime artifact self-consistent:
+    // the TypeScript facades retain embedded source maps, while this generated
+    // bridge bundle deliberately has no unusable external source map.
+    Compile / fastLinkJS / scalaJSLinkerConfig ~= (_.withSourceMap(false)),
+    Compile / fullLinkJS / scalaJSLinkerConfig ~= (_.withSourceMap(false))
+  )
 
 lazy val jfxControls = Project(id = "scalajs-jfx-controls", base = file("jfx-controls"))
   .enablePlugins(ScalaJSPlugin)
