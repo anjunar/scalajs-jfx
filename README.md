@@ -44,7 +44,7 @@ Add JFX 3 in `build.sbt` (sbt 2 uses `%%` for the Scala.js platform suffix):
 enablePlugins(ScalaJSPlugin)
 scalaVersion := "3.3.8"
 scalaJSUseMainModuleInitializer := true
-libraryDependencies += "com.anjunar" %% "scalajs-jfx-core" % "3.0.0"
+libraryDependencies += "com.anjunar" %% "scalajs-jfx-core" % "3.0.2"
 ```
 
 Add a host element to `index.html`:
@@ -145,6 +145,14 @@ SSR produces the initial readable HTML. Hydration claims that tree and adds brow
 
 The runnable examples are in [`application`](application) for Scala and [`npm/jfx-demo`](npm/jfx-demo) for TypeScript. The demo is a consumer and is not a library module.
 
+Set the shared project version in the Scala build, npm workspaces, demos, lockfile, and installation examples with one command:
+
+```bash
+npm run set-version -- 3.0.1
+```
+
+CI can verify the checked-in values without changing files with `npm run check-version -- 3.0.1`.
+
 ## Build and tests
 
 Use sbt 2 through the `sbt` runner:
@@ -162,7 +170,7 @@ npm run verify --workspace npm/jfx-core
 
 ## Project status and license
 
-The repository is on the `3.0.0` release line and under active development. The complete Scala suite and every npm workspace verification run in CI for pushes and pull requests. Source, releases, and issue tracking live in the [GitHub repository](https://github.com/anjunar/scalajs-jfx).
+The repository is on the `3.0.2` release line and under active development. The complete Scala suite and every npm workspace verification run in CI for pushes and pull requests. Source, releases, and issue tracking live in the [GitHub repository](https://github.com/anjunar/scalajs-jfx).
 
 JFX 3 is available under the [MIT License](LICENSE).
 

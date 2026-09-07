@@ -313,12 +313,12 @@ class App(
                   }
                 }
 
-                routerLink("v3.0.0") {
+                routerLink("v3.0.2") {
                   classes = Seq("app-toolbar__version")
-                  href = "https://repo1.maven.org/maven2/com/anjunar/scalajs-jfx-core_sjs1_3/3.0.0/"
+                  href = "https://repo1.maven.org/maven2/com/anjunar/scalajs-jfx-core_sjs1_3/3.0.2/"
                   target = "_blank"
                   rel = "noopener noreferrer"
-                  text("v3.0.0") {}
+                  text("v3.0.2") {}
                 }
               }
 

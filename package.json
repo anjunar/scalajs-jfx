@@ -1,12 +1,14 @@
 {
   "name": "scalajs-jfx",
-  "version": "1.0.0",
+  "version": "3.0.2",
   "private": true,
   "workspaces": [
     "npm/*"
   ],
   "type": "module",
   "scripts": {
+    "set-version": "node scripts/set-version.mjs",
+    "check-version": "node scripts/set-version.mjs --check",
     "build:landing": "node tools/landing/build.mjs",
     "preview:landing": "node tools/landing/serve.mjs",
     "verify:landing": "node tools/landing/verify.mjs docs",

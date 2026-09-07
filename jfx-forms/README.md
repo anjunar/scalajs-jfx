@@ -9,7 +9,7 @@ Model-bound forms and controls for JFX 3, including inputs, validation, field gr
 ## Installation
 
 ```scala
-libraryDependencies += "com.anjunar" %% "scalajs-jfx-forms" % "3.0.0"
+libraryDependencies += "com.anjunar" %% "scalajs-jfx-forms" % "3.0.2"
 ```
 
 ## Quick start

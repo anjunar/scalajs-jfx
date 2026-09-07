@@ -199,8 +199,8 @@ function renderToolbar(
       });
     });
     externalLink(
-      "v3.0.1",
-      "https://www.npmjs.com/package/@anjunar/jfx-core/v/3.0.1",
+      "v3.0.2",
+      "https://www.npmjs.com/package/@anjunar/jfx-core/v/3.0.2",
       "app-toolbar__version"
     );
   });
