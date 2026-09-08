@@ -26,14 +26,25 @@ assert(document.querySelector(".jfx-table-view").textContent.includes("Workspace
 assert(document.querySelector(".jfx-editor__readonly h2"));
 assert(!document.querySelector(".preview textarea"), "Readonly editor must render semantic HTML.");
 assert.deepEqual(
-  [...document.querySelector("main").children].map(section => section.querySelector("h1, h2")?.textContent.trim()),
+  [...document.querySelectorAll("main > section, main > .presentation-opening > section")].map(section => section.querySelector("h1, h2")?.textContent.trim()),
   [
     "One runtime. Two APIs.",
     "Same UI. Two languages.",
+    "From server HTML to interaction",
     "What you get",
+    "Built for application UI",
     "Application building blocks",
+    "Forms that connect to your model",
+    "Data views with room to grow",
+    "Rich editing. A Markdown value.",
+    "Routes are application structure",
     "A different trade-off",
+    "Compare the approaches",
     "Get started",
+    "Add JFX to your project",
+    "Mount your component",
+    "Complete starter files",
+    "Run your application",
     "Two ways in.One implementation.",
     "Go beyond the first example",
     "Why JFX exists",
@@ -41,9 +52,12 @@ assert.deepEqual(
   ],
   "Landing sections must present product proof before setup instructions."
 );
-for (const cell of document.querySelectorAll(".comparison tbody td")) {
-  assert(cell.dataset.label, "Responsive comparison cells need visible mobile labels.");
-}
+const comparison = document.querySelector('.comparison');
+assert.equal(document.querySelectorAll('main > [data-presentation-section]').length, 21, 'Every content section is a presentation chapter.');
+assert(comparison.caption, 'The comparison retains a table caption.');
+assert.equal(comparison.closest('[role="region"]').tabIndex, 0, 'The table scroll region must be keyboard reachable.');
+for (const header of comparison.querySelectorAll('thead th')) assert.equal(header.scope, 'col');
+for (const header of comparison.querySelectorAll('tbody th')) assert.equal(header.scope, 'row');
 
 for (const button of document.querySelectorAll("[data-copy]")) {
   assert(document.getElementById(button.dataset.copy), `Missing copy target: ${button.dataset.copy}`);

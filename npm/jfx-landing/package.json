@@ -11,7 +11,8 @@
     "build:server": "vite build --outDir dist/server --ssr src/page.mjs",
     "build": "npm run build:client && npm run build:server && npm run prerender",
     "prerender": "node scripts/prerender.mjs",
-    "verify": "npm run build && node scripts/verify.mjs && node scripts/verify-server.mjs"
+    "test": "node --test scripts/presentation.test.mjs",
+    "verify": "npm test && npm run build && node scripts/verify.mjs && node scripts/verify-server.mjs"
   },
   "dependencies": {
     "@anjunar/jfx-core": "*",

@@ -1,4 +1,7 @@
 import "./style.css";
+import { mountPresentation } from "./presentation.mjs";
+
+mountPresentation(document.querySelector('[data-presentation-root]'));
 
 import { createPreferences } from "@anjunar/scalajs-jfx/preferences";
 import { uiText } from "./ui-text.mjs";
@@ -67,6 +70,7 @@ const proofStatus = document.querySelector("#proof-status");
 activate.hidden = false;
 activate.addEventListener("click", async () => {
   activate.disabled = true;
+  document.querySelector("#counter-fieldset").setAttribute("aria-busy", "true");
   activate.textContent = t("Loading runtime…");
   liveProof.dataset.state = "loading";
   proofStatus.textContent = t("Loading runtime");
@@ -85,5 +89,7 @@ activate.addEventListener("click", async () => {
     proofStatus.textContent = t("Runtime unavailable");
     document.querySelector("#runtime-status").textContent = t("The runtime could not load. You can still read the code and open either full demo.");
     console.error("Landing counter hydration failed", error);
+  } finally {
+    document.querySelector("#counter-fieldset").setAttribute("aria-busy", "false");
   }
 });

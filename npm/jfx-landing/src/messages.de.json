@@ -159,5 +159,12 @@
   "Framework comparison": "Framework-Vergleich",
   "Approach": "Ansatz",
   "Where JFX differs": "Wo JFX sich unterscheidet",
-  "Scala API and TypeScript facade both connect to the JFX Scala.js runtime, which owns properties, components, SSR, browser rendering and hydration.": "Scala-API und TypeScript-Fassade führen beide zur Scala.js-Runtime von JFX. Diese verwaltet Properties, Komponenten, SSR, Browser-Rendering und Hydration."
+  "Scala API and TypeScript facade both connect to the JFX Scala.js runtime, which owns properties, components, SSR, browser rendering and hydration.": "Scala-API und TypeScript-Fassade führen beide zur Scala.js-Runtime von JFX. Diese verwaltet Properties, Komponenten, SSR, Browser-Rendering und Hydration.",
+  "From server HTML to interaction": "Vom Server-HTML zur Interaktion",
+  "Built for application UI": "Für Anwendungsoberflächen gemacht",
+  "Compare the approaches": "Die Ansätze im Vergleich",
+  "Mount your component": "Deine Komponente einbinden",
+  "Run your application": "Deine Anwendung starten",
+  "Complete starter files": "Vollständige Starter-Dateien",
+  "Add JFX to your project": "JFX zum Projekt hinzufügen"
 }

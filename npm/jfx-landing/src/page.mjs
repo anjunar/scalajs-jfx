@@ -57,7 +57,7 @@ export async function renderPage(url = "/", assets = { script: "/src/client.mjs"
   ];
 
   const html = `<!doctype html>
-<html lang="${locale}" data-design="${preferences.design}" data-color-scheme="${preferences.colorScheme}">
+<html data-presentation lang="${locale}" data-design="${preferences.design}" data-color-scheme="${preferences.colorScheme}">
 <head>
   <meta charset="utf-8">
   <base href="${localizedPath ? "../" : "./"}">
@@ -78,7 +78,9 @@ export async function renderPage(url = "/", assets = { script: "/src/client.mjs"
 </head>
 <body class="landing">
   <a class="skip-link" href="#main">Skip to content</a>
-  <header class="site-header wrap">
+  <main id="main" class="wrap" data-presentation-root>
+    <div class="presentation-opening" data-presentation-section>
+  <header role="banner" class="site-header">
     <a class="brand" href="./" aria-label="JFX home">JFX<span>.</span></a>
     <nav class="header-links" aria-label="Main navigation">
       <a class="optional" href="${repo}#related-documentation">Docs ↗</a><a href="./scala/">Scala</a><a href="./typescript/">TypeScript</a><a class="optional" href="${repo}">GitHub ↗</a>
@@ -90,7 +92,6 @@ export async function renderPage(url = "/", assets = { script: "/src/client.mjs"
     </nav>
     <span class="preference-status" id="preference-status" role="status"></span>
   </header>
-  <main id="main" class="wrap">
     <section class="hero" aria-labelledby="hero-title">
       <p class="eyebrow">JFX / A shared foundation for application UI</p>
       <h1 id="hero-title">One runtime. <span>Two APIs.</span></h1>
@@ -101,53 +102,117 @@ export async function renderPage(url = "/", assets = { script: "/src/client.mjs"
       <ul class="signals" aria-label="Technical highlights"><li>SSR + Hydration</li><li>Explicit Reactive State</li><li>Typed Components</li><li>Virtualized Data Views</li><li>Source-first i18n</li></ul>
     </section>
 
-    <section class="code-section section-proof" aria-labelledby="same-code">
+    </div>
+
+    <section data-presentation-section class="code-section section-proof" aria-labelledby="same-code">
       <div class="section-heading code-heading"><div><h2 id="same-code">Same UI. Two languages.</h2><p>One Property. One event. One runtime.</p></div></div>
       <div class="code-grid">
         ${code("scala-counter", "Scala", "scala", scalaBody, '<span>Inside Counter.compose</span><a href="./scala/state">Explore reactive state ↗</a>')}
         ${code("ts-counter", "TypeScript", "typescript", tsBody, '<span>Inside counter()</span><a href="./typescript/core/state">Explore reactive state ↗</a>')}
       </div>
+    </section>
+
+    <section data-presentation-section class="section section-live" aria-labelledby="live-title">
+      <h2 id="live-title">From server HTML to interaction</h2>
       <div class="proof" id="live-proof" data-state="ssr"><div class="proof-heading"><div><span class="proof-label">Actual JFX output</span><span class="proof-title">Counter / shared component tree</span></div><span class="proof-status"><span id="proof-status">SSR ready</span></span></div><fieldset id="counter-fieldset" disabled aria-label="JFX counter"><div id="counter-root">${previews.counter}</div></fieldset><div class="proof-actions"><button id="activate-counter" type="button" hidden>Hydrate this example →</button></div><p id="runtime-status" role="status">Server-rendered HTML. Enable the example to add interaction with the same runtime.</p><noscript><p class="muted">JavaScript is disabled. The server-rendered output, code and links remain available.</p></noscript></div>
     </section>
 
-    <section class="section" aria-labelledby="capabilities-title">
+    <section data-presentation-section class="section" aria-labelledby="capabilities-title">
       <p class="eyebrow">01 / The essentials</p><h2 id="capabilities-title">What you get</h2>
-      <div class="capabilities">${capabilities.map(([title, body], i) => `<article><span class="number">0${i + 1}</span><h3>${title}</h3><p>${body}</p></article>`).join("")}</div>
+      <div class="capabilities">${capabilities.slice(0, 3).map(([title, body], i) => `<article><span class="number">0${i + 1}</span><h3>${title}</h3><p>${body}</p></article>`).join("")}</div>
     </section>
 
-    <section class="section section-showcase" id="showcase" aria-labelledby="showcase-title">
-      <div class="section-heading"><div><p class="eyebrow">02 / Beyond a DOM DSL</p><h2 id="showcase-title">Application building blocks</h2></div><p>Real server-rendered previews. Full interaction in the demos.</p></div>
-      <div class="showcase-grid">
+    <section data-presentation-section class="section" aria-labelledby="capabilities-more-title">
+      <h2 id="capabilities-more-title">Built for application UI</h2>
+      <div class="capabilities">${capabilities.slice(3).map(([title, body], i) => `<article><span class="number">0${i + 4}</span><h3>${title}</h3><p>${body}</p></article>`).join("")}</div>
+    </section>
+
+    <section data-presentation-section id="showcase" class="section section-showcase" aria-labelledby="showcase-title">
+      <h2 id="showcase-title">Application building blocks</h2>
         <article class="showcase"><div class="preview flow-preview"><div class="flow-step"><b>01</b><span>Server HTML · readable UI</span></div><div class="flow-step"><b>02</b><span>Hydration · claim the existing tree</span></div><div class="flow-step"><b>03</b><span>Interactive application · state + events</span></div></div><div class="showcase-body"><h3>HTML first. Interaction follows.</h3><p>SSR produces the page. Hydration attaches runtime behavior to the same component tree. Try the counter above to see that handoff.</p><a href="./typescript/core/lifecycle">Explore rendering and lifecycle ↗</a></div></article>
-        <article class="showcase"><div class="preview"><fieldset disabled aria-label="Server-rendered account form preview">${previews.accountForm}</fieldset><p class="preview-caption">JFX Forms / readonly server preview</p></div><div class="showcase-body"><h3>Forms that connect to your model</h3><p>Bind fields to Properties, compose nested forms and declare validators. Hydration adds bidirectional updates and validation feedback.</p><a href="./typescript/forms/basics">Try the form ↗</a> · <a href="./typescript/forms/validation">Validation ↗</a></div></article>
-        <article class="showcase"><div class="preview"><div class="table-window" tabindex="0" role="region" aria-label="Server-rendered project table; scroll horizontally"><div class="table-preview-size">${previews.projectTable}</div></div><p class="preview-caption">JFX TableView / server-rendered rows</p></div><div class="showcase-body"><h3>Data views with room to grow</h3><p>Tables, grids and virtual lists share collection primitives. Load remote ranges, use paging or scrolling, and expose ordinary page links when crawlability is enabled.</p><a href="./typescript/controls/remote">Try paging and remote ranges ↗</a> · <a href="./typescript/controls/virtual-list">Virtual list ↗</a></div></article>
-        <article class="showcase"><div class="preview">${previews.articleEditor}<p class="preview-caption">JFX Editor / semantic readonly HTML</p></div><div class="showcase-body"><h3>Rich editing. A Markdown value.</h3><p>JFX’s Lexical-backed editor supports headings, lists, links, tables and code. Readonly mode serves semantic HTML; editable mode starts with a Markdown textarea.</p><a href="./typescript/editor/basics">Open the editor ↗</a></div></article>
-      </div>
-      <article class="routing-strip"><div><h3>Routes are application structure</h3><p>Declarative routes, nested outlets and constrained parameters, with server response status handled by the router.</p></div><div class="route-preview" aria-label="Example route hierarchy"><span>/router</span><span>/params</span><span>/42</span></div><a href="./typescript/router/params/42">Follow the route ↗</a></article>
-      <p class="tradeoff-note">Readable without JavaScript: server content, route links and configured collection pagers. Editing, client validation, virtualization and richer navigation need JavaScript; server-side writes still belong to your application.</p>
     </section>
 
-    <section class="section section-tradeoff" id="why-jfx" aria-labelledby="why-title">
+    <section data-presentation-section class="section section-showcase" aria-labelledby="showcase-1-title">
+      <h2 id="showcase-1-title">Forms that connect to your model</h2>
+        <article class="showcase"><div class="preview"><fieldset disabled aria-label="Server-rendered account form preview">${previews.accountForm}</fieldset><p class="preview-caption">JFX Forms / readonly server preview</p></div><div class="showcase-body"><p>Bind fields to Properties, compose nested forms and declare validators. Hydration adds bidirectional updates and validation feedback.</p><a href="./typescript/forms/basics">Try the form ↗</a> · <a href="./typescript/forms/validation">Validation ↗</a></div></article>
+    </section>
+
+    <section data-presentation-section class="section section-showcase" aria-labelledby="showcase-2-title">
+      <h2 id="showcase-2-title">Data views with room to grow</h2>
+        <article class="showcase"><div class="preview"><div class="table-window" tabindex="0" role="region" aria-label="Server-rendered project table; scroll horizontally"><div class="table-preview-size">${previews.projectTable}</div></div><p class="preview-caption">JFX TableView / server-rendered rows</p></div><div class="showcase-body"><p>Tables, grids and virtual lists share collection primitives. Load remote ranges, use paging or scrolling, and expose ordinary page links when crawlability is enabled.</p><a href="./typescript/controls/remote">Try paging and remote ranges ↗</a> · <a href="./typescript/controls/virtual-list">Virtual list ↗</a></div></article>
+    </section>
+
+    <section data-presentation-section class="section section-showcase" aria-labelledby="showcase-3-title">
+      <h2 id="showcase-3-title">Rich editing. A Markdown value.</h2>
+        <article class="showcase"><div class="preview">${previews.articleEditor}<p class="preview-caption">JFX Editor / semantic readonly HTML</p></div><div class="showcase-body"><p>JFX’s Lexical-backed editor supports headings, lists, links, tables and code. Readonly mode serves semantic HTML; editable mode starts with a Markdown textarea.</p><a href="./typescript/editor/basics">Open the editor ↗</a></div></article>
+    </section>
+
+    <section data-presentation-section class="section section-routing" aria-labelledby="routing-title">
+      <h2 id="routing-title">Routes are application structure</h2>
+      <article class="routing-strip"><div><p>Declarative routes, nested outlets and constrained parameters, with server response status handled by the router.</p></div><div class="route-preview" aria-label="Example route hierarchy"><span>/router</span><span>/params</span><span>/42</span></div><a href="./typescript/router/params/42">Follow the route ↗</a></article>
+      <p class="tradeoff-note">Readable without JavaScript: server content, route links and configured collection pagers. Editing, client validation, virtualization and richer navigation need JavaScript; server-side writes still belong to your application.</p>
+
+    </section>
+
+    <section data-presentation-section class="section section-tradeoff" id="why-jfx" aria-labelledby="why-title">
       <p class="eyebrow">03 / Architectural choices</p><h2 id="why-title">A different trade-off</h2>
       <p class="comparison-intro">The interesting question is which architecture fits your application. JFX brings a Scala.js implementation, explicit Properties and application components to both Scala and TypeScript.</p>
-      <div class="table-scroll" tabindex="0" role="region" aria-label="Framework comparison">
-        <table class="comparison"><caption class="sr-only">Authoring models and reasons to consider JFX alongside four established alternatives</caption><thead><tr><th scope="col">Tool</th><th scope="col">Its approach</th><th scope="col">Where JFX takes another path</th></tr></thead><tbody>
-          <tr class="jfx-row"><th scope="row">JFX</th><td data-label="Approach">Scala DSL + TypeScript facade over one Scala.js runtime.</td><td data-label="Where JFX differs">Properties, SSR, hydration and application controls owned by JFX modules.</td></tr>
-          <tr><th scope="row"><a href="https://laminar.dev/documentation">Laminar ↗</a></th><td data-label="Approach">Scala.js UI composition with Airstream observables.</td><td data-label="Where JFX differs">Consider JFX for an integrated SSR, forms, controls and editor stack that also has a TypeScript API.</td></tr>
-          <tr><th scope="row"><a href="https://react.dev/learn/creating-a-react-app">React ↗</a></th><td data-label="Approach">JavaScript components, commonly with JSX and TypeScript. Recommended frameworks provide application infrastructure.</td><td data-label="Where JFX differs">Consider JFX for Scala.js implementation, synchronous Properties and controls sharing the runtime’s lifecycle.</td></tr>
-          <tr><th scope="row"><a href="https://angular.dev/overview">Angular ↗</a></th><td data-label="Approach">A TypeScript framework with templates, dependency injection, routing, forms and SSR.</td><td data-label="Where JFX differs">Consider JFX for Scala and TypeScript composition APIs over a common component model.</td></tr>
-          <tr><th scope="row"><a href="https://vuejs.org/guide/introduction.html">Vue ↗</a></th><td data-label="Approach">A reactive JavaScript/TypeScript framework with templates, and optional render functions or JSX.</td><td data-label="Where JFX differs">Consider JFX for a typed composition DSL and Scala.js runtime accessible from either language.</td></tr>
-        </tbody></table>
-      </div>
       <p class="tradeoff-note">These are architecture choices, not a feature ranking. The linked official documentation describes each alternative. JFX is under active development: evaluate its API coverage and ecosystem against your project’s needs. It is an option for developers who prefer an explicit, typed, application-oriented runtime shared by Scala and TypeScript.</p>
     </section>
 
-    <section id="get-started" class="section section-start" aria-labelledby="start-title">
-      <div class="section-heading"><div><p class="eyebrow">04 / From code to browser</p><h2 id="start-title">Get started</h2></div><p>JFX ${version} · choose your API</p></div>
+    <section data-presentation-section class="section section-comparison" aria-labelledby="comparison-title">
+      <h2 id="comparison-title">Compare the approaches</h2>
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Framework comparison">
+        <table class="comparison"><caption class="sr-only">Authoring models and reasons to consider JFX alongside four established alternatives</caption><thead><tr><th scope="col">Tool</th><th scope="col">Its approach</th><th scope="col">Where JFX takes another path</th></tr></thead><tbody>
+          <tr class="jfx-row"><th scope="row">JFX</th><td>Scala DSL + TypeScript facade over one Scala.js runtime.</td><td>Properties, SSR, hydration and application controls owned by JFX modules.</td></tr>
+          <tr><th scope="row"><a href="https://laminar.dev/documentation">Laminar ↗</a></th><td>Scala.js UI composition with Airstream observables.</td><td>Consider JFX for an integrated SSR, forms, controls and editor stack that also has a TypeScript API.</td></tr>
+          <tr><th scope="row"><a href="https://react.dev/learn/creating-a-react-app">React ↗</a></th><td>JavaScript components, commonly with JSX and TypeScript. Recommended frameworks provide application infrastructure.</td><td>Consider JFX for Scala.js implementation, synchronous Properties and controls sharing the runtime’s lifecycle.</td></tr>
+          <tr><th scope="row"><a href="https://angular.dev/overview">Angular ↗</a></th><td>A TypeScript framework with templates, dependency injection, routing, forms and SSR.</td><td>Consider JFX for Scala and TypeScript composition APIs over a common component model.</td></tr>
+          <tr><th scope="row"><a href="https://vuejs.org/guide/introduction.html">Vue ↗</a></th><td>A reactive JavaScript/TypeScript framework with templates, and optional render functions or JSX.</td><td>Consider JFX for a typed composition DSL and Scala.js runtime accessible from either language.</td></tr>
+        </tbody></table>
+      </div>
+
+    </section>
+
+    <section data-presentation-section id="get-started" class="section section-start" aria-labelledby="start-title">
+      <h2 id="start-title">Get started</h2>
       <div class="two-col">
         <article class="starter"><h3>Scala</h3><p>For a Scala.js project using sbt 2. Requires a JDK and sbt; the local serving command also uses Node.js and npm.</p>
+        </article>
+        <article class="starter"><h3>TypeScript</h3><p>Start with Vite’s vanilla TypeScript template. Use Node.js 22.12+ and npm.</p>
+          ${code("ts-create", "Terminal · Shell", "bash", 'npm create vite@latest jfx-starter -- --template vanilla-ts\ncd jfx-starter\nnpm install')}
+        </article>
+      </div>
+    </section>
+
+    <section data-presentation-section class="section section-start" aria-labelledby="install-title">
+      <h2 id="install-title">Add JFX to your project</h2>
+      <div class="two-col">
+        <article class="starter"><h3>Scala</h3>
           ${code("scala-install", "build.sbt · Scala", "scala", `libraryDependencies +=\n  "com.anjunar" %% "scalajs-jfx-core" % "${version}"`)}
+        </article>
+        <article class="starter"><h3>TypeScript</h3>
+          ${code("ts-install", "Install JFX · Shell", "bash", `npm install @anjunar/jfx-core@${version} @anjunar/scalajs-jfx-bridge@${version} @anjunar/scalajs-jfx@${version}`)}
+        </article>
+      </div>
+    </section>
+
+    <section data-presentation-section class="section section-start" aria-labelledby="mount-title">
+      <h2 id="mount-title">Mount your component</h2>
+      <div class="two-col">
+        <article class="starter"><h3>Scala</h3>
           ${code("scala-mount", "Mount · Scala", "scala", 'Runtime.mount(\n  new Counter,\n  DomCursor.root(dom.document.getElementById("root"))\n)')}
+        </article>
+        <article class="starter"><h3>TypeScript</h3>
+          ${code("ts-mount", "Mount · TypeScript", "typescript", 'import { mount } from "@anjunar/jfx-core";\nimport "@anjunar/scalajs-jfx-bridge";\n\nmount(document.getElementById("root")!, counter);')}
+        </article>
+      </div>
+    </section>
+
+    <section data-presentation-section class="section section-start" aria-labelledby="starter-files-title">
+      <h2 id="starter-files-title">Complete starter files</h2>
+      <div class="two-col">
+        <article class="starter"><h3>Scala</h3>
           <details><summary>New project? Copy the complete starter</summary><p class="muted">Create these files in an empty folder. The minimal counter uses native browser styling.</p>
             ${code("scala-build", "build.sbt · complete", "scala", scalaBuild)}
             ${code("scala-plugin", "project/plugins.sbt · Scala", "scala", starterFiles["plugins.sbt"])}
@@ -155,37 +220,43 @@ export async function renderPage(url = "/", assets = { script: "/src/client.mjs"
             ${code("scala-main", "src/main/scala/Counter.scala · Scala", "scala", scalaSource)}
             ${code("scala-host", "index.html · HTML", "html", starterFiles["scala.html"])}
           </details>
-          <p class="step">BUILD & SERVE</p>${code("scala-run", "Terminal · Shell", "bash", 'sbt --server fastLinkJS\nnpx --yes http-server . -p 8080')}
-          <p>Open <code>http://localhost:8080</code>. <a href="./starters/Counter.scala" download>Download Counter.scala</a> or <a href="${repo}/tree/master/jfx-core">read the core documentation ↗</a>.</p>
         </article>
-        <article class="starter"><h3>TypeScript</h3><p>Start with Vite’s vanilla TypeScript template. Use Node.js 22.12+ and npm.</p>
-          ${code("ts-create", "Terminal · Shell", "bash", 'npm create vite@latest jfx-starter -- --template vanilla-ts\ncd jfx-starter\nnpm install')}
-          ${code("ts-install", "Install JFX · Shell", "bash", `npm install @anjunar/jfx-core@${version} @anjunar/scalajs-jfx-bridge@${version} @anjunar/scalajs-jfx@${version}`)}
+        <article class="starter"><h3>TypeScript</h3>
           <p>Replace <code>src/main.ts</code> with this counter and <code>index.html</code> with the host below.</p>
           <details><summary>Copy the complete starter files</summary>
             ${code("ts-main", "src/main.ts · TypeScript", "typescript", tsStarter)}
             ${code("ts-host", "index.html · HTML", "html", starterFiles["typescript.html"])}
           </details>
-          ${code("ts-mount", "Mount · TypeScript", "typescript", 'import { mount } from "@anjunar/jfx-core";\nimport "@anjunar/scalajs-jfx-bridge";\n\nmount(document.getElementById("root")!, counter);')}
+        </article>
+      </div>
+    </section>
+
+    <section data-presentation-section class="section section-start" aria-labelledby="run-title">
+      <h2 id="run-title">Run your application</h2>
+      <div class="two-col">
+        <article class="starter"><h3>Scala</h3>
+          <p class="step">BUILD & SERVE</p>${code("scala-run", "Terminal · Shell", "bash", 'sbt --server fastLinkJS\nnpx --yes http-server . -p 8080')}
+          <p>Open <code>http://localhost:8080</code>. <a href="./starters/Counter.scala" download>Download Counter.scala</a> or <a href="${repo}/tree/master/jfx-core">read the core documentation ↗</a>.</p>
+        </article>
+        <article class="starter"><h3>TypeScript</h3>
           <p class="step">START THE DEV SERVER</p>${code("ts-run", "Terminal · Shell", "bash", "npm run dev")}
           <p>Open the local URL printed by Vite. <a href="./starters/main.ts" download>Download main.ts</a> or <a href="${repo}/tree/master/npm/jfx-core">read the API documentation ↗</a>.</p>
         </article>
       </div>
     </section>
 
-    <section class="section section-architecture architecture" aria-labelledby="architecture-title">
+    <section data-presentation-section class="section section-architecture architecture" aria-labelledby="architecture-title">
       <div><p class="eyebrow">05 / Under the APIs</p><h2 id="architecture-title">Two ways in.<br>One implementation.</h2><p>Scala composes JFX components directly. The TypeScript facade calls the Scala.js bridge. Both reach the same rendering, state and component implementation.</p><p>Shared capabilities do not imply identical API surfaces. For example, the TypeScript controls facade does not expose every imperative Scala control handle.</p><a href="${repo}/tree/master/jfx-bridge">Inspect the runtime boundary ↗</a></div>
       <div class="architecture-map" role="img" aria-label="Scala API and TypeScript facade both connect to the JFX Scala.js runtime, which owns properties, components, SSR, browser rendering and hydration."><div class="api-pair"><div><strong>Scala</strong><small>Native component DSL</small></div><div><strong>TypeScript</strong><small>Typed facade → bridge</small></div></div><div class="connector" aria-hidden="true"></div><div class="runtime-box"><strong>JFX · Scala.js runtime</strong><span>Properties / Components / Lifecycle</span></div><div class="runtime-target">Server HTML ← SSR &nbsp; / &nbsp; Hydration → Browser</div></div>
     </section>
 
-    <section class="section section-demos" id="demos" aria-labelledby="demos-title"><p class="eyebrow">06 / Explore the project</p><h2 id="demos-title">Go beyond the first example</h2><div class="two-col"><a class="demo-link" href="./scala/"><h3>Scala Demo</h3><p>The native DSL, reactive state, application layouts and the complete Scala showcase.</p><span>Explore Scala →</span></a><a class="demo-link" href="./typescript/"><h3>TypeScript Demo</h3><p>The typed consumption layer, live controls and source examples, backed by the same runtime.</p><span>Explore TypeScript →</span></a></div>
+    <section data-presentation-section class="section section-demos" id="demos" aria-labelledby="demos-title"><p class="eyebrow">06 / Explore the project</p><h2 id="demos-title">Go beyond the first example</h2><div class="two-col"><a class="demo-link" href="./scala/"><h3>Scala Demo</h3><p>The native DSL, reactive state, application layouts and the complete Scala showcase.</p><span>Explore Scala →</span></a><a class="demo-link" href="./typescript/"><h3>TypeScript Demo</h3><p>The typed consumption layer, live controls and source examples, backed by the same runtime.</p><span>Explore TypeScript →</span></a></div>
       <dl class="metadata"><div><dt>Current version</dt><dd><a href="https://www.npmjs.com/package/@anjunar/jfx-core/v/${version}">${version} · package ↗</a></dd></div><div><dt>License</dt><dd><a href="${repo}/blob/master/LICENSE">MIT ↗</a></dd></div><div><dt>Scala / Scala.js</dt><dd>${scalaVersion} / ${scalaJsVersion}</dd></div><div><dt>TypeScript API</dt><dd><a href="${repo}/tree/master/npm">@anjunar/jfx-* ↗</a></dd></div><div><dt>Project status</dt><dd>Active development</dd></div><div><dt>Source & issues</dt><dd><a href="${repo}">GitHub ↗</a></dd></div></dl>
     </section>
 
-    <section class="section section-origin origin" aria-labelledby="origin-title"><div><p class="eyebrow">07 / The reasoning behind it</p><h2 id="origin-title">Why JFX exists</h2></div><div><p>JFX explores a simple idea: the component tree can be the common foundation for server rendering, browser interaction and application-level controls.</p><p>The project brings a property-driven, composable approach to Scala.js and makes that same implementation available to TypeScript. Explicit state, lifecycle ownership and useful server HTML guide the design. <a href="${repo}#overview">Read the technical overview ↗</a>.</p></div></section>
-    <section class="final-cta" aria-labelledby="explore-title"><h2 id="explore-title">Explore JFX</h2><p>Same runtime. Choose the API that fits your project.</p><div class="actions"><a class="action primary" href="./scala/">Scala Demo ↗</a><a class="action primary" href="./typescript/">TypeScript Demo ↗</a><a class="text-action" href="${repo}">GitHub ↗</a><a class="text-action" href="${repo}#related-documentation">Documentation ↗</a></div></section>
+    <section data-presentation-section class="section section-origin origin" aria-labelledby="origin-title"><div><p class="eyebrow">07 / The reasoning behind it</p><h2 id="origin-title">Why JFX exists</h2></div><div><p>JFX explores a simple idea: the component tree can be the common foundation for server rendering, browser interaction and application-level controls.</p><p>The project brings a property-driven, composable approach to Scala.js and makes that same implementation available to TypeScript. Explicit state, lifecycle ownership and useful server HTML guide the design. <a href="${repo}#overview">Read the technical overview ↗</a>.</p></div></section>
+    <section data-presentation-section class="final-cta" aria-labelledby="explore-title"><h2 id="explore-title">Explore JFX</h2><p>Same runtime. Choose the API that fits your project.</p><div class="actions"><a class="action primary" href="./scala/">Scala Demo ↗</a><a class="action primary" href="./typescript/">TypeScript Demo ↗</a><a class="text-action" href="${repo}">GitHub ↗</a><a class="text-action" href="${repo}#related-documentation">Documentation ↗</a></div>  <footer role="contentinfo" class="page-footer"><span>JFX · Open source · MIT licensed</span><a href="#main">Back to top ↑</a></footer></section>
   </main>
-  <footer class="page-footer wrap"><span>JFX · Open source · MIT licensed</span><a href="#main">Back to top ↑</a></footer>
   <div class="sr-only" id="copy-status" role="status" aria-live="polite"></div>
 </body>
 </html>`;
