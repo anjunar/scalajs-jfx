@@ -1,3 +1,4 @@
+import { serverPreferences } from "@anjunar/scalajs-jfx/preferences";
 /**
  * The whole document, `<html>` included -- mirrors
  * `application/src/main/scala-3/app/AppDocument.scala`. The demo has no
@@ -18,12 +19,17 @@
  * argument, the way `entry-server.ts`'s `path` does, and become ordinary
  * head entries -- see `Main.render`'s `clientAssets` on the Scala side.
  */
-import { attr, div, element, type HeadEntry } from "@anjunar/jfx-core";
+import { attr, div, element, isBrowser, documentHead, type HeadEntry } from "@anjunar/jfx-core";
 import { appHead } from "./head.js";
 
 const body = element("body");
 
-export function appDocument(assets: readonly HeadEntry[], bodyContent: () => void): void {
+export function appDocument(assets: readonly HeadEntry[], bodyContent: () => void, url = "/"): void {
+  if (!isBrowser()) {
+    const state = serverPreferences(url);
+    documentHead()?.htmlAttribute("data-design", state.design);
+    documentHead()?.htmlAttribute("data-color-scheme", state.colorScheme);
+  }
   appHead(assets);
 
   body(() => {

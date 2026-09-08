@@ -1,25 +1,40 @@
+@layer reset, patterns, designs, utilities, invariants;
+@import "./designs/atlas/tokens.css";
+@import "./designs/atlas/design.css";
+@import "./designs/flora/tokens.css";
+@import "./designs/flora/design.css";
+@import "./designs/terra/tokens.css";
+@import "./designs/terra/design.css";
+@import "./designs/ember/tokens.css";
+@import "./designs/ember/design.css";
+@import "./base/Theme.css";
+@import "./base/Tokens.css";
+@import "./base/Accessibility.css";
+
 @import "./base/Icons.css";
 
-@import "./action/Button.css";
+@import "./action/Button.css" layer(patterns);
 
-@import "./control/Link.css";
-@import "./control/Tabs.css";
+@import "./control/Link.css" layer(patterns);
+@import "./control/Tabs.css" layer(patterns);
 
-@import "./control/DataGrid.css";
-@import "./control/Carousel.css";
-@import "./control/TableView.css";
-@import "./control/TableCell.css";
-@import "./control/VirtualListView.css";
+@import "./control/DataGrid.css" layer(patterns);
+@import "./control/Carousel.css" layer(patterns);
+@import "./control/TableView.css" layer(patterns);
+@import "./control/TableCell.css" layer(patterns);
+@import "./control/VirtualListView.css" layer(patterns);
 
-@import "./form/Input.css";
-@import "./form/ComboBox.css";
-@import "./form/Editor.css";
-@import "./form/ImageCropper.css";
-@import "./form/InputContainer.css";
+@import "./form/Input.css" layer(patterns);
+@import "./form/ComboBox.css" layer(patterns);
+@import "./form/Editor.css" layer(patterns);
+@import "./form/ImageCropper.css" layer(patterns);
+@import "./form/InputContainer.css" layer(patterns);
 
-@import "./layout/Drawer.css";
-@import "./layout/HBox.css";
-@import "./layout/HorizontalLine.css";
-@import "./layout/VBox.css";
-@import "./layout/Window.css";
-@import "./layout/Viewport.css";
+@import "./layout/Drawer.css" layer(patterns);
+@import "./layout/HBox.css" layer(patterns);
+@import "./layout/HorizontalLine.css" layer(patterns);
+@import "./layout/VBox.css" layer(patterns);
+@import "./layout/Window.css" layer(patterns);
+@import "./layout/Viewport.css" layer(patterns);
+
+@import "./base/Patterns.css";

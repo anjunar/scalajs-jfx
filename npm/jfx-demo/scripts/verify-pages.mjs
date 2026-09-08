@@ -13,6 +13,7 @@
 import { spawn } from "node:child_process";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { verifyThemeBootstrap } from "../../../tools/verify-theme.mjs";
 
 const projectRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const port = 5180;
@@ -48,6 +49,8 @@ function unpairedMarkers(html) {
 async function checkRoute(entry) {
   const response = await fetch(`http://localhost:${port}${entry.path}`);
   const html = await response.text();
+
+  if (entry.path === "/") verifyThemeBootstrap(html);
 
   check(
     `${entry.path} -- status ${entry.status}`,
@@ -229,11 +232,24 @@ async function main() {
       "the richer editor example is incomplete"
     );
 
+    for (const design of ["atlas", "flora", "terra", "ember"]) {
+      for (const scheme of ["light", "dark"]) {
+        const response = await fetch(`http://localhost:${port}/?design=${design}&colorScheme=${scheme}`);
+        const html = await response.text();
+        check(`${design}/${scheme} -- SSR preview and semantic controls`, response.status === 200 &&
+          html.includes(`data-design="${design}"`) && html.includes(`data-color-scheme="${scheme}"`) &&
+          html.includes(`<option value="${design}" selected="">`) &&
+          html.includes(`<option value="${scheme}" selected="">`) &&
+          html.includes('<details open="">') && html.includes('<main class="app-main" id="main-content">'),
+          "preview attributes or native control selection missing");
+      }
+    }
+
     const germanResponse = await fetch(`http://localhost:${port}/de/core/derived`);
     const germanHtml = await germanResponse.text();
     check(
       "/de/core/derived -- locale-prefixed route",
-      germanResponse.status === 200 && germanHtml.includes('<html lang="de">'),
+      germanResponse.status === 200 && /<html\b[^>]*\blang="de"/.test(germanHtml),
       `got ${germanResponse.status} or missing lang=de`
     );
     check(

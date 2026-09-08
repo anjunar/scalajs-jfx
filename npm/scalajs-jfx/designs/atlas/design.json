@@ -1,0 +1,24 @@
+{
+  "id": "atlas",
+  "name": "Atlas",
+  "version": "1.0.0",
+  "order": 1,
+  "description": "Präzise, institutionell, ruhig und verlässlich.",
+  "thesis": "Klarheit entsteht durch sichtbare Ordnung.",
+  "temperament": "Präzise, ruhig, institutionell, verlässlich.",
+  "decisions": [
+    "Feste Textachsen und nummerierte Randmarken.",
+    "Humanistische UI-Schrift, Georgia im Lesetext.",
+    "Tintenblaue Handlungen, kupferne Orientierung.",
+    "Kleine Radien, Registerlinien und klar getrennte Flächen."
+  ],
+  "boundary": "Darf nicht bürokratisch oder autoritär werden.",
+  "supports": {
+    "light": true,
+    "dark": true
+  },
+  "styles": [
+    "tokens.css",
+    "design.css"
+  ]
+}

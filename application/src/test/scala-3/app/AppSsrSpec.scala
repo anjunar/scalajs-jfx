@@ -57,20 +57,35 @@ class AppSsrSpec extends AsyncFlatSpec with Matchers {
     }
   }
 
+  it should "render every design preview with semantic controls and isolated state" in {
+    scala.concurrent.Future.sequence(for {
+      design <- Seq("atlas", "flora", "terra", "ember")
+      scheme <- Seq("light", "dark")
+    } yield Runtime.renderToStringAsync(cursor =>
+      Runtime.mount(documentFor(desktopRequest, s"/?design=$design&colorScheme=$scheme"), cursor)
+    ).map { html =>
+      html should include(s"data-design=\"$design\" data-color-scheme=\"$scheme\"")
+      html should include(s"<option value=\"$design\" selected=\"\">")
+      html should include(s"<option value=\"$scheme\" selected=\"\">")
+      html should include("<details open=\"\">")
+      html should include("<main class=\"app-main\" id=\"main-content\">")
+      html should include("<span class=\"preferences__status\" role=\"status\">")
+    }).map(_ => succeed)
+  }
+
   it should "render route metadata in the document head" in {
     Runtime
       .renderToStringAsync(cursor =>
         Runtime.mount(documentFor(desktopRequest, "/de/router"), cursor)
       )
       .map { html =>
-        html should startWith("<html lang=\"de\"><head>")
+        html should startWith("<html data-design=\"atlas\" data-color-scheme=\"light\" lang=\"de\"><head>")
         html should include("<div id=\"root\"><app>")
         html should include("<title data-jfx-head=\"title\">Router | scalajs-jfx</title>")
         html should include(
           "<link data-jfx-head=\"link:canonical\" rel=\"canonical\" href=\"https://anjunar.github.io/scalajs-jfx/de/router/\">"
         )
         html should include("hreflang=\"de\"")
-        html should include("<html lang=\"de\">")
         html should not include "%SITE_"
       }
   }

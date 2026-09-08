@@ -2,109 +2,73 @@ package app
 
 import jfx.core.component.AbstractComponent
 import jfx.core.di.Context
-import jfx.core.state.{Property, ReadOnlyProperty}
-import org.scalajs.dom
-
+import jfx.core.state.{Disposable, Property, ReadOnlyProperty}
 import scala.scalajs.js
-import scala.util.control.NonFatal
+import scala.scalajs.js.annotation.JSImport
 
-/** Theme state of a single app instance.
-  *
-  * The SSR bundle is loaded once per Node process and reused for every request, so the mode must
-  * not live in an `object`. Every `App` owns its own instance and publishes it through the
-  * component context.
-  */
-final class AppTheme(initialMode: AppTheme.Mode, effects: AppTheme.Effects) {
+/** Per-application preference state; the small shared controller owns browser effects. */
+final class AppTheme private (initialUrl: String) {
+  private val controller = DesignPreferences.createPreferences(SiteConfig.themeStorageKey, initialUrl)
+  val serverState: PreferenceState = DesignPreferences.serverPreferences(initialUrl)
+  private val mode = Property(AppTheme.Mode.parse(controller.getState().colorScheme).getOrElse(AppTheme.Mode.Light))
+  private val design = Property(controller.getState().design)
+  private val storageAvailable = Property(true)
+  def modeProperty: ReadOnlyProperty[AppTheme.Mode] = mode
+  def designProperty: ReadOnlyProperty[String] = design
+  def storageAvailableProperty: ReadOnlyProperty[Boolean] = storageAvailable
 
-  private val mode: Property[AppTheme.Mode] =
-    Property(initialMode)
-
-  def modeProperty: ReadOnlyProperty[AppTheme.Mode] =
-    mode
-
-  def set(value: AppTheme.Mode): Unit = {
-    mode.set(value)
-    effects.apply(value)
+  def install(owner: AbstractComponent): Unit = {
+    val cancel = controller.subscribe { state =>
+      mode.set(AppTheme.Mode.parse(state.colorScheme).getOrElse(AppTheme.Mode.Light))
+      design.set(state.design)
+      storageAvailable.set(state.storageAvailable)
+    }
+    owner.addDisposable(Disposable(cancel()))
   }
+  def set(value: AppTheme.Mode): Unit = controller.setColorScheme(value.value)
+  def setDesign(value: String): Unit = controller.setDesign(value)
 }
 
 object AppTheme {
-
   enum Mode(val value: String) {
     case Light extends Mode("light")
-    case Dark  extends Mode("dark")
+    case Dark extends Mode("dark")
   }
-
   object Mode {
-    def parse(value: String | Null): Option[Mode] =
-      value match {
-        case "light" => Some(Mode.Light)
-        case "dark"  => Some(Mode.Dark)
-        case _       => None
-      }
-  }
-
-  /** Everything the theme does outside its own property. */
-  trait Effects {
-
-    /** Mode the environment already carries, if any. */
-    def initialMode: Option[Mode]
-
-    def apply(mode: Mode): Unit
-  }
-
-  object Effects {
-    val none: Effects =
-      new Effects {
-        override def initialMode: Option[Mode] = None
-        override def apply(mode: Mode): Unit   = ()
-      }
-  }
-
-  /** `data-theme`, `meta[theme-color]` and `localStorage`. Only instantiated in the browser. */
-  final class BrowserEffects extends Effects {
-
-    override def initialMode: Option[Mode] =
-      try Mode.parse(dom.document.documentElement.getAttribute("data-theme"))
-      catch { case NonFatal(_) => None }
-
-    override def apply(mode: Mode): Unit = {
-      applyToDocument(mode)
-      persist(mode)
+    def parse(value: String | Null): Option[Mode] = value match {
+      case "light" => Some(Mode.Light)
+      case "dark" => Some(Mode.Dark)
+      case _ => None
     }
-
-    // `meta[theme-color]` is not written here: AppHead registers it with the DocumentHead and
-    // keeps it in step with this property. Two writers on one head element would overwrite each
-    // other on the next reconcile.
-    private def applyToDocument(mode: Mode): Unit =
-      try dom.document.documentElement.setAttribute("data-theme", mode.value)
-      catch { case NonFatal(_) => () }
-
-    private def persist(mode: Mode): Unit =
-      try dom.window.localStorage.setItem(SiteConfig.themeStorageKey, mode.value)
-      catch { case NonFatal(_) => () }
   }
-
-  /** Browser-backed instance when a DOM is present, a plain state holder otherwise. */
-  def forEnvironment(): AppTheme = {
-    val effects = if (hasBrowserWindow) new BrowserEffects else Effects.none
-    new AppTheme(effects.initialMode.getOrElse(Mode.Light), effects)
+  def forEnvironment(initialUrl: String = "/"): AppTheme = new AppTheme(initialUrl)
+  private val Value: Context[AppTheme] = Context.create[AppTheme]("AppTheme")
+  def provide(value: AppTheme)(using component: AbstractComponent): Unit = Value.provide(value)
+  def current(using component: AbstractComponent): Option[AppTheme] = Value.inject
+  def require(using component: AbstractComponent): AppTheme = current.getOrElse {
+    throw new IllegalStateException("No AppTheme found in the current component tree.")
   }
+}
 
-  private val Value: Context[AppTheme] =
-    Context.create[AppTheme]("AppTheme")
-
-  def provide(value: AppTheme)(using component: AbstractComponent): Unit =
-    Value.provide(value)
-
-  def current(using component: AbstractComponent): Option[AppTheme] =
-    Value.inject
-
-  def require(using component: AbstractComponent): AppTheme =
-    current.getOrElse {
-      throw new IllegalStateException("No AppTheme found in the current component tree.")
-    }
-
-  private def hasBrowserWindow: Boolean =
-    js.typeOf(js.Dynamic.global.window) != "undefined"
+@js.native trait DesignEntry extends js.Object {
+  val id: String = js.native
+  val name: String = js.native
+}
+@js.native trait PreferenceState extends js.Object {
+  val design: String = js.native
+  val colorScheme: String = js.native
+  val storageAvailable: Boolean = js.native
+}
+@js.native trait PreferenceController extends js.Object {
+  def getState(): PreferenceState = js.native
+  def setDesign(value: String): Unit = js.native
+  def setColorScheme(value: String): Unit = js.native
+  def subscribe(listener: js.Function1[PreferenceState, Unit]): js.Function0[Unit] = js.native
+}
+@js.native @JSImport("@anjunar/scalajs-jfx/preferences",JSImport.Namespace)
+object DesignPreferences extends js.Object {
+  val designs: js.Array[DesignEntry] = js.native
+  def createPreferences(legacyKey: String, url: String): PreferenceController = js.native
+  def serverPreferences(url: String): PreferenceState = js.native
+  def bootstrapScript(legacyKey: String): String = js.native
 }

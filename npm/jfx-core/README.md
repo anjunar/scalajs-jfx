@@ -9,7 +9,7 @@ This package is a typed facade, not an independent framework. `@anjunar/scalajs-
 ## Installation
 
 ```bash
-npm install @anjunar/jfx-core @anjunar/scalajs-jfx-bridge @anjunar/scalajs-jfx @anjunar/ui
+npm install @anjunar/jfx-core @anjunar/scalajs-jfx-bridge @anjunar/scalajs-jfx
 ```
 
 Import the bridge before rendering:

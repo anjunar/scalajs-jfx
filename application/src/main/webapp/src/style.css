@@ -1,16 +1,7 @@
-/* Entry point. Import order is cascade order:
- *
- *   1. Tailwind and the @anjunar/ui grammar — the vocabulary.
- *   2. The component CSS of the libraries — what the modules render.
- *   3. This application's own tokens, base and pages — allowed to override (2).
- *
- * Which system owns what is written down in npm/scalajs-jfx/README.md.
- */
+@layer theme, base, reset, components, patterns, designs, utilities, invariants;
+/* JFX supplies the design roles and component CSS. Demo styles own composition. */
 @import "tailwindcss";
-@import "@anjunar/ui";
-@import "@anjunar/scalajs-lexical/index.css";
+@import "@anjunar/scalajs-lexical/index.css" layer(patterns);
 @import "@anjunar/scalajs-jfx/index.css";
-
-@import "./theme.css";
-@import "./base.css";
-@import "./app/index.css";
+@import "./base.css" layer(patterns);
+@import "./app/index.css" layer(patterns);

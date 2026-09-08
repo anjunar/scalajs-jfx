@@ -8,7 +8,7 @@
     min-height: 360px;
     padding: 16px;
     border: 1px solid var(--aj-line-soft);
-    border-radius: 20px;
+    border-radius: var(--radius-surface);
     background: var(--aj-surface-overlay);
 }
 
@@ -24,7 +24,7 @@
     min-height: 38px;
     padding: 8px 14px;
     border: 1px solid var(--aj-line);
-    border-radius: 999px;
+    border-radius: var(--radius-surface);
     color: var(--aj-ink);
     background: var(--aj-surface-raised);
     cursor: pointer;
@@ -41,7 +41,7 @@
     gap: 14px;
     padding: 18px;
     border: 1px solid var(--aj-line-soft);
-    border-radius: 20px;
+    border-radius: var(--radius-surface);
     background: var(--aj-surface-overlay);
 }
 
@@ -67,7 +67,7 @@
     width: 112px;
     height: 112px;
     border: 1px solid var(--aj-line);
-    border-radius: 18px;
+    border-radius: var(--radius-surface);
     object-fit: cover;
     background: var(--aj-canvas);
 }

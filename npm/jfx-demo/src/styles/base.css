@@ -6,7 +6,7 @@
 html,
 body,
 #root {
-    height: 100%;
+    min-height: 100%;
     margin: 0;
     padding: 0;
 }
@@ -40,99 +40,4 @@ input,
 select,
 textarea {
     font: inherit;
-}
-
-/* app/shell.ts's chrome. No dedicated file in CLAUDE_DEMO_PLAN.md §4's tree --
- * this is document-level chrome shared by every route, same as the rest of
- * this file. */
-.app-shell__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid var(--aj-line);
-}
-
-.app-shell__header a {
-    color: var(--aj-ink);
-    font-weight: 600;
-    text-decoration: none;
-}
-
-.app-shell__project-links,
-.app-shell__controls {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.app-shell__project-links a {
-    color: var(--aj-ink-soft);
-    font-size: 0.875rem;
-}
-
-.app-shell__theme-toggle,
-.app-shell__locale-toggle {
-    padding: 0.4rem 0.75rem;
-    border-radius: var(--radius-control);
-    border: 1px solid var(--aj-line);
-    background: var(--aj-surface);
-    color: var(--aj-ink-soft);
-    cursor: pointer;
-}
-
-.app-shell__theme-toggle:hover,
-.app-shell__locale-toggle:hover {
-    background: var(--aj-surface-hover);
-}
-
-.app-shell__nav {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 1.5rem;
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid var(--aj-line);
-}
-
-.app-shell__nav-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    min-width: 10rem;
-}
-
-.app-shell__nav-group-title {
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--aj-ink-muted);
-    margin-bottom: 0.25rem;
-}
-
-.app-shell__nav-group a {
-    color: var(--aj-ink-soft);
-    text-decoration: none;
-    padding: 0.15rem 0;
-}
-
-.app-shell__nav-group a.app-shell__nav-link--active {
-    color: var(--aj-accent-strong);
-    font-weight: 600;
-}
-
-@media (max-width: 800px) {
-    .app-shell__header {
-        align-items: flex-start;
-        flex-wrap: wrap;
-    }
-
-    .app-shell__project-links {
-        order: 3;
-        width: 100%;
-        overflow-x: auto;
-        padding-bottom: 0.25rem;
-    }
 }

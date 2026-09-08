@@ -1,12 +1,8 @@
-import { readFile, mkdir, writeFile } from "node:fs/promises";
-import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
-import { build } from "vite";
-
-const here = dirname(fileURLToPath(import.meta.url));
-const root = resolve(here, "../..");
+import content from "virtual:landing-content";
+import { bootstrapScript, designs, serverPreferences } from "@anjunar/scalajs-jfx/preferences";
+import { renderPreviews } from "./previews.mjs";
+import { localizePage } from "./localize.mjs";
 const repo = "https://github.com/anjunar/scalajs-jfx";
-const read = path => readFile(resolve(root, path), "utf8");
 const escape = value => value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 
 // Highlight at build time. Copy always reads the original textContent, and
@@ -28,38 +24,12 @@ function code(id, label, language, source, note = "") {
   </article>`;
 }
 
-export async function buildLanding(output) {
-  const buildSource = await read("build.sbt");
-  const version = buildSource.match(/^version\s*:=\s*"([^"]+)"/m)?.[1];
-  const scalaVersion = buildSource.match(/^scalaVersion\s*:=\s*"([^"]+)"/m)?.[1];
-  const scalaJsVersion = (await read("project/plugins.sbt")).match(/"sbt-scalajs"\s*%\s*"([^"]+)"/)?.[1];
-  const sbtVersion = (await read("project/build.properties")).match(/sbt.version\s*=\s*(\S+)/)?.[1];
-  if (!version || !scalaVersion || !scalaJsVersion || !sbtVersion) throw new Error("Landing metadata must match the Scala build.");
-  for (const pkg of ["jfx-core", "scalajs-jfx-bridge", "scalajs-jfx"]) {
-    if (JSON.parse(await read(`npm/${pkg}/package.json`)).version !== version) {
-      throw new Error(`Landing version differs from npm/${pkg}.`);
-    }
-  }
-
-  await build({
-    configFile: false,
-    root,
-    base: "./",
-    publicDir: false,
-    resolve: { dedupe: ["@anjunar/jfx-core", "@anjunar/scalajs-jfx-bridge"] },
-    build: {
-      outDir: output,
-      emptyOutDir: false,
-      manifest: "landing-manifest.json",
-      rollupOptions: { input: resolve(here, "client.mjs") },
-    },
-  });
-  const manifest = JSON.parse(await readFile(resolve(output, "landing-manifest.json"), "utf8"));
-  const client = manifest["tools/landing/client.mjs"];
-  const { renderPreviews } = await import("./previews.mjs");
+export async function renderPage(url = "/", assets = { script: "/src/client.mjs", css: ["/src/style.css"] }) {
+  const locale = /\/de\/(?:index\.html)?$/.test(new URL(url, "http://jfx.local").pathname) ? "de" : "en";
+  const preferences = serverPreferences(url);
+  const localizedPath = /\/(en|de)\/(?:index\.html)?$/.test(new URL(url, "http://jfx.local").pathname);
+  const { version, scalaVersion, scalaJsVersion, sbtVersion, scalaSource, tsSource } = content;
   const previews = await renderPreviews();
-  const scalaSource = await read("tools/landing/Counter.scala");
-  const tsSource = await read("tools/landing/counter.mjs");
   const scalaBody = scalaSource.slice(scalaSource.indexOf("      val count"), scalaSource.indexOf("\n    }\n  }\n}"))
     .split("\n").map(line => line.startsWith("      ") ? line.slice(6) : line).join("\n");
   const tsBody = tsSource.slice(tsSource.indexOf("  const count"), tsSource.lastIndexOf("\n}"))
@@ -77,9 +47,6 @@ export async function buildLanding(output) {
     "scala.html": host("./public/main.js"),
     "typescript.html": host("/src/main.ts"),
   };
-  await mkdir(resolve(output, "starters"), { recursive: true });
-  for (const [name, contents] of Object.entries(starterFiles)) await writeFile(resolve(output, "starters", name), contents + "\n");
-
   const capabilities = [
     ["Server rendering", "Render HTML on the server, then hydrate the same component model in the browser."],
     ["Explicit reactive state", "Read, set and derive Properties. State propagation is synchronous; components own subscription lifetimes."],
@@ -90,31 +57,38 @@ export async function buildLanding(output) {
   ];
 
   const html = `<!doctype html>
-<html lang="en">
+<html lang="${locale}" data-design="${preferences.design}" data-color-scheme="${preferences.colorScheme}">
 <head>
   <meta charset="utf-8">
+  <base href="${localizedPath ? "../" : "./"}">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="One runtime. Two APIs. A Scala.js UI runtime with Scala and TypeScript APIs, SSR, hydration, reactive state, typed forms and rich application components.">
-  <meta name="theme-color" content="#f4f1eb">
   <meta property="og:title" content="JFX · One runtime. Two APIs.">
   <meta property="og:description" content="See the code. Try the runtime. Build with Scala or TypeScript.">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://anjunar.github.io/scalajs-jfx/">
-  <link rel="canonical" href="https://anjunar.github.io/scalajs-jfx/">
-  <link rel="icon" href="./scala/favicon.svg" type="image/svg+xml">
+  <meta property="og:url" content="https://anjunar.github.io/scalajs-jfx/${locale === "de" ? "de/" : ""}">
+  <link rel="canonical" href="https://anjunar.github.io/scalajs-jfx/${locale === "de" ? "de/" : ""}">
+  <link rel="alternate" hreflang="en" href="https://anjunar.github.io/scalajs-jfx/">
+  <link rel="alternate" hreflang="de" href="https://anjunar.github.io/scalajs-jfx/de/">
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <title>JFX · One runtime. Two APIs.</title>
-  <script>try { var t = localStorage.getItem("scalajs-jfx.theme"); if (t === "dark" || t === "light") document.documentElement.dataset.theme = t; } catch {}</script>
-  ${client.css.map(file => `<link rel="stylesheet" href="./${file}">`).join("\n")}
-  <script type="module" src="./${client.file}"></script>
+  <script>${bootstrapScript("scalajs-jfx.theme")}</script>
+  ${assets.css.map(file => `<link rel="stylesheet" href="${escape(file)}">`).join("\n")}
+  <script type="module" src="${escape(assets.script)}"></script>
 </head>
-<body>
+<body class="landing">
   <a class="skip-link" href="#main">Skip to content</a>
   <header class="site-header wrap">
     <a class="brand" href="./" aria-label="JFX home">JFX<span>.</span></a>
     <nav class="header-links" aria-label="Main navigation">
       <a class="optional" href="${repo}#related-documentation">Docs ↗</a><a href="./scala/">Scala</a><a href="./typescript/">TypeScript</a><a class="optional" href="${repo}">GitHub ↗</a>
-      <button id="theme-toggle" type="button" hidden aria-label="Switch to dark theme" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16Z" fill="currentColor" stroke="none"/></svg></button>
+      <div class="header-tools">
+      <label class="preference-choice"><span class="sr-only">Language</span><select id="language-choice" disabled><option value="en"${locale === "en" ? ' selected' : ''}>EN</option><option value="de"${locale === "de" ? ' selected' : ''}>DE</option></select></label>
+      <label class="preference-choice"><span class="sr-only">Design</span><select id="design-choice" disabled>${designs.map(d => `<option value="${d.id}"${d.id === preferences.design ? ' selected' : ''}>${escape(d.name)}</option>`).join("")}</select></label>
+      <label class="preference-choice"><span class="sr-only">Appearance</span><select id="scheme-choice" disabled><option value="light"${preferences.colorScheme === "light" ? ' selected' : ''}>Light</option><option value="dark"${preferences.colorScheme === "dark" ? ' selected' : ''}>Dark</option></select></label>
+      </div>
     </nav>
+    <span class="preference-status" id="preference-status" role="status"></span>
   </header>
   <main id="main" class="wrap">
     <section class="hero" aria-labelledby="hero-title">
@@ -133,7 +107,7 @@ export async function buildLanding(output) {
         ${code("scala-counter", "Scala", "scala", scalaBody, '<span>Inside Counter.compose</span><a href="./scala/state">Explore reactive state ↗</a>')}
         ${code("ts-counter", "TypeScript", "typescript", tsBody, '<span>Inside counter()</span><a href="./typescript/core/state">Explore reactive state ↗</a>')}
       </div>
-      <div class="proof" id="live-proof" data-state="ssr"><div class="proof-heading"><div><span class="proof-label">Actual JFX output</span><span class="proof-title">Counter / shared component tree</span></div><span class="proof-status"><span class="status-dot" aria-hidden="true"></span><span id="proof-status">SSR ready</span></span></div><fieldset id="counter-fieldset" disabled aria-label="JFX counter"><div id="counter-root">${previews.counter}</div></fieldset><div class="proof-actions"><button id="activate-counter" type="button" hidden>Hydrate this example →</button></div><p id="runtime-status" role="status">Server-rendered HTML. Enable the example to add interaction with the same runtime.</p><noscript><p class="muted">JavaScript is disabled. The server-rendered output, code and links remain available.</p></noscript></div>
+      <div class="proof" id="live-proof" data-state="ssr"><div class="proof-heading"><div><span class="proof-label">Actual JFX output</span><span class="proof-title">Counter / shared component tree</span></div><span class="proof-status"><span id="proof-status">SSR ready</span></span></div><fieldset id="counter-fieldset" disabled aria-label="JFX counter"><div id="counter-root">${previews.counter}</div></fieldset><div class="proof-actions"><button id="activate-counter" type="button" hidden>Hydrate this example →</button></div><p id="runtime-status" role="status">Server-rendered HTML. Enable the example to add interaction with the same runtime.</p><noscript><p class="muted">JavaScript is disabled. The server-rendered output, code and links remain available.</p></noscript></div>
     </section>
 
     <section class="section" aria-labelledby="capabilities-title">
@@ -186,7 +160,7 @@ export async function buildLanding(output) {
         </article>
         <article class="starter"><h3>TypeScript</h3><p>Start with Vite’s vanilla TypeScript template. Use Node.js 22.12+ and npm.</p>
           ${code("ts-create", "Terminal · Shell", "bash", 'npm create vite@latest jfx-starter -- --template vanilla-ts\ncd jfx-starter\nnpm install')}
-          ${code("ts-install", "Install JFX · Shell", "bash", `npm install @anjunar/jfx-core@${version} @anjunar/scalajs-jfx-bridge@${version} @anjunar/scalajs-jfx@${version} @anjunar/ui@^1.0.1`)}
+          ${code("ts-install", "Install JFX · Shell", "bash", `npm install @anjunar/jfx-core@${version} @anjunar/scalajs-jfx-bridge@${version} @anjunar/scalajs-jfx@${version}`)}
           <p>Replace <code>src/main.ts</code> with this counter and <code>index.html</code> with the host below.</p>
           <details><summary>Copy the complete starter files</summary>
             ${code("ts-main", "src/main.ts · TypeScript", "typescript", tsStarter)}
@@ -211,14 +185,11 @@ export async function buildLanding(output) {
     <section class="section section-origin origin" aria-labelledby="origin-title"><div><p class="eyebrow">07 / The reasoning behind it</p><h2 id="origin-title">Why JFX exists</h2></div><div><p>JFX explores a simple idea: the component tree can be the common foundation for server rendering, browser interaction and application-level controls.</p><p>The project brings a property-driven, composable approach to Scala.js and makes that same implementation available to TypeScript. Explicit state, lifecycle ownership and useful server HTML guide the design. <a href="${repo}#overview">Read the technical overview ↗</a>.</p></div></section>
     <section class="final-cta" aria-labelledby="explore-title"><h2 id="explore-title">Explore JFX</h2><p>Same runtime. Choose the API that fits your project.</p><div class="actions"><a class="action primary" href="./scala/">Scala Demo ↗</a><a class="action primary" href="./typescript/">TypeScript Demo ↗</a><a class="text-action" href="${repo}">GitHub ↗</a><a class="text-action" href="${repo}#related-documentation">Documentation ↗</a></div></section>
   </main>
-  <footer class="wrap"><span>JFX · Open source · MIT licensed</span><a href="#main">Back to top ↑</a></footer>
+  <footer class="page-footer wrap"><span>JFX · Open source · MIT licensed</span><a href="#main">Back to top ↑</a></footer>
   <div class="sr-only" id="copy-status" role="status" aria-live="polite"></div>
 </body>
 </html>`;
-  await writeFile(resolve(output, "index.html"), html, "utf8");
-}
-
-// Build just the landing during iteration; production Pages calls the same function.
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  await buildLanding(resolve(root, process.argv[2] ?? "dist/landing"));
+  const localizedHtml = localizePage(html, locale).replace(/href="#([^"]+)"/g,
+    (_, id) => `href="./${localizedPath ? `${locale}/` : ""}#${id}" data-page-anchor="${id}"`);
+  return { html: localizedHtml, starters: starterFiles };
 }

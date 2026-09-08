@@ -18,6 +18,12 @@ Application
                                                   +--> DOM, SSR, hydration
 ```
 
+The landing page and both demos offer four designs with independent light/dark selection. See [Multi Design](MULTI_DESIGN.md) for the shared packages, preview URLs and verification steps.
+
+## Landing page
+
+The product page is the private npm workspace [jfx-landing](npm/jfx-landing/README.md), with English/German SSR, shared designs and a live JFX example loaded on demand. Use `npm run build:landing` and `npm run preview:landing` for the standalone page. `npm run check:pages` validates the full site in `dist/pages`; `npm run preview:pages` serves it with both demos.
+
 ## Choose an API
 
 ### Scala / Scala.js
@@ -94,7 +100,7 @@ Run `sbt --server fastLinkJS`, then serve the project directory with an HTTP ser
 ### TypeScript / npm
 
 ```bash
-npm install @anjunar/jfx-core @anjunar/scalajs-jfx-bridge @anjunar/scalajs-jfx @anjunar/ui
+npm install @anjunar/jfx-core @anjunar/scalajs-jfx-bridge @anjunar/scalajs-jfx
 ```
 
 Create `index.html`:

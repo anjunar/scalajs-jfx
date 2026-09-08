@@ -16,7 +16,6 @@ final class AppHead(
     documentHead: DocumentHead,
     router: Router,
     i18n: I18nRuntime,
-    theme: AppTheme,
     navigation: Seq[NavEntry]
 ) {
 
@@ -31,18 +30,6 @@ final class AppHead(
     owner.addDisposable(router.responseStatus.observeWithoutInitial(_ => updatePage(page)))
     owner.addDisposable(i18n.locale.observeWithoutInitial(_ => updatePage(page)))
 
-    val themeColor = documentHead.handle(owner)
-
-    owner.addDisposable(
-      theme.modeProperty.observe { mode =>
-        themeColor.set(
-          HeadEntry.meta(
-            "theme-color",
-            if (mode == AppTheme.Mode.Dark) "#171918" else "#eee9e1"
-          )
-        )
-      }
-    )
   }
 
   /** Registered once. `charset` comes first because it has to. */
@@ -163,21 +150,5 @@ final class AppHead(
        |  }
        |}""".stripMargin
 
-  /** Runs before the first paint and sets `data-theme`, so the page does not start in the wrong
-    * theme and correct itself once the bundle is loaded. It is the one piece of the head that has
-    * to be a script: the server cannot know what the visitor stored.
-    *
-    * [[AppTheme.BrowserEffects]] takes over from there and writes the same attribute.
-    */
-  private def themeInitScript: String =
-    s"""(() => {
-       |  try {
-       |    const key = '${SiteConfig.themeStorageKey}'
-       |    const stored = localStorage.getItem(key)
-       |    const preferred = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-       |    document.documentElement.dataset.theme = stored === 'dark' || stored === 'light' ? stored : preferred
-       |  } catch (error) {
-       |    document.documentElement.dataset.theme = 'light'
-       |  }
-       |})()""".stripMargin
+  private def themeInitScript: String = DesignPreferences.bootstrapScript(SiteConfig.themeStorageKey)
 }

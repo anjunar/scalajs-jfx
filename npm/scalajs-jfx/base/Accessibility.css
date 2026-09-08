@@ -1,0 +1,22 @@
+/* Behavioral invariants, independent of the selected visual design. */
+@layer invariants {
+    :focus-visible {
+        outline: 3px solid var(--color-focus) !important;
+        outline-offset: 3px;
+    }
+
+    [hidden] { display: none !important; }
+
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+            animation: none !important;
+            transition: none !important;
+            scroll-behavior: auto !important;
+        }
+    }
+
+    @media (forced-colors: active) {
+        :focus-visible { outline-color: Highlight !important; }
+        button, input, select, textarea { border: 1px solid ButtonText; }
+    }
+}

@@ -7,12 +7,12 @@
     background: var(--aj-code-bg);
     color: var(--aj-ink);
     border: 1px solid var(--aj-line-soft);
-    border-radius: 12px;
+    border-radius: var(--radius-surface);
     overflow: hidden;
 }
 
 .codemirror-wrapper .cm-scroller {
-    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-family: var(--font-mono);
 }
 
 .codemirror-wrapper .cm-content,
@@ -53,7 +53,7 @@
     min-height: 220px;
     display: block;
     border: 1px solid color-mix(in srgb, var(--aj-accent) 28%, var(--aj-line));
-    border-radius: 20px;
+    border-radius: var(--radius-surface);
     overflow: hidden;
     background: var(--aj-surface-overlay);
 }
@@ -111,12 +111,12 @@
 .jfx-editor-code {
     margin: 0;
     border: 1px solid var(--aj-line-soft);
-    border-radius: 16px;
+    border-radius: var(--radius-surface);
     padding: 14px;
     overflow: auto;
     color: var(--aj-ink);
     background: var(--aj-surface-muted);
-    font-family: "Cascadia Code", "JetBrains Mono", "Fira Code", monospace;
+    font-family: var(--font-mono);
     font-size: 0.9rem;
     line-height: 1.55;
 }
@@ -130,23 +130,11 @@
     font-weight: 800;
 }
 
-html[data-theme="dark"] .hljs-keyword {
-    color: var(--aj-code-keyword);
-}
-
 .hljs-string {
     color: var(--aj-code-string);
 }
 
-html[data-theme="dark"] .hljs-string {
-    color: var(--aj-code-string);
-}
-
 .hljs-number {
-    color: var(--aj-code-number);
-}
-
-html[data-theme="dark"] .hljs-number {
     color: var(--aj-code-number);
 }
 
@@ -162,7 +150,7 @@ html[data-theme="dark"] .hljs-number {
     color: var(--aj-accent-strong);
 }
 
-.jfx2-demo__lexical {
+.editor-demo__surface {
     min-height: 240px;
 }
 
@@ -216,7 +204,7 @@ html[data-theme="dark"] .hljs-number {
     justify-content: center;
     gap: 6px;
     border: 1px solid var(--aj-line);
-    border-radius: 999px;
+    border-radius: var(--radius-surface);
     padding: 0 12px;
     color: var(--aj-ink);
     background: var(--aj-surface-overlay);
@@ -271,3 +259,9 @@ html[data-theme="dark"] .hljs-number {
     color: var(--aj-ink-muted);
 }
 
+
+.editor-demo__note {
+    margin-top: 1.5rem;
+    color: var(--aj-ink-muted);
+    font-size: .92rem;
+}

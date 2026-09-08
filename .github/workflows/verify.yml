@@ -38,14 +38,15 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
 
+      # The demo's SSR tests import the shared preference module from this workspace.
+      - name: Install npm workspace
+        run: npm ci --no-audit --no-fund
+
       - name: Scala test suite
         run: sbt --server "Test/testOnly *"
 
       - name: Link the production Scala.js bridge
         run: sbt --server "scalajs-jfx-bridge/fullLinkJS"
-
-      - name: Install npm workspace
-        run: npm ci --no-audit --no-fund
 
       - name: Verify every npm package and demo
         run: npm run verify --workspaces --if-present

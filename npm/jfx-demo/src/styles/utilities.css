@@ -1,0 +1,12 @@
+/* The demo's small Tailwind vocabulary. Palette ownership stays in JFX CSS. */
+@theme inline {
+    --color-ink-soft: var(--aj-ink-soft);
+    --color-ink-muted: var(--aj-ink-muted);
+    --color-accent: var(--aj-accent);
+    --color-accent-muted: var(--aj-accent-muted);
+    --color-line: var(--aj-line);
+    --color-surface-muted: var(--aj-surface-muted);
+    --radius-panel: var(--radius-surface);
+}
+
+.rounded-control { border-radius: var(--radius-control); }

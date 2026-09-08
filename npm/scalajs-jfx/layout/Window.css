@@ -162,19 +162,19 @@
 
 }
 
-html[data-theme="light"] .jfx-window .jfx-window__surface {
+html[data-color-scheme="light"] .jfx-window .jfx-window__surface {
     border-color: color-mix(in srgb, var(--aj-overlay-border) 112%, transparent);
     box-shadow:
             0 16px 34px color-mix(in srgb, var(--aj-shadow-medium) 76%, transparent),
             inset 0 1px 0 color-mix(in srgb, white 36%, transparent);
 }
 
-html[data-theme="light"] .jfx-window .jfx-window__header {
+html[data-color-scheme="light"] .jfx-window .jfx-window__header {
     background-color: color-mix(in srgb, var(--aj-surface-scrim) 118%, transparent);
     border-bottom-color: color-mix(in srgb, var(--aj-chrome-border) 108%, transparent);
 }
 
-html[data-theme="light"] .jfx-window .jfx-window__title {
+html[data-color-scheme="light"] .jfx-window .jfx-window__title {
     color: color-mix(in srgb, var(--aj-ink-soft) 88%, black 12%);
 }
 

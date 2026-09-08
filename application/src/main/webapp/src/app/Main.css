@@ -1,250 +1,38 @@
-.app-shell {
-    min-height: 100%;
-    background: var(--app-shell-bg);
-}
-
-.app-shell .jfx-drawer__navigation {
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-    padding: 24px 18px 28px;
-    border-right: 1px solid var(--aj-line-strong);
-    background: var(--aj-gradient-chrome-top);
-    backdrop-filter: blur(var(--aj-glass-blur));
-    -webkit-backdrop-filter: blur(var(--aj-glass-blur));
-}
-
-.app-shell .jfx-drawer__content {
-    min-width: 0;
-    background: transparent;
-}
-
-.app-frame {
-    min-height: 100%;
-    position: relative;
-}
-
-.app-nav-intro {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 16px;
-    border: 1px solid var(--aj-line-strong);
-    border-radius: 22px;
-    background: var(--aj-gradient-surface-strong);
-    box-shadow: var(--app-shell-intro-shadow);
-}
-
-.app-nav-intro__title {
-    font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
-    font-size: 1.35rem;
-    line-height: 1.1;
-    letter-spacing: 0;
-}
-
-.app-nav-intro__copy {
-    color: var(--aj-ink-soft);
-    line-height: 1.6;
-}
-
-.app-zone-heading__label {
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--aj-ink-muted);
-}
-
-.app-nav-group {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.app-nav-card {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 14px 16px;
-    border: 1px solid var(--aj-line-soft);
-    border-radius: 18px;
-    background: var(--aj-surface-raised);
-    box-shadow: var(--app-shell-card-shadow);
-    cursor: pointer;
-    transition:
-        transform 180ms ease,
-        border-color 180ms ease,
-        background-color 180ms ease,
-        box-shadow 180ms ease;
-}
-
-.app-nav-card:hover,
-.app-nav-card:focus-visible {
-    transform: translateY(-1px);
-    border-color: var(--aj-line-strong);
-    background: var(--aj-surface-overlay);
-    outline: none;
-}
-
-.app-nav-card.is-active {
-    border-color: var(--aj-accent);
-    background: var(--app-shell-card-active-bg);
-    box-shadow: inset 0 0 0 1px var(--aj-accent-ring);
-}
-
-.app-nav-card__meta {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-}
-
-.app-nav-card__zone {
-    font-size: 0.8rem;
-    color: var(--aj-ink-muted);
-}
-
-.app-nav-card__title {
-    font-size: 1rem;
-    font-weight: 680;
-    line-height: 1.2;
-}
-
-.app-nav-card__copy {
-    color: var(--aj-ink-soft);
-    line-height: 1.55;
-}
-
-.app-footer__copy,
-.app-shell__controls {
-    color: var(--aj-ink-soft);
-}
-
-.app-shell__controls {
-    position: absolute;
-    top: 16px;
-    left: 16px;
-    z-index: 5;
-    display: flex;
-    gap: 10px;
-}
-
-.app-icon-button,
-.app-menu-button {
-    width: 40px;
-    height: 40px;
-    padding: 0;
-    border-radius: 12px;
-    flex: 0 0 auto;
-    border: 1px solid var(--app-shell-control-border);
-    background: var(--app-shell-control-bg);
-    color: var(--aj-ink);
-    box-shadow: var(--app-shell-control-shadow);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.app-theme-button {
-    min-width: 78px;
-    padding: 0 14px;
-    font-size: 0.82rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-}
-
-.app-icon-button:hover,
-.app-menu-button:hover {
-    background: var(--app-shell-control-hover-bg);
-}
-
-.app-icon-button:focus-visible,
-.app-menu-button:focus-visible {
-    outline: 2px solid var(--aj-accent-ring);
-    outline-offset: 2px;
-}
-
-.app-content {
-    flex: 1 1 auto;
-    min-width: 0;
-    min-height: 0;
-    padding: 24px;
-}
-
-.app-content > .jfx-viewport {
-    min-height: 100%;
-}
-
-.app-footer {
-    padding: 0 24px 22px;
-}
-
-.app-footer__copy {
-    line-height: 1.6;
-}
-
-@media (max-width: 960px) {
-    .app-shell__controls {
-        top: 12px;
-        left: 12px;
-    }
-}
-
-/* The showcase uses the drawer as persistent navigation on wide screens and as an
- * overlay everywhere the menu trigger is visible. Keeping that distinction in CSS
- * also gives prerendered, non-hydrated pages the correct responsive first frame. */
-@media (min-width: 1025px) {
-    div.jfx-drawer.app-shell-drawer > .jfx-drawer__panel-shell {
-        width: min(92vw, 280px) !important;
-    }
-
-    div.jfx-drawer.app-shell-drawer > .jfx-drawer__panel-shell > .jfx-drawer__panel {
-        transform: translate3d(0, 0, 0);
-    }
-}
-
-@media (max-width: 1024px) {
-    div.jfx-drawer.app-shell-drawer {
-        display: block !important;
-    }
-
-    div.jfx-drawer.app-shell-drawer > .jfx-drawer__panel-shell > .jfx-drawer__panel,
-    .app-shell .jfx-drawer__navigation {
-        background: var(--aj-surface);
-        backdrop-filter: none;
-        -webkit-backdrop-filter: none;
-    }
-
-    div.jfx-drawer.app-shell-drawer > .jfx-drawer__panel-shell,
-    div.jfx-drawer.app-shell-drawer.jfx-drawer--open > .jfx-drawer__panel-shell {
-        position: absolute !important;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        width: min(92vw, 280px) !important;
-        max-width: 100%;
-        height: 100% !important;
-        overflow: visible;
-        pointer-events: none;
-        z-index: 20;
-    }
-
-    div.jfx-drawer.app-shell-drawer.jfx-drawer--open > .jfx-drawer__panel-shell {
-        pointer-events: auto;
-    }
-
-    .app-shell .jfx-drawer__navigation {
-        padding: 18px 14px 22px;
-    }
-}
-
-@media (max-width: 720px) {
-    .app-content {
-        padding: 16px;
-    }
-
-    .app-footer {
-        padding: 0 16px 18px;
-    }
+/* Shared navigation arrangement for every design, including responsive behavior. */
+app { display: block; }
+.app-shell { max-width: var(--layout-max); margin-inline: auto; min-height: 100dvh; color: var(--color-text-primary); }
+.site-header { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4) var(--space-5); padding: var(--space-5) var(--space-page); }
+.brand { font-family: var(--font-heading); font-weight: var(--heading-weight); font-size: 1.6rem; color: var(--color-text-primary); text-decoration: none; margin-right: auto; }
+.shell { display: grid; grid-template-columns: 15rem minmax(0, 1fr); }
+.rail { padding: var(--space-5); min-width: 0; border-inline-end: 1px solid var(--color-border); }
+.rail summary { cursor: pointer; font-size: var(--text-small); font-weight: 650; padding-block: var(--space-3); min-height: 2.75rem; }
+.app-sidebar__nav { display: flex; flex-direction: column; gap: var(--space-4); padding-top: var(--space-4); }
+.rail details:not([open]) > .app-sidebar__nav { display: none; }
+.app-nav-group { min-width: 0; display: flex; flex-direction: column; }
+.app-sidebar__section-title { font-size: .75rem; font-weight: 650; color: var(--color-text-muted); margin-bottom: var(--space-2); }
+.app-nav-link { display: flex; align-items: center; min-height: 2.75rem; padding: .5rem .7rem; color: var(--color-text-secondary); text-decoration: none; border-radius: var(--radius-control); font-size: var(--text-small); }
+.app-nav-link:is(:hover, [aria-current="page"], .active) { color: var(--color-interactive); background: var(--color-elevated); }
+.app-main { min-width: 0; padding: var(--space-6) var(--space-page) var(--space-section); }
+.app-content-viewport.jfx-viewport { overflow: visible; height: auto; }
+.app-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-4); padding: var(--space-5) var(--space-page); border-top: 1px solid var(--color-border); color: var(--color-text-muted); font-size: var(--text-small); }
+.app-footer a { color: var(--color-interactive); }
+.app-toolbar__api-switch { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-small); }
+.app-toolbar__api-switch > * { padding: .5rem .7rem; border-radius: var(--radius-control); }
+.app-toolbar__api-switch a { color: var(--color-interactive); }
+.app-toolbar__api-switch .is-active { background: var(--color-elevated); }
+.locale-choice { padding: .5rem .7rem; border: 1px solid var(--color-border); }
+.preferences { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: end; min-width: 0; }
+.preferences label { display: flex; flex-direction: column; gap: .3rem; font-size: var(--text-small); min-width: 0; }
+.preferences__label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.preferences select { border: 1px solid var(--color-border); border-radius: var(--radius-control); background: var(--color-surface); color: var(--color-text-primary); padding: .5rem .65rem; max-width: 100%; }
+.preferences__status:empty { display: none; }
+.preferences__status { flex-basis: 100%; max-width: 40ch; color: var(--color-error); font-size: var(--text-small); }
+@media (max-width: 46rem) {
+  .shell { display: block; }
+  .rail { padding: var(--space-3) var(--space-page); border-block: 1px solid var(--color-border); border-inline-end: 0; }
+  .app-sidebar__nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .site-header { gap: var(--space-3); }
+  .preferences { width: 100%; }
+  .preferences label:first-child { flex: 1; }
+  .app-main { padding-top: var(--space-5); }
 }

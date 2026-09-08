@@ -31,7 +31,7 @@
     min-width: 0;
     padding: 14px 16px;
     border: 1px solid var(--aj-line-soft);
-    border-radius: 8px;
+    border-radius: var(--radius-surface);
     background: var(--aj-surface-raised);
 }
 
@@ -55,7 +55,7 @@
     overflow-x: auto;
     overflow-wrap: normal;
     white-space: nowrap;
-    font-family: "Consolas", "SFMono-Regular", monospace;
+    font-family: var(--font-code);
 }
 
 .docs-page__summary {

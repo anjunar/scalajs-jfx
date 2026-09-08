@@ -50,7 +50,7 @@ class App(
     Option(initialUrl).getOrElse("/")
 
   private val appTheme =
-    AppTheme.forEnvironment()
+    AppTheme.forEnvironment(initialLocation)
 
   private val i18nRuntime =
     I18nRuntime.managed(AppI18n.config, initialLocation, routerConfig.basePath)
@@ -118,18 +118,6 @@ class App(
       )
     )
 
-  private def toolbarTitle =
-    val router = Router.current(using this).get
-
-    router.state.flatMap { state =>
-      i18nRuntime.locale.map { locale =>
-        navigationEntries
-          .find(_.matches(state.path))
-          .map(_.title(locale))
-          .getOrElse("scalajs-jfx")
-      }
-    }
-
   private val routes =
     AppRoutes.routes
 
@@ -145,206 +133,64 @@ class App(
     AppTheme.provide(appTheme)(using this)
     Router.provide(appRouter)(using this)
 
+    appTheme.install(this)
     render(this, cursor) {
       div {
         classes = Seq("app-shell")
-
-        drawer {
-          classes = Seq("app-shell-drawer")
-          open = false
-
-          drawerNavigation {
-            div {
-              classes = Seq("app-sidebar")
-
-              div {
-                classes = Seq("app-sidebar__header")
-                div {
-                  classes = Seq("app-sidebar__logo")
-                  text(i18n"JFX API") {}
-                }
-              }
-
+        app.AppElement.element("header") {
+          classes = Seq("site-header")
+          routerLink("/") { classes = Seq("brand"); text("JFX API") {} }
+          hbox {
+            classes = Seq("app-toolbar__api-switch")
+            div { classes = Seq("is-active"); text("Scala") {} }
+            routerLink() { href = "https://anjunar.github.io/scalajs-jfx/typescript/"; text("TypeScript") {} }
+          }
+          button(AppI18n.localeLabel(i18nRuntime.locale)) {
+            classes = Seq("locale-choice")
+            onClick { _ => switchLocale() }
+          }
+          child(new PreferenceControls(appTheme)) {}
+        }
+        div {
+          classes = Seq("shell")
+          app.AppElement.element("nav") {
+            classes = Seq("rail")
+            summon[AppElement].setAttribute("aria-label", "Components")
+            app.AppElement.element("details") {
+              summon[AppElement].setAttribute("open", "")
+              app.AppElement.element("summary") { text(i18n"Components") {} }
               div {
                 classes = Seq("app-sidebar__nav")
-
-                var currentZone: Option[String] = None
-                navigationEntries.foreach { entry =>
-                  val zoneKey = entry.zoneMessage.key.source
-
-                  if (!currentZone.contains(zoneKey)) {
-                    currentZone = Some(zoneKey)
-                    div {
-                      classes = Seq("app-sidebar__section-title")
-                      text(entry.zoneMessage) {}
-                    }
-                  }
-
-                  routerLink(entry.path) {
-                    classes = Seq("app-nav-link")
-
-                    onClick { event =>
-                      if (Cursor.isBrowser && dom.window.innerWidth <= 720) {
-                        open = false
+                navigationEntries.map(_.zoneMessage.key.source).distinct.foreach { zone =>
+                  val entries = navigationEntries.filter(_.zoneMessage.key.source == zone)
+                  div {
+                    classes = Seq("app-nav-group")
+                    div { classes = Seq("app-sidebar__section-title"); text(entries.head.zoneMessage) {} }
+                    entries.foreach { entry =>
+                      routerLink(entry.path) {
+                        classes = Seq("app-nav-link")
+                        text(entry.titleMessage) {}
                       }
                     }
-
-                    div {
-                      classes = Seq("app-nav-link__label")
-                      text(entry.titleMessage) {}
-                    }
-
-                    div {
-                      classes = Seq("app-nav-link__sub")
-                      text(entry.copyMessage) {}
-                    }
-                  }
-                }
-              }
-
-              div {
-                classes = Seq("app-sidebar__footer")
-                text(i18n"JFX 3 · Scala.js and TypeScript · one runtime.") {}
-                hbox {
-                  classes = Seq("app-sidebar__project-links")
-                  routerLink() {
-                    href = "https://anjunar.github.io/scalajs-jfx/"
-                    text("Showcase") {}
-                  }
-                  routerLink() {
-                    href = "https://anjunar.github.io/scalajs-jfx/typescript/"
-                    text("TypeScript") {}
-                  }
-                  routerLink() {
-                    href = "https://github.com/anjunar/scalajs-jfx#quick-start"
-                    text("Quick Start") {}
                   }
                 }
               }
             }
           }
-
-          drawerContent {
-            div {
-              classes = Seq("app-main")
-
-              div {
-                classes = Seq("app-toolbar")
-
-                button("menu") {
-                  classes = Seq("app-toolbar__menu-toggle", "material-icons")
-                  onClick { _ => toggle() }
-                }
-
-                div {
-                  classes = Seq("app-toolbar__title")
-                  text(toolbarTitle) {}
-                }
-
-                div {
-                  classes = Seq("spacer")
-                  style {
-                    flex = "1"
-                  }
-                }
-
-                hbox {
-                  classes = Seq("app-toolbar__api-switch")
-                  div {
-                    classes = Seq("is-active")
-                    text("Scala") {}
-                  }
-                  routerLink() {
-                    href = "https://anjunar.github.io/scalajs-jfx/typescript/"
-                    text("TypeScript") {}
-                  }
-                }
-
-                routerLink() {
-                  classes = Seq("app-toolbar__scala-link")
-                  href = "https://www.scala-js.org/"
-                  target = "_blank"
-                  rel = "noopener noreferrer"
-
-                  image {
-                    classes = Seq("app-toolbar__scala-badge")
-                    src = "https://www.scala-js.org/assets/badges/scalajs-1.22.0.svg"
-                    alt = "Scala.js 1.22.0"
-                  }
-                }
-
-                routerLink() {
-                  classes = Seq("app-toolbar__github")
-                  href = "https://github.com/anjunar/scalajs-jfx"
-                  target = "_blank"
-                  rel = "noopener noreferrer"
-
-                  image {
-                    src = publicAssetPath("GitHub_Invertocat_Black.svg")
-                    alt = "GitHub repository"
-                    style {
-                      height = "20px"
-                      width = "20px"
-                    }
-                  }
-                }
-
-                hbox {
-                  classes = Seq("app-toolbar__chooser", "app-toolbar__language")
-                  button(AppI18n.localeLabel(i18nRuntime.locale)) {
-                    classes = Seq("app-toolbar__choice")
-                    onClick { _ => switchLocale() }
-                  }
-                }
-
-                hbox {
-                  classes = Seq("app-toolbar__chooser", "app-toolbar__theme")
-
-                  button(i18n"Light") {
-                    classes = Seq("app-toolbar__choice")
-                    classIf("is-active", appTheme.modeProperty.map(_ == Mode.Light))
-                    onClick { _ => appTheme.set(Mode.Light) }
-                  }
-
-                  button(i18n"Dark") {
-                    classes = Seq("app-toolbar__choice")
-                    classIf("is-active", appTheme.modeProperty.map(_ == Mode.Dark))
-                    onClick { _ => appTheme.set(Mode.Dark) }
-                  }
-                }
-
-                routerLink("v3.0.2") {
-                  classes = Seq("app-toolbar__version")
-                  href = "https://repo1.maven.org/maven2/com/anjunar/scalajs-jfx-core_sjs1_3/3.0.2/"
-                  target = "_blank"
-                  rel = "noopener noreferrer"
-                  text("v3.0.2") {}
-                }
-              }
-
-              viewport {
-                style {
-                  flex = "1"
-                  overflow = "auto"
-                }
-
-                div {
-                  classes = Seq("app-content-viewport")
-                  child(appRouter) {}
-                }
-              }
-
-              div {
-                classes = Seq("app-footer")
-                div {
-                  classes = Seq("app-footer__text")
-                  text(
-                    i18n"Pure Scala.js architecture, rebuilt around the modules that actually exist here."
-                  ) {}
-                }
-              }
+          app.AppElement.element("main") {
+            classes = Seq("app-main")
+            summon[AppElement].setAttribute("id", "main-content")
+            viewport {
+              classes = Seq("app-content-viewport")
+              child(appRouter) {}
             }
           }
+        }
+        app.AppElement.element("footer") {
+          classes = Seq("app-footer")
+          text(i18n"JFX 3 · Scala.js and TypeScript · one runtime.") {}
+          routerLink() { href = "https://github.com/anjunar/scalajs-jfx"; text("GitHub") {} }
+          text("v3.0.2") {}
         }
       }
     }
@@ -355,7 +201,6 @@ class App(
       DocumentHead.requireCurrent(using this),
       appRouter,
       i18nRuntime,
-      appTheme,
       navigationEntries
     ).install(this)
   }
@@ -374,8 +219,5 @@ class App(
       replace = true
     )
   }
-
-  private def publicAssetPath(name: String): String =
-    if (SiteConfig.basePath.isEmpty) s"/$name" else s"${SiteConfig.basePath}/$name"
 
 }

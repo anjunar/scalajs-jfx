@@ -33,6 +33,11 @@ final class AppDocument(
   private[app] def ssrStatus: Int = app.ssrStatus
 
   override def compose(cursor: Cursor): Unit = {
+    if (!cursor.isBrowser) {
+      val preferences = DesignPreferences.serverPreferences(initialUrl)
+      setAttribute("data-design", preferences.design)
+      setAttribute("data-color-scheme", preferences.colorScheme)
+    }
     DocumentHead.provide(documentHead)(using this)
 
     render(this, cursor) {

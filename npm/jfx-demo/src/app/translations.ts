@@ -2,6 +2,10 @@ import { catalogEntry, i18n, type CatalogEntry } from "@anjunar/jfx-core";
 
 /** Shared chrome and documentation strings used outside an individual page. */
 export const entries: readonly CatalogEntry[] = [
+  catalogEntry(i18n`Design`, { de: "Design" }),
+  catalogEntry(i18n`Appearance`, { de: "Darstellung" }),
+  catalogEntry(i18n`Components`, { de: "Komponenten" }),
+  catalogEntry(i18n`Selection applies to this page only: browser storage is unavailable.`, { de: "Auswahl gilt nur auf dieser Seite: Browserspeicher nicht verfügbar." }),
   catalogEntry(i18n`Copy`, { de: "Kopieren" }),
   catalogEntry(i18n`Name`, { de: "Name" }),
   catalogEntry(i18n`Type`, { de: "Typ" }),

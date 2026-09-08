@@ -1,3 +1,4 @@
+import { bootstrapScript } from "@anjunar/scalajs-jfx/preferences";
 /**
  * Everything the demo puts into the document `<head>` that isn't per-page --
  * ported from `application/src/main/scala-3/app/AppHead.scala`'s
@@ -18,27 +19,7 @@
 import { base, charset, disposeWith, documentHead, head, type HeadEntry, inlineScript, link, locale, meta, title } from "@anjunar/jfx-core";
 import { basePath } from "./base-path.js";
 
-/** Runs before anything paints so the first frame already carries the right
- * `data-theme` -- otherwise the page would flash light before a stored
- * "dark" preference (or the client's own toggle in theme.ts) caught up.
- * Verbatim from the inline script `index.html` used to carry. */
-const THEME_INIT_SCRIPT = `
-(function () {
-  try {
-    var stored = localStorage.getItem("jfx-demo.theme");
-    var mode =
-      stored === "light" || stored === "dark"
-        ? stored
-        : window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
-          ? "dark"
-          : "light";
-    document.documentElement.setAttribute("data-theme", mode);
-  } catch (error) {
-    /* localStorage can throw in a locked-down browser context; the CSS
-       default (light) is a fine fallback. */
-  }
-})();
-`;
+const THEME_INIT_SCRIPT = bootstrapScript("jfx-demo.theme");
 
 export function appHead(assets: readonly HeadEntry[] = []): void {
   head(() => {

@@ -39,7 +39,7 @@ object EditorPage {
           style { gap = "14px" }
 
           editor(editorName, standalone = true) {
-            classes = Seq("jfx2-demo__lexical")
+            classes = Seq("editor-demo__surface")
             placeholder = i18n"Write the article..."
             value = state.get
             editable = false
@@ -58,7 +58,7 @@ object EditorPage {
           }
 
           div {
-            classes = Seq("jfx2-demo__note")
+            classes = Seq("editor-demo__note")
             text(state.map(value => s"Markdown: ${value.length} characters")) {}
           }
         }

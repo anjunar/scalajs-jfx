@@ -3,7 +3,6 @@ import { cp, mkdir, readdir, readFile, rename, rm, writeFile } from "node:fs/pro
 import { dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { buildLanding } from "./landing/build.mjs";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const pagesDir = resolve(projectRoot, "dist", "pages");
@@ -36,17 +35,21 @@ await runSbt(["--server", "scalajs-jfx-bridge/fullLinkJS"], projectRoot, typescr
 await runNpm(["run", "build:pages"], typescriptRoot, typescriptEnv);
 await copyDirectory(typescriptStaticDir, resolve(pagesDir, "typescript"));
 
-await buildLanding(pagesDir);
+await runNpm(["run", "build"], resolve(projectRoot, "npm/jfx-landing"), process.env);
+await copyDirectory(resolve(projectRoot, "npm/jfx-landing/dist/static"), pagesDir);
 await writeFile(resolve(pagesDir, "404.html"), notFoundPage(), "utf8");
 await writeFile(resolve(pagesDir, ".nojekyll"), "", "utf8");
 await validatePages();
-await run(process.execPath, ["tools/landing/verify.mjs", pagesDir], { cwd: projectRoot, env: process.env });
+await run(process.execPath, ["npm/jfx-landing/scripts/verify.mjs", pagesDir, "--pages"], { cwd: projectRoot, env: process.env });
 
-await rm(docsDir, { recursive: true, force: true });
-await rename(pagesDir, docsDir);
-
-console.log("\nMoved dist/pages to docs:");
-await printTree(docsDir);
+if (process.argv.includes("--check")) {
+  console.log("Validated complete site in dist/pages; docs was not changed.");
+} else {
+  await rm(docsDir, { recursive: true, force: true });
+  await rename(pagesDir, docsDir);
+  console.log("\nMoved dist/pages to docs:");
+  await printTree(docsDir);
+}
 
 function pagesEnvironment(basePath, deployUrl) {
   return {

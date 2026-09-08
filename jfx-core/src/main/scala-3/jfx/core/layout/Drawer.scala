@@ -38,40 +38,24 @@ final class Drawer extends AbstractComponent {
     classIf("jfx-drawer--start", sideProperty.map(_ == Drawer.Side.Start))
     classIf("jfx-drawer--end", sideProperty.map(_ == Drawer.Side.End))
 
-    style {
-      display = "flex"
-      width = "100%"
-      height = "100%"
-      position = "relative"
-    }
-
     render(this, cursor) {
       div {
         classes = Seq("jfx-drawer__panel-shell")
 
         style {
-          width = panelShellWidth
-          position = "relative"
-          height = "100%"
+          css("--jfx-drawer-panel-width", panelShellWidth)
         }
 
         div {
           classes = Seq("jfx-drawer__panel")
 
           style {
-            width = drawerWidthProperty
-            height = "100%"
-            overflow = "hidden"
+            css("--jfx-drawer-width", drawerWidthProperty)
           }
 
           navigationHost = div {
             classes = Seq("jfx-drawer__navigation")
 
-            style {
-              display = "flex"
-              flexDirection = "column"
-              height = "100%"
-            }
           }
         }
       }
@@ -89,13 +73,6 @@ final class Drawer extends AbstractComponent {
       contentHost = div {
         classes = Seq("jfx-drawer__content")
 
-        style {
-          display = "flex"
-          flexDirection = "column"
-          flex = "1"
-          height = "100%"
-          minWidth = "0"
-        }
       }
     }
 

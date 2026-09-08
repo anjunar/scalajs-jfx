@@ -19,7 +19,8 @@
     "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
-    "verify": "node scripts/verify.mjs"
+    "verify": "node scripts/build-design-registry.mjs --check && node scripts/verify.mjs && node --test scripts/preferences.test.mjs",
+    "build:registry": "node scripts/build-design-registry.mjs"
   },
   "sideEffects": [
     "*.css",
@@ -31,7 +32,11 @@
     },
     "./index.css": "./index.css",
     "./css": "./index.css",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./preferences": {
+      "types": "./preferences.d.ts",
+      "import": "./preferences.js"
+    }
   },
   "files": [
     "index.js",
@@ -41,9 +46,9 @@
     "control",
     "form",
     "layout",
-    "README.md"
-  ],
-  "peerDependencies": {
-    "@anjunar/ui": "^1.0.1"
-  }
+    "README.md",
+    "designs",
+    "preferences.js",
+    "preferences.d.ts"
+  ]
 }

@@ -12,7 +12,6 @@ import { appRoutes, routerConfig } from "./app/routes.js";
 import { appShell } from "./app/shell.js";
 import { i18nProvider, providerConfig } from "./app/i18n.js";
 import { hydratedProperty } from "./app/hydrated.js";
-import { syncThemeFromDocument } from "./app/theme.js";
 
 // Claims the whole server-rendered document -- `<html>`, `<head>` and `<body>`
 // included -- built by src/entry-server.ts for the same path through the same
@@ -30,7 +29,5 @@ await hydrate(document, () =>
   )
 );
 
-// Only after hydration has fully settled -- see src/app/hydrated.ts and
-// src/app/theme.ts's own note on why this order matters (E-7).
+// Only after hydration has fully settled -- see src/app/hydrated.ts (E-7).
 hydratedProperty().set(true);
-syncThemeFromDocument();

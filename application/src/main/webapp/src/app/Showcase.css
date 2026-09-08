@@ -7,7 +7,7 @@
 }
 
 .clarity-page--home .calm-action {
-    border-radius: 8px;
+    border-radius: var(--radius-surface);
     letter-spacing: 0;
 }
 
@@ -21,7 +21,7 @@
     overflow: hidden;
     padding: 58px 56px 34px;
     border: 1px solid var(--aj-line-strong);
-    border-radius: 8px;
+    border-radius: var(--radius-surface);
     background: var(--aj-gradient-surface-soft);
     box-shadow: var(--aj-shadow-float);
 }
@@ -76,7 +76,7 @@
 
 .home-hero__title {
     max-width: 18ch;
-    font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+    font-family: var(--font-heading);
     font-size: 3.9rem;
     line-height: 0.98;
     letter-spacing: 0;
@@ -109,7 +109,7 @@
     gap: 10px;
     min-width: 0;
     border: 1px solid var(--aj-line-soft);
-    border-radius: 8px;
+    border-radius: var(--radius-surface);
     background: var(--aj-surface-raised);
     box-shadow: var(--aj-shadow-panel);
 }
@@ -122,7 +122,7 @@
 .home-metric__index,
 .home-architecture-step__index,
 .home-demo-card__meta {
-    font-family: "Consolas", "SFMono-Regular", monospace;
+    font-family: var(--font-mono);
     font-size: 0.74rem;
     font-weight: 760;
     letter-spacing: 0;
@@ -172,7 +172,7 @@
 
 .home-section-heading__title {
     max-width: 760px;
-    font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+    font-family: var(--font-heading);
     font-size: 2rem;
     line-height: 1.08;
     letter-spacing: 0;
@@ -240,7 +240,7 @@
     margin-top: 6px;
     padding: 28px;
     border: 1px solid var(--aj-line-soft);
-    border-radius: 8px;
+    border-radius: var(--radius-surface);
     background: var(--aj-gradient-surface-soft);
 }
 
@@ -252,7 +252,7 @@
 }
 
 .home-closing__title {
-    font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+    font-family: var(--font-heading);
     font-size: 1.8rem;
     line-height: 1.12;
     letter-spacing: 0;
@@ -284,7 +284,7 @@
     gap: 12px;
     padding: 20px;
     border: 1px solid var(--aj-line-strong);
-    border-radius: 24px;
+    border-radius: var(--radius-surface);
     background: var(--aj-gradient-surface-strong);
     box-shadow: 0 18px 36px var(--aj-shadow-medium);
 }
@@ -340,7 +340,7 @@
     gap: 14px;
     padding: 30px;
     border: 1px solid var(--aj-line-strong);
-    border-radius: 32px;
+    border-radius: var(--radius-surface);
     background:
         radial-gradient(circle at top right, color-mix(in srgb, var(--aj-accent) 14%, transparent), transparent 34%),
         radial-gradient(circle at bottom left, color-mix(in srgb, var(--aj-info) 10%, transparent), transparent 28%),
@@ -353,7 +353,7 @@
     position: absolute;
     inset: 18px auto 18px 18px;
     width: 2px;
-    border-radius: 999px;
+    border-radius: var(--radius-surface);
     background: var(--aj-line);
 }
 
@@ -388,7 +388,7 @@
 .clarity-hero__title,
 .docs-hero__title {
     max-width: 14ch;
-    font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+    font-family: var(--font-heading);
     font-size: clamp(2.3rem, 6vw, 4.6rem);
     line-height: 0.98;
     letter-spacing: -0.05em;
@@ -402,7 +402,7 @@
 }
 
 .docs-hero__package {
-    font-family: "Consolas", "SFMono-Regular", monospace;
+    font-family: var(--font-mono);
 }
 
 .docs-hero__actions,
@@ -423,7 +423,7 @@
     max-width: 100%;
     padding: 6px 10px;
     border: 1px solid transparent;
-    border-radius: 999px;
+    border-radius: var(--radius-surface);
     font-size: 0.72rem;
     font-weight: 700;
     letter-spacing: 0.08em;
@@ -469,7 +469,7 @@
     min-height: 40px;
     padding: 11px 16px;
     border: 1px solid var(--aj-line-strong);
-    border-radius: 999px;
+    border-radius: var(--radius-surface);
     background: var(--aj-surface-overlay);
     color: var(--aj-ink);
     font-weight: 650;
@@ -550,7 +550,7 @@
     gap: 8px;
     padding: 16px;
     border: 1px solid var(--aj-line-soft);
-    border-radius: 18px;
+    border-radius: var(--radius-surface);
     background: var(--aj-surface-overlay);
 }
 
@@ -613,7 +613,7 @@
     flex: 1 1 320px;
     padding: 12px 14px;
     border: 1px solid var(--aj-line-strong);
-    border-radius: 16px;
+    border-radius: var(--radius-surface);
     background: var(--aj-surface-overlay);
     color: var(--aj-ink);
 }
@@ -633,7 +633,7 @@
     min-height: 34px;
     padding: 8px 12px;
     border: 1px solid var(--aj-line-soft);
-    border-radius: 999px;
+    border-radius: var(--radius-surface);
     background: var(--aj-surface-muted);
     color: var(--aj-ink-soft);
     cursor: pointer;
@@ -649,10 +649,10 @@
 .component-doc__status {
     padding: 12px 14px;
     border: 1px solid var(--aj-line-soft);
-    border-radius: 16px;
+    border-radius: var(--radius-surface);
     background: var(--aj-surface-muted);
     color: var(--aj-ink-soft);
-    font-family: "Consolas", "SFMono-Regular", monospace;
+    font-family: var(--font-mono);
     font-size: 0.86rem;
     line-height: 1.55;
 }
@@ -660,7 +660,7 @@
 .table-page__table.jfx-table-view,
 .component-doc__mini-table .jfx-table-view {
     border: 1px solid var(--aj-line-strong);
-    border-radius: 22px;
+    border-radius: var(--radius-surface);
     background: var(--aj-surface);
     overflow: hidden;
 }
@@ -741,12 +741,12 @@
     gap: 8px;
     padding: 14px;
     border: 1px solid var(--aj-line-soft);
-    border-radius: 18px;
+    border-radius: var(--radius-surface);
     background: var(--aj-surface-overlay);
 }
 
 .table-page__count-value {
-    font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+    font-family: var(--font-heading);
     font-size: 1.55rem;
 }
 
@@ -802,7 +802,7 @@
 }
 
 .docs-index__meta-value {
-    font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+    font-family: var(--font-heading);
     font-size: 1.6rem;
 }
 
@@ -841,12 +841,12 @@
 
 .component-doc__api-name,
 .component-doc__code {
-    font-family: "Consolas", "SFMono-Regular", monospace;
+    font-family: var(--font-mono);
 }
 
 .component-doc__code {
     padding: 18px;
-    border-radius: 18px;
+    border-radius: var(--radius-surface);
     background: var(--aj-surface-overlay);
     color: var(--aj-ink);
     font-size: 0.9rem;
@@ -869,7 +869,7 @@
     gap: 8px;
     padding: 16px;
     border: 1px solid var(--aj-line-soft);
-    border-radius: 18px;
+    border-radius: var(--radius-surface);
     background: var(--aj-surface-overlay);
 }
 
@@ -887,7 +887,7 @@
     width: 100%;
     padding: 10px 12px;
     border: 1px solid var(--aj-line-soft);
-    border-radius: 16px;
+    border-radius: var(--radius-surface);
     background: var(--aj-surface-overlay);
 }
 
@@ -911,7 +911,7 @@
 
 .component-doc__combo-pill {
     padding: 5px 10px;
-    border-radius: 999px;
+    border-radius: var(--radius-surface);
     font-size: 0.72rem;
     font-weight: 700;
     letter-spacing: 0.08em;
@@ -933,13 +933,13 @@
 .i18n-demo__locale,
 .i18n-demo__label,
 .i18n-demo__source {
-    font-family: "Consolas", "SFMono-Regular", monospace;
+    font-family: var(--font-mono);
 }
 
 .i18n-demo__locale {
     padding: 10px 12px;
     border: 1px solid var(--aj-line-soft);
-    border-radius: 8px;
+    border-radius: var(--radius-surface);
     color: var(--aj-ink);
     background: var(--aj-surface-muted);
 }
@@ -1009,7 +1009,7 @@
     gap: 16px;
     justify-content: space-between;
     border: 1px solid var(--aj-line-soft);
-    border-radius: 24px;
+    border-radius: var(--radius-surface);
     background:
         radial-gradient(circle at top right, color-mix(in srgb, var(--aj-accent) 12%, transparent), transparent 36%),
         linear-gradient(180deg, var(--aj-surface-overlay), var(--aj-surface));
@@ -1025,7 +1025,7 @@
 
 .carousel-demo-slide__title {
     max-width: 14ch;
-    font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+    font-family: var(--font-heading);
     font-size: clamp(2.2rem, 5vw, 3.5rem);
     line-height: 0.98;
     color: var(--aj-ink);
@@ -1052,7 +1052,7 @@
     justify-content: center;
     min-height: 34px;
     padding: 6px 12px;
-    border-radius: 999px;
+    border-radius: var(--radius-surface);
     color: #ffffff;
     font-size: 0.74rem;
     font-weight: 760;
@@ -1161,7 +1161,7 @@
 
     .clarity-hero {
         padding: 24px;
-        border-radius: 24px;
+        border-radius: var(--radius-surface);
     }
 
     .clarity-hero__title,

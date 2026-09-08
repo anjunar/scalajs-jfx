@@ -1,9 +1,12 @@
+import { fileURLToPath } from "node:url";
+import { verifyThemeBootstrap } from "../../../tools/verify-theme.mjs";
 import assert from "node:assert/strict";
 import { access, readFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { resolve, dirname } from "node:path";
 import { JSDOM } from "jsdom";
 
-const output = resolve(process.argv[2] ?? "docs");
+const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const output = resolve(process.argv[2] ?? resolve(packageRoot, "dist/static"));
 const html = await readFile(resolve(output, "index.html"), "utf8");
 const document = new JSDOM(html, { url: "https://anjunar.github.io/scalajs-jfx/" }).window.document;
 const source = name => readFile(resolve(output, "starters", name), "utf8");
@@ -58,19 +61,42 @@ for (const element of document.querySelectorAll("a[href],link[href],script[src]"
   }
   const path = decodeURIComponent(url.pathname.slice("/scalajs-jfx/".length));
   if (!path && url.hash) assert(document.getElementById(url.hash.slice(1)), `Missing anchor: ${url.hash}`);
-  if (path) {
+  if (path && (process.argv.includes("--pages") || !/^(scala|typescript)\//.test(path))) {
     try { await access(resolve(output, path.endsWith("/") ? path + "index.html" : path)); }
     catch { await access(resolve(output, path, "index.html")); }
   }
   localLinks++;
 }
 const manifest = JSON.parse(await readFile(resolve(output, "landing-manifest.json"), "utf8"));
-const entry = manifest["tools/landing/client.mjs"];
+const entry = manifest["src/client.mjs"];
 assert.equal(entry.imports?.length ?? 0, 0, "Landing should not eagerly load the JFX runtime.");
 assert.equal(entry.dynamicImports.length, 1, "Live proof must load its runtime on demand.");
 for (const chunk of Object.values(manifest)) {
   await access(resolve(output, chunk.file));
   for (const css of chunk.css ?? []) await access(resolve(output, css));
+}
+verifyThemeBootstrap(html);
+const germanHtml = await readFile(resolve(output, "de/index.html"), "utf8");
+const german = new JSDOM(germanHtml, { url: "https://anjunar.github.io/scalajs-jfx/de/" }).window.document;
+assert.equal(german.documentElement.lang, "de");
+assert.equal(german.querySelector("h1").textContent, "Eine Runtime. Zwei APIs.");
+assert.equal(german.querySelector("#same-code").textContent, "Dieselbe Oberfläche. Zwei Sprachen.");
+assert.equal(german.querySelector("#counter-root").innerHTML, document.querySelector("#counter-root").innerHTML, "Language must not alter the hydratable example");
+assert.equal(german.querySelector("#scala-main").textContent, document.querySelector("#scala-main").textContent);
+assert.equal(german.querySelector("#ts-main").textContent, document.querySelector("#ts-main").textContent);
+assert(german.querySelector('.hero-actions a').href.endsWith('/scala/de/'));
+for (const doc of [document, german]) {
+  for (const anchor of doc.querySelectorAll('[data-page-anchor]')) {
+    assert.equal(new URL(anchor.href).pathname, new URL(doc.URL).pathname, 'Section links must stay in the current language');
+    assert(doc.getElementById(anchor.dataset.pageAnchor), 'Section links need an existing target');
+  }
+  assert.deepEqual([...doc.querySelector('#design-choice').options].map(o => o.value), ['atlas', 'flora', 'terra', 'ember']);
+  assert.deepEqual([...doc.querySelector('#scheme-choice').options].map(o => o.value), ['light', 'dark']);
+  assert.deepEqual([...doc.querySelector('#language-choice').options].map(o => o.value), ['en', 'de']);
+  for (const select of doc.querySelectorAll('.preference-choice select')) {
+    assert(select.disabled, 'Static controls must be inert without JavaScript');
+    assert(select.labels[0].querySelector('.sr-only'), 'Controls retain their accessible labels');
+  }
 }
 console.log(`Landing verified: real SSR, exact starter sources, ${localLinks} local links/assets, ${externalLinks.size} external destinations, lazy runtime.`);
 if (process.argv.includes("--external")) {

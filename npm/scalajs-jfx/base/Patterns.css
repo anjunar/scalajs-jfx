@@ -1,0 +1,24 @@
+@layer patterns {
+  html { font-family: var(--font-interface); font-size: 16px; background: var(--color-canvas); color: var(--color-text-primary); }
+  body { margin: 0; line-height: var(--leading-body); }
+  *, *::before, *::after { box-sizing: border-box; }
+  ::selection { background: var(--color-selection); color: var(--color-text-primary); }
+  :is(button, input, select, textarea) { font: inherit; color: inherit; }
+  :is(h1, h2, h3, h4, h5, h6) { font-family: var(--font-heading); font-weight: var(--heading-weight); letter-spacing: var(--heading-tracking); }
+  h1 { font-size: var(--text-h1); } h2 { font-size: var(--text-h2); } h3 { font-size: var(--text-h3); }
+  h4 { font-size: var(--text-h4); } h5 { font-size: var(--text-h5); } h6 { font-size: var(--text-h6); }
+  :is(pre, code) { font-family: var(--font-code); }
+  :is(button, select) { min-height: 2.75rem; }
+  button { border-radius: var(--radius-control); transition: color var(--duration-response) var(--ease-response), background-color var(--duration-response) var(--ease-response); }
+  button:disabled { color: var(--color-text-muted); cursor: not-allowed; }
+  :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not([type="range"]) { min-height: 2.75rem; }
+  .jfx-input-container__label { height: auto; min-height: 1.4em; }
+  .jfx-input-container__placeholder { font-size: var(--text-small); opacity: 1; letter-spacing: 0; text-transform: none; }
+  .jfx-input-container.empty .jfx-input-container__placeholder { display: inline; }
+  .jfx-input-container__errors { height: auto; font-size: var(--text-small); }
+  .jfx-tabs__panel { padding: var(--space-5); }
+  .jfx-tabs__trigger { min-height: 2.75rem; font-weight: var(--heading-weight); }
+  .jfx-tabs__trigger--active { color: var(--color-interactive); }
+  .jfx-editor-readonly { font-family: var(--font-reading); line-height: var(--leading-reading); }
+  .jfx-editor-readonly :is(p, blockquote) { max-width: var(--measure-reading); }
+}

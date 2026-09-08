@@ -32,7 +32,7 @@ export async function render(
   const result = await renderToString(
     () =>
       i18nProvider(providerConfig(path), () =>
-        appDocument(assets, () => appShell(appRoutes, { ...routerConfig, url: path }))
+        appDocument(assets, () => appShell(appRoutes, { ...routerConfig, url: path }), path)
       ),
     { document: true }
   );

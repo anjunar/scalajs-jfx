@@ -1,47 +1,46 @@
-/**
- * The light/dark toggle in the shell. `app/head.ts`'s inline theme-init
- * script already set `data-theme` on `<html>` before anything rendered (from
- * `localStorage`, key `jfx-demo.theme`, else `prefers-color-scheme`) -- this
- * module is only the reactive side the shell's button binds to.
- *
- * The property is created with the *same* default ("light") on the server
- * and on the client's first render pass, so the button's label can never
- * disagree between SSR and hydration -- see CLAUDE_DEMO_PLAN.md E-7.
- * `syncFromDocument()` reconciles it with whatever the inline script already
- * resolved, but only after `hydrate()` in entry-client.ts has settled: a
- * property change at that point is an ordinary update, not a hydration
- * conflict, the same reasoning as `hydratedProperty()` in app/hydrated.ts.
- */
-import { property } from "@anjunar/jfx-core";
-import type { Property } from "@anjunar/jfx-core";
+import { attr, classes, div, disposeWith, domProperty, element, isBrowser, on, property, self, text, type ReadOnlyProperty } from "@anjunar/jfx-core";
+import { createPreferences, designs, serverPreferences } from "@anjunar/scalajs-jfx/preferences";
+import { translated } from "./i18n.js";
+const label = element("label"), select = element("select"), option = element("option"), status = element("span");
 
-export type ThemeMode = "light" | "dark";
-
-const STORAGE_KEY = "jfx-demo.theme";
-
-let instance: Property<ThemeMode> | null = null;
-
-export function themeProperty(): Property<ThemeMode> {
-  return (instance ??= property<ThemeMode>("light"));
-}
-
-/** Reads the value app/head.ts's inline theme-init script already applied. */
-export function syncThemeFromDocument(): void {
-  try {
-    const attribute = document.documentElement.getAttribute("data-theme");
-    if (attribute === "light" || attribute === "dark") themeProperty().set(attribute);
-  } catch {
-    /* matches index.html's own guard around a locked-down localStorage/DOM. */
-  }
-}
-
-export function toggleTheme(): void {
-  const next: ThemeMode = themeProperty().get === "dark" ? "light" : "dark";
-  themeProperty().set(next);
-  try {
-    document.documentElement.setAttribute("data-theme", next);
-    localStorage.setItem(STORAGE_KEY, next);
-  } catch {
-    /* same guard as above -- the property itself is already updated. */
+/** Each shell owns its preferences and subscriptions, including during SSR. */
+export function preferenceControls(url: string): void {
+  const preferences = createPreferences("jfx-demo.theme", url);
+  const initial = serverPreferences(url);
+  div(() => {
+    classes("preferences");
+    choice("design-choice", "Design", "design", designs.map(d => [d.id, d.name]), preferences.setDesign);
+    choice("scheme-choice", "Appearance", "colorScheme", [["light", translated("Light")], ["dark", translated("Dark")]], value => preferences.setColorScheme(value === "dark" ? "dark" : "light"));
+    status(() => {
+      classes("preferences__status");
+      attr("role", "status");
+      const message = translated("Selection applies to this page only: browser storage is unavailable.");
+      const notice = property("");
+      let available = true;
+      disposeWith({ dispose: preferences.subscribe(state => { available = state.storageAvailable; notice.set(available ? "" : message.get); }) });
+      disposeWith(message.observeWithoutInitial(value => notice.set(available ? "" : value)));
+      text(notice);
+    });
+  });
+  function choice(id: string, title: string, axis: "design" | "colorScheme", options: readonly (readonly [string, string | ReadOnlyProperty<string>])[], change: (value: string) => void): void {
+    label(() => {
+      attr("for", id);
+      status(() => { classes("preferences__label"); text(translated(title)); });
+      select(() => {
+        attr("id", id);
+        attr("disabled", "");
+        for (const [value, title] of options) option(() => {
+          attr("value", value);
+          if (value === initial[axis]) attr("selected", "");
+          text(title);
+        });
+        on("change", event => change((event.target as HTMLSelectElement).value));
+        if (isBrowser()) {
+          domProperty("disabled", false);
+          const control = self();
+          disposeWith({ dispose: preferences.subscribe(state => control.setDomProperty("value", state[axis])) });
+        }
+      });
+    });
   }
 }
