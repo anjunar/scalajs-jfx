@@ -1,6 +1,6 @@
 {
   "name": "jfx-landing",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "private": true,
   "type": "module",
   "description": "The JFX product landing page: SSR previews, four shared designs, English/German and a lazy live example.",

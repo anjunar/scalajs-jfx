@@ -190,7 +190,7 @@ class App(
           classes = Seq("app-footer")
           text(i18n"JFX 3 · Scala.js and TypeScript · one runtime.") {}
           routerLink() { href = "https://github.com/anjunar/scalajs-jfx"; text("GitHub") {} }
-          text("v3.0.2") {}
+          text("v3.0.3") {}
         }
       }
     }

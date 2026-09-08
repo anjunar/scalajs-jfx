@@ -1,6 +1,6 @@
 {
   "name": "scalajs-jfx",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "private": true,
   "workspaces": [
     "npm/*"
@@ -12,6 +12,7 @@
     "build:landing": "npm run build --workspace npm/jfx-landing",
     "preview:landing": "npm run start --workspace npm/jfx-landing",
     "verify:landing": "npm run verify --workspace npm/jfx-landing",
+    "predev": "sbt --server \"scalajs-jfx-demo/fastLinkJS\"",
     "dev": "node server/server.mjs",
     "build:client": "vite build",
     "build:server": "vite build --ssr src/entry-server.js",

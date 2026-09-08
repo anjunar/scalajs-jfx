@@ -1,0 +1,373 @@
+<!DOCTYPE html><html data-presentation="" lang="de" data-design="atlas" data-color-scheme="light"><head>
+  <meta charset="utf-8">
+  <base href="../">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Eine Runtime. Zwei APIs. Eine Scala.js-Runtime mit APIs für Scala und TypeScript, SSR, Hydration, reaktivem Zustand, typisierten Formularen und umfangreichen Anwendungskomponenten.">
+  <meta property="og:title" content="JFX · Eine Runtime. Zwei APIs.">
+  <meta property="og:description" content="Code ansehen. Runtime ausprobieren. Mit Scala oder TypeScript entwickeln.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://anjunar.github.io/scalajs-jfx/de/">
+  <link rel="canonical" href="https://anjunar.github.io/scalajs-jfx/de/">
+  <link rel="alternate" hreflang="en" href="https://anjunar.github.io/scalajs-jfx/">
+  <link rel="alternate" hreflang="de" href="https://anjunar.github.io/scalajs-jfx/de/">
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <title>JFX · Eine Runtime. Zwei APIs.</title>
+  <script>/* jfx-preferences */
+(function (config) {
+    var root = document.documentElement;
+    if (root.getAttribute('data-preference-source') === 'server') return;
+    var params = new URL(window.location.href).searchParams;
+    var storedDesign = null, storedScheme = null;
+    try { storedDesign = window.localStorage.getItem(config.keys.design); } catch (_) {}
+    try {
+      storedScheme = window.localStorage.getItem(config.keys.colorScheme);
+      if (storedScheme === null) storedScheme = window.localStorage.getItem(config.legacyKey);
+    } catch (_) {}
+    var design = params.has('design') ? params.get('design') : storedDesign;
+    var scheme = params.has('colorScheme') ? params.get('colorScheme') : storedScheme;
+    root.setAttribute('data-design', config.ids.indexOf(design) >= 0 ? design : config.defaultDesign);
+    root.setAttribute('data-color-scheme', scheme === 'dark' ? 'dark' : 'light');
+  })({"ids":["atlas","flora","terra","ember"],"defaultDesign":"atlas","keys":{"design":"jfx.design","colorScheme":"jfx.color-scheme"},"legacyKey":"scalajs-jfx.theme"});</script>
+  <link rel="stylesheet" href="./assets/client-4v3iqCec.css">
+  <script type="module" src="./assets/client-BZzCk3Y2.js"></script>
+</head>
+<body class="landing">
+  <a class="skip-link" href="./de/#main" data-page-anchor="main">Zum Inhalt</a>
+  <main id="main" class="wrap" data-presentation-root="">
+    <div class="presentation-opening" data-presentation-section="">
+  <header role="banner" class="site-header">
+    <a class="brand" href="./" aria-label="JFX-Startseite">JFX<span>.</span></a>
+    <nav class="header-links" aria-label="Hauptnavigation">
+      <a class="optional" href="https://github.com/anjunar/scalajs-jfx#related-documentation">Doku ↗</a><a href="./scala/de/">Scala</a><a href="./typescript/de/">TypeScript</a><a class="optional" href="https://github.com/anjunar/scalajs-jfx">GitHub ↗</a>
+      <div class="header-tools">
+      <label class="preference-choice"><span class="sr-only">Sprache</span><select id="language-choice" disabled=""><option value="en">EN</option><option value="de" selected="">DE</option></select></label>
+      <label class="preference-choice"><span class="sr-only">Design</span><select id="design-choice" disabled=""><option value="atlas" selected="">Atlas</option><option value="flora">Flora</option><option value="terra">Terra</option><option value="ember">Ember</option></select></label>
+      <label class="preference-choice"><span class="sr-only">Darstellung</span><select id="scheme-choice" disabled=""><option value="light" selected="">Hell</option><option value="dark">Dunkel</option></select></label>
+      </div>
+    </nav>
+    <span class="preference-status" id="preference-status" role="status"></span>
+  </header>
+    <section class="hero" aria-labelledby="hero-title">
+      <p class="eyebrow">JFX / Eine gemeinsame Grundlage für Anwendungsoberflächen</p>
+      <h1 id="hero-title">Eine Runtime. <span>Zwei APIs.</span></h1>
+      <div class="hero-intro">
+        <div><p class="lead">Eine Scala.js-Runtime für Oberflächen mit idiomatischen APIs für Scala und TypeScript.</p><p class="hero-detail">SSR, Hydration, Routing, Formulare und umfangreiche Komponenten – eine Implementierung für beide Sprachen.</p></div>
+        <div class="hero-actions"><a class="action primary" href="./scala/de/">Scala-Demo öffnen <span aria-hidden="true">↗</span></a><a class="action primary" href="./typescript/de/">TypeScript-Demo öffnen <span aria-hidden="true">↗</span></a><div class="hero-secondary"><a href="./de/#get-started" data-page-anchor="get-started">Schnellstart ↓</a><a href="https://github.com/anjunar/scalajs-jfx">GitHub ↗</a></div></div>
+      </div>
+      <ul class="signals" aria-label="Technische Schwerpunkte"><li>SSR + Hydration</li><li>Expliziter reaktiver Zustand</li><li>Typisierte Komponenten</li><li>Virtualisierte Datenansichten</li><li>Internationalisierung am Quelltext</li></ul>
+    </section>
+
+    </div>
+
+    <section data-presentation-section="" class="code-section section-proof" aria-labelledby="same-code">
+      <div class="section-heading code-heading"><div><h2 id="same-code">Dieselbe Oberfläche. Zwei Sprachen.</h2><p>Eine Property. Ein Ereignis. Eine Runtime.</p></div></div>
+      <div class="code-grid">
+        <article class="code-card" data-language="scala">
+    <header><strong class="code-label">Scala</strong><button type="button" hidden="" data-copy="scala-counter" data-label="Scala" aria-label="Scala kopieren">Kopieren</button></header>
+    <pre tabindex="0" aria-label="Scala code"><code id="scala-counter" class="language-scala"><span class="token-keyword">val</span> count = <span class="token-type">Property</span>(<span class="token-number">0</span>)
+
+vbox {
+  text(count.map(n =&gt; s<span class="token-string">"Count: $n"</span>)) {}
+  button(<span class="token-string">"Increment"</span>) {
+    onClick(_ =&gt; count.set(count.get + <span class="token-number">1</span>))
+  }
+}</code></pre>
+    <div class="code-note"><span>In Counter.compose</span><a href="./scala/de/state">Reaktiven Zustand ausprobieren ↗</a></div>
+  </article>
+        <article class="code-card" data-language="typescript">
+    <header><strong class="code-label">TypeScript</strong><button type="button" hidden="" data-copy="ts-counter" data-label="TypeScript" aria-label="TypeScript kopieren">Kopieren</button></header>
+    <pre tabindex="0" aria-label="TypeScript code"><code id="ts-counter" class="language-typescript"><span class="token-keyword">const</span> count = property(<span class="token-number">0</span>);
+
+vbox(() =&gt; {
+  text(count.map(n =&gt; <span class="token-string">"Count: "</span> + n));
+  button(<span class="token-string">"Increment"</span>, {}, () =&gt; {
+    onClick(() =&gt; count.set(count.get + <span class="token-number">1</span>));
+  });
+});</code></pre>
+    <div class="code-note"><span>In counter()</span><a href="./typescript/de/core/state">Reaktiven Zustand ausprobieren ↗</a></div>
+  </article>
+      </div>
+    </section>
+
+    <section data-presentation-section="" class="section section-live" aria-labelledby="live-title">
+      <h2 id="live-title">Vom Server-HTML zur Interaktion</h2>
+      <div class="proof" id="live-proof" data-state="ssr"><div class="proof-heading"><div><span class="proof-label">Echte JFX-Ausgabe</span><span class="proof-title">Zähler / gemeinsamer Komponentenbaum</span></div><span class="proof-status"><span id="proof-status">SSR bereit</span></span></div><fieldset id="counter-fieldset" disabled="" aria-label="JFX-Zähler"><div id="counter-root"><!--jfx:BridgeRoot:start--><div class="vbox">Count: 0<button>Increment</button></div><!--jfx:BridgeRoot:end--></div></fieldset><div class="proof-actions"><button id="activate-counter" type="button" hidden="">Beispiel aktivieren →</button></div><p id="runtime-status" role="status">Auf dem Server erzeugtes HTML. Aktiviere das Beispiel, um mit derselben Runtime zu interagieren.</p><noscript><p class="muted">JavaScript is disabled. The server-rendered output, code and links remain available.</p></noscript></div>
+    </section>
+
+    <section data-presentation-section="" class="section" aria-labelledby="capabilities-title">
+      <p class="eyebrow">01 / Die Grundlagen</p><h2 id="capabilities-title">Was JFX mitbringt</h2>
+      <div class="capabilities"><article><span class="number">01</span><h3>Server-Rendering</h3><p>Erzeuge HTML auf dem Server und hydriere dasselbe Komponentenmodell anschließend im Browser.</p></article><article><span class="number">02</span><h3>Expliziter reaktiver Zustand</h3><p>Properties lesen, setzen und ableiten. Zustandsänderungen werden synchron weitergegeben; Komponenten verwalten die Lebensdauer ihrer Abonnements.</p></article><article><span class="number">03</span><h3>Anwendungskomponenten</h3><p>Kombiniere typisierte Formulare, Tabellen, virtualisierte Sammlungen, Layouts und einen Editor mit Markdown als Datenformat.</p></article></div>
+    </section>
+
+    <section data-presentation-section="" class="section" aria-labelledby="capabilities-more-title">
+      <h2 id="capabilities-more-title">Für Anwendungsoberflächen gemacht</h2>
+      <div class="capabilities"><article><span class="number">04</span><h3>Scala + TypeScript</h3><p>Wähle eine der beiden APIs. Rendering, Zustand und Komponentenverhalten stammen aus derselben Scala.js-Runtime.</p></article><article><span class="number">05</span><h3>Internationalisierung am Quelltext</h3><p>Ausgangstexte und Interpolation bleiben beim Code; Kataloge enthalten die Übersetzungen.</p></article><article><span class="number">06</span><h3>Schrittweise Erweiterung</h3><p>Liefere zuerst lesbare Inhalte und gewöhnliche Links. Hydration ergänzt Bearbeitung und umfangreichere Interaktion.</p></article></div>
+    </section>
+
+    <section data-presentation-section="" id="showcase" class="section section-showcase" aria-labelledby="showcase-title">
+      <h2 id="showcase-title">Bausteine für Anwendungen</h2>
+        <article class="showcase"><div class="preview flow-preview"><div class="flow-step"><b>01</b><span>Server-HTML · lesbare Oberfläche</span></div><div class="flow-step"><b>02</b><span>Hydration · vorhandenen Baum übernehmen</span></div><div class="flow-step"><b>03</b><span>Interaktive Anwendung · Zustand + Ereignisse</span></div></div><div class="showcase-body"><h3>Zuerst HTML. Dann Interaktion.</h3><p>SSR erzeugt die Seite. Hydration ergänzt das Runtime-Verhalten am selben Komponentenbaum. Am Zähler oben kannst du diesen Übergang ausprobieren.</p><a href="./typescript/de/core/lifecycle">Rendering und Lebenszyklus erkunden ↗</a></div></article>
+    </section>
+
+    <section data-presentation-section="" class="section section-showcase" aria-labelledby="showcase-1-title">
+      <h2 id="showcase-1-title">Formulare, die mit deinem Modell verbunden sind</h2>
+        <article class="showcase"><div class="preview"><fieldset disabled="" aria-label="Server-Vorschau eines Kontoformulars"><!--jfx:BridgeRoot:start--><form><div class="jfx-input-container"><div class="jfx-input-container__label"><div class="placeholder jfx-input-container__placeholder">Name</div></div><div class="jfx-input-container__control"><input name="name" value="Mira" aria-label="Name" placeholder="Name"></div><div class="jfx-input-container__divider"></div><div class="jfx-input-container__errors"><!--jfx:text--></div></div><div class="jfx-input-container"><div class="jfx-input-container__label"><div class="placeholder jfx-input-container__placeholder">E-Mail</div></div><div class="jfx-input-container__control"><input name="email" value="mira@example.com" type="email" aria-label="E-Mail" placeholder="Email"></div><div class="jfx-input-container__divider"></div><div class="jfx-input-container__errors"><!--jfx:text--></div></div></form><!--jfx:BridgeRoot:end--></fieldset><p class="preview-caption">JFX Forms / schreibgeschützte Server-Vorschau</p></div><div class="showcase-body"><p>Binde Felder an Properties, kombiniere verschachtelte Formulare und definiere Validatoren. Hydration ergänzt den beidseitigen Datenabgleich und Validierungsmeldungen.</p><a href="./typescript/de/forms/basics">Formular ausprobieren ↗</a> · <a href="./typescript/de/forms/validation">Validierung ↗</a></div></article>
+    </section>
+
+    <section data-presentation-section="" class="section section-showcase" aria-labelledby="showcase-2-title">
+      <h2 id="showcase-2-title">Datenansichten, die mitwachsen</h2>
+        <article class="showcase"><div class="preview"><div class="table-window" tabindex="0" role="region" aria-label="Server-Vorschau einer Projekttabelle; horizontal scrollbar"><div class="table-preview-size"><!--jfx:BridgeRoot:start--><div class="jfx-table-view" style="display: flex; flex-direction: column; width: 100%; overflow: hidden"><!--jfx:Condition:start--><!--jfx:ConditionalBody:start--><div class="jfx-table-header-viewport" style="position: relative; overflow: hidden; width: 100%; flex: 0 0 auto; height: 40px"><div class="jfx-table-header-content" style="display: flex; width: 800px; min-width: 800px; height: 100%; transform: translateX(-0px)"><!--jfx:Foreach:start--><!--jfx:ForeachItem:start--><div class="jfx-table-header-cell" style="width: 150px; min-width: 150px; flex: 0 0 auto; box-sizing: border-box">Project</div><!--jfx:ForeachItem:end--><!--jfx:ForeachItem:start--><div class="jfx-table-header-cell jfx-table-header-cell-last" style="width: 650px; min-width: 650px; flex: 0 0 auto; box-sizing: border-box">API</div><!--jfx:ForeachItem:end--><!--jfx:Foreach:end--></div></div><!--jfx:ConditionalBody:end--><!--jfx:Condition:end--><div class="jfx-table-body-wrapper" style="position: relative; flex: 1 1 auto; overflow: hidden; width: 100%"><div class="jfx-table-viewport" style="position: relative; width: 100%; height: 100%; overflow: hidden"><div class="jfx-table-content" style="width: 800px; min-width: 800px"><div class="jfx-table-content-header" style="width: 800px; min-width: 800px; box-sizing: border-box"></div><div class="jfx-table-rows-surface" style="position: relative; width: 800px; min-width: 800px"><!--jfx:Foreach:start--><!--jfx:ForeachItem:start--><div class="jfx-table-row-slot" style="position: absolute; top: 0px; left: 0; width: 800px; height: 40px; display: flex"><div class="jfx-table-row jfx-table-row-even" aria-selected="false" style="display: flex; width: 100%; height: 100%"><div class="jfx-table-cell" style="width: 150px; min-width: 150px; flex: 0 0 auto">Website</div><div class="jfx-table-cell jfx-table-cell-last" style="width: 650px; min-width: 650px; flex: 0 0 auto">TypeScript</div></div></div><!--jfx:ForeachItem:end--><!--jfx:ForeachItem:start--><div class="jfx-table-row-slot" style="position: absolute; top: 40px; left: 0; width: 800px; height: 40px; display: flex"><div class="jfx-table-row jfx-table-row-odd" aria-selected="false" style="display: flex; width: 100%; height: 100%"><div class="jfx-table-cell" style="width: 150px; min-width: 150px; flex: 0 0 auto">Workspace</div><div class="jfx-table-cell jfx-table-cell-last" style="width: 650px; min-width: 650px; flex: 0 0 auto">Scala</div></div></div><!--jfx:ForeachItem:end--><!--jfx:ForeachItem:start--><div class="jfx-table-row-slot" style="position: absolute; top: 80px; left: 0; width: 800px; height: 40px; display: flex"><div class="jfx-table-row jfx-table-row-even" aria-selected="false" style="display: flex; width: 100%; height: 100%"><div class="jfx-table-cell" style="width: 150px; min-width: 150px; flex: 0 0 auto">Admin console</div><div class="jfx-table-cell jfx-table-cell-last" style="width: 650px; min-width: 650px; flex: 0 0 auto">TypeScript</div></div></div><!--jfx:ForeachItem:end--><!--jfx:Foreach:end--></div></div></div><!--jfx:Condition:start--><!--jfx:Condition:end--></div><!--jfx:Condition:start--><!--jfx:Condition:end--></div><!--jfx:BridgeRoot:end--></div></div><p class="preview-caption">JFX TableView / auf dem Server gerenderte Zeilen</p></div><div class="showcase-body"><p>Tabellen, Grids und virtuelle Listen verwenden gemeinsame Sammlungsbausteine. Lade entfernte Datenbereiche, nutze Seitenwechsel oder Scrolling und erzeuge bei aktivierter Crawlability gewöhnliche Seitenlinks.</p><a href="./typescript/de/controls/remote">Seitenwechsel und entfernte Daten ausprobieren ↗</a> · <a href="./typescript/de/controls/virtual-list">Virtuelle Liste ↗</a></div></article>
+    </section>
+
+    <section data-presentation-section="" class="section section-showcase" aria-labelledby="showcase-3-title">
+      <h2 id="showcase-3-title">Umfangreich bearbeiten. Als Markdown speichern.</h2>
+        <article class="showcase"><div class="preview"><!--jfx:BridgeRoot:start--><div aria-disabled="true" class="jfx-editor-host jfx-editor-host--markdown" name="body" role="group" data-jfx-editor-format="markdown" data-jfx-editor-loading="false"><div class="jfx-editor"><div class="jfx-editor__shell"><div class="jfx-editor__toolbar" aria-label="Editor toolbar" style="display: none"></div><div class="jfx-editor__markdown-actions"><!--jfx:DynamicComponentRenderer:start--><a class="jfx-editor__mode-toggle jfx-editor__edit-link" href="./typescript/de/editor/basics">Open live editor ↗</a><!--jfx:DynamicComponentRenderer:end--></div><div class="jfx-editor__surface-wrap"><div class="jfx-editor__fallback"><!--jfx:DynamicComponentRenderer:start--><div class="jfx-editor__readonly"><div class="jfx-editor__preview jfx-editor-readonly" aria-readonly="true"><!--jfx:DynamicComponentRenderer:start--><!--jfx:MarkdownRenderer:start--><h2 class="lexical-heading-h2">A place for your ideas</h2><p class="lexical-paragraph">Write <strong>rich content</strong>. Keep a Markdown value.</p><ul class="lexical-list-ul"><li class="lexical-listitem">Headings and lists</li><li class="lexical-listitem">Links, tables and code</li></ul><!--jfx:MarkdownRenderer:end--><!--jfx:DynamicComponentRenderer:end--></div></div><!--jfx:DynamicComponentRenderer:end--></div><div class="jfx-editor__surface lexical-editor-container lexical-editor-input" role="textbox" aria-multiline="true" contenteditable="false" aria-readonly="true" spellcheck="true" style="display: none; opacity: 0"></div><div class="jfx-editor__placeholder" style="display: none"><!--jfx:Condition:start--><!--jfx:Condition:end--></div></div></div></div></div><!--jfx:BridgeRoot:end--><p class="preview-caption">JFX Editor / semantisches, schreibgeschütztes HTML</p></div><div class="showcase-body"><p>Der auf Lexical basierende JFX-Editor unterstützt Überschriften, Listen, Links, Tabellen und Code. Der Lesemodus liefert semantisches HTML; der Bearbeitungsmodus beginnt mit einem Markdown-Textfeld.</p><a href="./typescript/de/editor/basics">Editor öffnen ↗</a></div></article>
+    </section>
+
+    <section data-presentation-section="" class="section section-routing" aria-labelledby="routing-title">
+      <h2 id="routing-title">Routen strukturieren die Anwendung</h2>
+      <article class="routing-strip"><div><p>Deklarative Routen, verschachtelte Outlets und eingeschränkte Parameter. Den Status der Server-Antwort verwaltet der Router.</p></div><div class="route-preview" aria-label="Beispiel einer Routenhierarchie"><span>/router</span><span>/params</span><span>/42</span></div><a href="./typescript/de/router/params/42">Der Route folgen ↗</a></article>
+      <p class="tradeoff-note">Ohne JavaScript lesbar: Server-Inhalte, Routenlinks und konfigurierte Seitenwechsel in Sammlungen. Bearbeitung, Validierung im Browser, Virtualisierung und umfangreichere Navigation benötigen JavaScript. Schreibzugriffe auf dem Server bleiben Aufgabe deiner Anwendung.</p>
+
+    </section>
+
+    <section data-presentation-section="" class="section section-tradeoff" id="why-jfx" aria-labelledby="why-title">
+      <p class="eyebrow">03 / Architekturentscheidungen</p><h2 id="why-title">Eine andere Abwägung</h2>
+      <p class="comparison-intro">Entscheidend ist, welche Architektur zu deiner Anwendung passt. JFX verbindet eine Scala.js-Implementierung, explizite Properties und Anwendungskomponenten mit APIs für Scala und TypeScript.</p>
+      <p class="tradeoff-note">Diese Gegenüberstellung beschreibt Architekturentscheidungen, keine Rangliste von Funktionen. Die verlinkte offizielle Dokumentation erläutert die Alternativen. JFX wird aktiv entwickelt: Prüfe API-Abdeckung und Ökosystem anhand deiner Projektanforderungen. Es richtet sich an Entwickler, die eine explizite, typisierte Runtime für Anwendungen in Scala und TypeScript suchen.</p>
+    </section>
+
+    <section data-presentation-section="" class="section section-comparison" aria-labelledby="comparison-title">
+      <h2 id="comparison-title">Die Ansätze im Vergleich</h2>
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Framework-Vergleich">
+        <table class="comparison"><caption class="sr-only">Entwicklungsmodelle und Gründe, JFX neben vier etablierten Alternativen zu betrachten</caption><thead><tr><th scope="col">Werkzeug</th><th scope="col">Der Ansatz</th><th scope="col">Wo JFX einen anderen Weg geht</th></tr></thead><tbody>
+          <tr class="jfx-row"><th scope="row">JFX</th><td>Scala-DSL und TypeScript-Fassade über einer Scala.js-Runtime.</td><td>Properties, SSR, Hydration und Anwendungssteuerelemente aus JFX-Modulen.</td></tr>
+          <tr><th scope="row"><a href="https://laminar.dev/documentation">Laminar ↗</a></th><td>Scala.js-Oberflächenkomposition mit Airstream-Observables.</td><td>JFX bietet eine gemeinsame Grundlage für SSR, Formulare, Steuerelemente und Editor mit zusätzlicher TypeScript-API.</td></tr>
+          <tr><th scope="row"><a href="https://react.dev/learn/creating-a-react-app">React ↗</a></th><td>JavaScript-Komponenten, häufig mit JSX und TypeScript. Empfohlene Frameworks ergänzen die Anwendungsinfrastruktur.</td><td>JFX verbindet eine Scala.js-Implementierung, synchrone Properties und Steuerelemente mit dem Lebenszyklus der Runtime.</td></tr>
+          <tr><th scope="row"><a href="https://angular.dev/overview">Angular ↗</a></th><td>Ein TypeScript-Framework mit Templates, Dependency Injection, Routing, Formularen und SSR.</td><td>JFX bietet Kompositions-APIs für Scala und TypeScript über einem gemeinsamen Komponentenmodell.</td></tr>
+          <tr><th scope="row"><a href="https://vuejs.org/guide/introduction.html">Vue ↗</a></th><td>Ein reaktives JavaScript-/TypeScript-Framework mit Templates sowie optionalen Render-Funktionen oder JSX.</td><td>JFX bietet eine typisierte Kompositions-DSL und eine Scala.js-Runtime, die aus beiden Sprachen zugänglich ist.</td></tr>
+        </tbody></table>
+      </div>
+
+    </section>
+
+    <section data-presentation-section="" id="get-started" class="section section-start" aria-labelledby="start-title">
+      <h2 id="start-title">Loslegen</h2>
+      <div class="two-col">
+        <article class="starter"><h3>Scala</h3><p>Für ein Scala.js-Projekt mit sbt 2. Benötigt werden ein JDK und sbt; der Befehl zum lokalen Bereitstellen verwendet außerdem Node.js und npm.</p>
+        </article>
+        <article class="starter"><h3>TypeScript</h3><p>Beginne mit Vites Vanilla-TypeScript-Vorlage. Verwende Node.js 22.12+ und npm.</p>
+          <article class="code-card" data-language="bash">
+    <header><strong class="code-label">Terminal · Shell</strong><button type="button" hidden="" data-copy="ts-create" data-label="Terminal · Shell" aria-label="Terminal · Shell kopieren">Kopieren</button></header>
+    <pre tabindex="0" aria-label="Terminal · Shell code"><code id="ts-create" class="language-bash">npm create vite@latest jfx-starter -- --template vanilla-ts
+cd jfx-starter
+npm install</code></pre>
+    
+  </article>
+        </article>
+      </div>
+    </section>
+
+    <section data-presentation-section="" class="section section-start" aria-labelledby="install-title">
+      <h2 id="install-title">JFX zum Projekt hinzufügen</h2>
+      <div class="two-col">
+        <article class="starter"><h3>Scala</h3>
+          <article class="code-card" data-language="scala">
+    <header><strong class="code-label">build.sbt · Scala</strong><button type="button" hidden="" data-copy="scala-install" data-label="build.sbt · Scala" aria-label="build.sbt · Scala kopieren">Kopieren</button></header>
+    <pre tabindex="0" aria-label="build.sbt · Scala code"><code id="scala-install" class="language-scala">libraryDependencies +=
+  <span class="token-string">"com.anjunar"</span> %% <span class="token-string">"scalajs-jfx-core"</span> % <span class="token-string">"3.0.3"</span></code></pre>
+    
+  </article>
+        </article>
+        <article class="starter"><h3>TypeScript</h3>
+          <article class="code-card" data-language="bash">
+    <header><strong class="code-label">JFX installieren · Shell</strong><button type="button" hidden="" data-copy="ts-install" data-label="JFX installieren · Shell" aria-label="JFX installieren · Shell kopieren">Kopieren</button></header>
+    <pre tabindex="0" aria-label="Install JFX · Shell code"><code id="ts-install" class="language-bash">npm install @anjunar/jfx-core@<span class="token-number">3.0.3</span> @anjunar/scalajs-jfx-bridge@<span class="token-number">3.0.3</span> @anjunar/scalajs-jfx@<span class="token-number">3.0.3</span></code></pre>
+    
+  </article>
+        </article>
+      </div>
+    </section>
+
+    <section data-presentation-section="" class="section section-start" aria-labelledby="mount-title">
+      <h2 id="mount-title">Deine Komponente einbinden</h2>
+      <div class="two-col">
+        <article class="starter"><h3>Scala</h3>
+          <article class="code-card" data-language="scala">
+    <header><strong class="code-label">Einbinden · Scala</strong><button type="button" hidden="" data-copy="scala-mount" data-label="Einbinden · Scala" aria-label="Einbinden · Scala kopieren">Kopieren</button></header>
+    <pre tabindex="0" aria-label="Mount · Scala code"><code id="scala-mount" class="language-scala"><span class="token-type">Runtime</span>.mount(
+  <span class="token-keyword">new</span> <span class="token-type">Counter</span>,
+  <span class="token-type">DomCursor</span>.root(dom.document.getElementById(<span class="token-string">"root"</span>))
+)</code></pre>
+    
+  </article>
+        </article>
+        <article class="starter"><h3>TypeScript</h3>
+          <article class="code-card" data-language="typescript">
+    <header><strong class="code-label">Einbinden · TypeScript</strong><button type="button" hidden="" data-copy="ts-mount" data-label="Einbinden · TypeScript" aria-label="Einbinden · TypeScript kopieren">Kopieren</button></header>
+    <pre tabindex="0" aria-label="Mount · TypeScript code"><code id="ts-mount" class="language-typescript"><span class="token-keyword">import</span> { mount } <span class="token-keyword">from</span> <span class="token-string">"@anjunar/jfx-core"</span>;
+<span class="token-keyword">import</span> <span class="token-string">"@anjunar/scalajs-jfx-bridge"</span>;
+
+mount(document.getElementById(<span class="token-string">"root"</span>)!, counter);</code></pre>
+    
+  </article>
+        </article>
+      </div>
+    </section>
+
+    <section data-presentation-section="" class="section section-start" aria-labelledby="starter-files-title">
+      <h2 id="starter-files-title">Vollständige Starter-Dateien</h2>
+      <div class="two-col">
+        <article class="starter"><h3>Scala</h3>
+          <details><summary>Neues Projekt? Vollständigen Starter kopieren</summary><p class="muted">Lege diese Dateien in einem leeren Ordner an. Der minimale Zähler verwendet die Standarddarstellung des Browsers.</p>
+            <article class="code-card" data-language="scala">
+    <header><strong class="code-label">build.sbt · vollständig</strong><button type="button" hidden="" data-copy="scala-build" data-label="build.sbt · vollständig" aria-label="build.sbt · vollständig kopieren">Kopieren</button></header>
+    <pre tabindex="0" aria-label="build.sbt · complete code"><code id="scala-build" class="language-scala"><span class="token-keyword">import</span> org.scalajs.linker.interface.<span class="token-type">ModuleKind</span>
+
+<span class="token-keyword">enablePlugins</span>(<span class="token-type">ScalaJSPlugin</span>)
+name := <span class="token-string">"jfx-starter"</span>
+scalaVersion := <span class="token-string">"3.3.8"</span>
+scalaJSUseMainModuleInitializer := <span class="token-keyword">true</span>
+scalaJSLinkerConfig ~= (_.withModuleKind(<span class="token-type">ModuleKind</span>.<span class="token-type">ESModule</span>))
+<span class="token-type">Compile</span> / fastLinkJS / scalaJSLinkerOutputDirectory := baseDirectory.value / <span class="token-string">"public"</span>
+libraryDependencies += <span class="token-string">"com.anjunar"</span> %% <span class="token-string">"scalajs-jfx-core"</span> % <span class="token-string">"3.0.3"</span></code></pre>
+    
+  </article>
+            <article class="code-card" data-language="scala">
+    <header><strong class="code-label">project/plugins.sbt · Scala</strong><button type="button" hidden="" data-copy="scala-plugin" data-label="project/plugins.sbt · Scala" aria-label="project/plugins.sbt · Scala kopieren">Kopieren</button></header>
+    <pre tabindex="0" aria-label="project/plugins.sbt · Scala code"><code id="scala-plugin" class="language-scala">addSbtPlugin(<span class="token-string">"org.scala-js"</span> % <span class="token-string">"sbt-scalajs"</span> % <span class="token-string">"1.22.0"</span>)</code></pre>
+    
+  </article>
+            <article class="code-card" data-language="properties">
+    <header><strong class="code-label">project/build.properties · Properties</strong><button type="button" hidden="" data-copy="scala-sbt-version" data-label="project/build.properties · Properties" aria-label="project/build.properties · Properties kopieren">Kopieren</button></header>
+    <pre tabindex="0" aria-label="project/build.properties · Properties code"><code id="scala-sbt-version" class="language-properties">sbt.version=<span class="token-number">2.0.8</span></code></pre>
+    
+  </article>
+            <article class="code-card" data-language="scala">
+    <header><strong class="code-label">src/main/scala/Counter.scala · Scala</strong><button type="button" hidden="" data-copy="scala-main" data-label="src/main/scala/Counter.scala · Scala" aria-label="src/main/scala/Counter.scala · Scala kopieren">Kopieren</button></header>
+    <pre tabindex="0" aria-label="src/main/scala/Counter.scala · Scala code"><code id="scala-main" class="language-scala"><span class="token-keyword">import</span> jfx.core.component.{<span class="token-type">AbstractComponent</span>, <span class="token-type">Runtime</span>}
+<span class="token-keyword">import</span> jfx.core.dsl.<span class="token-type">EventDsl</span>.onClick
+<span class="token-keyword">import</span> jfx.core.dsl.<span class="token-type">DslLayer</span>.render
+<span class="token-keyword">import</span> jfx.core.layout.<span class="token-type">Button</span>.button
+<span class="token-keyword">import</span> jfx.core.layout.<span class="token-type">TextComponent</span>.text
+<span class="token-keyword">import</span> jfx.core.layout.<span class="token-type">VBox</span>.vbox
+<span class="token-keyword">import</span> jfx.core.render.{<span class="token-type">Cursor</span>, <span class="token-type">DomCursor</span>}
+<span class="token-keyword">import</span> jfx.core.state.<span class="token-type">Property</span>
+<span class="token-keyword">import</span> org.scalajs.dom
+
+<span class="token-keyword">final</span> <span class="token-keyword">class</span> <span class="token-type">Counter</span> <span class="token-keyword">extends</span> <span class="token-type">AbstractComponent</span> {
+  <span class="token-keyword">val</span> tagName = <span class="token-string">"main"</span>
+
+  <span class="token-keyword">override</span> <span class="token-keyword">def</span> compose(cursor: <span class="token-type">Cursor</span>): <span class="token-type">Unit</span> = {
+    render(this, cursor) {
+      <span class="token-keyword">val</span> count = <span class="token-type">Property</span>(<span class="token-number">0</span>)
+
+      vbox {
+        text(count.map(n =&gt; s<span class="token-string">"Count: $n"</span>)) {}
+        button(<span class="token-string">"Increment"</span>) {
+          onClick(_ =&gt; count.set(count.get + <span class="token-number">1</span>))
+        }
+      }
+    }
+  }
+}
+
+<span class="token-keyword">object</span> <span class="token-type">Main</span> {
+  <span class="token-keyword">def</span> main(args: <span class="token-type">Array</span>[<span class="token-type">String</span>]): <span class="token-type">Unit</span> =
+    <span class="token-type">Runtime</span>.mount(<span class="token-keyword">new</span> <span class="token-type">Counter</span>, <span class="token-type">DomCursor</span>.root(dom.document.getElementById(<span class="token-string">"root"</span>)))
+}</code></pre>
+    
+  </article>
+            <article class="code-card" data-language="html">
+    <header><strong class="code-label">index.html · HTML</strong><button type="button" hidden="" data-copy="scala-host" data-label="index.html · HTML" aria-label="index.html · HTML kopieren">Kopieren</button></header>
+    <pre tabindex="0" aria-label="index.html · HTML code"><code id="scala-host" class="language-html">&lt;!doctype html&gt;
+&lt;html lang=<span class="token-string">"en"</span>&gt;
+&lt;meta charset=<span class="token-string">"utf-8"</span>&gt;
+&lt;meta name=<span class="token-string">"viewport"</span> content=<span class="token-string">"width=device-width, initial-scale=1"</span>&gt;
+&lt;title&gt;<span class="token-type">JFX</span> counter&lt;/title&gt;
+&lt;div id=<span class="token-string">"root"</span>&gt;&lt;/div&gt;
+&lt;script type=<span class="token-string">"module"</span> src=<span class="token-string">"./public/main.js"</span>&gt;&lt;/script&gt;
+&lt;/html&gt;</code></pre>
+    
+  </article>
+          </details>
+        </article>
+        <article class="starter"><h3>TypeScript</h3>
+          <p>Ersetze <code>src/main.ts</code> durch diesen Zähler und <code>index.html</code> durch die Host-Datei unten.</p>
+          <details><summary>Vollständige Starter-Dateien kopieren</summary>
+            <article class="code-card" data-language="typescript">
+    <header><strong class="code-label">src/main.ts · TypeScript</strong><button type="button" hidden="" data-copy="ts-main" data-label="src/main.ts · TypeScript" aria-label="src/main.ts · TypeScript kopieren">Kopieren</button></header>
+    <pre tabindex="0" aria-label="src/main.ts · TypeScript code"><code id="ts-main" class="language-typescript"><span class="token-keyword">import</span> <span class="token-string">"@anjunar/scalajs-jfx-bridge"</span>;
+<span class="token-keyword">import</span> <span class="token-string">"@anjunar/scalajs-jfx/index.css"</span>;
+<span class="token-keyword">import</span> { mount } <span class="token-keyword">from</span> <span class="token-string">"@anjunar/jfx-core"</span>;
+<span class="token-keyword">import</span> { button, onClick, property, text, vbox } <span class="token-keyword">from</span> <span class="token-string">"@anjunar/jfx-core"</span>;
+
+<span class="token-keyword">function</span> counter() {
+  <span class="token-keyword">const</span> count = property(<span class="token-number">0</span>);
+
+  vbox(() =&gt; {
+    text(count.map(n =&gt; <span class="token-string">"Count: "</span> + n));
+    button(<span class="token-string">"Increment"</span>, {}, () =&gt; {
+      onClick(() =&gt; count.set(count.get + <span class="token-number">1</span>));
+    });
+  });
+}
+
+mount(document.getElementById(<span class="token-string">"root"</span>)!, counter);</code></pre>
+    
+  </article>
+            <article class="code-card" data-language="html">
+    <header><strong class="code-label">index.html · HTML</strong><button type="button" hidden="" data-copy="ts-host" data-label="index.html · HTML" aria-label="index.html · HTML kopieren">Kopieren</button></header>
+    <pre tabindex="0" aria-label="index.html · HTML code"><code id="ts-host" class="language-html">&lt;!doctype html&gt;
+&lt;html lang=<span class="token-string">"en"</span>&gt;
+&lt;meta charset=<span class="token-string">"utf-8"</span>&gt;
+&lt;meta name=<span class="token-string">"viewport"</span> content=<span class="token-string">"width=device-width, initial-scale=1"</span>&gt;
+&lt;title&gt;<span class="token-type">JFX</span> counter&lt;/title&gt;
+&lt;div id=<span class="token-string">"root"</span>&gt;&lt;/div&gt;
+&lt;script type=<span class="token-string">"module"</span> src=<span class="token-string">"/src/main.ts"</span>&gt;&lt;/script&gt;
+&lt;/html&gt;</code></pre>
+    
+  </article>
+          </details>
+        </article>
+      </div>
+    </section>
+
+    <section data-presentation-section="" class="section section-start" aria-labelledby="run-title">
+      <h2 id="run-title">Deine Anwendung starten</h2>
+      <div class="two-col">
+        <article class="starter"><h3>Scala</h3>
+          <p class="step">BAUEN &amp; BEREITSTELLEN</p><article class="code-card" data-language="bash">
+    <header><strong class="code-label">Terminal · Shell</strong><button type="button" hidden="" data-copy="scala-run" data-label="Terminal · Shell" aria-label="Terminal · Shell kopieren">Kopieren</button></header>
+    <pre tabindex="0" aria-label="Terminal · Shell code"><code id="scala-run" class="language-bash">sbt --server fastLinkJS
+npx --yes http-server . -p <span class="token-number">8080</span></code></pre>
+    
+  </article>
+          <p>Öffne <code>http://localhost:8080</code>. <a href="./starters/Counter.scala" download="">Counter.scala herunterladen</a> oder <a href="https://github.com/anjunar/scalajs-jfx/tree/master/jfx-core">die Core-Dokumentation lesen ↗</a>.</p>
+        </article>
+        <article class="starter"><h3>TypeScript</h3>
+          <p class="step">ENTWICKLUNGSSERVER STARTEN</p><article class="code-card" data-language="bash">
+    <header><strong class="code-label">Terminal · Shell</strong><button type="button" hidden="" data-copy="ts-run" data-label="Terminal · Shell" aria-label="Terminal · Shell kopieren">Kopieren</button></header>
+    <pre tabindex="0" aria-label="Terminal · Shell code"><code id="ts-run" class="language-bash">npm run dev</code></pre>
+    
+  </article>
+          <p>Öffne die von Vite ausgegebene lokale URL. <a href="./starters/main.ts" download="">main.ts herunterladen</a> oder <a href="https://github.com/anjunar/scalajs-jfx/tree/master/npm/jfx-core">die API-Dokumentation lesen ↗</a>.</p>
+        </article>
+      </div>
+    </section>
+
+    <section data-presentation-section="" class="section section-architecture architecture" aria-labelledby="architecture-title">
+      <div><p class="eyebrow">05 / Unter den APIs</p><h2 id="architecture-title">Zwei Zugänge.<br>Eine Implementierung.</h2><p>Scala setzt JFX-Komponenten direkt zusammen. Die TypeScript-Fassade ruft die Scala.js-Bridge auf. Beide nutzen dieselbe Implementierung für Rendering, Zustand und Komponenten.</p><p>Gemeinsame Fähigkeiten bedeuten keine identischen API-Oberflächen. Beispielsweise stellt die TypeScript-Fassade nicht jeden imperativen Scala-Komponentenzugriff bereit.</p><a href="https://github.com/anjunar/scalajs-jfx/tree/master/jfx-bridge">Die Runtime-Schnittstelle ansehen ↗</a></div>
+      <div class="architecture-map" role="img" aria-label="Scala-API und TypeScript-Fassade führen beide zur Scala.js-Runtime von JFX. Diese verwaltet Properties, Komponenten, SSR, Browser-Rendering und Hydration."><div class="api-pair"><div><strong>Scala</strong><small>Native Komponenten-DSL</small></div><div><strong>TypeScript</strong><small>Typisierte Fassade → Bridge</small></div></div><div class="connector" aria-hidden="true"></div><div class="runtime-box"><strong>JFX · Scala.js-Runtime</strong><span>Properties / Komponenten / Lebenszyklus</span></div><div class="runtime-target">Server-HTML ← SSR &nbsp; / &nbsp; Hydration → Browser</div></div>
+    </section>
+
+    <section data-presentation-section="" class="section section-demos" id="demos" aria-labelledby="demos-title"><p class="eyebrow">06 / Das Projekt entdecken</p><h2 id="demos-title">Mehr als das erste Beispiel</h2><div class="two-col"><a class="demo-link" href="./scala/de/"><h3>Scala-Demo</h3><p>Die native DSL, reaktiver Zustand, Anwendungslayouts und die vollständige Scala-Demo.</p><span>Scala entdecken →</span></a><a class="demo-link" href="./typescript/de/"><h3>TypeScript-Demo</h3><p>Die typisierte API, interaktive Steuerelemente und Quellcodebeispiele auf derselben Runtime.</p><span>TypeScript entdecken →</span></a></div>
+      <dl class="metadata"><div><dt>Aktuelle Version</dt><dd><a href="https://www.npmjs.com/package/@anjunar/jfx-core/v/3.0.3">3.0.3 · Paket ↗</a></dd></div><div><dt>Lizenz</dt><dd><a href="https://github.com/anjunar/scalajs-jfx/blob/master/LICENSE">MIT ↗</a></dd></div><div><dt>Scala / Scala.js</dt><dd>3.3.8 / 1.22.0</dd></div><div><dt>TypeScript API</dt><dd><a href="https://github.com/anjunar/scalajs-jfx/tree/master/npm">@anjunar/jfx-* ↗</a></dd></div><div><dt>Projektstatus</dt><dd>Aktive Entwicklung</dd></div><div><dt>Quellcode &amp; Issues</dt><dd><a href="https://github.com/anjunar/scalajs-jfx">GitHub ↗</a></dd></div></dl>
+    </section>
+
+    <section data-presentation-section="" class="section section-origin origin" aria-labelledby="origin-title"><div><p class="eyebrow">07 / Die Überlegung dahinter</p><h2 id="origin-title">Warum es JFX gibt</h2></div><div><p>JFX untersucht eine einfache Idee: Der Komponentenbaum kann die gemeinsame Grundlage für Server-Rendering, Browser-Interaktion und Anwendungssteuerelemente sein.</p><p>Das Projekt bringt einen auf Properties basierenden, kombinierbaren Ansatz nach Scala.js und macht dieselbe Implementierung für TypeScript verfügbar. Expliziter Zustand, klar verwaltete Lebenszyklen und nutzbares Server-HTML bestimmen die Gestaltung. <a href="https://github.com/anjunar/scalajs-jfx#overview">Den technischen Überblick lesen ↗</a>.</p></div></section>
+    <section data-presentation-section="" class="final-cta" aria-labelledby="explore-title"><h2 id="explore-title">JFX entdecken</h2><p>Dieselbe Runtime. Wähle die API, die zu deinem Projekt passt.</p><div class="actions"><a class="action primary" href="./scala/de/">Scala-Demo ↗</a><a class="action primary" href="./typescript/de/">TypeScript-Demo ↗</a><a class="text-action" href="https://github.com/anjunar/scalajs-jfx">GitHub ↗</a><a class="text-action" href="https://github.com/anjunar/scalajs-jfx#related-documentation">Dokumentation ↗</a></div>  <footer role="contentinfo" class="page-footer"><span>JFX · Open Source · MIT-Lizenz</span><a href="./de/#main" data-page-anchor="main">Nach oben ↑</a></footer></section>
+  </main>
+  <div class="sr-only" id="copy-status" role="status" aria-live="polite"></div>
+
+</body></html>

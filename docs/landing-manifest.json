@@ -1,20 +1,20 @@
 {
-  "tools/landing/client.mjs": {
-    "file": "assets/client-Ckz0AreE.js",
+  "src/client.mjs": {
+    "file": "assets/client-BZzCk3Y2.js",
     "name": "client",
-    "src": "tools/landing/client.mjs",
+    "src": "src/client.mjs",
     "isEntry": true,
     "dynamicImports": [
-      "tools/landing/hydrate.mjs"
+      "src/hydrate.mjs"
     ],
     "css": [
-      "assets/client-DMuSpNaY.css"
+      "assets/client-4v3iqCec.css"
     ]
   },
-  "tools/landing/hydrate.mjs": {
-    "file": "assets/hydrate-CBxmgznP.js",
+  "src/hydrate.mjs": {
+    "file": "assets/hydrate-BwCagdFi.js",
     "name": "hydrate",
-    "src": "tools/landing/hydrate.mjs",
+    "src": "src/hydrate.mjs",
     "isDynamicEntry": true
   }
 }

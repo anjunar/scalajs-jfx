@@ -26,6 +26,8 @@ The product page is the private npm workspace [jfx-landing](npm/jfx-landing/READ
 
 ## Choose an API
 
+To run this repository’s Scala.js demo locally, use `npm run dev` from the repository root, then open `http://localhost:3000/scalajs-jfx/`. The `predev` step links the demo with `sbt --server "scalajs-jfx-demo/fastLinkJS"` before Vite loads its SSR module and sourcemap. After changing Scala sources, run that link command again (or keep it running with sbt’s `~` watch prefix).
+
 ### Scala / Scala.js
 
 Use the Scala modules when the application, model, and server integration are written in Scala. The public packages are published as `com.anjunar` Scala.js artifacts.
@@ -50,7 +52,7 @@ Add JFX 3 in `build.sbt` (sbt 2 uses `%%` for the Scala.js platform suffix):
 enablePlugins(ScalaJSPlugin)
 scalaVersion := "3.3.8"
 scalaJSUseMainModuleInitializer := true
-libraryDependencies += "com.anjunar" %% "scalajs-jfx-core" % "3.0.2"
+libraryDependencies += "com.anjunar" %% "scalajs-jfx-core" % "3.0.3"
 ```
 
 Add a host element to `index.html`:
@@ -176,7 +178,7 @@ npm run verify --workspace npm/jfx-core
 
 ## Project status and license
 
-The repository is on the `3.0.2` release line and under active development. The complete Scala suite and every npm workspace verification run in CI for pushes and pull requests. Source, releases, and issue tracking live in the [GitHub repository](https://github.com/anjunar/scalajs-jfx).
+The repository is on the `3.0.3` release line and under active development. The complete Scala suite and every npm workspace verification run in CI for pushes and pull requests. Source, releases, and issue tracking live in the [GitHub repository](https://github.com/anjunar/scalajs-jfx).
 
 JFX 3 is available under the [MIT License](LICENSE).
 
