@@ -329,6 +329,13 @@ export interface SsrResult {
 }
 
 export interface SsrOptions {
+  /**
+   * Incoming HTTP headers, scoped to this render's component tree. Forward the
+   * server request headers so cookie-backed state matches browser hydration.
+   * Names are case-insensitive; repeated values are supported. Never serialized
+   * into the HTML or returned as response headers.
+   */
+  readonly requestHeaders?: Readonly<Record<string, string | readonly string[] | undefined>>;
   /** Milliseconds before the render is abandoned. Mirrors `Runtime.DefaultSsrTimeoutMs`. */
   readonly timeoutMs?: number;
   /**

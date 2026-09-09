@@ -198,6 +198,26 @@ async function main() {
       "the richer remote TableView example is missing from SSR"
     );
 
+    // A saved range outside the 50 supplied rows must also reach SSR. Otherwise
+    // the browser claims placeholders while SSR contains the first page's text.
+    const savedCookie = `jfx-crawl-books=${encodeURIComponent("493:50:")}`;
+    const savedTableHtml = await (await fetch(`http://localhost:${port}/controls/table`, {
+      headers: { Cookie: savedCookie },
+    })).text();
+    check(
+      "/controls/table -- saved remote scroll window reaches SSR",
+      savedTableHtml.includes('aria-rowindex="495"') &&
+        savedTableHtml.includes("jfx-table-cell-loading-placeholder") &&
+        !savedTableHtml.includes("The Long Route 1"),
+      "SSR ignored the request cookie and rendered the initial page"
+    );
+    const freshTableHtml = await (await fetch(`http://localhost:${port}/controls/table`)).text();
+    check(
+      "/controls/table -- request cookies do not leak to the next render",
+      freshTableHtml.includes("The Long Route 1") && !freshTableHtml.includes('aria-rowindex="495"'),
+      "a request without cookies inherited another request's scroll state"
+    );
+
     const tabsHtml = await (await fetch(`http://localhost:${port}/controls/tabs`)).text();
     check(
       "/controls/tabs -- both lifecycle modes are demonstrated",

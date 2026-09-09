@@ -1,6 +1,6 @@
 // By package specifier, like entry-client.ts -- see the note there and
 // vite.config.ts's `resolve.dedupe`, which is what makes it safe.
-import { renderToString, type HeadEntry } from "@anjunar/jfx-core";
+import { renderToString, type HeadEntry, type SsrOptions } from "@anjunar/jfx-core";
 import "@anjunar/scalajs-jfx-bridge";
 import { appDocument } from "./app/document.js";
 import { appRoutes, routerConfig } from "./app/routes.js";
@@ -24,7 +24,8 @@ export { supportedLocales } from "./app/i18n.js";
  */
 export async function render(
   path: string,
-  assets: readonly HeadEntry[] = []
+  assets: readonly HeadEntry[] = [],
+  requestHeaders: SsrOptions["requestHeaders"] = {}
 ): Promise<{ html: string; status: number }> {
   // `url: path` is how the complete request target reaches `jfx.router.Router` on the
   // server -- there is no browser `location` here. The client omits it.
@@ -34,7 +35,7 @@ export async function render(
       i18nProvider(providerConfig(path), () =>
         appDocument(assets, () => appShell(appRoutes, { ...routerConfig, url: path }), path)
       ),
-    { document: true }
+    { document: true, requestHeaders }
   );
   return { html: `<!doctype html>${result.html}`, status: result.status };
 }

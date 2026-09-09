@@ -47,6 +47,8 @@ mount(document.getElementById("empty-root")!, build); // browser, empty host
 
 `renderToString` returns `{ html, status, headers }`. Use `document: true` when the body composes a complete document with `head()` and `body` roots. Rendering bodies are synchronous. Use `fetchInto` for async work that SSR must await; use `capture` for a later callback that needs to resume a component scope. Capturing a scope does not make SSR wait.
 
+HTTP servers should pass `requestHeaders: req.headers` in the render options. These case-insensitive, request-scoped headers provide the Scala `RequestContext`, including cookies needed to render the same saved crawl window that the browser hydrates. Header values may be strings, readonly string arrays, or undefined. They are not serialized into HTML or echoed as response headers; static rendering can omit them.
+
 ## Core concepts
 
 - `property` creates a synchronous `Property`; `listProperty` creates a reactive list.

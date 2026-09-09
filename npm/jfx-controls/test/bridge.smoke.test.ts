@@ -1830,6 +1830,53 @@ describe("table-view", () => {
     expect(html).toContain("Remote #5");
   });
 
+  it("hydrates a saved remote crawl window beyond the initial data without replacing server nodes", async () => {
+    const cookie = `jfx-crawl-reload=${encodeURIComponent("60:5:")}`;
+    const catalog = Array.from({ length: 100 }, (_, index) => `Reload row ${index}`);
+    let finishLoad!: () => void;
+    const load = vi.fn((query: { offset: number; limit: number }) =>
+      new Promise<RemotePage<string, { offset: number; limit: number }>>(resolve => {
+        finishLoad = () => resolve({
+          items: catalog.slice(query.offset, query.offset + query.limit),
+          offset: query.offset,
+          totalCount: catalog.length,
+        });
+      }));
+    const build = (): void => {
+      const source = remoteSource({
+        initialQuery: { offset: 0, limit: 5 }, initial: catalog.slice(0, 5),
+        totalCount: catalog.length,
+        rangeQuery: (query, offset, limit) => ({ ...query, offset, limit }), load,
+      });
+      tableView(source, [valueColumn("Title", row => row)], {
+        crawlable: true, crawlId: "reload", pageSize: 5, rowHeight: 20,
+      });
+    };
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+    document.cookie = `${cookie}; Path=/`;
+    try {
+      const rendered = await renderToString(build, { requestHeaders: { Cookie: cookie } });
+      expect(load).not.toHaveBeenCalled();
+      root.innerHTML = rendered.html;
+      const rows = Array.from(root.querySelectorAll(".jfx-table-row"));
+      expect(rows).toHaveLength(5);
+      expect(rows[0]?.getAttribute("aria-rowindex")).toBe("62");
+      expect(root.textContent).not.toContain("Reload row 0");
+      const app = await hydrate(root, build);
+      try {
+        expect(Array.from(root.querySelectorAll(".jfx-table-row"))).toEqual(rows);
+        expect(load).toHaveBeenCalledWith({ offset: 60, limit: 5 });
+        finishLoad();
+        await vi.waitFor(() => expect(root.textContent).toContain("Reload row 60"));
+        expect(root.textContent).not.toContain("Reload row 0");
+      } finally { app.dispose(); }
+    } finally {
+      root.remove();
+      document.cookie = "jfx-crawl-reload=; Max-Age=0; Path=/";
+    }
+  });
+
   it("pages locally without native navigation after browser enhancement", () => {
     const root = document.createElement("div");
     document.body.appendChild(root);

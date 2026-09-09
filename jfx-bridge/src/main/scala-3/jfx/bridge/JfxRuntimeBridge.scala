@@ -3,6 +3,7 @@ package jfx.bridge
 import jfx.core.async.AsyncRenderContext
 import jfx.core.component.{AbstractComponent, Runtime}
 import jfx.core.render.{Cursor, DomCursor, HydratingCursor}
+import jfx.core.request.{RequestContext, RequestHeaders}
 import jfx.core.state.{ListProperty => CoreListProperty, Property => CoreProperty}
 import org.scalajs.dom
 
@@ -100,10 +101,27 @@ final class JfxRuntimeBridge extends js.Object {
     val tagName    = if (asDocument) "html" else ""
 
     val status = new SsrStatus()
+    // Snapshot incoming headers into this render's tree, never process-wide state.
+    val headers = options.toOption
+      .flatMap(_.requestHeaders.toOption)
+      .toVector
+      .flatMap {
+        _.iterator.flatMap { case (name, value) =>
+          value.toOption.map { entry =>
+            val values =
+              if (js.typeOf(entry) == "string") Vector(entry.asInstanceOf[String])
+              else entry.asInstanceOf[js.Array[String]].toVector
+            name -> values
+          }
+        }
+      }
+      .toMap
+    val requestContext = RequestContext(RequestHeaders(headers))
 
     Runtime
       .renderToStringAsync(
-        cursor => Runtime.mount(new BridgeRoot(build, tagName, Some(status)), cursor),
+        cursor =>
+          Runtime.mount(new BridgeRoot(build, tagName, Some(status), Some(requestContext)), cursor),
         timeoutMs
       )
       .map(html => new SsrResultHandle(html, status.get, js.Dictionary()))

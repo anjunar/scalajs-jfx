@@ -3,6 +3,7 @@ package jfx.bridge
 import jfx.core.component.AbstractComponent
 import jfx.core.document.DocumentHead
 import jfx.core.render.Cursor
+import jfx.core.request.RequestContext
 
 import scala.scalajs.js
 
@@ -38,12 +39,14 @@ import scala.scalajs.js
 private[bridge] final class BridgeRoot(
     build: js.Function1[ScopeHandleBridge, Unit],
     val tagName: String = "",
-    status: Option[SsrStatus] = None
+    status: Option[SsrStatus] = None,
+    requestContext: Option[RequestContext] = None
 ) extends AbstractComponent {
 
   override def compose(cursor: Cursor): Unit = {
     DocumentHead.provide(new DocumentHead())(using this)
     status.foreach(SsrStatus.provide(_)(using this))
+    requestContext.foreach(RequestContext.provide(_)(using this))
     build(new ScopeHandleBridge(this, cursor))
   }
 }

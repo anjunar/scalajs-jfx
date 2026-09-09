@@ -8,6 +8,8 @@ Dieses Dokument beschreibt, welche Funktionen unsere TableView bereits unterstü
 
 Ziel ist funktionale Parität für Datenbindung, Zellen und Zeilen, Auswahl, Fokus, Sortierung, Editing und Spaltenbedienung. Die Scala-DSL und die TypeScript-Fassade sollen dieselben Fähigkeiten derselben Scala.js-Runtime anbieten. JVM-Binärkompatibilität, JavaBeans-Reflection und eine Kopie des JavaFX-Scenegraphs sind kein Ziel.
 
+**Vereinbarte Abgrenzung:** Sortierung und Filterung laufen ausschließlich über die RemoteDataList (im Repository `RemoteListProperty`/`RemoteListDataSource`). Lokale Sortier-/Filteransichten, Comparatoren und Mutation-Policies sind aus dem Zielumfang entfernt. Die Tabelle liefert Sortierschlüssel und Richtungen; Filter gehören zur Remote-Abfrage der Anwendung. Bereits unterstützte lokale Listen, deren Strukturänderungen und eingebettete Editoren bleiben unverändert unterstützt.
+
 Die öffentliche [TableView-API von JavaFX 26](https://openjfx.io/javadoc/26/javafx.controls/javafx/scene/control/TableView.html) bildet den Referenzumfang. Zell- und Spaltenverträge werden zusätzlich gegen deren eigene APIs geprüft. Geerbte Darstellungsfunktionen werden auf DOM, Komponenten-Slots und Web-CSS abgebildet.
 
 **Editierbare Inhalte sind bereits möglich.** `TableColumn.cell { row => … }` komponiert beliebige Komponenten. Darin können Eingabefelder stehen, die über die vorhandene Property-/Form-Bindung das Zeilenmodell ändern. Dieser Weg bleibt unterstützt. Davon getrennt ist der noch fehlende, von der Tabelle verwaltete JavaFX-Editierablauf mit Editierposition, Start/Commit/Cancel und typisierten Ereignissen. „Editing fehlt“ wäre daher eine falsche Beschreibung des heutigen Stands.
@@ -138,7 +140,7 @@ Für eigene Inhalte `renderCells` ersetzen oder ergänzen. TypeScript-Beispiel u
 3. **Spaltenlebensdauer – behoben:** Alle Listenänderungen durchlaufen Attach/Detach; entfernte Spalten verlieren die Tabellenlistener. Mehrfachzuordnungen werden vor der Mutation abgewiesen.
 4. **Sortierberechtigung – behoben:** Darstellung und `toggleRemoteSort()` verwenden jetzt beide `isRemoteSortable()`.
 5. **Remote-Koordinaten – expliziter Vertrag:** `itemAt(index)` und `observeIndexedChanges` verwenden absolute Positionen. Das ältere `observeChanges` bleibt ein dichter Cache-Ereignisstrom und darf nicht für Tabellenpositionen verwendet werden. Eigene Remote-Quellen müssen den neuen Vertrag implementieren; der Default invalidiert konservativ die Auswahl (siehe 4.3).
-6. **Datenquelle ist lesend:** `ListDataSource` verspricht weder Mutation noch Sortierung; die Basisklasse hält die Quelle derzeit als `val`. Quellentausch, lokale Sortieransichten und Schreibzugriffe benötigen explizite Verträge.
+6. **Datenquelle ist lesend:** `ListDataSource` verspricht weder Mutation noch Sortierung; die Basisklasse hält die Quelle derzeit als `val`. Quellentausch und Schreibzugriffe benötigen explizite Verträge.
 
 Die offenen Befunde stammen aus der Quellprüfung. Tests des gelieferten Grundlagenpakets stehen in Abschnitt 6; sie ersetzen nicht die vollständige Interaktionsabnahme aller geplanten Modelle.
 
@@ -193,15 +195,14 @@ Referenzen: [TableColumnBase](https://openjfx.io/javadoc/26/javafx.controls/java
 
 ### 3.4 Sortierung
 
-Für lokale Ansichten liefert [SortedList](https://openjfx.io/javadoc/26/javafx.base/javafx/collections/transformation/SortedList.html) das Vorbild mit Quell-/Ansichtsindexabbildung.
+Sortierung und Filterung werden ausschließlich an die Remote-Datenquelle delegiert; lokale Transformationsansichten sind kein Ziel.
 
 | ID | Funktion | Stand | Umsetzung |
 | --- | --- | --- | --- |
 | O01 | Remote-Sortierung über Header | Teilweise | Vorhandenen `RemoteSort`-Pfad weiterverwenden; Flagprüfung und Paging-Reset vereinheitlichen. M0/M3. |
-| O02 | Lokale Sortierung mit typisierten Vergleichern | Offen | Comparator pro Spalte, abgeleiteter Gesamtvergleich und lokale Sortieransicht/Mutation-Policy. M3. |
 | O03 | Mehrspaltensortierung, sortOrder/sortType | Teilweise | Remote-Quelle kennt mehrere Deskriptoren, Headerklick ersetzt sie heute durch höchstens einen. Sortiermodell und additive Bedienung ergänzen. M3. |
 | O04 | `sort()`, sortPolicy, onSort | Offen | Programmatische und interaktive Sortierung über denselben auswechselbaren Vertrag ausführen. M3. |
-| O05 | Zusammenarbeit mit gefilterten/sortierten Quellen | Teilweise | Eigene `ListDataSource` ist möglich; belastbare Transformationsansicht und Identitätsabbildung fehlen. M3. |
+| O05 | Zusammenarbeit mit Remote-Sortier-/Filterabfragen | Teilweise | Remote-Query und akzeptierte Ergebnisgeneration bilden den Vertrag; stabile Identitäten und Zustandsregeln für Abfragewechsel vervollständigen. M3. |
 
 ### 3.5 Editing
 
@@ -238,7 +239,7 @@ Die folgenden Bausteine beschreiben die Zielarchitektur. `TableSelectionModel`, 
 | `TableColumnModel[S]` | Spaltenbaum, Ownership, stabile Spaltenidentität, sichtbare Blattliste und Indexabbildung. |
 | `TableSelectionModel[S]` | Implementiert für Modus, Shift-Anker und ausgewählte Zeilen mit lesbaren Ergebnis-Properties. Zellselektion und Modellaustausch bleiben offen. |
 | `TableFocusModel[S]` | Logische Fokusposition unabhängig von Auswahl und gemountetem DOM. |
-| `TableSortModel[S]` | Sortierreihenfolge, Richtungen, Vergleicher und Delegation an lokale/remote Policy. |
+| `TableSortModel[S]` | Sortierreihenfolge, Richtungen und Delegation der Sortierschlüssel an die Remote-Abfrage. |
 | `TableEditModel[S]` | Aktive Editiersitzung, Originalwert/Entwurf, Abschluss und Ereignisse. |
 | `TableColumnLayout` / `ColumnResizePolicy` | Seiteneffektfreie Breitenberechnung und Ergebnis pro sichtbarer Blattspalte. |
 | `TableHeader[S]` / `TableBehavior[S]` | Headerdarstellung und Übersetzung von Pointer-/Keyboard-Eingaben in Modelloperationen. |
@@ -308,7 +309,7 @@ Eingebettete Editoren erhalten ihre bisherige Semantik. Tabellenverwaltete Edito
 
 ### 4.3 Datenidentität, Koordinaten und Quellentausch
 
-Intern drei Begriffe auseinanderhalten: **Zeilenidentität**, **Ansichtsindex** und **Quellindex**. Öffentliche Tabellenpositionen beziehen sich auf die aktuelle Ansicht. Bei lokalen Transformationen wird zum Schreiben in den Quellindex übersetzt; bei Remote-Daten bezeichnet der Ansichtsindex eine absolute Position im aktuellen Abfrageergebnis.
+Intern **Zeilenidentität** und **Index im aktuellen Abfrageergebnis** auseinanderhalten. Öffentliche Tabellenpositionen bezeichnen bei Remote-Daten absolute Positionen im aktuellen Abfrageergebnis, nicht Indizes im lückenhaften Cache. Schreibzugriffe benötigen Datensatzidentität und Abfragegeneration; lokale Sortier-/Filtertransformationen werden nicht eingeführt.
 
 Ein optionaler `rowKey: S => K` erlaubt stabile Entitätsidentität. Für lokale Listen ohne Key müssen Vorkommen auch bei gleichen Werten unterscheidbar sein; `equals` allein reicht nicht. Für Remote-Daten eine Abfragegeneration und ungeladene Positionen separat modellieren. `selectedItems` darf keine erfundenen Objekte für ungeladene Positionen liefern.
 
@@ -340,7 +341,11 @@ Der Grid-Tabstopp stellt beim Eintritt bestehenden logischen Fokus bzw. Auswahl/
 
 Echte Browserprüfung mit explizitem Startbereich `?books.offset=0&books.limit=50`: Pfeile, Ctrl-Fokus ohne Auswahländerung, Shift-Bereich auf/ab, Ctrl+End bis Zeile 1.000 mit Nachladen, PageUp, Space und Tab zum Spaltenmenü funktionieren. DOM-Fokus bleibt bei virtuellen Zeilenwechseln am Grid, fokussierte Zeile hat eine 2-px-Kontur; keine Fehler in diesem Lauf.
 
-**Offener Nebenfund bei der Browserabnahme:** Ein normaler Reload der TypeScript-Demo mit gespeichertem `jfx-crawl-books`-Offset außerhalb der ersten 50 Datensätze kann bereits beim Claim mit `Hydration fault` abbrechen. `npm/jfx-demo/server.mjs` reicht nur URL/Assets an `src/entry-server.ts` weiter; dessen SSR-Aufruf hat keinen Cookie-Request-Kontext. `CrawlCookieState` liest serverseitig `RequestContext`, clientseitig jedoch `document.cookie`: Server und Client komponieren unterschiedliche Ausschnitte. Der explizite Startbereich dient nur zur isolierten Fokusprüfung, ist keine Fehlerbehebung. Als Nächstes den Request-Kontext durch die SSR-Fassade/den Demo-Server führen und Reload mit gespeichertem Remote-Offset als Regression prüfen; keine pauschale fehlerfreie Hydration für diesen Fall behaupten.
+**Behoben – SSR-Request-Kontext bei Remote-Crawl-Wiederherstellung:** Ein normaler Seitenaufruf der TypeScript-Demo mit gespeichertem `jfx-crawl-books`-Offset außerhalb der ersten 50 Datensätze brach beim Claim mit `Hydration fault` ab. Der Server komponierte ohne Cookie die erste Seite, der Browser den gespeicherten Ausschnitt. `SsrOptions.requestHeaders` führt jetzt eingehende Header über die Bridge in einen eigenen `RequestContext` pro Komponentenbaum; `npm/jfx-demo/server.mjs` reicht dafür `req.headers` an `src/entry-server.ts` weiter. Headernamen werden normalisiert, Mehrfachwerte und fehlende Werte unterstützt. Keine globale Request-Variable, keine automatische Serialisierung der Header ins HTML, keine Übernahme als Response-Header. Statische Renderer dürfen die Option weglassen.
+
+Regression: Ein Scala-Bridge-Test prüft getrennte parallele SSR-Requests einschließlich asynchroner Kinder, Header-Normalisierung und den anschließenden Render ohne Header. Ein TypeScript-Integrationstest hydriert Offset 60 bei nur fünf initial geladenen Zeilen mit erhaltenen Platzhalter-Nodes und lädt anschließend den richtigen Remote-Bereich. Die Demo-HTTP-Abnahme prüft Cookie-Offset 493 und einen unabhängigen Folge-Request ohne Cookie. Browserabnahme ohne Query-Offset: gespeicherter Bereich nahe dem Listenende und anschließend um Zeile 500 samt absteigender Sortierung erfolgreich wiederhergestellt; Tastatur und Spaltensichtbarkeit bedienbar, keine Browserfehler. Es werden weder Cookies gelöscht noch Startbereiche erzwungen.
+
+Abnahme: vollständiges `sbt --server "Test/testOnly *"`, Bridge-Full-Link und sämtliche npm-Gates für Core (114 + 8 Consumer-Tests), Controls (66 + 3 Consumer-Tests) und Demo (Typecheck, Client-/SSR-Builds, Eine-Runtime-Prüfung, 31 Routen und Cookie-Regressionsprüfungen) grün.
 
 Geplant ist `TablePosition[S]` mit Ansichtszeile und Spaltenreferenz; der Blattspaltenindex wird abgeleitet. Eine separate interne Identität schützt vor Spalten-Reordering und lokalen Listenverschiebungen.
 
@@ -356,14 +361,9 @@ Bei einer bekannten endlichen lokalen Quelle gilt Auswahl über alle Ansichtszei
 
 ### 4.5 Sortierung als gemeinsamer Vertrag
 
-Das geplante Sortiermodell hält eine geordnete Spaltenliste und die Richtung jeder Spalte. Daraus entstehen lokale Vergleicher bzw. `Vector[RemoteSort]`. Jeder Einstieg prüft dieselben Fähigkeiten und `sortable`.
+Das geplante Sortiermodell hält eine geordnete Spaltenliste und die Richtung jeder Spalte. Daraus entsteht `Vector[RemoteSort]` für die Remote-Datenquelle. Jeder Einstieg prüft dieselben Fähigkeiten und `sortable`; Spalten benötigen `sortKey`.
 
-Für lokale Quellen zwei klar benannte Wege vorsehen:
-
-- **Ansicht:** eine sortierte/optional gefilterte `ListDataSource` mit Indexabbildung. Ohne Vergleich wird die aktuelle Quellreihenfolge sichtbar. Dies ist die empfohlene Lösung für den bestehenden lesenden Datenvertrag.
-- **Mutation-Policy:** explizite Policy für tatsächlich veränderbare Listen, wenn JavaFX-ähnliches Sortieren der Items selbst gewünscht ist. Unsortieren stellt hier nicht ohne Weiteres eine frühere Reihenfolge wieder her.
-
-Eine unvollständig geladene Remote-Liste wird ausschließlich über ihren Server-Sortiervertrag sortiert. Ein lokaler Comparator lässt sich nicht automatisch in einen Remote-Schlüssel übersetzen; Spalten brauchen dafür weiter `sortKey`.
+Sortierung und Filterung finden ausschließlich über die Remote-Abfrage statt, niemals im geladenen Cache. Filterkriterien gehören zum anwendungsspezifischen Query-Vertrag. Eine akzeptierte Ersatzantwort begründet die neue Ergebnisgeneration; Fehler und veraltete Antworten dürfen den bisherigen Zustand nicht überschreiben. Es werden weder lokale Comparatoren noch sortierte/gefilterte Ansichten oder Mutation-Policies implementiert.
 
 Normale Headerklicks ändern die primäre Sortierung; additive Bedienung erhält andere Sortierspalten. Richtungswechsel und Entfernen einer Spalte aus der Sortierung aktualisieren Anzeige und Daten gemeinsam. `sort()`, geänderte Sortierproperties und Benutzeraktionen führen durch denselben Policy-/Eventpfad. Fehler, abgebrochene Sortierung und verspätete Antworten dürfen keinen falschen Headerzustand hinterlassen. Bei einem neuen Ergebnis Paging auf die erste Seite und Scroll-/Edit-/Auswahlzustand gemäß den Modellregeln behandeln.
 
@@ -458,7 +458,7 @@ Die Größen S/M/L bezeichnen relative Komplexität, keine Zeitversprechen. M0 i
 | M0 – Verträge und Korrektheit | Identität/Koordinaten, Remote-Events, Quellentausch, Handle-Vertrag und Defaults; sortable-Prüfung spezifizieren. | Verbindliche Regeln für Insert/Remove/Sort/Reload, Quelleigentum und Edit-Schreibziel; kleine gezielte Fehlerkorrekturen mit Regressionstest. | M |
 | M1 – Zeilen, Zellen, Spaltenbasis | Nach M0: differenzielles Zeilenfenster, Zellbindung, typed value/factory, rowFactory, Spalten-Ownership, Baum-/Blattmodell, refresh. | Bestehender Editor behält Fokus/Cursor bei unverändert sichtbarer Zeile; Property-Änderung aktualisiert Zelle; entfernte Bindungen sind gelöst. | L |
 | M2 – Auswahl, Fokus, Scroll-API | Nach M1: Selection-/FocusModel, Zeilen-/Zellbereiche, Keyboard, ARIA-Grundstruktur, Sichtbarkeitsanforderungen. | Auswahl/Fokus über Scrollfenster und Listenänderungen konsistent; Tastatur bedient Grid ohne Eingabefelder zu stören. | L |
-| M3 – Sortiermodell | Nach M1 und den Identitätsregeln aus M2: lokal/remote, Mehrspalten, Policy/Events, Transformationsabbildung. | Gleiches Sortiermodell für API und Header; korrekte Quelle beim Writeback; keine lokale Teilsortierung von Remote-Daten. | L |
+| M3 – Remote-Sortiermodell | Nach M1 und den Identitätsregeln aus M2: Mehrspalten, Remote-Policy/Events, Abfragegenerationen. | Gleiches Sortiermodell für API und Header; korrekte Datensatzidentität beim Writeback; keine lokale Sortierung oder Filterung. | L |
 | M4 – Integrierte Editoren | Nach M1–M3: Sitzungen, Start/Commit/Cancel, Schreibvertrag, Standard-Text-/Boolean-Editoren. | Commit genau einmal, Cancel ohne Schreiben, korrekter Datensatz nach Sortierung, Fokus-/Virtualisierungsregeln getestet. | L |
 | M5 – Spaltenbedienung | Nach M1/M2; parallel zu M3/M4 möglich: Gruppenheader, Resize-Policies, Reorder, Visibility-Menü und Header-Slots. | Header und Zellen fluchten bei jeder Policy; Grenzen, ausgeblendete Spalten, Gruppen und horizontaler Scroll funktionieren. | L |
 | M6 – Vervollständigung | Nach den betreffenden Grundlagen: variable Höhen, verbleibende Standardzellen, Tooltips/Menüs, RTL und Accessibility-Abnahme. | Individuelle Höhen ohne Scrollsprünge; Standardzellen und benutzerdefinierte Zeilen; Tastatur und Screenreader geprüft. | L |
@@ -467,7 +467,7 @@ Die Größen S/M/L bezeichnen relative Komplexität, keine Zeitversprechen. M0 i
 ### Konkreter Startumfang und Fortschritt
 
 - [x] M0: Dokumentations-/Testvertrag für Einzelauswahl nach Vorkommen, absolute Remote-Koordinaten und akzeptierte Reloads.
-- [ ] M0: Quellentausch, stabile Keys und allgemeine Transformations-/Identitätsabbildung.
+- [ ] M0: Quellentausch, stabile Keys und Identitätsregeln für Remote-Abfragewechsel.
 - [x] M0/M2: Typisiertes TypeScript-Handle für konsistente Einzelauswahl und kontrollierte Mutationen.
 - [x] M2: Zentrales Zeilen-Auswahlmodell, Mehrfachauswahl/Ergebnislisten, Bereichsoperationen und Ctrl/Cmd-/Shift-Mausbedienung in Scala und TypeScript.
 - [x] M2: Programmatische Zeilennavigation per Index/Item, einschließlich Paging, Remote-Lücken und Hydration.
@@ -519,7 +519,7 @@ Pro Feature gezielte Vertrags- und Integrationstests:
 - Editing: vorhandene eingebettete Felder, F2/Enter/Escape/Tab, IME, Fokus im Popup, einmaliger Commit, Cancel, Parserfehler, Datenänderung während Editieren und veraltete Async-Antwort.
 - Spalten: Grenzen und Policy-Ergebnisse als Modelltests; Pointer-Resize, Drag-Reorder, Gruppenheader und horizontale Erreichbarkeit in einem echten Browser.
 - SSR/Hydration: identisches Anfangsmarkup, keine frühzeitigen Mess-/Fokusaktionen, unveränderte Paging-Links und Crawl-Wiederherstellung.
-- Performance: Rendering, DOM-Mounts und Viewport-Updates skalieren mit dem gerenderten Fenster; Mount-/Dispose-Zähler belegen erhaltene Zeilen. Lokale Sortierung, Filterung und selectAll dürfen den gesamten Datenumfang bearbeiten. Große lokale und lückenhafte Remote-Daten getrennt betrachten.
+- Performance: Rendering, DOM-Mounts und Viewport-Updates skalieren mit dem gerenderten Fenster; Mount-/Dispose-Zähler belegen erhaltene Zeilen. selectAll darf den gesamten bekannten Datenumfang bearbeiten. Große lokale und lückenhafte Remote-Daten getrennt betrachten; Sortierung/Filterung delegieren an die Remote-Abfrage.
 - Accessibility: reale Fokusführung und Tastatur-/Screenreader-Prüfung; HTML-String- oder jsdom-Tests allein belegen keine Layout-/Fokuskorrektheit.
 - API: gleiche Szenarien mit Scala-DSL und TypeScript-Handle; Paket-Consumer nutzt die tatsächlich gelinkte Runtime.
 
@@ -548,7 +548,7 @@ Auch `npm run verify` für Controls, Core und Demo ist grün: Controls 14 Integr
 
 ## 7. Nicht mit JavaFX-Parität verwechseln
 
-Filterung über eine Datenansicht gehört zur Integration; ein eingebauter Filterdialog pro Spalte ist ein separates Produktfeature. JavaFX bietet hierfür unter anderem [FilteredList](https://openjfx.io/javadoc/26/javafx.base/javafx/collections/transformation/FilteredList.html).
+Lokale Sortierung und Filterung sind ausdrücklich aus dem Paritätsumfang entfernt. Filterung erfolgt über die Remote-Abfrage; ein eingebauter Filterdialog pro Spalte wäre ein separates Produktfeature.
 
 Aus der geprüften Standard-API ergibt sich außerdem kein eingebauter Vertrag für eingefrorene Spalten, Gruppierungs-/Aggregationszeilen, Excel-Export, Tabellen-Copy/Paste, Undo/Redo oder beliebige Zellverschmelzung. Diese Wünsche können später eigene Erweiterungen werden. Ein `rowFactory`-Erweiterungspunkt ist nicht gleichbedeutend mit fertiger Zellverschmelzung. Hierarchische Datensätze gehören zur gesonderten TreeTableView.
 
@@ -559,7 +559,7 @@ Vorhandene Web-Funktionen – serverseitiges Paging, Remote-Range-Loading, SSR/H
 - [ ] Jede ID der Feature-Matrix hat eine Implementierung und eine nachvollziehbare Abnahme oder eine ausdrücklich dokumentierte Abweichung vom Referenzumfang.
 - [ ] Bereits eingebettete editierbare Controls funktionieren weiter; integriertes Editing ist als zusätzlicher Vertrag dokumentiert.
 - [ ] Auswahl, Fokus, Sortierung, Editing und Spaltenlayout verwenden konsistente Identitäten und Koordinaten.
-- [ ] Lokale, sortierte/gefilterte und lückenhafte Remote-Quellen haben verständliche Schreib- und Änderungsregeln.
+- [ ] Bestehende lokale Listen sowie lückenhafte und per Remote-Abfrage sortierte/gefilterte Quellen haben verständliche Schreib- und Änderungsregeln.
 - [ ] Scala- und TypeScript-API erschließen denselben Funktionsumfang ohne zweite Runtime.
 - [ ] SSR, Hydration, Paging und die anderen virtualisierten Controls bestehen ihre Regression.
 - [ ] Browserbedienung, Accessibility und Zeilenlebensdauer sind überprüft; alle betroffenen Paket- und Gesamt-Gates sind grün.

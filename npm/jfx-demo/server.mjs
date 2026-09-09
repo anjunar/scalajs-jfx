@@ -63,7 +63,8 @@ app.use(async (req, res, next) => {
 
     // originalUrl is the complete request target. Passing req.path here would
     // silently discard query parameters before RouterConfig.url reaches SSR.
-    const { html: rendered, status } = await render(url, await clientAssets());
+    // Cookie-backed crawl state must be identical during SSR and hydration.
+    const { html: rendered, status } = await render(url, await clientAssets(), req.headers);
 
     // In dev, Vite hangs its own HMR client off the head. The browser head
     // sink only touches nodes carrying its own marker, so it leaves that one

@@ -1,5 +1,6 @@
 package jfx.bridge
 
+import jfx.core.request.RequestContext
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -25,6 +26,49 @@ class JfxRuntimeBridgeSpec extends AsyncFlatSpec with Matchers {
       build: js.Function1[ScopeHandleBridge, Unit]
   ): scala.concurrent.Future[SsrResultHandle] =
     runtime.renderToString(build, js.undefined).toFuture
+
+  "SSR request headers" should "remain isolated through asynchronous children and normalize repeated values" in {
+    val build: js.Function1[ScopeHandleBridge, Unit] = { scope =>
+      scope.fetch(
+        () => js.Promise.resolve[js.Any]("ready"),
+        (_, loadedScope) => {
+          val context = RequestContext.require(using loadedScope.parent)
+          loadedScope.text(context.header("COOKIE").getOrElse("no-cookie"))
+          loadedScope.text(context.headers.getAll("X-Multi").mkString("|"))
+          context.headers.contains("X-Missing") shouldBe false
+        },
+        (_, _) => ()
+      )
+    }
+    def options(cookie: String): SsrOptionsFacade =
+      js.Dynamic
+        .literal(requestHeaders =
+          js.Dynamic.literal(
+            "Cookie"    -> cookie,
+            "X-Multi"   -> js.Array("first", "second"),
+            "X-Missing" -> js.undefined
+          )
+        )
+        .asInstanceOf[SsrOptionsFacade]
+
+    val first  = runtime.renderToString(build, options("request-one")).toFuture
+    val second = runtime.renderToString(build, options("request-two")).toFuture
+    val empty  = render(build)
+    for {
+      one  <- first
+      two  <- second
+      none <- empty
+    } yield {
+      one.html should include("request-one")
+      one.html should not include "request-two"
+      one.html should include("first|second")
+      two.html should include("request-two")
+      two.html should not include "request-one"
+      none.html should include("no-cookie")
+      none.html should not include "first|second"
+      one.headers.toMap shouldBe Map.empty[String, String]
+    }
+  }
 
   "renderToString" should "mount a generic element, a library component and reactive text" in {
     val counter = runtime.property[Int](0)
