@@ -1,6 +1,6 @@
 {
   "name": "@anjunar/jfx-forms",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "description": "The TypeScript forms API of JFX 3: model-bound inputs, validators, field groups, repeating and nested sub-forms, a combo box, and an image cropper, projected onto the jfx.forms components that run in the Scala.js runtime published as @anjunar/scalajs-jfx-bridge.",
   "type": "module",
   "types": "./dist/index.d.ts",
@@ -27,11 +27,11 @@
     "verify": "npm run typecheck && npm run test && npm run test:consumer"
   },
   "peerDependencies": {
-    "@anjunar/jfx-core": "^3.0.3",
-    "@anjunar/jfx-controls": "^3.0.3",
-    "@anjunar/jfx-viewport": "^3.0.3",
-    "@anjunar/scalajs-jfx": "^3.0.3",
-    "@anjunar/scalajs-jfx-bridge": "^3.0.3"
+    "@anjunar/jfx-core": "^3.0.4",
+    "@anjunar/jfx-controls": "^3.0.4",
+    "@anjunar/jfx-viewport": "^3.0.4",
+    "@anjunar/scalajs-jfx": "^3.0.4",
+    "@anjunar/scalajs-jfx-bridge": "^3.0.4"
   },
   "devDependencies": {
     "@anjunar/jfx-core": "*",

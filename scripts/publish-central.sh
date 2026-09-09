@@ -90,6 +90,10 @@ BUNDLE_DIR="${REPO_ROOT}/target/sona-staging"
 BUNDLE_ZIP="${REPO_ROOT}/target/central-bundle-${VERSION}.zip"
 
 if [[ "$SKIP_PUBLISH_SIGNED" -eq 0 ]]; then
+  case "$BUNDLE_DIR" in
+    "$REPO_ROOT"/target/*) rm -rf -- "$BUNDLE_DIR" ;;
+    *) echo "Refusing to clean staging outside target: $BUNDLE_DIR" >&2; exit 1 ;;
+  esac
   sbt --server "publishSigned"
 fi
 

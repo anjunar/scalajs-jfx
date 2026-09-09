@@ -9,7 +9,7 @@ Route matching, asynchronous route loading, nested outlets, links, localized URL
 ## Installation
 
 ```scala
-libraryDependencies += "com.anjunar" %% "scalajs-jfx-router" % "3.0.3"
+libraryDependencies += "com.anjunar" %% "scalajs-jfx-router" % "3.0.4"
 ```
 
 ## Quick start

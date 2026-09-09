@@ -9,7 +9,7 @@ Rich-text editing for JFX 3, backed by Lexical in the browser and exposed as a r
 ## Installation
 
 ```scala
-libraryDependencies += "com.anjunar" %% "scalajs-jfx-editor" % "3.0.3"
+libraryDependencies += "com.anjunar" %% "scalajs-jfx-editor" % "3.0.4"
 ```
 
 The module also uses the repository's `scalajs-lexical` dependency and the viewport for default plugin dialogs.
@@ -64,10 +64,8 @@ Storage, backend validation, orphan cleanup and a future multipart HTML POST han
 the application. The TypeScript [media integration guide](../npm/jfx-editor/README.md) documents
 the complete adapter and backend contract.
 
-This development change depends on the companion `scalajs-lexical` 1.4.0-SNAPSHOT library.
-Build/publish it locally with `sbt --server "scalajs-lexical/publishLocal"` in that repository.
-A published Maven version is required before distributing this JFX change independently;
-no registry release is performed by the implementation.
+This release depends on the companion `scalajs-lexical` 1.4.0 library and the
+`@anjunar/scalajs-lexical` 1.0.10 runtime package.
 
 ## SSR and non-JavaScript behavior
 

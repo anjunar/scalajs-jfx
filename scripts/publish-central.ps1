@@ -70,6 +70,14 @@ $bundleDir = Join-Path $repoRoot "target\sona-staging"
 $bundleZip = Join-Path $repoRoot "target\central-bundle-$Version.zip"
 
 if (-not $SkipPublishSigned) {
+    $targetRoot = [IO.Path]::GetFullPath((Join-Path $repoRoot "target"))
+    $resolvedBundleDir = [IO.Path]::GetFullPath($bundleDir)
+    if (-not $resolvedBundleDir.StartsWith($targetRoot + [IO.Path]::DirectorySeparatorChar)) {
+        throw "Refusing to clean staging outside target: $resolvedBundleDir"
+    }
+    if (Test-Path $resolvedBundleDir) {
+        Remove-Item -LiteralPath $resolvedBundleDir -Recurse -Force
+    }
     & sbt --server "publishSigned"
     if ($LASTEXITCODE -ne 0) {
         throw "sbt --server publishSigned failed."

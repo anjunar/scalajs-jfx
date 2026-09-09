@@ -9,7 +9,7 @@ The controls build on `jfx-core` state and data-source contracts. They render on
 ## Installation
 
 ```scala
-libraryDependencies += "com.anjunar" %% "scalajs-jfx-controls" % "3.0.3"
+libraryDependencies += "com.anjunar" %% "scalajs-jfx-controls" % "3.0.4"
 ```
 
 ## Quick start

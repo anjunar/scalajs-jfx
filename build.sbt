@@ -27,7 +27,7 @@ val siteConfigUrlOverride = settingKey[Option[String]](
 // 3. Slash-Syntax ist Pflicht, 0.13-Syntax ist entfernt. War hier schon so.
 // ---------------------------------------------------------------------------
 
-version              := "3.0.3"
+version              := "3.0.4"
 organization         := "com.anjunar"
 organizationName     := "Anjunar"
 organizationHomepage := Some(url("https://github.com/anjunar"))
@@ -90,8 +90,8 @@ publishTo := {
 // dann `Files.move`. Ergebnis war reproduzierbar
 //
 //   java.nio.file.AccessDeniedException:
-//     ...\scalajs-jfx-core_sjs1_3-3.0.3.jar.151b4332.tmp
-//       -> ...\scalajs-jfx-core_sjs1_3-3.0.3.jar
+//     ...\scalajs-jfx-core_sjs1_3-3.0.4.jar.151b4332.tmp
+//       -> ...\scalajs-jfx-core_sjs1_3-3.0.4.jar
 //
 // bei *jedem* Lauf nach dem ersten im selben Server -- auch ohne Quelltext-
 // aenderung, weil packageBin jedes Mal laeuft. Nur ein Serverneustart half.
@@ -275,7 +275,7 @@ lazy val jfxEditor = Project(id = "scalajs-jfx-editor", base = file("jfx-editor"
   .settings(
     name                                 := "scalajs-jfx-editor",
     moduleName                           := "scalajs-jfx-editor",
-    libraryDependencies += "com.anjunar" %% "scalajs-lexical" % "1.4.0-SNAPSHOT"
+    libraryDependencies += "com.anjunar" %% "scalajs-lexical" % "1.4.0"
   )
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)

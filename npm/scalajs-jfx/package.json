@@ -1,6 +1,6 @@
 {
   "name": "@anjunar/scalajs-jfx",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "description": "Default component CSS for the scalajs-jfx Scala.js modules.",
   "type": "module",
   "license": "MIT",

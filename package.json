@@ -1,6 +1,6 @@
 {
   "name": "scalajs-jfx",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "private": true,
   "workspaces": [
     "npm/*"
@@ -26,7 +26,7 @@
   },
   "dependencies": {
     "@anjunar/scalajs-jfx": "*",
-    "@anjunar/scalajs-lexical": "^1.0.9",
+    "@anjunar/scalajs-lexical": "^1.0.10",
     "express": "^5.2.1"
   },
   "devDependencies": {
