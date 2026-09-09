@@ -83,6 +83,10 @@ export function controlsTablePage(): void {
 
     div(() => text(translated("Shift-click headers to sort by multiple columns. Enter or Space sorts a focused header; Shift keeps other sort columns.")));
     button(translated("Clear sorting"), {}, () => { onClick(() => table.clearSort()); });
+    button(translated("Sort first two columns"), {}, () => onClick(() => table.setSortOrder([
+      { columnIndex: 0, ascending: true }, { columnIndex: 1, ascending: false },
+    ])));
+    button(translated("Reload current sorting"), {}, () => onClick(() => table.sort()));
     button(translated("Toggle author column"), {}, () => {
       onClick(() => showAuthors.set(!showAuthors.get));
     });

@@ -80,6 +80,11 @@ export interface TableRowContext<T> {
 }
 
 export type TableSelectionMode = "single" | "multiple";
+/** One term in an explicit remote sort order, resolved against the current visible columns. */
+export interface TableSort {
+  readonly columnIndex: number;
+  readonly ascending: boolean;
+}
 export type ColumnResizePolicy = "unconstrained" | "all-columns" | "last-column" | "next-column"
   | "subsequent-columns" | "flex-next-column" | "flex-last-column";
 
@@ -117,6 +122,16 @@ export interface TableViewOptions<T = unknown> {
 
 /** Runtime-owned row selection, row focus, navigation and refresh. Cell coordinates remain pending. */
 export interface TableViewHandle<T = unknown> {
+  /** Atomically replaces the whole remote order. Invalid, hidden, unsortable or duplicate
+   * sort keys reject the whole command without changing state. Empty order requests unsorted.
+   * Indices resolve at call time; the resulting field keys survive later column reordering.
+   * Browser-only, with the same guards and return semantics as toggleSort.
+   */
+  setSortOrder(order: readonly TableSort[]): boolean;
+  /** Reissues the current remote order (also empty/hidden/external terms), e.g. after a load failure.
+   * True means requested, not completed; the remote source may deduplicate an in-flight request.
+   */
+  sort(): boolean;
   /** Requested remote order. Loading/error state belongs to the source, not an accepted-result snapshot. */
   readonly sorting: ReadOnlyProperty<readonly SortSpec[]>;
   /** Browser-only: cycle unsorted/ascending/descending; additive preserves other terms and priority.

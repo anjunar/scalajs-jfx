@@ -46,7 +46,7 @@ import {
 import { div, text } from "@anjunar/jfx-core";
 import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";
 import { carousel, dataGrid, remoteSource, tab, tableView, tabs, valueColumn, virtualList } from "../src/index.js";
-import type { ColumnResizePolicy, TableViewHandle, TableRowContext, TableSelectionMode, RemotePage, SortSpec } from "../src/index.js";
+import type { ColumnResizePolicy, TableViewHandle, TableRowContext, TableSelectionMode, TableSort, RemotePage, SortSpec } from "../src/index.js";
 
 const linkedArtifact = resolve(process.cwd(), "../scalajs-jfx-bridge/dist/fullopt/main.js");
 
@@ -1757,6 +1757,130 @@ describe("table-view", () => {
     app.dispose();
   });
 
+  it("sets an explicit remote order in one request and resolves indices against the current columns", async () => {
+    type Query = { sorting: readonly SortSpec[] };
+    const load = vi.fn(async (_query: Query) => ({ items: ["Ada"], totalCount: 1 }));
+    const root = document.createElement("div");
+    let table!: TableViewHandle<string>;
+    const app = mount(root, () => {
+      table = tableView(remoteSource({ initialQuery: { sorting: [] } as Query, initial: ["Ada"],
+        totalCount: 1, load, sortQuery: (q, sorting) => ({ ...q, sorting }) }), [
+        valueColumn("Author", row => row, { sortable: true, sortKey: "author" }),
+        valueColumn("Year", row => row, { sortable: true, sortKey: "year" }),
+      ], { paging: true });
+    });
+    const order = [{ columnIndex: 1, ascending: false }, { columnIndex: 0, ascending: true }];
+    try {
+      expect(table.setSortOrder(order)).toBe(true);
+      expect(load).toHaveBeenCalledTimes(1);
+      expect(table.sorting.get).toEqual([{ field: "year", ascending: false }, { field: "author", ascending: true }]);
+      order[0]!.ascending = true; // Input is a command snapshot, not a live binding.
+      expect(table.sorting.get[0]?.ascending).toBe(false);
+      expect(root.querySelector('[aria-sort="descending"]')?.textContent).toBe("Year");
+      expect(table.moveColumn(0, 1)).toBe(true);
+      expect(table.sorting.get[0]?.field).toBe("year");
+      await vi.waitFor(() => expect(root.querySelector("[role=grid]")?.getAttribute("aria-busy")).toBe("false"));
+      expect(table.setSortOrder([{ columnIndex: 0, ascending: true }])).toBe(true);
+      expect(table.sorting.get).toEqual([{ field: "year", ascending: true }]);
+      expect(load).toHaveBeenCalledTimes(2);
+      await vi.waitFor(() => expect(root.querySelector("[role=grid]")?.getAttribute("aria-busy")).toBe("false"));
+      expect(table.setSortOrder([])).toBe(true);
+      expect(table.sorting.get).toEqual([]);
+      expect(load).toHaveBeenCalledTimes(3);
+    } finally { app.dispose(); }
+    expect(table.setSortOrder(order)).toBe(false);
+    expect(table.sort()).toBe(false);
+  });
+
+  it("rejects the entire explicit order for invalid JS values, duplicate keys and unavailable columns", () => {
+    const load = vi.fn(async () => ({ items: ["Ada"], totalCount: 1 }));
+    let table!: TableViewHandle<string>;
+    const root = document.createElement("div");
+    const app = mount(root, () => {
+      table = tableView(remoteSource({ initialQuery: {}, initial: ["Ada"], totalCount: 1,
+        load, sortQuery: (q, _sorting) => q }), [
+        valueColumn("Author", row => row, { sortable: true, sortKey: "author" }),
+        valueColumn("Alias", row => row, { sortable: true, sortKey: " author " }),
+        valueColumn("Locked", row => row, { sortable: false, sortKey: "locked" }),
+        valueColumn("Unkeyed", row => row, { sortable: true, sortKey: " " }),
+        valueColumn("Hidden", row => row, { sortable: true, sortKey: "hidden", visible: false }),
+      ], { paging: true });
+    });
+    try {
+      table.selectIndex(0);
+      const first = { columnIndex: 0, ascending: true };
+      const invalid: unknown[] = [null, undefined, {}, "bad", [null], [undefined], Array(1),
+        [{ columnIndex: 0 }], [{ columnIndex: 0, ascending: "false" }],
+        [{ columnIndex: "0", ascending: true }], [first, first],
+        ...[-1, 0.5, Infinity, NaN, 1, 2, 3, 4, 99].map(columnIndex => [first, { columnIndex, ascending: false }]),
+      ];
+      for (const request of invalid)
+        expect(table.setSortOrder(request as readonly TableSort[]), JSON.stringify(request)).toBe(false);
+      expect(load).not.toHaveBeenCalled();
+      expect(table.sorting.get).toEqual([]);
+      expect(table.selectedIndex.get).toBe(0);
+      expect(root.querySelector("[aria-sort]")).toBeNull();
+    } finally { app.dispose(); }
+  });
+
+  it("retries a failed order without cycling its direction, including hidden terms", async () => {
+    type Query = { sorting: readonly SortSpec[] };
+    const visible = property(true);
+    const load = vi.fn<(q: Query) => Promise<RemotePage<string, Query>>>()
+      .mockRejectedValueOnce(new Error("Temporary outage"))
+      .mockResolvedValue({ items: ["Grace"], totalCount: 1 });
+    const root = document.createElement("div");
+    let table!: TableViewHandle<string>;
+    const app = mount(root, () => {
+      table = tableView(remoteSource({ initialQuery: { sorting: [] } as Query, initial: ["Ada"],
+        totalCount: 1, load, sortQuery: (q, sorting) => ({ ...q, sorting }) }), [
+        valueColumn("Author", row => row, { sortable: true, sortKey: "author", visible }),
+        valueColumn("Other", row => row),
+      ], { paging: true });
+    });
+    try {
+      table.selectIndex(0); table.focusIndex(0);
+      expect(table.setSortOrder([{ columnIndex: 0, ascending: false }])).toBe(true);
+      await vi.waitFor(() => expect(root.querySelector(".jfx-table-view-error")).not.toBeNull());
+      expect(table.selectedItem.get).toBe("Ada");
+      expect(table.focusedItem.get).toBe("Ada");
+      visible.set(false);
+      expect(table.sort()).toBe(true);
+      expect(load.mock.calls[1]?.[0]).toEqual(load.mock.calls[0]?.[0]);
+      await vi.waitFor(() => expect(root.querySelector(".jfx-table-view-error")).toBeNull());
+      await vi.waitFor(() => expect(table.selectedIndex.get).toBe(-1));
+      expect(table.focusedIndex.get).toBe(-1);
+      expect(table.sorting.get).toEqual([{ field: "author", ascending: false }]);
+      visible.set(true);
+      expect(root.textContent).toContain("Grace");
+      expect(root.querySelector("[aria-sort]")?.getAttribute("aria-sort")).toBe("descending");
+    } finally { app.dispose(); }
+  });
+
+  it("keeps the latest explicit order and result when an older request finishes last", async () => {
+    type Query = { sorting: readonly SortSpec[] };
+    const pending: ((page: RemotePage<string, Query>) => void)[] = [];
+    const root = document.createElement("div");
+    let table!: TableViewHandle<string>;
+    const app = mount(root, () => {
+      table = tableView(remoteSource({ initialQuery: { sorting: [] } as Query, initial: ["initial"], totalCount: 1,
+        load: () => new Promise<RemotePage<string, Query>>(resolve => pending.push(resolve)),
+        sortQuery: (q, sorting) => ({ ...q, sorting }) }), [
+        valueColumn("Value", row => row, { sortable: true, sortKey: "value" }),
+      ], { paging: true });
+    });
+    try {
+      table.setSortOrder([{ columnIndex: 0, ascending: true }]);
+      table.setSortOrder([{ columnIndex: 0, ascending: false }]);
+      pending[1]!({ items: ["latest"], totalCount: 1 });
+      await vi.waitFor(() => expect(root.textContent).toContain("latest"));
+      pending[0]!({ items: ["stale"], totalCount: 1 });
+      await new Promise(resolve => setTimeout(resolve, 0));
+      expect(root.textContent).not.toContain("stale");
+      expect(table.sorting.get).toEqual([{ field: "value", ascending: false }]);
+    } finally { app.dispose(); }
+  });
+
   it("shares additive remote sorting between pointer, keyboard and handle with stable priorities", async () => {
     type Query = { sorting: readonly SortSpec[] };
     const load = vi.fn(async (_query: Query) => ({ items: ["Ada"], totalCount: 1 }));
@@ -1868,6 +1992,8 @@ describe("table-view", () => {
         sortQuery: (q, _sorting) => q }), [valueColumn("Author", row => row, { sortable: true, sortKey: "author" })]);
       expect(table.toggleSort(0)).toBe(false);
       expect(table.clearSort()).toBe(false);
+      expect(table.setSortOrder([{ columnIndex: 0, ascending: true }])).toBe(false);
+      expect(table.sort()).toBe(false);
     };
     const root = document.createElement("div");
     root.innerHTML = (await renderToString(build)).html;
@@ -1880,7 +2006,11 @@ describe("table-view", () => {
     const local = mount(document.createElement("div"), () => {
       table = tableView(listProperty(["Ada"]), [valueColumn("Author", row => row, { sortable: true, sortKey: "author" })]);
     });
-    try { expect(table.toggleSort(0)).toBe(false); expect(table.sorting.get).toEqual([]); }
+    try {
+      expect(table.toggleSort(0)).toBe(false); expect(table.sorting.get).toEqual([]);
+      expect(table.setSortOrder([{ columnIndex: 0, ascending: true }])).toBe(false);
+      expect(table.sort()).toBe(false);
+    }
     finally { local.dispose(); }
   });
 

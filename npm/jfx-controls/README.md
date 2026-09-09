@@ -118,6 +118,31 @@ The control never sorts/filters cached rows. Supply `sortKey`/`sortable` and a r
 `sortQuery` handling all descriptors in order. The demos simulate that backend in their
 loaders; production applications do it through their RemoteDataList/server query.
 
+Set an entire order explicitly, without cycling headers or issuing intermediate requests:
+
+```ts
+table.setSortOrder([
+  { columnIndex: 1, ascending: true },
+  { columnIndex: 2, ascending: false },
+]);
+table.sort(); // Reissue the current requested order, e.g. retry after a load error.
+```
+
+`TableSort` is the exported TypeScript term type. Indices refer to **currently visible**
+columns at call time; they resolve immediately to remote field keys, which survive later
+reordering. Scala uses `Seq(TableSort(authorColumn), TableSort(yearColumn, false))` with
+column identities instead of indices. Validation is atomic: foreign/hidden/disposed or
+unsortable columns, missing/blank keys and duplicate keys reject the entire order without
+changing sorting, selection, paging or scrolling. JavaScript inputs also require finite
+integer indices and real boolean directions. An empty sequence requests unsorted data.
+
+Setting the same order again or calling `sort()` asks the source to reload; the source may
+deduplicate an identical in-flight request. `sort()` preserves the current descriptors,
+including terms whose columns have since been hidden or keys supplied directly by the
+source. Both commands obey the browser/hydration/lifetime guards above. They do not
+promise successful completion or implement sort rollback. A failed request retains the
+existing rows/selection/focus; only an accepted replacement invalidates selection/focus.
+
 ### Column visibility menu
 
 Set `tableMenuButtonVisible: true` to show a Columns button above the header. The table

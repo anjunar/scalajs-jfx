@@ -5,11 +5,14 @@ import scala.concurrent.Future
 import app.components.Showcase.*
 import jfx.control.table.TableColumn.*
 import jfx.control.table.TableView.*
+import jfx.control.table.{TableColumn, TableSort, TableView}
 import jfx.core.component.AbstractComponent
 import jfx.core.remote.{RemoteListProperty, RemoteLoader, RemotePage, RemoteSort}
 import jfx.core.dsl.ClassDsl.classes
+import jfx.core.dsl.EventDsl.onClick
 import jfx.core.dsl.StyleDsl.*
 import jfx.core.layout.Div.div
+import jfx.core.layout.Button.button
 import jfx.core.layout.HBox.hbox
 import jfx.core.layout.TextComponent.text
 import jfx.core.layout.VBox.vbox
@@ -135,6 +138,9 @@ object TableViewPage {
         ) {
           vbox {
             style { gap = "16px" }
+            var table: TableView[Book]                  = null
+            var authorColumn: TableColumn[Book, String] = null
+            var yearColumn: TableColumn[Book, Int]      = null
             div {
               text(
                 i18n"Shift-click headers to sort by multiple columns. Enter or Space sorts a focused header; Shift keeps other sort columns."
@@ -159,7 +165,7 @@ object TableViewPage {
                 minHeight = "0"
               }
 
-              tableView[Book](books) {
+              table = tableView[Book](books) {
                 style { height = "100%" }
                 rowHeight = 44.0
                 crawlable = true
@@ -174,7 +180,7 @@ object TableViewPage {
                   }
                 }
 
-                column[Book, String]("Author") {
+                authorColumn = column[Book, String]("Author") {
                   prefWidth = 240.0
                   sortable = true
                   sortKey = "author"
@@ -183,7 +189,7 @@ object TableViewPage {
                   }
                 }
 
-                column[Book, Int]("Year") {
+                yearColumn = column[Book, Int]("Year") {
                   prefWidth = 100.0
                   sortable = true
                   sortKey = "year"
@@ -213,6 +219,17 @@ object TableViewPage {
                 }
 
                 onRowDoubleClick((book: Book) => status.set(s"${book.title} — ${book.author}"))
+              }
+            }
+            hbox {
+              style { gap = "10px"; flexWrap = "wrap" }
+              button(i18n"Author ascending, year descending") {
+                onClick(_ =>
+                  table.setSortOrder(Seq(TableSort(authorColumn), TableSort(yearColumn, false)))
+                )
+              }
+              button(i18n"Reload current sorting") {
+                onClick(_ => table.sort())
               }
             }
           }

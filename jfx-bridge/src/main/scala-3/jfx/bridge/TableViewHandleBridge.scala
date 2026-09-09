@@ -1,12 +1,38 @@
 package jfx.bridge
 
-import jfx.control.table.{ColumnResizePolicy, TableSelectionMode, TableView}
+import jfx.control.table.{ColumnResizePolicy, TableSelectionMode, TableSort, TableView}
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.*
 
 /** Minimal imperative table contract; all operations remain owned by the Scala component. */
 final class TableViewHandleBridge(private val table: TableView[js.Any]) extends js.Object {
-  val sorting = new ReadOnlyPropertyHandle(
+  def setSortOrder(order: js.Array[TableSortFacade]): Boolean =
+    if (order == null || !js.Array.isArray(order)) false
+    else {
+      val parsed = order.iterator.map { term =>
+        if (term == null || js.typeOf(term) != "object") None
+        else {
+          // Keep untrusted fields as js.Any until validation. Reading a native Boolean first
+          // would coerce an absent field to false before js.typeOf can inspect it.
+          val index     = term.columnIndex
+          val ascending = term.ascending
+          if (
+            js.typeOf(index) != "number" || !validIndex(index.asInstanceOf[Double]) ||
+            js.typeOf(ascending) != "boolean"
+          ) None
+          else
+            Some(
+              TableSort(
+                table.getVisibleLeafColumn(index.asInstanceOf[Double].toInt),
+                ascending.asInstanceOf[Boolean]
+              )
+            )
+        }
+      }.toVector
+      parsed.forall(_.nonEmpty) && table.setSortOrder(parsed.flatten)
+    }
+  def sort(): Boolean = table.sort()
+  val sorting         = new ReadOnlyPropertyHandle(
     table.sortingProperty.map(
       _.map(sort => js.Dynamic.literal(field = sort.field, ascending = sort.ascending)).toJSArray
     )
@@ -74,6 +100,12 @@ final class TableViewHandleBridge(private val table: TableView[js.Any]) extends 
     if (validIndex(index)) table.scrollToColumnIndex(index.toInt)
   def isDisposed: Boolean = table.isDisposed
   def refresh(): Unit     = table.refresh()
+}
+
+@js.native
+trait TableSortFacade extends js.Object {
+  val columnIndex: js.Any = js.native
+  val ascending: js.Any   = js.native
 }
 
 private[bridge] object TableViewHandleBridge {

@@ -968,7 +968,7 @@ final class TableView[S] private (
     */
   def toggleSort(column: TableColumn[S, ?], additive: Boolean = false): Boolean =
     if (
-      !browserRendering || !scrollNavigationMounted || !canMoveColumns || column == null ||
+      !canRequestSort || column == null ||
       getVisibleLeafIndex(column) < 0 || !isRemoteSortable(column)
     ) false
     else
@@ -977,10 +977,26 @@ final class TableView[S] private (
       )
 
   def clearSort(): Boolean =
-    if (
-      !browserRendering || !scrollNavigationMounted || !canMoveColumns || currentRemoteSorting.isEmpty
-    ) false
+    if (!canRequestSort || currentRemoteSorting.isEmpty) false
     else applyRemoteSorting(Vector.empty)
+
+  /** Replaces the complete requested order atomically. Invalid/hidden/foreign/locked columns, empty
+    * sort keys and duplicate keys reject the whole command. Empty order requests unsorted.
+    * Repeating the same order still asks the source to reload (in-flight deduplication is its own).
+    */
+  def setSortOrder(order: Seq[TableSort[S]]): Boolean =
+    canRequestSort && TableSortOrder
+      .resolve(order, visibleColumns.toVector)
+      .exists(applyRemoteSorting)
+
+  /** Reissues the source's current requested sorting, including hidden or externally supplied keys.
+    * Does not add/change terms; useful for retry after a load failure. Browser-only.
+    */
+  def sort(): Boolean = canRequestSort && applyRemoteSorting(currentRemoteSorting)
+
+  private def canRequestSort: Boolean =
+    browserRendering && scrollNavigationMounted && canMoveColumns &&
+      Option(currentRemoteItems).exists(_.supportsSorting)
 
   private def applyRemoteSorting(next: Vector[RemoteSort]): Boolean =
     Option(currentRemoteItems) match {
