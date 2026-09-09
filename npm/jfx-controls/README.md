@@ -60,6 +60,32 @@ scrolling and measurement when the item instance is unchanged. Leaving the virtu
 replacing an item, resetting the source list, or changing the renderer can recreate cells.
 Identity across data reordering and table-managed start/commit/cancel are not implemented yet.
 
+### Column visibility and refresh
+
+Column `visible` accepts a boolean or a `ReadOnlyProperty<boolean>` (default: true).
+Hidden columns do not render headers/cells or consume width. Their definitions remain
+attached; showing them again creates fresh cells. Other visible cells remain mounted when
+a neighboring column is hidden or shown. With no visible columns, the table displays its
+placeholder instead of rows. This currently supports flat columns, not grouped headers.
+
+```ts
+const showYear = property(true);
+const book = { title: "Dune", year: 1965 };
+const table = tableView(listProperty([book]), [
+  valueColumn("Title", (row) => row.title),
+  valueColumn("Year", (row) => row.year, { visible: showYear }),
+]);
+showYear.set(false);
+book.title = "Solaris";
+table.refresh(); // Re-evaluates visible snapshots and cell bodies; no remote reload.
+```
+
+`tableView()` now returns `TableViewHandle` with `refresh()` and read-only `isDisposed`.
+After unmount, refresh is a no-op. Refresh recreates visible cell content and can reset local
+editor state, so use observed values for live edits. Calling code may ignore the new return
+value. An explicitly void-returning expression arrow should use a block:
+`() : void => { tableView(source, columns); }`. The matching linked bridge must be installed.
+
 ### Other controls
 
 `tabs` accepts `tab(title, body)` definitions and supports `active-only` or `keep-mounted` rendering. `carousel` accepts a list property and a slide renderer; `autoAdvanceMs` controls browser auto-advance. `tableView`, `dataGrid`, and `virtualList` accept a local `ListProperty` or a `RemoteSource`.
@@ -99,7 +125,7 @@ SSR renders a stable paged or crawl slice. After successful hydration, `tableVie
 - `tab`, `tabs`, `carousel`
 - `column`, `valueColumn`, `ValueColumnOptions`, `tableView`, `dataGrid`, `virtualList`
 - `remoteSource`, `RemoteSource`, `RemotePage`, `SortSpec`
-- `TabsOptions`, `CarouselOptions`, `TableViewOptions`, `DataGridOptions`, `VirtualListOptions`
+- `TabsOptions`, `CarouselOptions`, `TableViewOptions`, `TableViewHandle`, `DataGridOptions`, `VirtualListOptions`
 
 ## Related modules
 

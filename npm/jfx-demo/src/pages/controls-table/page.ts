@@ -1,4 +1,4 @@
-import { classes, div, style, text } from "@anjunar/jfx-core";
+import { button, classes, div, onClick, property, style, text } from "@anjunar/jfx-core";
 import { column, remoteSource, tableView } from "@anjunar/jfx-controls";
 import type { RemotePage, RemoteSource, SortSpec } from "@anjunar/jfx-controls";
 import { translated } from "../../app/i18n.js";
@@ -49,6 +49,7 @@ function loadPage(query: Query): Promise<RemotePage<Book, Query>> {
 }
 
 export function controlsTablePage(): void {
+  const showAuthors = property(true);
   const initialQuery: Query = { offset: 0, limit: PAGE_SIZE, sorting: [] };
   const source: RemoteSource<Book, Query> = remoteSource({
     load: loadPage,
@@ -74,13 +75,17 @@ export function controlsTablePage(): void {
       });
     });
 
+    button(translated("Toggle author column"), {}, () => {
+      onClick(() => showAuthors.set(!showAuthors.get));
+    });
+
     div(() => {
       style("height", "420px");
       tableView(
         source,
         [
           column(translated("Title").get, (book) => text(book.title), { prefWidth: 280, sortable: true, sortKey: "title" }),
-          column(translated("Author").get, (book) => text(book.author), { prefWidth: 220, sortable: true, sortKey: "author" }),
+          column(translated("Author").get, (book) => text(book.author), { prefWidth: 220, sortable: true, sortKey: "author", visible: showAuthors }),
           column(translated("Year").get, (book) => text(String(book.year)), { prefWidth: 100, sortable: true, sortKey: "year" }),
         ],
         {

@@ -8,6 +8,7 @@ class TableColumn[S, T](initialText: String = "") extends AbstractCustomComponen
   import TableColumn.{CellFactory, CellRenderer, CellValueFactory}
 
   val textProperty: Property[String]                                     = Property(initialText)
+  val visibleProperty: Property[Boolean]                                 = Property(true)
   val prefWidthProperty: Property[Double]                                = Property(160.0)
   val cellRenderer: Property[Option[CellRenderer[S]]]                    = Property(None)
   val sortableProperty: Property[Boolean]                                = Property(false)
@@ -69,6 +70,9 @@ class TableColumn[S, T](initialText: String = "") extends AbstractCustomComponen
   def text: String                = textProperty.get
   def text_=(value: String): Unit = textProperty.set(value)
 
+  def visible: Boolean                = visibleProperty.get
+  def visible_=(value: Boolean): Unit = visibleProperty.set(value)
+
   def prefWidth: Double                = prefWidthProperty.get
   def prefWidth_=(value: Double): Unit = prefWidthProperty.set(value)
 
@@ -77,6 +81,14 @@ class TableColumn[S, T](initialText: String = "") extends AbstractCustomComponen
 }
 
 object TableColumn {
+  def visible[S, T](using column: TableColumn[S, T]): Boolean = column.visibleProperty.get
+
+  def visible_=[S, T](value: Boolean)(using column: TableColumn[S, T]): Unit =
+    column.visibleProperty.set(value)
+
+  def visible_=[S, T](value: ReadOnlyProperty[Boolean])(using column: TableColumn[S, T]): Unit =
+    column.addDisposable(value.observe(column.visibleProperty.set))
+
   type CellRenderer[S]        = S => AbstractComponent ?=> Cursor ?=> Unit
   type CellValueFactory[S, T] = CellDataFeatures[S, T] => ReadOnlyProperty[T] | Null
   type CellFactory[S, T]      = TableColumn[S, T] => TableCell[S, T]

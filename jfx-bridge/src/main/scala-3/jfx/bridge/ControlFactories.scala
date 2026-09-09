@@ -89,12 +89,14 @@ private[bridge] trait ColumnFacade extends js.Object {
   val prefWidth: js.UndefOr[Double] = js.native
   val sortable: js.UndefOr[Boolean] = js.native
   val sortKey: js.UndefOr[String]   = js.native
+  val visible: js.UndefOr[js.Any]   = js.native
 
   /** `(row) => (scope) => void` -- the cell body, already wrapped in `withScope` on the TS side. */
   val cell: js.UndefOr[js.Function1[js.Any, js.Function1[ScopeHandleBridge, Unit]]] = js.native
-  val value: js.UndefOr[js.Function1[js.Any, js.Any]] = js.native
-  val valueCell: js.UndefOr[js.Function2[ReadOnlyPropertyHandle[js.Any], js.Any,
-    js.Function1[ScopeHandleBridge, Unit]]] = js.native
+  val value: js.UndefOr[js.Function1[js.Any, js.Any]]                               = js.native
+  val valueCell: js.UndefOr[
+    js.Function2[ReadOnlyPropertyHandle[js.Any], js.Any, js.Function1[ScopeHandleBridge, Unit]]
+  ] = js.native
 }
 
 private[bridge] object ControlFactories {
@@ -261,7 +263,7 @@ private[bridge] object TableViewFactory extends ComponentFactory {
     val src     = ControlFactories.source(options("source"))
     val columns = options("columns").asInstanceOf[js.Array[ColumnFacade]]
 
-    TableView.tableView[js.Any](src) {
+    val table = TableView.tableView[js.Any](src) {
       options.get("rowHeight").foreach(value => TableView.rowHeight = ControlFactories.dbl(value))
       options
         .get("showHeader")
@@ -277,12 +279,16 @@ private[bridge] object TableViewFactory extends ComponentFactory {
 
       columns.foreach { col =>
         TableColumn.column[js.Any, js.Any](col.text) {
+          col.visible.foreach(value =>
+            TableColumn.visible_=[js.Any, js.Any](ReactiveBridge.asProperty[Boolean](value))
+          )
           col.prefWidth.foreach(width => TableColumn.prefWidth_=[js.Any, js.Any](width))
           col.sortable.foreach(flag => TableColumn.sortable_=[js.Any, js.Any](flag))
           col.sortKey.foreach(key => TableColumn.sortKey_=[js.Any, js.Any](key))
           col.value.foreach { accessor =>
             TableColumn.cellValueFactory_=[js.Any, js.Any](features =>
-              ReactiveBridge.asProperty[js.Any](accessor(features.value)))
+              ReactiveBridge.asProperty[js.Any](accessor(features.value))
+            )
           }
           col.cell.foreach { renderer =>
             TableColumn.cell[js.Any, js.Any] {
@@ -291,11 +297,18 @@ private[bridge] object TableViewFactory extends ComponentFactory {
             }
           }
           col.valueCell.foreach { renderer =>
-            TableColumn.cellFactory_=[js.Any, js.Any](_ => new TableCell[js.Any, js.Any] {
-              override protected def renderContent(using parent: AbstractComponent, cursor: Cursor): Unit =
-                renderer(new ReadOnlyPropertyHandle(itemProperty), tableRow.asInstanceOf[jfx.control.table.TableRow[js.Any]].itemProperty.get)(
-                  new ScopeHandleBridge(parent, cursor))
-            })
+            TableColumn.cellFactory_=[js.Any, js.Any](_ =>
+              new TableCell[js.Any, js.Any] {
+                override protected def renderContent(using
+                    parent: AbstractComponent,
+                    cursor: Cursor
+                ): Unit =
+                  renderer(
+                    new ReadOnlyPropertyHandle(itemProperty),
+                    tableRow.asInstanceOf[jfx.control.table.TableRow[js.Any]].itemProperty.get
+                  )(new ScopeHandleBridge(parent, cursor))
+              }
+            )
           }
         }
       }
@@ -311,6 +324,12 @@ private[bridge] object TableViewFactory extends ComponentFactory {
         )
       }
     }
+    options.get("receiveHandle").foreach { callback =>
+      callback.asInstanceOf[js.Function1[TableViewHandleBridge, Unit]](
+        new TableViewHandleBridge(table)
+      )
+    }
+    table
   }
 }
 

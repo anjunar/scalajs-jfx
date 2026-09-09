@@ -17,7 +17,6 @@ class TableCell[S, T] extends AbstractComponent {
   val indexProperty: ReadOnlyProperty[Int]          = indexState
   private var boundRow: TableRow[S] | Null          = null
   private var boundColumn: TableColumn[S, T] | Null = null
-  private var columnIndex                           = -1
   private var valueSubscription: Disposable         = Disposable.empty
 
   def tableRow: TableRow[S] | Null          = boundRow
@@ -25,14 +24,13 @@ class TableCell[S, T] extends AbstractComponent {
   def tableView: TableView[S] | Null        =
     Option(boundColumn).fold[TableView[S] | Null](null)(_.tableViewProperty.get)
 
-  private[control] def bind(row: TableRow[S], column: TableColumn[S, T], index: Int): Unit = {
+  private[control] def bind(row: TableRow[S], column: TableColumn[S, T]): Unit = {
     require(
       boundRow == null && !isBound && !isDisposed,
       "A cell factory must return a fresh, unmounted TableCell"
     )
     boundRow = row
     boundColumn = column
-    columnIndex = index
     indexState.set(row.indexProperty.get)
     emptyProperty.set(row.isPlaceholder)
   }
@@ -42,10 +40,10 @@ class TableCell[S, T] extends AbstractComponent {
       addClass("jfx-table-cell")
       classIf("jfx-table-cell-empty", emptyProperty)
       for (column <- Option(boundColumn); table <- Option(tableView)) {
-        classIf("jfx-table-cell-last", table.columns.map(cols => columnIndex == cols.length - 1))
+        classIf("jfx-table-cell-last", table.visibleLeafColumns.map(_.lastOption.contains(column)))
         if (emptyProperty.get) addClass("jfx-table-cell-loading-placeholder")
         val widthProperty = table.renderedWidthsProperty.map { widths =>
-          s"${widths.lift(columnIndex).getOrElse(column.prefWidth)}px"
+          s"${widths.lift(table.getVisibleLeafIndex(column)).getOrElse(column.prefWidth)}px"
         }
         style {
           width = widthProperty

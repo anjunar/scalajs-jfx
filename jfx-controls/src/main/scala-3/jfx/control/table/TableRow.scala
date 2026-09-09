@@ -7,7 +7,7 @@ import jfx.core.dsl.EventDsl.{onClick, onDoubleClick}
 import jfx.core.dsl.StyleDsl.*
 import jfx.core.render.Cursor
 import jfx.core.state.Property
-import jfx.core.statement.Foreach.foreachIndexed
+import jfx.core.statement.Foreach.foreach
 import jfx.core.statement.DynamicComponentRenderer.dynamic
 
 class TableRow[S] private[control] (
@@ -55,12 +55,12 @@ class TableRow[S] private[control] (
         }
       }
 
-      foreachIndexed(requireTableView().columns) { (column, columnIndex) =>
+      foreach(requireTableView().visibleColumns) { column =>
         val typedColumn = column.asInstanceOf[TableColumn[S, Any]]
         dynamic(typedColumn.rendererRevisionProperty.map { _ =>
           val cell = typedColumn.cellFactoryProperty.get
             .fold(new TableCell[S, Any])(_(typedColumn))
-          cell.bind(TableRow.this, typedColumn, columnIndex)
+          cell.bind(TableRow.this, typedColumn)
           cell
         })
       }

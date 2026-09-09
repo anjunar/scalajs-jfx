@@ -163,6 +163,104 @@ describe("carousel", () => {
 });
 
 describe("table-view", () => {
+  it("preserves a focused editor when another column is hidden or shown", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+    const shown = property(true);
+    let compositions = 0;
+    const app = mount(root, () => {
+      tableView(listProperty(["Ada"]), [
+        { text: "Optional", visible: shown, cell: (row) => text(`optional:${row}`) },
+        { text: "Editor", cell: () => element("input")(() => { compositions++; }) },
+      ], { paging: true });
+    });
+    try {
+      const editor = root.querySelector<HTMLInputElement>("input")!;
+      const cell = editor.closest<HTMLElement>(".jfx-table-cell")!;
+      editor.focus();
+      editor.value = "draft text";
+      editor.setSelectionRange(2, 7);
+      const header = root.querySelectorAll(".jfx-table-header-cell")[1];
+      shown.set(false);
+      expect(root.querySelectorAll(".jfx-table-header-cell")).toHaveLength(1);
+      expect(root.querySelector(".jfx-table-header-cell")).toBe(header);
+      expect(root.textContent).not.toContain("optional:Ada");
+      expect(root.querySelector("input")).toBe(editor);
+      expect(document.activeElement).toBe(editor);
+      expect([editor.selectionStart, editor.selectionEnd]).toEqual([2, 7]);
+      expect(cell.style.width).toBe("800px");
+      shown.set(true);
+      expect(root.querySelectorAll(".jfx-table-header-cell")).toHaveLength(2);
+      expect(root.querySelector("input")).toBe(editor);
+      expect(document.activeElement).toBe(editor);
+      expect(editor.value).toBe("draft text");
+      expect(cell.style.width).toBe("400px");
+      expect(compositions).toBe(1);
+      expect(root.querySelectorAll(".jfx-table-cell-last")).toHaveLength(1);
+      expect(root.querySelector(".jfx-table-cell-last")).toBe(cell);
+    } finally {
+      app.dispose();
+      root.remove();
+    }
+  });
+
+  it("hydrates initially hidden columns and switches the no-visible-columns placeholder", async () => {
+    const shown = property(false);
+    let hiddenRenders = 0;
+    const build = (): void => {
+      tableView(listProperty(["Ada"]), [
+        { text: "Name", visible: shown, cell: (row) => { hiddenRenders++; text(row); } },
+      ], { paging: true, placeholder: () => text("No visible columns") });
+    };
+    const rendered = await renderToString(build);
+    expect(rendered.html).toContain("No visible columns");
+    const root = document.createElement("div");
+    root.innerHTML = rendered.html;
+    document.body.appendChild(root);
+    const placeholder = root.querySelector(".jfx-table-placeholder");
+    const app = await hydrate(root, build);
+    expect(root.querySelector(".jfx-table-placeholder")).toBe(placeholder);
+    expect(root.querySelectorAll(".jfx-table-cell")).toHaveLength(0);
+    expect(hiddenRenders).toBe(0);
+    shown.set(true);
+    expect(root.querySelector(".jfx-table-placeholder")).toBeNull();
+    expect(root.querySelector(".jfx-table-cell")!.textContent).toBe("Ada");
+    shown.set(false);
+    expect(root.textContent).toContain("No visible columns");
+    app.dispose();
+    const previousRenders = hiddenRenders;
+    shown.set(true);
+    expect(hiddenRenders).toBe(previousRenders);
+    root.remove();
+  });
+
+  it("returns a refresh handle that cannot mutate the disposed table", () => {
+    const root = document.createElement("div");
+    const row = { name: "Ada" };
+    let refresh: (() => void) | undefined;
+    let disposed: (() => boolean) | undefined;
+    let compositions = 0;
+    const app = mount(root, () => {
+      const table = tableView(listProperty([row]), [
+        valueColumn("Name", (person) => person.name),
+        { text: "Legacy", cell: (person) => { compositions++; text(person.name); } },
+      ]);
+      refresh = () => table.refresh();
+      disposed = () => table.isDisposed;
+    });
+    expect(disposed!()).toBe(false);
+    row.name = "Grace";
+    expect(root.textContent).not.toContain("Grace");
+    refresh!();
+    expect(root.querySelectorAll(".jfx-table-cell")[0]!.textContent).toBe("Grace");
+    expect(root.querySelectorAll(".jfx-table-cell")[1]!.textContent).toBe("Grace");
+    app.dispose();
+    expect(disposed!()).toBe(true);
+    const previousCompositions = compositions;
+    expect(() => refresh!()).not.toThrow();
+    expect(compositions).toBe(previousCompositions);
+  });
+
   it("updates typed default and custom value cells without recomposing them", () => {
     const root = document.createElement("div");
     const name = property("Ada");
@@ -236,10 +334,10 @@ describe("table-view", () => {
   });
 
   it("hydrates typed and legacy cells with their server DOM identity", async () => {
-    const build = (): void => tableView(listProperty([{ name: property("Ada") }]), [
+    const build = (): void => { tableView(listProperty([{ name: property("Ada") }]), [
       valueColumn("Name", (row) => row.name),
       { text: "Legacy", cell: (row) => text(row.name) },
-    ], { paging: true });
+    ], { paging: true }); };
     const rendered = await renderToString(build);
     const root = document.createElement("div");
     root.innerHTML = rendered.html;

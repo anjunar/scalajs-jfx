@@ -220,6 +220,104 @@ class TableCellSpec extends AnyFlatSpec with Matchers {
     Runtime.unmount(root)
   }
 
+  it should "project visibility into headers, cells, widths and leaf lookups without remounting other cells" in {
+    val source                                = ListProperty(js.Array("Ada"))
+    val shown                                 = Property(false)
+    var first: TableColumn[String, String]    = null
+    var second: TableColumn[String, String]   = null
+    val observed                              = new CountingValue(Property("observed"))
+    var firstMounts                           = 0
+    var secondMounts                          = 0
+    var secondCell: TableCell[String, String] = null
+    val (root, table, cursor)                 = mountTable(source) {
+      first = column[String, String]("First") {
+        visible = shown
+        cellValueFactory = _ => observed
+        cell { value => firstMounts += 1; text("first:" + value) {} }
+      }
+      second = column[String, String]("Second") {
+        cellFactory = _ =>
+          new TableCell[String, String] {
+            override protected def renderContent(using AbstractComponent, Cursor): Unit = {
+              secondMounts += 1
+              secondCell = this
+              text("second") {}
+            }
+          }
+      }
+    }
+    table.visibleLeafColumns.get shouldBe Vector(second)
+    table.getVisibleLeafIndex(first) shouldBe -1
+    table.getVisibleLeafColumn(-1) shouldBe null
+    table.getVisibleLeafColumn(1) shouldBe null
+    table.getVisibleLeafColumn(0) shouldBe second
+    cursor.collectHtml() should not include "First"
+    firstMounts shouldBe 0
+    observed.listeners shouldBe 0
+    table.renderedWidthsProperty.get shouldBe Vector(800.0)
+    val retained = secondCell
+
+    shown.set(true)
+    table.visibleLeafColumns.get shouldBe Vector(first, second)
+    table.getVisibleLeafIndex(second) shouldBe 1
+    firstMounts shouldBe 1
+    observed.listeners shouldBe 1
+    secondCell should be theSameInstanceAs retained
+    secondMounts shouldBe 1
+    retained.host.style("width") shouldBe Some("400px")
+    cursor.collectHtml() should include("first:Ada")
+
+    first.visible = false
+    observed.listeners shouldBe 0
+    retained.host.style("width") shouldBe Some("800px")
+    secondMounts shouldBe 1
+    first.tableViewProperty.get shouldBe table
+    first.isDisposed shouldBe false
+    Runtime.unmount(root)
+  }
+
+  it should "show the placeholder without visible columns and restore rows and selection when shown again" in {
+    val source                            = ListProperty(js.Array("Ada"))
+    var name: TableColumn[String, String] = null
+    val (root, table, cursor)             = mountTable(source) {
+      placeholder { text("No visible data") {} }
+      name = column[String, String]("Name") { cell(value => text(value) {}) }
+    }
+    table.select(0)
+    name.visible = false
+    cursor.collectHtml() should include("No visible data")
+    cursor.collectHtml() should not include "jfx-table-row-slot"
+    table.selectedItemProperty.get shouldBe "Ada"
+    table.renderedWidthsProperty.get shouldBe Vector.empty
+    name.visible = true
+    cursor.collectHtml() should not include "No visible data"
+    cursor.collectHtml() should include("jfx-table-row-selected")
+    cursor.collectHtml() should include("Ada")
+    Runtime.unmount(root)
+  }
+
+  it should "release visibility listeners on detach and keep the visible projection ordered after replacement" in {
+    val source                = ListProperty(js.Array("Ada"))
+    val (root, table, cursor) = mountTable(source) {}
+    val first                 = new TableColumn[String, String]("First")
+    val hidden                = new TableColumn[String, String]("Hidden")
+    val last                  = new TableColumn[String, String]("Last")
+    hidden.visible = false
+    table.columns.setAll(Seq(first, hidden, last))
+    table.visibleLeafColumns.get shouldBe Vector(first, last)
+    table.columns.setAll(Seq(last, first))
+    table.visibleLeafColumns.get shouldBe Vector(last, first)
+    var changes      = 0
+    val subscription = table.visibleLeafColumns.observeWithoutInitial(_ => changes += 1)
+    hidden.visible = true
+    changes shouldBe 0
+    table.visibleLeafColumns.get shouldBe Vector(last, first)
+    table.columns.addOne(hidden)
+    table.visibleLeafColumns.get shouldBe Vector(last, first, hidden)
+    subscription.dispose()
+    Runtime.unmount(root)
+  }
+
   private final class CountingValue(underlying: Property[String]) extends ReadOnlyProperty[String] {
     var listeners                                              = 0
     override def get: String                                   = underlying.get

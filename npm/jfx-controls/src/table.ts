@@ -15,6 +15,8 @@ import type { Source } from "./data-source.js";
 export interface ColumnDef<T> {
   readonly text: string;
   readonly prefWidth?: number;
+  /** Removes the column from layout and rendering without removing its definition. Defaults to true. */
+  readonly visible?: Reactive<boolean>;
   /** Enables the sort toggle in this column's header. Needs `sortKey` and a `sortQuery` on the source. */
   readonly sortable?: boolean;
   /** The field name passed back to the source's `sortQuery`. */
@@ -75,23 +77,33 @@ export interface TableViewOptions {
   readonly crawlId?: string;
   /** A content header that scrolls with the rows, below the fixed column header. */
   readonly header?: () => void;
-  /** Shown while the table has no rows. */
+  /** Shown while the table has no rows or no visible columns. */
   readonly placeholder?: () => void;
 }
 
-/** Mounts a table over `source` with `columns`. */
+/** Runtime-owned operations for a mounted table. Further selection/scroll APIs are not yet projected. */
+export interface TableViewHandle {
+  /** Rebuilds visible cell content to pick up snapshot mutations. Does not request a remote reload. */
+  refresh(): void;
+  readonly isDisposed: boolean;
+}
+
+/** Mounts a table and returns its runtime-owned handle. */
 export function tableView<T, Q = unknown>(
   source: Source<T, Q>,
   columns: readonly ColumnDef<T>[],
   options: TableViewOptions = {}
-): void {
+): TableViewHandle {
+  let handle: TableViewHandle | undefined;
   component(
     "table-view",
     defined({
       source,
+      receiveHandle: (value: TableViewHandle) => { handle = value; },
       columns: columns.map((col) => ({
         text: col.text,
         prefWidth: col.prefWidth,
+        visible: col.visible,
         sortable: col.sortable,
         sortKey: col.sortKey,
         cell: col.cell ? rowBody(col.cell) : undefined,
@@ -112,4 +124,6 @@ export function tableView<T, Q = unknown>(
       placeholder: options.placeholder ? body(options.placeholder) : undefined,
     })
   );
+  if (handle === undefined) throw new Error("The installed runtime does not provide a TableView handle.");
+  return handle;
 }

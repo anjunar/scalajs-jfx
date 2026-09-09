@@ -1,6 +1,6 @@
 # TableView: Feature-Stand und Implementierungsplan
 
-Stand: 09.09.2026 · Ausgangsanalyse: `7295d92` · einschließlich erstem Grundlagenpaket im Arbeitsbaum · Referenz: JavaFX 26.
+Stand: 09.09.2026 · Ausgangsanalyse: `7295d92` · einschließlich Grundlagenpaket und Ausbau für Spaltensichtbarkeit/Refresh-Handle · Referenz: JavaFX 26.
 
 Dieses Dokument beschreibt, welche Funktionen unsere TableView bereits unterstützt und wie wir die fehlenden Fähigkeiten der JavaFX-TableView ergänzen. Es ist ein Implementierungsplan; als **geplant** bezeichnete Modelle, Methoden und Dateien existieren noch nicht.
 
@@ -21,10 +21,23 @@ Paging, SSR, Hydration, Crawl-Zustand und Remote-Nachladen sind vorhandene JFX-E
 - Zellkontext: Tabelle, Spalte, Zeile, Index, Item und empty. Alte Wertabonnements werden bei Factory-Wechsel, Zeilenersatz und Unmount gelöst.
 - Direkte Änderungen an `columns` werden verwaltet. Doppelte, fremde, null- oder bereits entsorgte Spalten werden vor der Mutation abgewiesen. Entfernte Spalten bleiben wiederverwendbar; beim Tabellen-Unmount werden die dann noch zugeordneten Spalten entsorgt.
 - Scala: `getCellData`, `getCellObservableValue` und `TableView.refresh()`. Ein explizites Refresh bzw. lokaler Listen-Reset bewertet die sichtbaren Zellrenderer neu und kann deren Editorzustand zurücksetzen; kein explizites Remote-Reload.
-- TypeScript: `valueColumn(text, accessor, options)` für beobachtete oder konstante Werte und typisierte Renderer. Imperative TableView-/Spalten-Handles sind noch offen, damit auch die TypeScript-Projektion von `refresh()` und den Zellwert-Lookups.
+- TypeScript: `valueColumn(text, accessor, options)` für beobachtete oder konstante Werte und typisierte Renderer. Der nachfolgende Ausbau ergänzt das minimale Refresh-Handle; Spalten-Handles und Zellwert-Lookups bleiben offen.
 - Ein Remote-Header mit `sortable=false` löst auch bei vorhandenem `sortKey` keine Sortierung mehr aus.
 
 **Grenze dieses Pakets:** keine Identitätserhaltung über Insert-/Sortierpermutationen, kein `rowKey`, Quellentausch, Spaltenbaum, Selection-/FocusModel oder tabellenverwaltetes Editing. M0 und M1 sind damit noch nicht vollständig abgeschlossen. Beim tatsächlichen Austritt aus dem virtuellen Fenster wird eine Zelle weiterhin entsorgt. Fokus/Cursor sind automatisiert in jsdom geprüft; die reale Browser-/IME-/Screenreader-Abnahme steht noch aus.
+
+### Implementiert: Spaltensichtbarkeit und erstes TypeScript-Handle
+
+- Scala: `TableColumn.visibleProperty`, `visible` und bindbare DSL-Zuweisung. TypeScript: `ColumnDef.visible: Reactive<boolean>`, ebenfalls nutzbar in `column` und `valueColumn`. Default ist `true`.
+- Eine gemeinsame Projektion steuert Header, Zellen, Breiten und letzte-Spalte-Klassen. `TableView.visibleLeafColumns` liefert eine lesbare Property mit unveränderlichem Vector; `getVisibleLeafIndex(column)` liefert `-1` für unbekannte/versteckte Spalten und `getVisibleLeafColumn(index)` liefert bei ungültigen Indizes `null`.
+- Ausblenden entfernt die betroffenen Zellen und löst deren Wertbindungen, ohne die Spalte aus `columns` zu entfernen oder sie zu entsorgen. Beim erneuten Einblenden entstehen frische Zellen. Die anderen sichtbaren Header/Zellen bleiben beim Ein-/Ausblenden erhalten, auch wenn sich ihr sichtbarer Index ändert. Fokus/Textauswahl einer benachbarten Editorzelle sind in jsdom abgesichert.
+- Ohne sichtbare Spalten erscheinen keine Datenzeilen; der konfigurierte Platzhalter wird angezeigt. Eine vorhandene Zeilenauswahl wird durch reine Sichtbarkeitsänderungen nicht gelöscht.
+- `tableView(...)` gibt jetzt ein `TableViewHandle` mit `refresh()` und lesbarem `isDisposed` zurück. Das Handle delegiert an Scala; nach Unmount ist Refresh wirkungslos. Es gibt keine zweite Tabellenimplementierung in TypeScript und keine neuen Core-/Forms-Abhängigkeiten.
+- In der TypeScript-Demo `/controls/table` zeigt ein Schalter das Ein-/Ausblenden der Autorenspalte. Dieser Weg wurde im In-app-Browser geprüft, einschließlich Wiederherstellung von Header/Werten und ohne gemeldete Browserfehler.
+
+**Abgrenzung:** Die Spaltenliste ist weiterhin flach. „Blatt“ bedeutet bis zum Spaltenbaum-Ausbau eine normale Spalte. Gruppenheader, `rowFactory`, umfassende Handles, Auswahlidentität und Remote-Koordinaten sind weiterhin offen. Verstecken einer sortierten Spalte ändert die bestehende Remote-Sortierung nicht. Programmatisches Spalten-Reordering garantiert noch keinen Erhalt aller verschobenen Zellen.
+
+**Migration TypeScript:** Aufrufe dürfen den Rückgabewert weiter ignorieren. Explizit `void`-annotierte Expression-Arrows benötigen einen Block, beispielsweise `(): void => { tableView(source, columns); }`. Die Fassade erwartet die dazu passende neu gelinkte Bridge. Refresh ist für Snapshot-Änderungen gedacht und darf lokale Editorentwürfe zurücksetzen; live editierte Werte bleiben beobachtbar gebunden.
 
 ## 2. Bestandsaufnahme im Repository
 
@@ -39,7 +52,7 @@ Paging, SSR, Hydration, Crawl-Zustand und Remote-Nachladen sind vorhandene JFX-E
 | [ItemGeometry.scala](jfx-controls/src/main/scala-3/jfx/control/virtualized/ItemGeometry.scala) | `FixedRowGeometry` und bereits vorhandene `MeasuredRowGeometry` als Grundlage für variable Zeilenhöhen. |
 | [ListDataSource.scala](jfx-core/src/main/scala-3/jfx/core/state/ListDataSource.scala), [ListProperty.scala](jfx-core/src/main/scala-3/jfx/core/state/ListProperty.scala) | Lesender Datenquellenvertrag und veränderbare lokale Liste. |
 | [RemoteListProperty.scala](jfx-core/src/main/scala-3/jfx/core/remote/RemoteListProperty.scala) | Lückenhaft geladene Daten, Bereichsabfragen, Sortierdeskriptoren und Schutz vor veralteten Ladeantworten. |
-| [table.ts](npm/jfx-controls/src/table.ts), [ControlFactories.scala](jfx-bridge/src/main/scala-3/jfx/bridge/ControlFactories.scala) | Deklarative TypeScript-Tabellenoptionen und Bridge-Mounting; noch kein öffentliches TableView-Handle für Methoden und Zustandsabfragen. |
+| [table.ts](npm/jfx-controls/src/table.ts), [ControlFactories.scala](jfx-bridge/src/main/scala-3/jfx/bridge/ControlFactories.scala), [TableViewHandleBridge.scala](jfx-bridge/src/main/scala-3/jfx/bridge/TableViewHandleBridge.scala) | Deklarative TypeScript-Tabellenoptionen, reaktive Sichtbarkeit und minimales TableView-Handle für Refresh/Lifecycle. Weitere Methoden und Modellzustände sind offen. |
 
 ### Technische Voraussetzungen und Bearbeitungsstand
 
@@ -68,8 +81,8 @@ Referenzen: [TableColumn](https://openjfx.io/javadoc/26/javafx.controls/javafx/s
 | D04 | Austauschbare `cellFactory`, Default-Zelle | Vorhanden | Integrierte `TableCell[S,T]`, Default-Text und eigener `renderContent`; TypeScript bietet den typisierten Content-Callback in `valueColumn`. M1. |
 | D05 | Zellkontext und Zustände | Teilweise | Item/empty, Tabelle, Zeile, Spalte und Index sind angebunden. selected, focused und editing fehlen noch. M2/M4. |
 | D06 | `rowFactory` und Zeilenkontext | Teilweise | `TableRow` existiert, wird jedoch fest erzeugt. Factory für eigene TableRows mit vollständiger Zeilenkomposition sowie Stil, Tooltip, Menü und Events anbieten. M1/M6. |
-| D07 | `refresh()` für nicht beobachtete Änderungen | Teilweise | Scala-Methode vorhanden, einschließlich bisheriger Zeilenrenderer. TypeScript-Handle noch offen. M1. |
-| D08 | Platzhalter bei leerer Tabelle/ohne sichtbare Spalten | Teilweise | Eigener Platzhalter vorhanden; auch „keine sichtbaren Blattspalten“ berücksichtigen. M1/M5. |
+| D07 | `refresh()` für nicht beobachtete Änderungen | Vorhanden | Scala-Methode und TypeScript-Handle, einschließlich bisheriger Zeilenrenderer; nach Unmount wirkungslos. M1. |
+| D08 | Platzhalter bei leerer Tabelle/ohne sichtbare Spalten | Vorhanden | Eigener Platzhalter erscheint auch ohne sichtbare Spalten; zu diesem Zeitpunkt werden keine Datenzeilen gerendert. Gruppenmodell später mitprüfen. M1/M5. |
 
 ### 3.2 Auswahl und Fokus
 
@@ -91,7 +104,7 @@ Referenzen: [TableColumnBase](https://openjfx.io/javadoc/26/javafx.controls/java
 | ID | Funktion | Stand | Umsetzung |
 | --- | --- | --- | --- |
 | C01 | Dynamische Spaltenliste und Ownership | Vorhanden | Validierung vor Mutation, Attach/Detach und wiederverwendbare entfernte Spalten; neue/ersetzte Zellen werden verwaltet. Baumstruktur bleibt C03. M1. |
-| C02 | Sichtbarkeit und sichtbare Blattspalten | Offen | `visible`, abgeleitete Blattliste, Index-Lookups und konsistente Verwendung in allen Modellen. M1/M5. |
+| C02 | Sichtbarkeit und sichtbare Blattspalten | Teilweise | Flache Spalten: `visible`, beobachtbare Projektion, Index-Lookups und gemeinsamer Render-/Breitenpfad vorhanden. Spaltenbaum und spätere Auswahl-/Fokusmodelle noch anbinden. M1/M5. |
 | C03 | Verschachtelte Spalten/Gruppenheader | Offen | Kindspalten, parentColumn/tableView, rekursive Header; Gruppenbreite aus Blattspalten. `headerRows` bleibt ein separater Inhaltsheader. M1/M5. |
 | C04 | minWidth/prefWidth/maxWidth/width/resizable | Teilweise | Nur prefWidth und pauschale Mindestbreite vorhanden. Breitenmodell mit echten Grenzen und beobachtbarem Ergebnis ergänzen. M5. |
 | C05 | Resize-Policies und `resizeColumn` | Offen | Reine Breitenberechnung und austauschbare Policy, einschließlich der JavaFX-26-Varianten. M5. |
@@ -297,9 +310,9 @@ ARIA umfasst Grid/Row/ColumnHeader/GridCell, sichtbare Spaltenindizes, absolute 
 
 ### 4.9 Scala- und TypeScript-Vertrag gemeinsam liefern
 
-Heute befindet sich die öffentliche Tabellenfassade in `npm/jfx-controls`; `tableView(...)` liefert `void`. Zusätzliche Optionsfelder allein reichen für Auswahlbeobachtung, `scrollTo`, `sort` oder `edit` nicht.
+Die öffentliche Tabellenfassade liegt in `npm/jfx-controls`; `tableView(...)` liefert inzwischen ein minimales `TableViewHandle` für `refresh()` und `isDisposed`. Zusätzliche Optionsfelder allein reichen für Auswahlbeobachtung, `scrollTo`, `sort` oder `edit` nicht.
 
-Mit M0 den minimalen Handle-Vertrag planen, etwa ein `TableViewHandle[S]` mit Methoden und lesbaren Modellzuständen sowie kontrollierten Modelloperationen. Die konkrete Rückgabe muss durch ComponentFactory, Bridge und TypeScript-Fassade transportiert werden. Der bestehende Aufruf, der keinen Rückgabewert verwendet, soll weiter funktionieren. Spalten benötigen typisierte Werte-/Editor-Callbacks und stabile Handles oder IDs.
+Mit M0 den vorhandenen minimalen Handle-Vertrag um typsichere Modellzustände und kontrollierte Operationen erweitern. Die Rückgabe wird bereits nach abgeschlossenem Mount über einen internen Factory-Callback aus der Bridge an die TypeScript-Fassade übergeben. Spalten benötigen zusätzlich stabile Handles oder IDs für ihre Operationen.
 
 Jeder Meilenstein liefert Scala-API, Bridge-Anbindung, TypeScript-Typen, Lifecycle und ein Beispiel gemeinsam. Forms-basierte Zellfactory-Helfer werden entsprechend im Paket `npm/jfx-forms` angeboten. Keine zweite Auswahl-/Sortier-/Editierimplementierung in TypeScript. Callbacks müssen im vorhandenen Render-Scope laufen; Handles nach Unmount dürfen keine entfernten Komponenten weiter bedienen.
 
@@ -325,10 +338,16 @@ Die Größen S/M/L bezeichnen relative Komplexität, keine Zeitversprechen. M0 i
 - [ ] M1: Reale Browserabnahme für Eingabefelder/IME, nicht nur jsdom.
 - [x] M1: `cellValueFactory` vervollständigen und `TableCell` in den Renderpfad integrieren; `cell(row)` bleibt nutzbar.
 - [x] M1: Spalten-Ownership einschließlich atomarer Validierung und Attach/Detach aufbauen.
+- [x] M1: Sichtbarkeit flacher Spalten, gemeinsame sichtbare Projektion und Platzhalter ohne sichtbare Spalten.
+- [x] M1: Minimales TypeScript-Handle für Refresh und Dispose-Status.
 - [ ] M1: `rowFactory`, Spaltenbaum und Blattspaltenmodell sowie imperative TypeScript-Handles ergänzen.
 - [ ] Anschließend M2 und M3; auf dieser Basis M4 und M5 vervollständigen.
 
 ## 6. Verifikation
+
+Der zweite Ausbau ergänzt drei Scala-Fälle (Sichtbarkeit/Instanzerhalt/Breiten/Lookups, Platzhalter/Auswahl, Reihenfolge/Detach) sowie drei Bridge-Fälle (fokussierter Editor neben versteckter Spalte, Hidden-Column-Hydration, Refresh-Handle/Lifecycle). Der Paket-Consumer prüft auch den exportierten Handle-Typ und eine wirklich nicht gerenderte versteckte Spalte. Vollständiges Scala-Gate: 351 erfolgreiche Tests. Der echte Browser-Smoke-Test deckt das Ein-/Ausblenden in der Demo ab; eine vollständige Browser-/IME-/Screenreader-Abnahme der Editorinteraktion ist damit nicht behauptet.
+
+Abnahme des zweiten Ausbaus: Bridge-Full-Link und alle drei npm-Gates für Controls/Core/Demo grün. Controls: 17 Integrationstests plus 3 Paket-Consumer-Tests; Core: 114 Tests plus 8 Paket-Consumer-Tests; Demo: Typecheck, Client-/SSR-Builds, Eine-Runtime-Prüfung und 31 Routen. Temporärer Browser-Testtab und lokaler Testserver wurden anschließend geschlossen.
 
 Das erste Grundlagenpaket ergänzt sechs Scala-Tests in [TableCellSpec.scala](jfx-controls/src/test/scala-3/jfx/control/table/TableCellSpec.scala): Wert-/Factory-Wechsel und Listener-Disposal, erhaltene Scrollfenster einschließlich Messung/Zeilenhöhe, Spalten-Attach/Detach, atomare Ablehnung ungültiger Spaltenänderungen, Refresh und spaltenlokaler Rendererwechsel. Vier zusätzliche [Bridge-Smoke-Tests](npm/jfx-controls/test/bridge.smoke.test.ts) prüfen typisierte Werte, einen gebundenen Editor im Scrollfenster, DOM-Identität nach Hydration und `sortable=false`.
 

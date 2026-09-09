@@ -26,7 +26,7 @@ import jfx.core.state.{
   Property,
   ReadOnlyProperty
 }
-import jfx.core.statement.Foreach.{foreach, foreachIndexed}
+import jfx.core.statement.Foreach.foreach
 import org.scalajs.dom
 
 import scala.concurrent.ExecutionContext
@@ -45,7 +45,11 @@ final class TableView[S] private (
 
   override val tagName: String = "div"
 
-  val columns: ListProperty[TableColumn[S, ?]]                   = new TableColumnList(this)
+  val columns: ListProperty[TableColumn[S, ?]] = new TableColumnList(this)
+  private[table] val visibleColumns            = ListProperty[TableColumn[S, ?]]()
+  val visibleLeafColumns: ReadOnlyProperty[Vector[TableColumn[S, ?]]] =
+    visibleColumns.map(_.toVector)
+  private val placeholderVisibleProperty                         = Property(true)
   val showHeaderProperty: Property[Boolean]                      = Property(true)
   val showFooterProperty: Property[Boolean]                      = Property(true)
   val rowHeightProperty: Property[Double]                        = Property(32.0)
@@ -106,17 +110,19 @@ final class TableView[S] private (
   val renderedWidthsProperty: ReadOnlyProperty[Vector[Double]] =
     viewportWidthProperty.flatMap { viewportWidth =>
       columnStateRevisionProperty.map { _ =>
-        resolveRenderedColumnWidths(columns.toSeq, viewportWidth)
+        resolveRenderedColumnWidths(visibleColumns.toSeq, viewportWidth)
       }
     }
 
   private val totalColumnWidthProperty: ReadOnlyProperty[Double] =
     renderedWidthsProperty.map(_.sum)
 
-  def items: ListDataSource[S]                     = dataSource
-  def $getColumns: ListProperty[TableColumn[S, ?]] = columns
-  def $getFixedCellSize: Double                    = rowHeightProperty.get
-  def setFixedCellSize(value: Double): Unit        = rowHeightProperty.set(value)
+  def items: ListDataSource[S]                                   = dataSource
+  def getVisibleLeafIndex(column: TableColumn[S, ?]): Int        = visibleColumns.indexOf(column)
+  def getVisibleLeafColumn(index: Int): TableColumn[S, ?] | Null = visibleColumns.lift(index).orNull
+  def $getColumns: ListProperty[TableColumn[S, ?]]               = columns
+  def $getFixedCellSize: Double                                  = rowHeightProperty.get
+  def setFixedCellSize(value: Double): Unit                      = rowHeightProperty.set(value)
 
   private[control] def registerColumn(column: TableColumn[S, ?]): Unit = {
     if (!columns.contains(column)) columns.addOne(column)
@@ -135,9 +141,28 @@ final class TableView[S] private (
       subscriptions.add(column.prefWidthProperty.observeWithoutInitial(_ => bumpColumnState()))
       subscriptions.add(column.sortableProperty.observeWithoutInitial(_ => bumpHeaderState()))
       subscriptions.add(column.sortKeyProperty.observeWithoutInitial(_ => bumpHeaderState()))
+      subscriptions.add(column.visibleProperty.observeWithoutInitial(_ => syncVisibleColumns()))
       attachedColumns.put(column, subscriptions)
     }
+    syncVisibleColumns()
+  }
+
+  /** A visibility change removes only hidden cells, retaining all other column instances. */
+  private def syncVisibleColumns(): Unit = {
+    val wanted = columns.toVector.filter(_.visible)
+    visibleColumns.toVector.filterNot(wanted.contains).foreach { column =>
+      visibleColumns.remove(visibleColumns.indexOf(column))
+    }
+    wanted.zipWithIndex.foreach { (column, index) =>
+      if (visibleColumns.lift(index) != Some(column)) {
+        val previous = visibleColumns.indexOf(column)
+        if (previous >= 0) visibleColumns.remove(previous)
+        visibleColumns.insert(index, column)
+      }
+    }
     bumpColumnState()
+    placeholderVisibleProperty.set(renderableCount == 0 || visibleColumns.isEmpty)
+    recomputeVisible()
   }
 
   /** Re-evaluates visible cells, including unobserved mutable data, without reloading the source.
@@ -221,16 +246,16 @@ final class TableView[S] private (
               transform = scrollLeftProperty.map(value => s"translateX(-${value}px)")
             }
 
-            foreachIndexed(columns) { (column, columnIndex) =>
+            foreach(visibleColumns) { column =>
               val typedColumn = column.asInstanceOf[TableColumn[S, Any]]
               val headerCell  = div {
                 classes = Seq("jfx-table-header-cell")
                 classIf(
                   "jfx-table-header-cell-last",
-                  columns.map(cols => columnIndex == cols.length - 1)
+                  visibleLeafColumns.map(_.lastOption.contains(column))
                 )
                 val widthProperty = renderedWidthsProperty.map { widths =>
-                  s"${widths.lift(columnIndex).getOrElse(typedColumn.prefWidth)}px"
+                  s"${widths.lift(getVisibleLeafIndex(column)).getOrElse(typedColumn.prefWidth)}px"
                 }
                 style {
                   width = widthProperty
@@ -279,6 +304,7 @@ final class TableView[S] private (
           classes = Seq("jfx-table-viewport")
           style {
             position = "relative"
+            display = placeholderVisibleProperty.map(empty => if (empty) "none" else "block")
             width = "100%"
             height = "100%"
             overflow = displayModeProperty.map {
@@ -365,7 +391,7 @@ final class TableView[S] private (
 
         }
 
-        when(itemStateRevisionProperty.map(_ => renderableCount == 0)) {
+        when(placeholderVisibleProperty) {
           div {
             classes = Seq("jfx-table-placeholder")
             style { display = "flex" }
@@ -430,7 +456,7 @@ final class TableView[S] private (
 
   override protected def recomputeVisible(): Unit = {
     val total = displayItemCount
-    if (total == 0) visibleRowsProperty.clear()
+    if (total == 0 || visibleColumns.isEmpty) visibleRowsProperty.clear()
     else {
       val (start, end) = visibleRange(total)
       // Absolute slots in an overlapping window stay mounted. Source mutations may replace an
@@ -475,6 +501,7 @@ final class TableView[S] private (
   }
 
   override protected def refreshItemState(): Unit = {
+    placeholderVisibleProperty.set(renderableCount == 0 || visibleColumns.isEmpty)
     super.refreshItemState()
     refreshSelectedItem()
   }
