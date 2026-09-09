@@ -177,6 +177,146 @@ describe("carousel", () => {
 });
 
 describe("table-view", () => {
+  // jsdom has no layout engine. Model the CSS max-content result; real geometry is checked
+  // against the production demo in a browser, including padding and sort decoration.
+  function intrinsicWidths(widths: Map<Element, number>): () => void {
+    const computed = window.getComputedStyle.bind(window);
+    const css = vi.spyOn(window, "getComputedStyle").mockImplementation((element, pseudo) => {
+      const result = computed(element, pseudo);
+      if ((element as HTMLElement).style.width === "max-content" && widths.has(element)) {
+        const width = widths.get(element);
+        return new Proxy(result, { get(target, name) {
+          if (name === "boxSizing") return "border-box";
+          if (name === "getPropertyValue") return (property: string) =>
+            property === "width" ? `${width}px` : target.getPropertyValue(property);
+          return Reflect.get(target, name);
+        } });
+      }
+      return result;
+    });
+    const rects = vi.spyOn(HTMLElement.prototype, "getClientRects").mockImplementation(function (this: HTMLElement) {
+      return { length: widths.has(this) ? 1 : 0 } as DOMRectList;
+    });
+    return () => { css.mockRestore(); rects.mockRestore(); };
+  }
+
+  it("auto-fits intrinsic header/cell widths through the policy, retaining editors and bindings", () => {
+    const root = document.createElement("div"); document.body.appendChild(root);
+    const value = property("Ada");
+    const widths = new Map<Element, number>();
+    const restore = intrinsicWidths(widths);
+    const locked = property(false);
+    const visible = property(true);
+    let table!: TableViewHandle<string>;
+    let builds = 0;
+    const app = mount(root, () => {
+      table = tableView(listProperty(["Ada"]), [
+        { text: "Editor", prefWidth: 200, minWidth: 80, maxWidth: 300, visible, resizable: locked.map(v => !v),
+          cell: () => { builds++; element("input")(() => attr("value", "Lovelace")); } },
+        valueColumn("Other", () => value, { prefWidth: 200 }),
+      ], { paging: true, columnResizePolicy: "unconstrained" });
+    });
+    try {
+      const header = root.querySelector<HTMLElement>(".jfx-table-header-cell")!;
+      const cell = root.querySelector<HTMLElement>(".jfx-table-cell")!;
+      const editor = root.querySelector<HTMLInputElement>("input")!;
+      const grip = header.querySelector<HTMLElement>(".jfx-table-column-resize-handle")!;
+      widths.set(header, 120); widths.set(cell, 240.2);
+      editor.focus(); editor.setSelectionRange(1, 4, "backward"); table.selectIndex(0);
+      expect(table.autoFitColumn(0)).toBe(true);
+      expect(table.columnWidths.get).toEqual([241, 200]);
+      expect(cell.style.minWidth).toBe("241px"); expect(cell.style.maxWidth).toBe("");
+      expect(header.style.width).toBe("241px"); expect(header.style.maxWidth).toBe("");
+      expect(table.autoFitColumn(0)).toBe(false);
+      widths.set(cell, 400);
+      grip.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
+      expect(table.columnWidths.get).toEqual([300, 200]);
+      widths.set(cell, 40);
+      grip.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Enter" }));
+      expect(table.columnWidths.get).toEqual([120, 200]); // Header wins; fitting can shrink.
+      widths.set(header, 30); expect(table.autoFitColumn(0)).toBe(true);
+      expect(table.columnWidths.get).toEqual([80, 200]);
+      locked.set(true); widths.set(cell, 200); expect(table.autoFitColumn(0)).toBe(false);
+      locked.set(false);
+      editor.dispatchEvent(new CompositionEvent("compositionstart", { bubbles: true }));
+      expect(table.autoFitColumn(0)).toBe(false);
+      editor.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true }));
+      expect(table.autoFitColumn(0)).toBe(true);
+      expect(root.querySelector("input")).toBe(editor); expect(builds).toBe(1);
+      expect(document.activeElement).toBe(editor);
+      expect([editor.selectionStart, editor.selectionEnd, editor.selectionDirection]).toEqual([1, 4, "backward"]);
+      expect(table.selectedIndex.get).toBe(0);
+      value.set("Grace"); expect(root.querySelectorAll(".jfx-table-cell")[1]!.textContent).toBe("Grace");
+      for (const index of [-1, 2, 0.5, Infinity, NaN]) expect(table.autoFitColumn(index)).toBe(false);
+      expect(table.moveColumn(0, 1)).toBe(true);
+      widths.set(cell, 250); expect(table.autoFitColumn(1)).toBe(true);
+      expect(table.columnWidths.get).toEqual([200, 250]);
+      visible.set(false); visible.set(true);
+      widths.set(root.querySelectorAll(".jfx-table-header-cell")[1]!, 110);
+      widths.set(root.querySelectorAll(".jfx-table-cell")[1]!, 90);
+      expect(table.autoFitColumn(1)).toBe(true);
+      expect(table.columnWidths.get).toEqual([200, 110]); // Disposed cells must not remain in the sample.
+      expect(builds).toBe(2);
+      app.dispose(); expect(table.autoFitColumn(0)).toBe(false);
+    } finally { app.dispose(); restore(); root.remove(); }
+  });
+
+  it("samples at most 100 mounted loaded cells without fetching remote data", () => {
+    const rows = Array.from({ length: 150 }, (_, i) => String(i));
+    const load = vi.fn(async () => ({ items: rows, offset: 0, totalCount: 150 }));
+    const source = remoteSource({ initialQuery: {}, initial: rows, totalCount: 150, load });
+    const root = document.createElement("div");
+    const widths = new Map<Element, number>(); const restore = intrinsicWidths(widths);
+    let table!: TableViewHandle<string>;
+    const app = mount(root, () => { table = tableView(source, [valueColumn("Name", row => row)],
+      { paging: true, pageSize: 150, rowHeight: 1, showHeader: false, columnResizePolicy: "unconstrained" }); });
+    try {
+      expect(root.querySelectorAll(".jfx-table-cell").length).toBe(150);
+      root.querySelectorAll(".jfx-table-cell").forEach((cell, i) => widths.set(cell, i < 100 ? 200 : 900));
+      expect(table.autoFitColumn(0)).toBe(true); expect(table.columnWidths.get).toEqual([200]);
+      expect(load).not.toHaveBeenCalled();
+      widths.clear(); expect(table.autoFitColumn(0)).toBe(false); // Hidden/unmeasurable layout.
+    } finally { app.dispose(); restore(); }
+  });
+
+  it("defers auto-fit until hydration and respects constrained compensation", async () => {
+    const widths = new Map<Element, number>(); const restore = intrinsicWidths(widths);
+    let table!: TableViewHandle<string>;
+    const build = (): void => {
+      table = tableView(listProperty(["Ada"]), [valueColumn("A", row => row, { prefWidth: 200 }),
+        valueColumn("B", row => row, { prefWidth: 200, minWidth: 100 })], { paging: true });
+      table.autoFitColumn(0);
+    };
+    const root = document.createElement("div");
+    root.innerHTML = (await renderToString(build)).html;
+    const header = root.querySelector<HTMLElement>(".jfx-table-header-cell")!;
+    const cell = root.querySelector<HTMLElement>(".jfx-table-cell")!;
+    const sum = table.columnWidths.get.reduce((a,b) => a+b, 0);
+    widths.set(header, 120); widths.set(cell, 900);
+    const app = await hydrate(root, build);
+    try {
+      expect(root.querySelector(".jfx-table-cell")).toBe(cell);
+      expect(root.querySelector(".jfx-table-header-cell")).toBe(header);
+      expect(table.columnWidths.get).toEqual([sum - 100, 100]);
+      expect(table.autoFitColumn(0)).toBe(false);
+    } finally { app.dispose(); restore(); }
+  });
+
+  it("restores temporary sizing when intrinsic measurement throws", () => {
+    const root = document.createElement("div");
+    const widths = new Map<Element, number>(); const restore = intrinsicWidths(widths);
+    let table!: TableViewHandle<string>;
+    const app = mount(root, () => { table = tableView(listProperty(["Ada"]), [valueColumn("A", row => row)], { paging: true }); });
+    const header = root.querySelector<HTMLElement>(".jfx-table-header-cell")!;
+    widths.set(header, 100);
+    const before = header.getAttribute("style");
+    const fail = vi.spyOn(widths, "get").mockImplementation(() => { throw new Error("measurement failed"); });
+    try {
+      expect(() => table.autoFitColumn(0)).toThrow("measurement failed");
+      expect(header.getAttribute("style")).toBe(before);
+    } finally { fail.mockRestore(); app.dispose(); restore(); }
+  });
+
   it("moves columns without rebuilding cells, losing focus, selection or width overrides", () => {
     const root = document.createElement("div");
     document.body.appendChild(root);

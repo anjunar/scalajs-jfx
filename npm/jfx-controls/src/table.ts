@@ -113,6 +113,11 @@ export interface TableViewHandle<T = unknown> {
   readonly columnWidths: ReadOnlyProperty<readonly number[]>;
   /** Resizes a visible column by a pixel delta; true if any movement was possible. */
   resizeColumn(visibleColumnIndex: number, delta: number): boolean;
+  /** Browser-only: fit header + up to 100 mounted loaded cells; never fetches remote data.
+   * Bounds and resize policy apply. Returns true on change or when queued during hydration.
+   * Hidden/unmeasurable/locked columns, protected hosts and active composition are no-ops.
+   */
+  autoFitColumn(visibleColumnIndex: number): boolean;
   /** Browser-only: moves to a final visible index without recreating cells. During hydration,
    * the latest valid request waits until claiming completes. Hidden columns keep relative order.
    * Returns false for invalid/no-op requests, protected hosts or active IME composition.

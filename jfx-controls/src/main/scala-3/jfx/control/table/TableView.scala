@@ -86,14 +86,45 @@ final class TableView[S] private (
   private var scrollNavigationMounted                                          = false
   private var pendingScrollIndex: Option[Int]                                  = None
   private var pendingColumnMove: Option[(TableColumn[S, ?], Int)]              = None
-  private var composingTarget: Option[dom.Node]                                = None
-  private var headerViewport: Div | Null                                       = null
-  private[table] val columnHeaders    = mutable.Map.empty[TableColumn[S, ?], Div]
+  private var pendingAutoFit: Option[TableColumn[S, ?]]                        = None
+  private val mountedCells                      = mutable.LinkedHashSet.empty[TableCell[S, ?]]
+  private var composingTarget: Option[dom.Node] = None
+  private var headerViewport: Div | Null        = null
+  private[table] val columnHeaders              = mutable.Map.empty[TableColumn[S, ?], Div]
   private[table] val columnDropMarker = Property[Option[(TableColumn[S, ?], Boolean)]](None)
   private[table] var cancelColumnDrag: () => Unit = () => ()
 
   private[table] def checkColumnMutation(): Unit =
     if (isBound) HostMutationGuard.checkRemoval(host)
+
+  private[table] def registerCell(cell: TableCell[S, ?]): Unit = {
+    mountedCells.add(cell)
+    cell.addDisposable(Disposable { mountedCells.remove(cell) })
+  }
+
+  /** Browser-only intrinsic sizing of the header and at most 100 mounted, loaded cells. No remote
+    * fetch or renderer calls. Bounds and the current resize policy still apply. True means a width
+    * changed, or a valid hydration-time request was queued.
+    */
+  def autoFitColumn(column: TableColumn[S, ?]): Boolean =
+    if (
+      !browserRendering || column == null || !column.resizable ||
+      getVisibleLeafIndex(column) < 0 || !canMoveColumns
+    ) false
+    else if (!scrollNavigationMounted) {
+      pendingAutoFit = Some(column)
+      true
+    } else {
+      cancelColumnDrag()
+      val cells = mountedCells.iterator
+        .filter(cell => (cell.tableColumn eq column) && !cell.emptyProperty.get)
+        .toVector
+        .sortBy(_.indexProperty.get)
+        .take(TableColumnAutoFit.sampleLimit)
+      val samples = columnHeaders.get(column).toVector ++ cells
+      val widths  = samples.flatMap(TableColumnAutoFit.measure)
+      widths.maxOption.exists(width => resizeColumn(column, width - column.width))
+    }
 
   private[table] def canMoveColumns: Boolean =
     if (isDisposed || composingTarget.exists(_.isConnected)) false
@@ -608,6 +639,9 @@ final class TableView[S] private (
         val move = pendingColumnMove
         pendingColumnMove = None
         move.foreach { case (column, index) => moveColumn(column, index) }
+        val fit = pendingAutoFit
+        pendingAutoFit = None
+        fit.foreach(autoFitColumn)
         flushScrollRequest()
       }
     }

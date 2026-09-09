@@ -73,5 +73,13 @@ class TableColumnResizeSpec extends AnyFlatSpec with Matchers {
   it should "ignore requests after unmount" in mounted { (table, first, _) =>
     Runtime.unmount(table)
     table.resizeColumn(first, 50) shouldBe false
+    table.autoFitColumn(first) shouldBe false
+  }
+
+  it should "leave server widths unchanged for browser-only content fitting" in mounted {
+    (table, first, _) =>
+      val before = table.renderedWidthsProperty.get
+      table.autoFitColumn(first) shouldBe false
+      table.renderedWidthsProperty.get shouldBe before
   }
 }

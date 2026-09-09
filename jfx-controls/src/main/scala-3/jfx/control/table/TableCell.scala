@@ -40,6 +40,7 @@ class TableCell[S, T] extends AbstractComponent {
       addClass("jfx-table-cell")
       classIf("jfx-table-cell-empty", emptyProperty)
       for (column <- Option(boundColumn); table <- Option(tableView)) {
+        table.registerCell(this)
         classIf("jfx-table-cell-last", table.visibleLeafColumns.map(_.lastOption.contains(column)))
         if (emptyProperty.get) addClass("jfx-table-cell-loading-placeholder")
         val widthProperty = table.renderedWidthsProperty.map { widths =>

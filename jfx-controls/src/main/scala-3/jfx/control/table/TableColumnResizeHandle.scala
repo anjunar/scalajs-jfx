@@ -49,9 +49,19 @@ private[table] final class TableColumnResizeHandle[S](
     addDisposable(table.columnResizePolicyProperty.observeWithoutInitial(_ => finishDrag()))
     addDisposable(Disposable(finishDrag()))
     on("click") { event => event.preventDefault(); event.stopPropagation() }
-    on("dblclick") { event => event.preventDefault(); event.stopPropagation() }
+    on("dblclick") { event =>
+      event.preventDefault()
+      event.stopPropagation()
+      finishDrag()
+      table.autoFitColumn(column)
+    }
     on("keydown") { event =>
       event.raw match {
+        case key: dom.KeyboardEvent if key.key == "Enter" =>
+          event.preventDefault()
+          event.stopPropagation()
+          finishDrag()
+          table.autoFitColumn(column)
         case key: dom.KeyboardEvent if key.key == "ArrowLeft" || key.key == "ArrowRight" =>
           event.preventDefault()
           event.stopPropagation()

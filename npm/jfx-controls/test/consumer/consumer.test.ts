@@ -171,6 +171,7 @@ describe("typechecking a consumer", () => {
       "    const widths: readonly number[] = table.columnWidths.get;",
       "    const resized: boolean = table.resizeColumn(0, 10);",
       "    const moved: boolean = table.moveColumn(0, 1);",
+      "    const fitted: boolean = table.autoFitColumn(0);",
       "    carousel(rows, (row) => div(() => text(row.name)));",
       "    dataGrid(rows, (row) => div(() => text(row?.name ?? \"\")));",
       "    virtualList(rows, (row) => div(() => text(row?.name ?? \"\")));",

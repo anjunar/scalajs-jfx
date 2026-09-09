@@ -8,6 +8,8 @@ import scala.scalajs.js.JSConverters.*
 final class TableViewHandleBridge(private val table: TableView[js.Any]) extends js.Object {
   private val model = table.selectionModel
   val columnWidths  = new ReadOnlyPropertyHandle(table.renderedWidthsProperty.map(_.toJSArray))
+  def autoFitColumn(index: Double): Boolean =
+    validIndex(index) && table.autoFitColumn(table.getVisibleLeafColumn(index.toInt))
   def moveColumn(from: Double, to: Double): Boolean =
     validIndex(from) && validIndex(to) && table.moveColumn(
       table.getVisibleLeafColumn(from.toInt),

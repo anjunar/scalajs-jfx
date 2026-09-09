@@ -86,6 +86,7 @@ export function controlsTablePage(): void {
     });
     div(() => text(translated("Ctrl/Cmd-click toggles rows; Shift-click selects a range.")));
     div(() => text(translated("Drag a column edge to resize. Focus its grip and use arrow keys for keyboard resizing.")));
+    div(() => text(translated("Double-click a column edge to fit its content, or press Enter on the focused grip.")));
     div(() => text(translated("Drag a column header to move it. Or focus the header and press Alt+Shift+Left/Right.")));
     button(translated("Toggle constrained / free column widths"), {}, () => onClick(() =>
       resizePolicy.set(resizePolicy.get === "unconstrained" ? "flex-last-column" : "unconstrained")));

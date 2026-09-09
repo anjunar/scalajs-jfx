@@ -76,7 +76,25 @@ Negative minima normalize to zero, invalid non-finite minima/preferences use the
 non-finite maxima are unbounded, and a conflicting minimum takes precedence over the maximum.
 Invalid resize deltas/indices, hidden/foreign columns and disposed tables are no-ops.
 
-Auto-fit remains planned.
+Double-click a resize grip, or press Enter on its focus, to fit the column's content.
+The same command is `table.autoFitColumn(visibleColumnIndex)` in TypeScript and
+`table.autoFitColumn(column)` in Scala. It measures the header (including current sort
+decoration) and at most 100 mounted, loaded cells, ordered by absolute row index.
+Overscan cells may participate; unloaded/off-window data is not fetched or rendered.
+The maximum intrinsic CSS width is rounded up, then applied through the existing resize
+policy and min/max bounds. Constrained policies may only fit partially, or not at all
+when no compensating column has capacity. The command can also shrink a column.
+
+Measurement uses temporary max-content sizing on the existing header/cell hosts and
+restores their width constraints synchronously. There are no clones or renderer calls;
+custom controls keep their DOM, bindings, focus and text selection. Content keeps its CSS
+layout semantics (e.g. explicit child widths); this is not a text-only width estimate.
+Call again after fonts/images load or content changes if another fit is desired.
+
+Auto-fit is browser-only; during hydration the latest valid request waits for claiming.
+Invalid/hidden/locked columns, unmeasurable layout, protected hosts and active native
+composition are no-ops, not queued retries. A true result means a width changed or a
+hydration-time request was accepted; SSR and disposed handles return false.
 
 ### Column reordering
 
