@@ -12,7 +12,7 @@ private[table] final class TableColumnReorderGesture[S](
     table: TableView[S],
     column: TableColumn[S, ?],
     header: Div,
-    sort: () => Unit,
+    sort: Boolean => Boolean,
     browser: Boolean
 ) extends Disposable {
   private val subscriptions      = new CompositeDisposable()
@@ -31,13 +31,24 @@ private[table] final class TableColumnReorderGesture[S](
   )
   subscriptions.add(header.onDisposable("click") { event =>
     if (suppressClick) { event.preventDefault(); event.stopPropagation(); suppressClick = false }
-    else sort()
+    else
+      event.raw match {
+        case click: dom.MouseEvent if !click.defaultPrevented && click.button == 0 =>
+          sort(click.shiftKey)
+        case _ => ()
+      }
   })
   subscriptions.add(column.reorderableProperty.observeWithoutInitial(_ => finish()))
   subscriptions.add(table.visibleLeafColumns.observeWithoutInitial(_ => finish()))
   if (browser) {
     subscriptions.add(header.onDisposable("keydown") { event =>
       event.raw match {
+        case key: dom.KeyboardEvent
+            if !key.defaultPrevented && !key.isComposing && !key.repeat &&
+              !key.altKey && !key.ctrlKey && !key.metaKey &&
+              (key.key == "Enter" || key.key == " ") &&
+              key.target == header.host.asInstanceOf[DomHostElement].node =>
+          if (sort(key.shiftKey)) { event.preventDefault(); event.stopPropagation() }
         case key: dom.KeyboardEvent
             if key.altKey && key.shiftKey &&
               (key.key == "ArrowLeft" || key.key == "ArrowRight") =>

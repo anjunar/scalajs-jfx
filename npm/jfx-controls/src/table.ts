@@ -10,7 +10,7 @@
 import { component, currentScope, withScope } from "@anjunar/jfx-core";
 import type { ComponentHandle, Reactive, ReadOnlyProperty, ScopeHandle } from "@anjunar/jfx-core";
 import { body, defined, rowBody } from "./internal.js";
-import type { Source } from "./data-source.js";
+import type { Source, SortSpec } from "./data-source.js";
 
 export interface ColumnDef<T> {
   readonly text: string;
@@ -117,6 +117,15 @@ export interface TableViewOptions<T = unknown> {
 
 /** Runtime-owned row selection, row focus, navigation and refresh. Cell coordinates remain pending. */
 export interface TableViewHandle<T = unknown> {
+  /** Requested remote order. Loading/error state belongs to the source, not an accepted-result snapshot. */
+  readonly sorting: ReadOnlyProperty<readonly SortSpec[]>;
+  /** Browser-only: cycle unsorted/ascending/descending; additive preserves other terms and priority.
+   * False for local sources, invalid/hidden/unsortable columns, during SSR/hydration or after disposal.
+   * True means a remote request was issued, not that loading succeeded. Resets paging/scroll to the start.
+   */
+  toggleSort(visibleColumnIndex: number, additive?: boolean): boolean;
+  /** Clears all remote sort terms through the same command path. */
+  clearSort(): boolean;
   /** Logical row focus. A known unloaded position has a null focusedItem. */
   readonly focusedIndex: ReadOnlyProperty<number>;
   readonly focusedItem: ReadOnlyProperty<T | null>;

@@ -216,6 +216,7 @@ final class RemoteListProperty[V, Query](
 
   def clear(): Unit = indexedUpdate(RemoteListChange.Reset()) {
     invalidatePendingLoads()
+    refreshLoadingState()
     loadedRanges.clear()
     loadedItems.clear()
     totalCountProperty.set(Some(0))
@@ -311,7 +312,10 @@ final class RemoteListProperty[V, Query](
   private def invalidatePendingLoads(): Unit = {
     loadGeneration += 1
     pendingLoads.clear()
-    refreshLoadingState()
+    // A replacement registers its new request before publishing loading state. Publishing
+    // false here would expose a non-existent idle interval: viewport observers would start
+    // another range load (and recursively publish true) before the replacement even exists.
+    // clear(), which has no replacement request, publishes its own final idle state.
   }
 
   private def applyPage(

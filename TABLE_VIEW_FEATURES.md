@@ -1,6 +1,6 @@
 # TableView: Feature-Stand und Implementierungsplan
 
-Stand: 09.09.2026 · Ausgangsanalyse: `7295d92` · einschließlich Grundlagenpaket, Spaltensichtbarkeit, Auswahl-/Remote-Vertrag, RowFactory, Mehrfachauswahl, Zeilen-/Spaltennavigation, Spalten-Resizing, Drag-Reordering, Auto-Fit, Spaltenmenü sowie Zeilenfokus/Tastaturbedienung · Referenz: JavaFX 26.
+Stand: 10.09.2026 · Ausgangsanalyse: `7295d92` · einschließlich Grundlagenpaket, Spaltensichtbarkeit, Auswahl-/Remote-Vertrag, RowFactory, Mehrfachauswahl, Zeilen-/Spaltennavigation, Spalten-Resizing, Drag-Reordering, Auto-Fit, Spaltenmenü, Zeilenfokus/Tastaturbedienung sowie Remote-Mehrspaltensortierung · Referenz: JavaFX 26.
 
 Dieses Dokument beschreibt, welche Funktionen unsere TableView bereits unterstützt und wie wir die fehlenden Fähigkeiten der JavaFX-TableView ergänzen. Es ist ein Implementierungsplan; als **geplant** bezeichnete Modelle, Methoden und Dateien existieren noch nicht.
 
@@ -190,7 +190,7 @@ Referenzen: [TableColumnBase](https://openjfx.io/javadoc/26/javafx.controls/java
 | C06 | Interaktives Resize und Anpassung an Inhalt | Vorhanden | Pointer/Pfeiltasten, Doppelklick/Enter und autoFitColumn; Header plus maximal 100 gemountete geladene Zellen, vorhandene Grenzen/Policy. M5. |
 | C07 | Drag-Reordering und reorderable | Vorhanden | Flache Spalten: Pointer-Drag mit Einfügemarkierung, Alt+Shift+Links/Rechts, reaktives reorderable und moveColumn. Maßgebliche Liste und stabile Runtime-Projektion; Gruppen/Drag-Autoscroll bleiben offen. M5. |
 | C08 | Menü zum Ein-/Ausblenden der Spalten | Vorhanden | Optionales Viewport-Overlay mit Checkbox-Menü, Tastaturbedienung und tableMenuButtonVisible. Flache Spalten einschließlich ausgeblendeter Spalten. M5/M6. |
-| C09 | Header-Grafik, Sortierdarstellung, Kontextmenü | Teilweise | Text und Sortier-CSS vorhanden. Slots für graphic/sortNode/Menü sowie Sortierpriorität ergänzen. M5/M6. |
+| C09 | Header-Grafik, Sortierdarstellung, Kontextmenü | Teilweise | Text, Richtung und numerische Sortierpriorität vorhanden. Slots für graphic/sortNode/Menü fehlen. M5/M6. |
 | C10 | Spalten-ID, Klassen, Stil, Metadaten | Teilweise | Geerbte Komponentenmittel erreichen den separat erzeugten Header nicht automatisch. Anwendung auf Header/Zellen explizit festlegen. M1/M6. |
 
 ### 3.4 Sortierung
@@ -199,9 +199,9 @@ Sortierung und Filterung werden ausschließlich an die Remote-Datenquelle delegi
 
 | ID | Funktion | Stand | Umsetzung |
 | --- | --- | --- | --- |
-| O01 | Remote-Sortierung über Header | Teilweise | Vorhandenen `RemoteSort`-Pfad weiterverwenden; Flagprüfung und Paging-Reset vereinheitlichen. M0/M3. |
-| O03 | Mehrspaltensortierung, sortOrder/sortType | Teilweise | Remote-Quelle kennt mehrere Deskriptoren, Headerklick ersetzt sie heute durch höchstens einen. Sortiermodell und additive Bedienung ergänzen. M3. |
-| O04 | `sort()`, sortPolicy, onSort | Offen | Programmatische und interaktive Sortierung über denselben auswechselbaren Vertrag ausführen. M3. |
+| O01 | Remote-Sortierung über Header | Vorhanden | Flagprüfung und gemeinsamer Remote-Befehl mit Paging-/Scroll-Reset für Maus, Tastatur und API. M3. |
+| O03 | Mehrspaltensortierung, sortOrder/sortType | Teilweise | Shift-Klick/Shift+Enter/Space, stabile Prioritäten, Richtungszyklus, lesbares sorting und API toggleSort/clearSort vorhanden. Eigenständige beschreibbare sortOrder/sortType-Properties bleiben offen. M3. |
+| O04 | `sort()`, sortPolicy, onSort | Teilweise | toggleSort/clearSort nutzen denselben Remote-Befehl wie Header. Austauschbare Policy, Events und transaktionaler Fehler-/Rollback-Vertrag bleiben offen. M3. |
 | O05 | Zusammenarbeit mit Remote-Sortier-/Filterabfragen | Teilweise | Remote-Query und akzeptierte Ergebnisgeneration bilden den Vertrag; stabile Identitäten und Zustandsregeln für Abfragewechsel vervollständigen. M3. |
 
 ### 3.5 Editing
@@ -225,7 +225,7 @@ Referenzen: [Cell-Editierablauf](https://openjfx.io/javadoc/26/javafx.controls/j
 | V03 | `scrollTo(index/item)`, `onScrollTo` | Teilweise | Zeilennavigation in Scala und TypeScript, bekannte ungeladene Remote-Positionen, Paging, Header und Hydration vorhanden. `onScrollTo` bleibt offen. M2. |
 | V04 | Horizontales Scrollen und Spaltennavigation | Teilweise | Header-Synchronisation, Policy-abhängiges overflow und `scrollToColumn`/`scrollToColumnIndex` in Scala bzw. Index-API in TypeScript vorhanden. `onScrollToColumn` und RTL fehlen. M2/M5. |
 | V05 | Zeilen-/Zellzustände und CSS-Anpassung | Teilweise | selected/odd/even/loading und Zeilen-focused vorhanden; Zellzustände, editing/disabled und Spaltenstil ergänzen. M2/M4/M6. |
-| V06 | Zugänglicher Tabellen-/Grid-Vertrag | Teilweise | Grid-/Zeilen-/Zell-/Headerrollen, Indizes/Zähler, aria-selected und aktiver Zeilenfokus vorhanden. Sortierinformation, Zellnavigation und umfassende Screenreader-Abnahme fehlen. M2/M5/M6. |
+| V06 | Zugänglicher Tabellen-/Grid-Vertrag | Teilweise | Rollen, Indizes/Zähler, aria-selected, Zeilenfokus sowie primäres aria-sort, Richtungs-/Prioritätsbeschreibung und aria-busy vorhanden. Zellnavigation und umfassende Screenreader-Abnahme fehlen. M2/M5/M6. |
 | V07 | Angepasste Darstellung, Menüs, Tooltips, RTL | Teilweise | Eigene Zellkomposition vorhanden. Zeilen-/Header-Slots, spiegelbare Navigation und Overlay-Integration vervollständigen. M5/M6. |
 
 ## 4. Wie wir es implementieren
@@ -360,6 +360,18 @@ Tastaturverhalten als Tabelle von Befehlen implementieren: Pfeile, Home/End, Ctr
 Bei einer bekannten endlichen lokalen Quelle gilt Auswahl über alle Ansichtszeilen. Für Remote-Quellen mit unbekanntem Umfang bedeutet „alle“ nicht automatisch „alle Datensätze auf dem Server“; eine solche Auswahl benötigt einen separaten serverseitigen Vertrag.
 
 ### 4.5 Sortierung als gemeinsamer Vertrag
+
+**Umgesetzt – Remote-Mehrspaltensortierung:** Normaler Headerklick durchläuft aufsteigend, absteigend, unsortiert und ersetzt andere Terme. Shift-Klick ergänzt eine Spalte am Ende, ändert ihre Richtung an derselben Priorität oder entfernt nur diesen Term. Enter/Leertaste am fokussierten Header verwenden denselben Ablauf, Shift bleibt additiv. Resize-Griffe, Drag-Reordering, IME, bereits behandelte Tastendrücke und Wiederholung lösen keine zusätzliche Sortierung aus.
+
+Scala `toggleSort(column, additive = false)`/`clearSort()` und TypeScript `toggleSort(visibleColumnIndex, additive?)`/`clearSort()` delegieren ausschließlich an `RemoteListDataSource.applySorting`. Commands setzen Seite/Scroll auf den Anfang und sind während SSR/Hydration, nach Dispose, für lokale Quellen, ungültige/verborgene/unsortierbare Spalten und geschützte Hosts wirkungslos. Verbergen und Verschieben von Spalten ändern bestehende Remote-Deskriptoren nicht. Sortierung wird bei eindeutigen `sortKey`s pro Fachfeld empfohlen; mehrere Spalten können denselben Term darstellen.
+
+`sortingProperty`/TypeScript `sorting` sind lesbare Momentaufnahmen der **angeforderten** Remote-Sortierung. `true` bedeutet ausgelöste Anfrage, nicht erfolgreichen Ladeabschluss. Header zeigen Richtung und einbasierte Priorität; nur der primäre sichtbare Header trägt `aria-sort`, weitere Header eine Richtungs-/Prioritätsbeschreibung. Die Tabelle meldet Laden über `aria-busy`. Grundlage: [WAI-ARIA Grid and Table Properties](https://www.w3.org/WAI/ARIA/apg/practices/grid-and-table-properties/#indicating-sort-order-with-aria-sort). Die umfassende Screenreader-Abnahme bleibt offen.
+
+Die Scala- und TypeScript-Demo-Loader werten nun alle Remote-Sortierdeskriptoren in Reihenfolge aus (simuliertes Backend, keine Sortierung in der TableView). Zusätzlich wurde der bei der Browserabnahme reproduzierte Reload-Zyklus behoben: `RemoteListProperty` veröffentlicht beim Ersetzen laufender Bereichsanfragen keinen zwischenzeitlichen `loading=false`-Zustand mehr. Die neue Anfrage wird erst registriert, dann der Ladezustand publiziert; veraltete Antworten können sie nicht als beendet markieren. `clear()` meldet weiterhin den echten Leerlauf.
+
+Noch offen: eigenständige beschreibbare sortOrder/sortType-Properties, austauschbare Sortierpolicy und Ereignisse sowie die transaktionale Unterscheidung zwischen angeforderter und erfolgreich übernommener Sortierung einschließlich Rollback. Bestehende Auswahl-/Fokusregeln bleiben an akzeptierte Remote-Resets gebunden.
+
+Abnahme am 10.09.2026: zwei neue Scala-Tests für Deskriptorzyklen und additive Prioritäten, ein Core-Regressionstest für atomaren Reload/alte Antworten/clear sowie vier neue Bridge-Integrationstests für Maus/Tastatur/API, Priorität bei Reordering/Visibility, Paging-Reset, Schutzregeln, SSR/Hydration und Sortieren während eines laufenden Range-Loads. Der letzte Test war vor der Core-Korrektur mit demselben Observer-Zyklus rot. Vollständiges Scala-Gate, Bridge-Full-Link, Scala-Demo-Fast-Link und alle npm-Gates grün (Controls: 70 + 3 Consumer-Tests; Core: 114 + 8 Consumer-Tests; Demo: Typecheck, Client-/SSR-Builds, Eine-Runtime-Nachweis, 31 Routen einschließlich Cookie-Regression). Browser: gespeicherte Mehrspaltensortierung wiederhergestellt; nach Navigation zu Zeile 500 Sortierung aufgehoben und Autor/Jahr per Klick und Shift+Enter kombiniert. Jahre steigen innerhalb desselben Autors ab 1980 beziehungsweise fallen nach Richtungswechsel ab 2025; Prioritäten 1/2 bleiben erhalten, Scroll-Reset auf 0, keine Browserfehler im korrigierten Lauf.
 
 Das geplante Sortiermodell hält eine geordnete Spaltenliste und die Richtung jeder Spalte. Daraus entsteht `Vector[RemoteSort]` für die Remote-Datenquelle. Jeder Einstieg prüft dieselben Fähigkeiten und `sortable`; Spalten benötigen `sortKey`.
 

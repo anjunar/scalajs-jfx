@@ -46,7 +46,7 @@ import {
 import { div, text } from "@anjunar/jfx-core";
 import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";
 import { carousel, dataGrid, remoteSource, tab, tableView, tabs, valueColumn, virtualList } from "../src/index.js";
-import type { ColumnResizePolicy, TableViewHandle, TableRowContext, TableSelectionMode, RemotePage } from "../src/index.js";
+import type { ColumnResizePolicy, TableViewHandle, TableRowContext, TableSelectionMode, RemotePage, SortSpec } from "../src/index.js";
 
 const linkedArtifact = resolve(process.cwd(), "../scalajs-jfx-bridge/dist/fullopt/main.js");
 
@@ -1755,6 +1755,133 @@ describe("table-view", () => {
     header.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     expect(sorts).toBe(0);
     app.dispose();
+  });
+
+  it("shares additive remote sorting between pointer, keyboard and handle with stable priorities", async () => {
+    type Query = { sorting: readonly SortSpec[] };
+    const load = vi.fn(async (_query: Query) => ({ items: ["Ada"], totalCount: 1 }));
+    const visible = property(true);
+    const root = document.createElement("div"); document.body.appendChild(root);
+    let table!: TableViewHandle<string>;
+    const app = mount(root, () => {
+      table = tableView(remoteSource({ initialQuery: { sorting: [] } as Query, initial: ["Ada"], totalCount: 1,
+        load, sortQuery: (query, sorting) => ({ ...query, sorting }) }), [
+        valueColumn("Author", row => row, { sortKey: "author", sortable: true, visible }),
+        valueColumn("Year", row => row, { sortKey: "year", sortable: true }),
+      ], { paging: true });
+    });
+    const headers = Array.from(root.querySelectorAll<HTMLElement>("[role=columnheader]"));
+    const author = { field: "author", ascending: true };
+    const year = { field: "year", ascending: true };
+    try {
+      headers[0]!.click();
+      headers[1]!.dispatchEvent(new MouseEvent("click", { bubbles: true, shiftKey: true }));
+      expect(table.sorting.get).toEqual([author, year]);
+      expect(headers.map(h => h.getAttribute("data-sort-priority"))).toEqual(["1", "2"]);
+      expect(root.querySelectorAll("[aria-sort]")).toHaveLength(1);
+      expect(headers[0]!.getAttribute("aria-sort")).toBe("ascending");
+      expect(headers[1]!.getAttribute("aria-description")).toBe("Ascending, 2/2");
+      headers[1]!.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", shiftKey: true, bubbles: true }));
+      expect(table.sorting.get).toEqual([author, { ...year, ascending: false }]);
+      expect(table.toggleSort(1, true)).toBe(true);
+      expect(table.sorting.get).toEqual([author]);
+      expect(headers[1]!.hasAttribute("data-sort-priority")).toBe(false);
+      expect(table.toggleSort(1, true)).toBe(true);
+      expect(table.moveColumn(0, 1)).toBe(true);
+      expect(Array.from(root.querySelectorAll("[role=columnheader]"))).toEqual([headers[1], headers[0]]);
+      expect(table.sorting.get).toEqual([author, year]);
+      visible.set(false); // Visibility does not silently alter the remote query.
+      expect(table.sorting.get).toEqual([author, year]);
+      expect(headers[1]!.getAttribute("data-sort-priority")).toBe("2");
+      expect(table.clearSort()).toBe(true);
+      expect(table.sorting.get).toEqual([]);
+      expect(table.clearSort()).toBe(false);
+      await vi.waitFor(() => expect(root.querySelector("[role=grid]")?.getAttribute("aria-busy")).toBe("false"));
+      expect(load.mock.calls.at(-1)?.[0].sorting).toEqual([]);
+    } finally { app.dispose(); root.remove(); }
+    expect(table.toggleSort(0)).toBe(false);
+    expect(table.clearSort()).toBe(false);
+  });
+
+  it("guards sort keyboard commands and resets paging through the same remote command", async () => {
+    type Query = { offset: number; limit: number; sorting: readonly SortSpec[] };
+    const rows = Array.from({ length: 10 }, (_, i) => i);
+    const load = vi.fn(async (query: Query) => ({ items: rows.slice(query.offset, query.offset + query.limit), offset: query.offset, totalCount: 10 }));
+    const root = document.createElement("div");
+    let table!: TableViewHandle<number>;
+    const app = mount(root, () => {
+      table = tableView(remoteSource({ initialQuery: { offset: 0, limit: 5, sorting: [] } as Query,
+        initial: rows, totalCount: 10, load,
+        rangeQuery: (q, offset, limit) => ({ ...q, offset, limit }),
+        sortQuery: (q, sorting) => ({ ...q, offset: 0, sorting }) }), [
+        valueColumn("Value", row => row, { sortKey: "value", sortable: true }),
+        valueColumn("Locked", row => row, { sortKey: "locked", sortable: false }),
+      ], { paging: true, pageSize: 5 });
+    });
+    try {
+      const header = root.querySelector<HTMLElement>("[role=columnheader]")!;
+      for (const init of [{ isComposing: true }, { repeat: true }, { ctrlKey: true }, { altKey: true }])
+        header.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, ...init }));
+      const canceled = new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true });
+      canceled.preventDefault(); header.dispatchEvent(canceled);
+      for (const index of [-1, 0.5, Infinity, NaN, 1, 2]) expect(table.toggleSort(index)).toBe(false);
+      expect(load).not.toHaveBeenCalled();
+      root.querySelectorAll<HTMLAnchorElement>("a.jfx-virtualized-page-button")[1]!.click();
+      expect(root.textContent).toContain("Page 2 of 2");
+      const space = new KeyboardEvent("keydown", { key: " ", bubbles: true, cancelable: true });
+      header.dispatchEvent(space);
+      expect(space.defaultPrevented).toBe(true);
+      expect(root.textContent).toContain("Page 1 of 2");
+      expect(table.sorting.get).toEqual([{ field: "value", ascending: true }]);
+      await vi.waitFor(() => expect(load).toHaveBeenCalledTimes(1));
+      header.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+      expect(table.sorting.get).toEqual([{ field: "value", ascending: false }]);
+    } finally { app.dispose(); }
+  });
+
+  it("sorts while a missing scroll range is loading without reentrant loading notifications", () => {
+    type Query = { offset: number; limit: number; sorting: readonly SortSpec[] };
+    const load = vi.fn((_query: Query) => new Promise<RemotePage<number, Query>>(() => {}));
+    let table!: TableViewHandle<number>;
+    const root = document.createElement("div");
+    const app = mount(root, () => {
+      table = tableView(remoteSource({ initialQuery: { offset: 90, limit: 10, sorting: [] } as Query,
+        initial: [90, 91], initialOffset: 90, totalCount: 100, load,
+        rangeQuery: (q, offset, limit) => ({ ...q, offset, limit }),
+        sortQuery: (q, sorting) => ({ ...q, offset: 0, sorting }) }), [
+        valueColumn("ID", row => row, { sortKey: "id", sortable: true }),
+      ], { paging: false, rowHeight: 20 });
+    });
+    try {
+      expect(load).toHaveBeenCalled();
+      expect(table.toggleSort(0)).toBe(true);
+      expect(load.mock.calls.at(-1)?.[0].sorting).toEqual([{ field: "id", ascending: true }]);
+      expect(root.querySelector("[role=grid]")?.getAttribute("aria-busy")).toBe("true");
+    } finally { app.dispose(); }
+  });
+
+  it("keeps sort commands inert during SSR/hydration and on local sources", async () => {
+    const load = vi.fn(async () => ({ items: ["Ada"], totalCount: 1 }));
+    let table!: TableViewHandle<string>;
+    const build = (): void => {
+      table = tableView(remoteSource({ initialQuery: {}, initial: ["Ada"], totalCount: 1, load,
+        sortQuery: (q, _sorting) => q }), [valueColumn("Author", row => row, { sortable: true, sortKey: "author" })]);
+      expect(table.toggleSort(0)).toBe(false);
+      expect(table.clearSort()).toBe(false);
+    };
+    const root = document.createElement("div");
+    root.innerHTML = (await renderToString(build)).html;
+    const header = root.querySelector("[role=columnheader]");
+    const app = await hydrate(root, build);
+    try {
+      expect(root.querySelector("[role=columnheader]")).toBe(header);
+      expect(load).not.toHaveBeenCalled();
+    } finally { app.dispose(); }
+    const local = mount(document.createElement("div"), () => {
+      table = tableView(listProperty(["Ada"]), [valueColumn("Author", row => row, { sortable: true, sortKey: "author" })]);
+    });
+    try { expect(table.toggleSort(0)).toBe(false); expect(table.sorting.get).toEqual([]); }
+    finally { local.dispose(); }
   });
 
   interface Book {

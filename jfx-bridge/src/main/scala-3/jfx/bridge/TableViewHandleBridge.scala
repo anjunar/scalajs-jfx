@@ -6,6 +6,17 @@ import scala.scalajs.js.JSConverters.*
 
 /** Minimal imperative table contract; all operations remain owned by the Scala component. */
 final class TableViewHandleBridge(private val table: TableView[js.Any]) extends js.Object {
+  val sorting = new ReadOnlyPropertyHandle(
+    table.sortingProperty.map(
+      _.map(sort => js.Dynamic.literal(field = sort.field, ascending = sort.ascending)).toJSArray
+    )
+  )
+  def toggleSort(index: Double, additive: js.UndefOr[Boolean]): Boolean =
+    validIndex(index) && table.toggleSort(
+      table.getVisibleLeafColumn(index.toInt),
+      additive.getOrElse(false)
+    )
+  def clearSort(): Boolean            = table.clearSort()
   private val model                   = table.selectionModel
   val focusedIndex                    = new ReadOnlyPropertyHandle(table.focusedIndexProperty)
   val focusedItem                     = new ReadOnlyPropertyHandle(table.focusedItemProperty)

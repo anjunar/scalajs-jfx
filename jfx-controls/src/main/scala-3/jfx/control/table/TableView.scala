@@ -82,6 +82,10 @@ final class TableView[S] private (
   private val visibleRowsProperty         = ListProperty[VisibleRow]()
   private val columnStateRevisionProperty = Property(0)
   private val headerStateRevisionProperty = Property(0)
+
+  /** Requested remote sort descriptors, not a promise that the corresponding load succeeded. */
+  val sortingProperty: ReadOnlyProperty[Vector[RemoteSort]] =
+    headerStateRevisionProperty.map(_ => currentRemoteSorting)
   private val contentHeaderHeightProperty = Property(0.0)
   private val attachedColumns = mutable.LinkedHashMap.empty[TableColumn[S, ?], CompositeDisposable]
 
@@ -522,6 +526,9 @@ final class TableView[S] private (
         on("compositionend")(_ => composingTarget = None)
       }
       classIf("jfx-table-view-loading", remoteStateRevisionProperty.map(_ => remoteLoading))
+      addDisposable(
+        remoteStateRevisionProperty.observe(_ => setAttribute("aria-busy", remoteLoading.toString))
+      )
       classIf("jfx-table-view-error", remoteStateRevisionProperty.map(_ => remoteError.nonEmpty))
 
       style {
@@ -613,7 +620,7 @@ final class TableView[S] private (
                       TableView.this,
                       column,
                       headerCell,
-                      () => toggleRemoteSort(typedColumn),
+                      additive => toggleSort(column, additive),
                       cursor.isBrowser
                     )
                   )
@@ -621,6 +628,34 @@ final class TableView[S] private (
                     "jfx-table-header-cell-sortable",
                     headerStateRevisionProperty.map(_ => isRemoteSortable(typedColumn))
                   )
+                  headerCell.addDisposable(headerStateRevisionProperty.observe { _ =>
+                    if (!headerCell.isDisposed) {
+                      val sorting  = currentRemoteSorting
+                      val priority =
+                        sortKeyOf(column).fold(-1)(key => sorting.indexWhere(_.field == key))
+                      if (priority >= 0)
+                        headerCell.setAttribute("data-sort-priority", (priority + 1).toString)
+                      else headerCell.removeAttribute("data-sort-priority")
+                      // ARIA permits aria-sort on one header only. Other terms retain their
+                      // direction/priority as an accessible description and visible indicator.
+                      if (
+                        priority == 0 && visibleColumns
+                          .find(c => sortKeyOf(c) == sortKeyOf(column))
+                          .contains(column)
+                      )
+                        headerCell.setAttribute(
+                          "aria-sort",
+                          if (sorting.head.ascending) "ascending" else "descending"
+                        )
+                      else headerCell.removeAttribute("aria-sort")
+                      if (priority >= 0)
+                        headerCell.setAttribute(
+                          "aria-description",
+                          s"${if (sorting(priority).ascending) "Ascending" else "Descending"}, ${priority + 1}/${sorting.size}"
+                        )
+                      else headerCell.removeAttribute("aria-description")
+                    }
+                  })
                   headerCell.classCondition(
                     "jfx-table-header-cell-sorted",
                     headerStateRevisionProperty.map(_ => currentSortFor(typedColumn).nonEmpty)
@@ -871,6 +906,11 @@ final class TableView[S] private (
     bumpHeaderState()
   }
 
+  override protected def onRemoteSortingChanged(sorting: Vector[RemoteSort]): Unit = {
+    super.onRemoteSortingChanged(sorting)
+    bumpHeaderState()
+  }
+
   override protected def refreshItemState(): Unit = {
     if (itemsUpdateInProgress) return
     placeholderVisibleProperty.set(renderableCount == 0 || visibleColumns.isEmpty)
@@ -912,32 +952,48 @@ final class TableView[S] private (
   private def currentRemoteSorting: Vector[RemoteSort] =
     Option(currentRemoteItems).fold(Vector.empty[RemoteSort])(_.getSorting)
 
-  private def sortKeyOf(column: TableColumn[S, Any]): Option[String] =
+  private def sortKeyOf(column: TableColumn[S, ?]): Option[String] =
     column.sortKeyProperty.get.map(_.trim).filter(_.nonEmpty)
 
   private def currentSortFor(column: TableColumn[S, Any]): Option[RemoteSort] =
     sortKeyOf(column).flatMap(key => currentRemoteSorting.find(_.field == key))
 
-  private def isRemoteSortable(column: TableColumn[S, Any]): Boolean =
+  private def isRemoteSortable(column: TableColumn[S, ?]): Boolean =
     Option(currentRemoteItems).exists(remote =>
       remote.supportsSorting && column.sortableProperty.get && sortKeyOf(column).nonEmpty
     )
 
-  private def toggleRemoteSort(column: TableColumn[S, Any]): Unit =
-    (Option(currentRemoteItems), sortKeyOf(column)) match {
-      case (Some(remote), Some(sortKey)) if isRemoteSortable(column) =>
-        val next = currentSortFor(column) match {
-          case Some(sort) if sort.ascending =>
-            Vector(RemoteSort(sort.field, ascending = false))
-          case Some(_) => Vector.empty
-          case None    => Vector(RemoteSort(sortKey, ascending = true))
-        }
+  /** Browser command: cycles unsorted/ascending/descending. Shift/additive preserves priorities.
+    * Returns false before hydration completes, for unavailable columns or after disposal.
+    */
+  def toggleSort(column: TableColumn[S, ?], additive: Boolean = false): Boolean =
+    if (
+      !browserRendering || !scrollNavigationMounted || !canMoveColumns || column == null ||
+      getVisibleLeafIndex(column) < 0 || !isRemoteSortable(column)
+    ) false
+    else
+      applyRemoteSorting(
+        TableSortOrder.toggle(currentRemoteSorting, sortKeyOf(column).get, additive)
+      )
+
+  def clearSort(): Boolean =
+    if (
+      !browserRendering || !scrollNavigationMounted || !canMoveColumns || currentRemoteSorting.isEmpty
+    ) false
+    else applyRemoteSorting(Vector.empty)
+
+  private def applyRemoteSorting(next: Vector[RemoteSort]): Boolean =
+    Option(currentRemoteItems) match {
+      case Some(remote) if remote.supportsSorting =>
+        initialScrollIndex = -1
         crawlState = crawlState.copy(offset = 0).withSorting(next)
         persistCrawlState(crawlState)
+        pageIndexProperty.set(0)
         scrollTopProperty.set(0.0)
         domElement(viewportComponent).foreach(_.scrollTop = 0.0)
         discardResult(remote.applySorting(next))
-      case _ => ()
+        true
+      case _ => false
     }
 
   def select(index: Int): Unit = selectionModel.select(index)

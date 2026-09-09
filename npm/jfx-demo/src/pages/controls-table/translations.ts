@@ -1,6 +1,8 @@
 import { catalogEntry, i18n, type CatalogEntry } from "@anjunar/jfx-core";
 
 export const entries: readonly CatalogEntry[] = [
+  catalogEntry(i18n`Shift-click headers to sort by multiple columns. Enter or Space sorts a focused header; Shift keeps other sort columns.`, { de: "Shift-Klick auf Spaltenköpfe sortiert nach mehreren Spalten. Enter oder Leertaste sortiert den fokussierten Spaltenkopf; Shift behält andere Sortierspalten bei." }),
+  catalogEntry(i18n`Clear sorting`, { de: "Sortierung aufheben" }),
   catalogEntry(i18n`Focus the table: arrows, Home/End and PageUp/PageDown navigate rows. Shift extends selection; Ctrl/Cmd moves focus only; Space selects.`, { de: "Tabelle fokussieren: Pfeile, Pos1/Ende und Bild auf/ab navigieren. Shift erweitert die Auswahl; Ctrl/Cmd bewegt nur den Fokus; Leertaste wählt aus." }),
   catalogEntry(i18n`Focused row`, { de: "Fokussierte Zeile" }),
   catalogEntry(i18n`For horizontal navigation, use free widths and widen the columns.`, { de: "Für horizontale Navigation auf freie Breiten umschalten und die Spalten verbreitern." }),

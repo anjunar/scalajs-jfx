@@ -5,6 +5,10 @@ import jfx.core.i18n.{CatalogEntry, i18n}
 
 object TableViewPageTranslations {
   val entries: Seq[CatalogEntry] = Seq(
+    de(
+      i18n"Shift-click headers to sort by multiple columns. Enter or Space sorts a focused header; Shift keeps other sort columns.",
+      "Shift-Klick auf Spaltenköpfe sortiert nach mehreren Spalten. Enter oder Leertaste sortiert den fokussierten Spaltenkopf; Shift behält andere Sortierspalten bei."
+    ),
     de(i18n"TableView", "TableView"),
     de(
       i18n"Reactive rows with a stable SSR and hydration structure.",

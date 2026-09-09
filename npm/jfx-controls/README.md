@@ -96,6 +96,28 @@ Invalid/hidden/locked columns, unmeasurable layout, protected hosts and active n
 composition are no-ops, not queued retries. A true result means a width changed or a
 hydration-time request was accepted; SSR and disposed handles return false.
 
+### Remote multi-column sorting
+
+Click a sortable header to cycle ascending, descending, unsorted. Shift-click keeps other
+terms and their priorities, appends a new term, or changes/removes that term in place.
+Focused headers support Enter/Space with the same Shift modifier; resize grips and reorder
+gestures retain their own commands. Arrows include the one-based priority. `aria-sort` is
+on the primary header only; other sorted headers describe their direction and priority.
+
+`table.toggleSort(visibleColumnIndex, additive?)` and `table.clearSort()` use the same
+remote command path, resetting paging and scrolling to the start. Scala takes a column
+instance instead of an index. Commands are inert on local sources, invalid/hidden/unsortable
+columns, protected hosts, active IME composition, during SSR/hydration and after disposal.
+Hiding or moving a sorted column does not alter the remote query. `sorting` (Scala:
+`sortingProperty`) exposes the remote source's **requested** descriptors. A true command
+result means a request was issued, not that its load succeeded; the existing loading/error
+state and accepted-reset selection rules still apply. Transactional sort rollback and
+custom sort-policy/events are not provided by this increment.
+
+The control never sorts/filters cached rows. Supply `sortKey`/`sortable` and a remote
+`sortQuery` handling all descriptors in order. The demos simulate that backend in their
+loaders; production applications do it through their RemoteDataList/server query.
+
 ### Column visibility menu
 
 Set `tableMenuButtonVisible: true` to show a Columns button above the header. The table

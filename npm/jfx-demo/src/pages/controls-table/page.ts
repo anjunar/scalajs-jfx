@@ -27,14 +27,17 @@ const books: readonly Book[] = Array.from({ length: TOTAL_BOOKS }, (_, index) =>
 }));
 
 function slice(query: Query): readonly Book[] {
-  const term = query.sorting[0];
-  const ordered = term === undefined
+  const ordered = query.sorting.length === 0
     ? books
     : [...books].sort((left, right) => {
-        const leftValue = left[term.field as keyof Book];
-        const rightValue = right[term.field as keyof Book];
-        const result = leftValue < rightValue ? -1 : leftValue > rightValue ? 1 : 0;
-        return term.ascending ? result : -result;
+        // The demo's simulated remote loader, not a TableView-side sort.
+        for (const term of query.sorting) {
+          const leftValue = left[term.field as keyof Book];
+          const rightValue = right[term.field as keyof Book];
+          const result = leftValue < rightValue ? -1 : leftValue > rightValue ? 1 : 0;
+          if (result !== 0) return term.ascending ? result : -result;
+        }
+        return 0;
       });
   return ordered.slice(query.offset, query.offset + query.limit);
 }
@@ -78,6 +81,8 @@ export function controlsTablePage(): void {
       });
     });
 
+    div(() => text(translated("Shift-click headers to sort by multiple columns. Enter or Space sorts a focused header; Shift keeps other sort columns.")));
+    button(translated("Clear sorting"), {}, () => { onClick(() => table.clearSort()); });
     button(translated("Toggle author column"), {}, () => {
       onClick(() => showAuthors.set(!showAuthors.get));
     });

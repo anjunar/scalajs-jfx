@@ -186,11 +186,11 @@
 }
 
 .jfx-table-header-cell.jfx-table-header-cell-sorted-asc::after {
-  content: "↑";
+  content: "↑" attr(data-sort-priority);
 }
 
 .jfx-table-header-cell.jfx-table-header-cell-sorted-desc::after {
-  content: "↓";
+  content: "↓" attr(data-sort-priority);
 }
 
 .jfx-table-row {

@@ -95,16 +95,20 @@ object TableViewPage {
       books: Vector[Book],
       sorting: Vector[RemoteSort]
   ): Vector[Book] =
-    sorting.headOption match {
-      case Some(sort) =>
-        val sorted = sort.field match {
-          case "title"  => books.sortBy(_.title.toLowerCase)
-          case "author" => books.sortBy(_.author.toLowerCase)
-          case "year"   => books.sortBy(_.year)
-          case _        => books
+    // The simulated remote loader evaluates every term, in priority order.
+    books.sortWith { (left, right) =>
+      sorting.iterator
+        .map { sort =>
+          val result = sort.field match {
+            case "title"  => left.title.compareToIgnoreCase(right.title)
+            case "author" => left.author.compareToIgnoreCase(right.author)
+            case "year"   => left.year.compare(right.year)
+            case _        => 0
+          }
+          if (sort.ascending) result else -result
         }
-        if (sort.ascending) sorted else sorted.reverse
-      case None => books
+        .find(_ != 0)
+        .exists(_ < 0)
     }
 
   def render(books: RemoteListProperty[Book, BookQuery])(using AbstractComponent, Cursor): Unit = {
@@ -131,6 +135,11 @@ object TableViewPage {
         ) {
           vbox {
             style { gap = "16px" }
+            div {
+              text(
+                i18n"Shift-click headers to sort by multiple columns. Enter or Space sorts a focused header; Shift keeps other sort columns."
+              ) {}
+            }
 
             hbox {
               style { gap = "10px"; flexWrap = "wrap" }

@@ -14,6 +14,32 @@ class RemoteListPropertySpec extends AnyFlatSpec with Matchers {
 
   private given ExecutionContext = ExecutionContext.parasitic
 
+  "Remote reload" should "replace pending requests without publishing an intermediate idle state" in {
+    val loader = new ControllableLoader(100)
+    val remote = RemoteListProperty[String, PageQuery](
+      loader,
+      PageQuery(0, 5),
+      executionContext = ExecutionContext.parasitic,
+      rangeQueryUpdater = Some((q, index, limit) => q.copy(index = index, limit = limit))
+    )
+    val states = mutable.ArrayBuffer.empty[Boolean]
+    remote.loadingProperty.observe(states += _)
+    remote.ensureRangeLoaded(50, 55)
+    remote.reload(PageQuery(0, 5))
+    states.toSeq shouldBe Seq(false, true)
+    loader.completeNext() // Stale range may not mark the replacement as idle.
+    remote.loadingProperty.get shouldBe true
+    remote.itemAt(50) shouldBe None
+    loader.completeLast()
+    states.toSeq shouldBe Seq(false, true, false)
+    remote.itemAt(0) shouldBe Some("Member 0")
+    remote.ensureRangeLoaded(80, 85)
+    remote.clear()
+    remote.loadingProperty.get shouldBe false
+    loader.completeAll()
+    remote.loadedLength shouldBe 0
+  }
+
   "RemoteListProperty" should "index preloaded items at an explicit absolute offset" in {
     val remote = RemoteListProperty[String, PageQuery](
       loader = RemoteLoader[String, PageQuery](_ =>
