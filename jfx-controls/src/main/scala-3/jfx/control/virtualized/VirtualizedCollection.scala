@@ -6,6 +6,7 @@ import jfx.core.dsl.ClassDsl.classes
 import jfx.core.dsl.EventDsl.onClick
 import jfx.core.layout.Anchor.{anchor, href}
 import jfx.core.layout.Button.*
+import jfx.core.layout.Condition.when
 import jfx.core.layout.Div
 import jfx.core.layout.Div.div
 import jfx.core.layout.TextComponent.text
@@ -260,14 +261,18 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
     div {
       classes = Seq(s"$cssPrefix-footer", "jfx-virtualized-footer")
 
-      renderPagingControl("Previous", pageDelta = -1)
+      when(displayModeProperty.map(_ == CollectionDisplayMode.Paging)) {
+        renderPagingControl("Previous", pageDelta = -1)
+      }
 
       div {
         classes = Seq("jfx-virtualized-page-status")
         text(pageStatusProperty) {}
       }
 
-      renderPagingControl("Next", pageDelta = 1)
+      when(displayModeProperty.map(_ == CollectionDisplayMode.Paging)) {
+        renderPagingControl("Next", pageDelta = 1)
+      }
 
       button(
         displayModeProperty.map {

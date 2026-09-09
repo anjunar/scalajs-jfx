@@ -158,6 +158,16 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
     html should include("overflow: auto")
   }
 
+  it should "omit the previous and next links in scrolling mode" in {
+    val html = renderTable((0 until 20).map(index => s"Member $index")) {
+      scrolling = true
+    }
+
+    html should not include ">Previous</a>"
+    html should not include ">Next</a>"
+    html should include("Switch to paging")
+  }
+
   it should "hide the paging footer through the TableView DSL" in {
     val html = renderTable(Seq("Alice", "Bob")) {
       scrolling = true

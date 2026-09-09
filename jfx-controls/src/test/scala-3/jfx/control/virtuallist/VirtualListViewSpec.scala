@@ -34,6 +34,18 @@ class VirtualListViewSpec extends AnyFlatSpec with Matchers {
     html should not include "10:Item 10"
   }
 
+  it should "omit the previous and next links in scrolling mode" in {
+    val items = ListProperty[String](js.Array((0 until 30).map(index => s"Item $index")*))
+
+    val html = renderList(items) {
+      scrolling = true
+    }
+
+    html should not include ">Previous</a>"
+    html should not include ">Next</a>"
+    html should include("Switch to paging")
+  }
+
   it should "render unloaded remote positions as measured placeholder cells" in {
     val remote = remoteMembers(pageSize = 5)
     remote.totalCountProperty.set(Some(20))
