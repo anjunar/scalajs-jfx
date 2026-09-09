@@ -36,11 +36,16 @@ import {
   attr,
   self,
   onInput,
+  classes,
+  classIf,
+  disposeWith,
+  onClick,
+  capture,
 } from "@anjunar/jfx-core";
 import { div, text } from "@anjunar/jfx-core";
 import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";
 import { carousel, dataGrid, remoteSource, tab, tableView, tabs, valueColumn, virtualList } from "../src/index.js";
-import type { TableViewHandle, RemotePage } from "../src/index.js";
+import type { TableViewHandle, TableRowContext, RemotePage } from "../src/index.js";
 
 const linkedArtifact = resolve(process.cwd(), "../scalajs-jfx-bridge/dist/fullopt/main.js");
 
@@ -338,6 +343,130 @@ describe("table-view", () => {
     shown.set(true);
     expect(hiddenRenders).toBe(previousRenders);
     root.remove();
+  });
+
+  it("composes typed custom rows in their own scope with standard cells and managed subscriptions", () => {
+    const root = document.createElement("div");
+    const source = listProperty([{ name: "Ada" }, { name: "Grace" }]);
+    const showName = property(true);
+    const signal = property(0);
+    const contexts: TableRowContext<{ name: string }>[] = [];
+    let updates = 0;
+    let clicks = 0;
+    let table!: TableViewHandle<{ name: string }>;
+    const app = mount(root, () => {
+      table = tableView(source, [valueColumn("Name", (person) => person.name, { visible: showName })], {
+        paging: true,
+        row: (row) => {
+          contexts.push(row);
+          classes("custom-row");
+          classIf("chosen", row.selected);
+          attr("data-row", String(row.index.get));
+          onClick(() => { clicks++; });
+          disposeWith(signal.observeWithoutInitial(() => { updates++; }));
+          div(() => { classes("cell-wrapper"); row.renderCells(); });
+        },
+      });
+    });
+    try {
+      const rows = root.querySelectorAll(".custom-row");
+      expect(rows).toHaveLength(2);
+      expect(rows[1]!.querySelector(".cell-wrapper > .jfx-table-cell")!.textContent).toBe("Grace");
+      rows[1]!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      expect(clicks).toBe(1);
+      expect(table.selectedItem.get).toBe(source.get[1]);
+      expect(contexts[1]!.selected.get).toBe(true);
+      expect(rows[1]!.classList.contains("chosen")).toBe(true);
+      expect(rows[1]!.getAttribute("aria-selected")).toBe("true");
+      table.clearSelection();
+      expect(rows[1]!.classList.contains("chosen")).toBe(false);
+      signal.set(1);
+      expect(updates).toBe(2);
+      showName.set(false);
+      expect(root.querySelectorAll(".custom-row")).toHaveLength(0);
+      signal.set(2);
+      expect(updates).toBe(2);
+      showName.set(true);
+      expect(root.querySelectorAll(".custom-row")).toHaveLength(2);
+    } finally { app.dispose(); }
+    signal.set(3);
+    expect(updates).toBe(2);
+  });
+
+  it("hydrates custom row content with DOM identity and refreshes snapshots", async () => {
+    const person = { name: "Ada" };
+    const source = listProperty([person]);
+    let table!: TableViewHandle<typeof person>;
+    const build = (): void => {
+      table = tableView(source, [valueColumn("Unused", (row) => row.name)], {
+        paging: true,
+        row: (row) => { classes("summary-row"); text(`Person: ${row.item.get!.name}`); },
+      });
+    };
+    const rendered = await renderToString(build);
+    const root = document.createElement("div");
+    root.innerHTML = rendered.html;
+    document.body.appendChild(root);
+    const before = root.querySelector(".summary-row");
+    const app = await hydrate(root, build);
+    try {
+      expect(root.querySelector(".summary-row")).toBe(before);
+      expect(root.querySelector(".jfx-table-cell")).toBeNull();
+      person.name = "Grace";
+      table.refresh();
+      expect(root.querySelector(".summary-row")).not.toBe(before);
+      expect(root.querySelector(".summary-row")!.textContent).toBe("Person: Grace");
+    } finally { app.dispose(); root.remove(); }
+  });
+
+  it("binds custom placeholder rows and replaces them after a remote range arrives", async () => {
+    const requests: Array<{ offset: number; limit: number; resolve: (page: RemotePage<string, { offset: number; limit: number }>) => void }> = [];
+    const source = remoteSource<string, { offset: number; limit: number }>({
+      initialQuery: { offset: 0, limit: 3 }, initial: ["loaded"], totalCount: 3,
+      rangeQuery: (_query, offset, limit) => ({ offset, limit }),
+      load: (query) => new Promise((resolve) => requests.push({ ...query, resolve })),
+    });
+    const root = document.createElement("div");
+    let table!: TableViewHandle<string>;
+    const app = mount(root, () => {
+      table = tableView(source, [valueColumn("Value", (row) => row)], {
+        paging: true, pageSize: 3,
+        row: (row) => {
+          attr("data-empty", String(row.empty.get));
+          text(row.empty.get ? `pending:${row.index.get}` : row.item.get!);
+        },
+      });
+    });
+    try {
+      const pending = root.querySelector('[data-empty="true"]');
+      expect(pending).not.toBeNull();
+      table.selectIndex(1);
+      expect(pending!.getAttribute("aria-selected")).toBe("false");
+      await vi.waitFor(() => expect(requests.length).toBeGreaterThan(0));
+      for (const request of [...requests]) request.resolve({
+        items: Array.from({ length: Math.min(request.limit, 3 - request.offset) }, (_, i) => `item:${request.offset + i}`),
+        offset: request.offset, totalCount: 3,
+      });
+      await vi.waitFor(() => expect(root.querySelector('[data-empty="true"]')).toBeNull());
+      expect(root.contains(pending)).toBe(false);
+      expect(table.selectedItem.get).toBe("item:1");
+      expect(root.querySelector('[aria-selected="true"]')!.textContent).toBe("item:1");
+    } finally { app.dispose(); }
+  });
+
+  it("rejects duplicate and delayed standard-cell composition", () => {
+    const root = document.createElement("div");
+    let delayed!: () => void;
+    const app = mount(root, () => tableView(listProperty(["Ada"]), [valueColumn("Name", (row) => row)], {
+      row: (row) => {
+        row.renderCells();
+        expect(() => row.renderCells()).toThrow(/only be rendered once/);
+        const runInRow = capture();
+        delayed = () => runInRow(() => row.renderCells());
+      },
+    }));
+    try { expect(() => delayed()).toThrow(/synchronously inside the row renderer/); }
+    finally { app.dispose(); }
   });
 
   it("returns a refresh handle that cannot mutate the disposed table", () => {

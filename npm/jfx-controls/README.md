@@ -116,6 +116,39 @@ Derived properties may notify even when only the other selection field changes.
 Multi-selection, cell selection, and a separate focus model are not available yet.
 Selection identity does not guarantee DOM/editor identity across data reordering.
 
+### Custom rows
+
+`TableViewOptions<T>.row` replaces the content of each row. Its callback runs in that
+row's component scope: styles, attributes, events and `disposeWith` belong to the row.
+Call `renderCells()` to include the usual columns, or omit it for entirely custom content:
+
+```ts
+import { attr, style } from "@anjunar/jfx-core";
+
+tableView(books, [valueColumn("Title", (book) => book.title)], {
+  row: (row) => {
+    if (!row.empty.get) attr("title", row.item.get?.title ?? "");
+    style("font-weight", row.selected.map((selected) => selected ? "600" : "400"));
+    row.renderCells();
+  },
+});
+```
+
+`TableRowContext<T>` exposes read-only `item`, absolute `index`, `empty`, and `selected`
+properties. Remote placeholders also receive the callback, with `empty = true` and
+`item = null`; they remain non-interactive and unselected until replaced by loaded rows.
+A loaded null value is distinguishable by `empty = false`. Row selection, standard classes
+and cleanup remain runtime-owned even when standard cells are omitted.
+
+`renderCells()` may be called at most once, synchronously in the row callback or inside
+a nested element built by that callback. Give custom wrappers the appropriate layout
+(for example `display: flex`) to retain column alignment. Deferred calls are rejected.
+The callback does not rerun on selection changes: use the supplied reactive properties.
+It does run for newly materialized rows and on `refresh()`. Refresh now recreates whole
+visible rows, including custom snapshot content; it may discard local editor state.
+Overlapping scroll slots with unchanged items retain their row instances. Fixed row
+height still applies; this is not automatic cell spanning or a variable-height layout.
+
 ### Other controls
 
 `tabs` accepts `tab(title, body)` definitions and supports `active-only` or `keep-mounted` rendering. `carousel` accepts a list property and a slide renderer; `autoAdvanceMs` controls browser auto-advance. `tableView`, `dataGrid`, and `virtualList` accept a local `ListProperty` or a `RemoteSource`.
@@ -157,7 +190,7 @@ SSR renders a stable paged or crawl slice. After successful hydration, `tableVie
 - `tab`, `tabs`, `carousel`
 - `column`, `valueColumn`, `ValueColumnOptions`, `tableView`, `dataGrid`, `virtualList`
 - `remoteSource`, `RemoteSource`, `RemotePage`, `SortSpec`
-- `TabsOptions`, `CarouselOptions`, `TableViewOptions`, `TableViewHandle`, `DataGridOptions`, `VirtualListOptions`
+- `TabsOptions`, `CarouselOptions`, `TableViewOptions<T>`, `TableViewHandle<T>`, `TableRowContext<T>`, `DataGridOptions`, `VirtualListOptions`
 
 ## Related modules
 

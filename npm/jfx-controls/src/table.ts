@@ -7,8 +7,8 @@
  * a few options. `table-view` is a registry entry in `jfx-bridge`
  * (`ControlFactories.scala`).
  */
-import { component } from "@anjunar/jfx-core";
-import type { Reactive, ReadOnlyProperty } from "@anjunar/jfx-core";
+import { component, currentScope, withScope } from "@anjunar/jfx-core";
+import type { ComponentHandle, Reactive, ReadOnlyProperty, ScopeHandle } from "@anjunar/jfx-core";
 import { body, defined, rowBody } from "./internal.js";
 import type { Source } from "./data-source.js";
 
@@ -59,7 +59,19 @@ export function column<T>(
   return { text, cell, ...options };
 }
 
-export interface TableViewOptions {
+/** State of one mounted row, including unloaded remote placeholders. */
+export interface TableRowContext<T> {
+  readonly item: ReadOnlyProperty<T | null>;
+  readonly index: ReadOnlyProperty<number>;
+  readonly empty: ReadOnlyProperty<boolean>;
+  readonly selected: ReadOnlyProperty<boolean>;
+  /** Optional standard cells. Call at most once, synchronously in this row body or a nested element. */
+  renderCells(): void;
+}
+
+export interface TableViewOptions<T = unknown> {
+  /** Replaces row content. Styles/events apply to the row; call row.renderCells() for standard columns. */
+  readonly row?: (row: TableRowContext<T>) => void;
   readonly rowHeight?: number;
   readonly showHeader?: boolean;
   readonly showFooter?: boolean;
@@ -100,13 +112,20 @@ export interface TableViewHandle<T = unknown> {
 export function tableView<T, Q = unknown>(
   source: Source<T, Q>,
   columns: readonly ColumnDef<T>[],
-  options: TableViewOptions = {}
+  options: TableViewOptions<T> = {}
 ): TableViewHandle<T> {
   let handle: TableViewHandle<T> | undefined;
   component(
     "table-view",
     defined({
       source,
+      row: options.row
+        ? (row: Omit<TableRowContext<T>, "renderCells">, self: ComponentHandle, scope: ScopeHandle,
+           cells: (scope: ScopeHandle) => void) => withScope(scope, self, () => options.row!({
+             item: row.item, index: row.index, empty: row.empty, selected: row.selected,
+             renderCells: () => cells(currentScope()),
+           }))
+        : undefined,
       receiveHandle: (value: TableViewHandle<T>) => { handle = value; },
       columns: columns.map((col) => ({
         text: col.text,

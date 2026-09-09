@@ -1,6 +1,6 @@
 # TableView: Feature-Stand und Implementierungsplan
 
-Stand: 09.09.2026 · Ausgangsanalyse: `7295d92` · einschließlich Grundlagenpaket, Spaltensichtbarkeit und Auswahl-/Remote-Vertrag · Referenz: JavaFX 26.
+Stand: 09.09.2026 · Ausgangsanalyse: `7295d92` · einschließlich Grundlagenpaket, Spaltensichtbarkeit, Auswahl-/Remote-Vertrag und RowFactory · Referenz: JavaFX 26.
 
 Dieses Dokument beschreibt, welche Funktionen unsere TableView bereits unterstützt und wie wir die fehlenden Fähigkeiten der JavaFX-TableView ergänzen. Es ist ein Implementierungsplan; als **geplant** bezeichnete Modelle, Methoden und Dateien existieren noch nicht.
 
@@ -54,11 +54,38 @@ Paging, SSR, Hydration, Crawl-Zustand und Remote-Nachladen sind vorhandene JFX-E
 
 ## 2. Bestandsaufnahme im Repository
 
+### Implementiert: eigene Tabellenzeilen
+
+- Scala: `rowFactoryProperty` und DSL `rowFactory = table => new TableRow[S] { ... }`. Die Factory liefert pro benötigter Zeile eine frische, ungemountete Instanz; null, bereits gebundene oder entsorgte Ergebnisse werden abgewiesen. `None` stellt die Standardfactory wieder her. Ein Factory-Wechsel ersetzt die sichtbaren Zeilen und entsorgt deren Bindungen.
+- `TableRow` stellt lesbare Properties für `item`, absoluten `index`, `empty` und `selected` sowie die zugehörige `tableView` bereit. `renderContent` ist der Erweiterungspunkt; `renderCells` komponiert optional einmal die normalen sichtbaren Spalten, auch innerhalb eines eigenen Containers. Tabellenbindung, Auswahl/Klick, Doppelklick, Zeilenklassen und Disposal bleiben im finalen `compose`.
+- TypeScript: `TableViewOptions<T>.row` erhält einen typisierten `TableRowContext<T>` mit demselben Zustand und `renderCells()`. Der Callback läuft im Komponenten-Kontext der Zeile: Klassen, Attribute, Styles, Events und `disposeWith` beziehen sich auf diese Zeile. Ohne Callback gilt unverändert der Standardrenderer. Ohne `renderCells()` wird ausschließlich eigener Inhalt gezeigt.
+- Die Factory verarbeitet auch ungeladene Remote-Positionen (`empty=true`, `item=null`). Diese Platzhalter bleiben wie bisher nicht interaktiv und `selected=false`; beim Eintreffen des Datensatzes entstehen gebundene Datenzeilen. `empty` unterscheidet einen fehlenden Datensatz von einem tatsächlich geladenen null-Wert.
+- Überlappende unveränderte Scrollslots erhalten ihre RowFactory-Instanzen. Ohne sichtbare Spalten wird keine Zeile erzeugt. `refresh()` baut nun die gesamten sichtbaren Zeileninhalte einschließlich eigener Snapshot-Inhalte neu auf; eine Auswahl bleibt dabei erhalten.
+- Die Demo `/controls/table` verwendet eigene Zeilen mit Buch-Tooltip und reaktiver Schriftstärke für die Auswahl. Das Rendering bleibt vollständig in derselben Scala.js-Runtime.
+
+**Migration:** Eigene Scala-Row-Unterklassen überschreiben `renderContent`, nicht mehr `compose`. `TableRow.itemProperty` und `indexProperty` sind jetzt nur lesbar. Bestehende `tableRow`-/Bindungshelfer bleiben verfügbar; Factories verwenden jedoch `new TableRow[S]`, nicht den bereits mountenden DSL-Builder. `renderCells()` darf in TypeScript nur synchron im Row-Callback bzw. einem synchron komponierten Kindelement und höchstens einmal aufgerufen werden. Neue Factory/Refresh/Datensatzersatz können lokale Editorentwürfe zurücksetzen. Es gibt weiterhin keine variablen Zeilenhöhen, automatische Zellverschmelzung oder Erhaltung von Row-Instanzen über Datenverschiebungen.
+
+Scala-Beispiel innerhalb einer `TableView[Person]` mit den üblichen DSL-Imports:
+
+```scala
+rowFactory = _ => new TableRow[Person] {
+  override protected def renderContent(using AbstractComponent, Cursor): Unit = {
+    setAttribute("data-row-index", indexProperty.get.toString)
+    classIf("person-selected", selectedProperty)
+    renderCells
+  }
+}
+```
+
+Für eigene Inhalte `renderCells` ersetzen oder ergänzen. TypeScript-Beispiel und Scope-Regeln stehen im [Paket-README](npm/jfx-controls/README.md#custom-rows). Das entspricht dem Erweiterungszweck der [JavaFX-RowFactory](https://openjfx.io/javadoc/26/javafx.controls/javafx/scene/control/TableView.html#rowFactoryProperty()), nicht einer Portierung des JavaFX-Skins.
+
+### Bausteine
+
 | Baustein | Heutige Verantwortung und Befund |
 | --- | --- |
 | [TableView.scala](jfx-controls/src/main/scala-3/jfx/control/table/TableView.scala) | Spaltenliste, feste Zeilenhöhe, Zeilenfenster, einfache Auswahl, Remote-Header-Sortierung und automatische Breitenverteilung. |
 | [TableColumn.scala](jfx-controls/src/main/scala-3/jfx/control/table/TableColumn.scala) | Text, bevorzugte Breite, bestehender Zeilenrenderer, beobachtbare Zellwerte, Zellfactory, Tabellenzuordnung, `sortable` und `sortKey`. [TableColumnList.scala](jfx-controls/src/main/scala-3/jfx/control/table/TableColumnList.scala) validiert Listenänderungen vor ihrer Veröffentlichung. |
-| [TableRow.scala](jfx-controls/src/main/scala-3/jfx/control/table/TableRow.scala) | Erzeugt TableCells über die Spaltenfactory und reagiert auf Spalten-/Rendereränderungen. Unterstützt Auswahl per Klick und einen Zeilen-Doppelklick-Callback. |
+| [TableRow.scala](jfx-controls/src/main/scala-3/jfx/control/table/TableRow.scala) | Integrierte RowFactory, lesbarer Zeilenkontext und überschreibbares `renderContent`; optionale Standardzellen reagieren auf Spalten-/Rendereränderungen. Auswahl/Klick, Doppelklick und Lifecycle bleiben zentral. |
 | [TableCell.scala](jfx-controls/src/main/scala-3/jfx/control/table/TableCell.scala) | Integrierter Zellkontext, beobachteter Wert, Default-Text oder eigener Inhalt über `renderContent`, Breitenbindung und Disposal. |
 | [VirtualizedCollection.scala](jfx-controls/src/main/scala-3/jfx/control/virtualized/VirtualizedCollection.scala) | Gemeinsame Paging-/Scroll-, URL-, Viewport- und Remote-Logik für TableView, DataGrid und VirtualListView. |
 | [CrawlableCollection.scala](jfx-controls/src/main/scala-3/jfx/control/virtualized/CrawlableCollection.scala) | Crawl-Cookies und Wiederherstellung rund um SSR/Hydration. |
@@ -93,7 +120,7 @@ Referenzen: [TableColumn](https://openjfx.io/javadoc/26/javafx.controls/javafx/s
 | D03 | Typisierter, beobachtbarer Zellwert `S → T` | Vorhanden | Scala-Factory und Zellwert-Lookups sowie TypeScript-`valueColumn` mit beobachteten Werten/Snapshots. Lookup-Handles für TypeScript fehlen noch. M1. |
 | D04 | Austauschbare `cellFactory`, Default-Zelle | Vorhanden | Integrierte `TableCell[S,T]`, Default-Text und eigener `renderContent`; TypeScript bietet den typisierten Content-Callback in `valueColumn`. M1. |
 | D05 | Zellkontext und Zustände | Teilweise | Item/empty, Tabelle, Zeile, Spalte und Index sind angebunden. selected, focused und editing fehlen noch. M2/M4. |
-| D06 | `rowFactory` und Zeilenkontext | Teilweise | `TableRow` existiert, wird jedoch fest erzeugt. Factory für eigene TableRows mit vollständiger Zeilenkomposition sowie Stil, Tooltip, Menü und Events anbieten. M1/M6. |
+| D06 | `rowFactory` und Zeilenkontext | Vorhanden | Scala-RowFactory und TypeScript-`row`-Renderer mit item/index/empty/selected, eigenen Inhalten und optionalen Standardzellen. Stil, native Tooltips und Events über Komponentenmittel; fertige Menü-/Tooltip-Presenter bleiben M6. |
 | D07 | `refresh()` für nicht beobachtete Änderungen | Vorhanden | Scala-Methode und TypeScript-Handle, einschließlich bisheriger Zeilenrenderer; nach Unmount wirkungslos. M1. |
 | D08 | Platzhalter bei leerer Tabelle/ohne sichtbare Spalten | Vorhanden | Eigener Platzhalter erscheint auch ohne sichtbare Spalten; zu diesem Zeitpunkt werden keine Datenzeilen gerendert. Gruppenmodell später mitprüfen. M1/M5. |
 
@@ -365,10 +392,15 @@ Die Größen S/M/L bezeichnen relative Komplexität, keine Zeitversprechen. M0 i
 - [x] M1: Spalten-Ownership einschließlich atomarer Validierung und Attach/Detach aufbauen.
 - [x] M1: Sichtbarkeit flacher Spalten, gemeinsame sichtbare Projektion und Platzhalter ohne sichtbare Spalten.
 - [x] M1: Minimales TypeScript-Handle für Refresh und Dispose-Status.
-- [ ] M1: `rowFactory`, Spaltenbaum und Blattspaltenmodell sowie imperative TypeScript-Handles ergänzen.
+- [x] M1: `rowFactory` mit eigener Zeilenkomposition, lesbarem Kontext und TypeScript-Row-Renderer.
+- [ ] M1: Spaltenbaum und Blattspaltenmodell sowie weitere imperative TypeScript-Handles ergänzen.
 - [ ] Anschließend M2 und M3; auf dieser Basis M4 und M5 vervollständigen.
 
 ## 6. Verifikation
+
+Der vierte Ausbau ergänzt sechs Scala-RowFactory-Tests und vier TypeScript-Integrationstests: gebundener Kontext, Auswahl, eigene/normale Zellinhalte, Factory-Wechsel und Disposal, erhaltene Scrollslots, ungeladene Remote-Zeilen, Refresh, ungültige Factory-Ergebnisse, unsichtbare Spalten sowie SSR/Hydration mit DOM-Identität. Doppelte oder verzögerte TypeScript-`renderCells`-Aufrufe werden geprüft. Der Tarball-Consumer verwendet die exportierten generischen Options-/Kontexttypen und rendert eigene Zeilen über die gelinkte Runtime.
+
+Abnahme des vierten Ausbaus: **368 Scala-Tests**, Bridge-Full-Link und alle npm-Gates für Controls/Core/Demo grün. Controls: 24 Integrationstests plus 3 Paket-Consumer-Tests; Core: 114 Tests plus 8 Paket-Consumer-Tests; Demo: Typecheck, Client-/SSR-Builds, Eine-Runtime-Prüfung und 31 Routen. Echte Browserprüfung: Buch-Tooltip vorhanden, ausgewählte Custom-Row mit Schriftstärke 600, weiterhin zwei Standardzellen nach Ausblenden der Autorenspalte, Rückkehr zu 400 nach Aufheben der Auswahl, keine Browserfehler. Testtab und lokaler Testserver wurden geschlossen. Die vollständige IME-/Screenreader-Abnahme bleibt offen.
 
 Der dritte Ausbau ergänzt sechs Scala-Auswahltests und fünf Core-Remote-Tests: Duplikate, lokale Strukturänderungen/Reset, absolute lückenhafte Remote-Bereiche, kohärente Metadaten, Ladeabschlussreihenfolge sowie erfolgreiche, fehlgeschlagene und veraltete Ersatzantworten. Drei zusätzliche Bridge-Integrationstests prüfen den typisierten Zustand, Lebensdauer, ungültige JavaScript-Indizes und Remote-Sortierantworten. Der bestehende Follow-up-Test unterscheidet nun ausdrücklich `UpdateAt` von Reset. Vollständiges Scala-Gate: **362 erfolgreiche Tests**; Bridge-Full-Link grün.
 

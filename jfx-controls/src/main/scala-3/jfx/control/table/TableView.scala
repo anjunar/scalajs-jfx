@@ -6,7 +6,6 @@ import jfx.control.virtualized.{
   FixedRowGeometry,
   VirtualizedCollection
 }
-import jfx.control.table.TableRow.{placeholderRow, rowItem, tableRow}
 import jfx.core.component.AbstractComponent
 import jfx.core.remote.{RemoteListChange, RemoteSort}
 import jfx.core.dsl.ClassDsl.{addClass, classIf, classes}
@@ -27,6 +26,7 @@ import jfx.core.state.{
   ReadOnlyProperty
 }
 import jfx.core.statement.Foreach.foreach
+import jfx.core.statement.DynamicComponentRenderer.dynamic
 import org.scalajs.dom
 
 import scala.concurrent.ExecutionContext
@@ -45,8 +45,10 @@ final class TableView[S] private (
 
   override val tagName: String = "div"
 
-  val columns: ListProperty[TableColumn[S, ?]] = new TableColumnList(this)
-  private[table] val visibleColumns            = ListProperty[TableColumn[S, ?]]()
+  val columns: ListProperty[TableColumn[S, ?]]                          = new TableColumnList(this)
+  val rowFactoryProperty: Property[Option[TableView[S] => TableRow[S]]] = Property(None)
+  private val rowRendererRevisionProperty                               = Property(0)
+  private[table] val visibleColumns = ListProperty[TableColumn[S, ?]]()
   val visibleLeafColumns: ReadOnlyProperty[Vector[TableColumn[S, ?]]] =
     visibleColumns.map(_.toVector)
   private val placeholderVisibleProperty            = Property(true)
@@ -217,8 +219,11 @@ final class TableView[S] private (
   def refresh(): Unit = {
     if (isDisposed) return
     refreshItemState()
-    attachedColumns.keys.toVector.foreach(_.invalidateRenderer())
+    invalidateRows()
   }
+
+  private def invalidateRows(): Unit =
+    rowRendererRevisionProperty.set(rowRendererRevisionProperty.get + 1)
 
   private[control] def setContentHeader(
       body: AbstractComponent ?=> Cursor ?=> Unit
@@ -412,25 +417,16 @@ final class TableView[S] private (
                     display = "flex"
                   }
 
-                  tableRow[S] {
-                    rowDefinition.item match {
-                      case Some(value) =>
-                        rowItem(
-                          rowDefinition.index,
-                          value,
-                          TableView.this,
-                          columns.toSeq,
-                          rowHeightProperty.get
-                        )
-                      case None =>
-                        placeholderRow(
-                          rowDefinition.index,
-                          TableView.this,
-                          columns.toSeq,
-                          rowHeightProperty.get
-                        )
-                    }
-                  }
+                  dynamic(rowRendererRevisionProperty.map { _ =>
+                    val row = rowFactoryProperty.get.fold(new TableRow[S])(_(TableView.this))
+                    require(row != null, "A row factory must not return null")
+                    require(
+                      row.tableView == null && !row.isBound && !row.isDisposed,
+                      "A row factory must return a fresh, unmounted TableRow"
+                    )
+                    row.bindItem(rowDefinition.index, rowDefinition.item, TableView.this)
+                    row
+                  })
                 }
               }
             }
@@ -492,6 +488,7 @@ final class TableView[S] private (
     addDisposable(viewportHeightProperty.observeWithoutInitial(_ => recomputeVisible()))
     addDisposable(viewportWidthProperty.observeWithoutInitial(_ => recomputeVisible()))
     addDisposable(columns.observeChanges(_ => syncColumns()))
+    addDisposable(rowFactoryProperty.observeWithoutInitial(_ => invalidateRows()))
     addDisposable(rowHeightProperty.observeWithoutInitial(_ => refreshItemState()))
     addDisposable(headerRowsProperty.observeWithoutInitial(_ => refreshItemState()))
     addDisposable(crawlableProperty.observeWithoutInitial(_ => refreshConfiguredCrawlState()))
@@ -707,6 +704,11 @@ object TableView {
     DslLayer.child(new TableView[S](source, body)) {}
 
   def items[S](using table: TableView[S]): ListDataSource[S] = table.items
+
+  def rowFactory[S](using table: TableView[S]): Option[TableView[S] => TableRow[S]] =
+    table.rowFactoryProperty.get
+  def rowFactory_=[S](using table: TableView[S])(factory: TableView[S] => TableRow[S]): Unit =
+    table.rowFactoryProperty.set(Option(factory))
 
   def rowHeight(using table: TableView[?]): Double                = table.rowHeightProperty.get
   def rowHeight_=(value: Double)(using table: TableView[?]): Unit =

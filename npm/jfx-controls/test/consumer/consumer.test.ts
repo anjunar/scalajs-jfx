@@ -141,7 +141,7 @@ describe("typechecking a consumer", () => {
       'import type { SsrResult } from "@anjunar/jfx-core";',
       'import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";',
       'import { carousel, column, dataGrid, remoteSource, tab, tableView, tabs, virtualList } from "@anjunar/jfx-controls";',
-      'import type { ColumnDef, RemoteSource, TableViewHandle } from "@anjunar/jfx-controls";',
+      'import type { ColumnDef, RemoteSource, TableViewHandle, TableViewOptions, TableRowContext } from "@anjunar/jfx-controls";',
       "",
       "interface Row { readonly name: string }",
       "",
@@ -154,7 +154,8 @@ describe("typechecking a consumer", () => {
       "  return renderToString(() => {",
       "    const rows = listProperty<Row>([{ name: \"a\" }]);",
       "    tabs([tab(\"One\", () => div(() => text(\"one\")))]);",
-      "    const table: TableViewHandle<Row> = tableView(rows, columns, { crawlable: true, crawlId: \"t\" });",
+      "    const options: TableViewOptions<Row> = { crawlable: true, crawlId: \"t\", row: (row: TableRowContext<Row>) => { const name: string | undefined = row.item.get?.name; row.renderCells(); } };",
+      "    const table: TableViewHandle<Row> = tableView(rows, columns, options);",
       "    if (!table.isDisposed) table.refresh();",
       "    table.selectIndex(0);",
       "    const selectedName: string | undefined = table.selectedItem.get?.name;",
@@ -212,7 +213,7 @@ describe("rendering controls from a packed install", () => {
       "const result = await renderToString(() => {",
       "  const rows = listProperty([{ title: \"Dune\" }, { title: \"Solaris\" }]);",
       "  tabs([tab(\"A\", () => div(() => text(\"panel a\"))), tab(\"B\", () => div(() => text(\"panel b\")))], { selectedIndex: 1 });",
-      "  const table = tableView(rows, [{ text: \"Title\", cell: (r) => text(r.title) }, { text: \"Hidden\", visible: false, cell: () => { throw new Error(\"Hidden cell rendered\"); } }], { crawlable: true, crawlId: \"probe\" });",
+      "  const table = tableView(rows, [{ text: \"Title\", cell: (r) => text(r.title) }, { text: \"Hidden\", visible: false, cell: () => { throw new Error(\"Hidden cell rendered\"); } }], { crawlable: true, crawlId: \"probe\", row: (row) => { text(\"custom-row-content\"); row.renderCells(); } });",
       "  if (table.isDisposed) throw new Error(\"Handle disposed before unmount\");",
       "  table.refresh();",
       "  table.selectIndex(1);",
@@ -225,6 +226,7 @@ describe("rendering controls from a packed install", () => {
       "  dune: result.html.includes(\"Dune\"),",
       "  solaris: result.html.includes(\"Solaris\"),",
       "  selectedTitle,",
+      "  customRow: result.html.includes(\"custom-row-content\"),",
       "}));",
       "",
     ].join("\n");
@@ -238,6 +240,7 @@ describe("rendering controls from a packed install", () => {
       dune: boolean;
       solaris: boolean;
       selectedTitle: string;
+      customRow: boolean;
     }>(run(process.execPath, ["ssr-controls.mjs"], consumer));
 
     expect(result.status).toBe(200);
@@ -246,5 +249,6 @@ describe("rendering controls from a packed install", () => {
     expect(result.dune).toBe(true);
     expect(result.solaris).toBe(true);
     expect(result.selectedTitle).toBe("Solaris");
+    expect(result.customRow).toBe(true);
   });
 });

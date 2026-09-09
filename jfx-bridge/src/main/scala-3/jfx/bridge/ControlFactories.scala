@@ -2,7 +2,7 @@ package jfx.bridge
 
 import jfx.control.carousel.Carousel
 import jfx.control.datagrid.DataGrid
-import jfx.control.table.{TableCell, TableColumn, TableView}
+import jfx.control.table.{TableCell, TableColumn, TableRow, TableView}
 import jfx.control.tabs.Tabs
 import jfx.control.virtuallist.VirtualListView
 import jfx.core.component.AbstractComponent
@@ -276,6 +276,38 @@ private[bridge] object TableViewFactory extends ComponentFactory {
       options.get("headerRows").foreach(value => TableView.headerRows = ControlFactories.int(value))
       options.get("crawlable").foreach(value => TableView.crawlable = ControlFactories.bool(value))
       options.get("crawlId").foreach(value => TableView.crawlId = ControlFactories.str(value))
+
+      options.get("row").foreach { callback =>
+        val renderer = callback.asInstanceOf[js.Function4[
+          TableRowContextBridge,
+          ComponentHandleBridge,
+          ScopeHandleBridge,
+          js.Function1[ScopeHandleBridge, Unit],
+          Unit
+        ]]
+        TableView.rowFactory_=[js.Any](_ =>
+          new TableRow[js.Any] {
+            override protected def renderContent(using
+                parent: AbstractComponent,
+                cursor: Cursor
+            ): Unit = {
+              var active                                       = true
+              val cells: js.Function1[ScopeHandleBridge, Unit] = scope => {
+                require(active, "renderCells must be called synchronously inside the row renderer")
+                renderCells(using scope.parent, scope.cursor)
+              }
+              try
+                renderer(
+                  new TableRowContextBridge(this),
+                  new ComponentHandleBridge(this),
+                  new ScopeHandleBridge(parent, cursor),
+                  cells
+                )
+              finally active = false
+            }
+          }
+        )
+      }
 
       columns.foreach { col =>
         TableColumn.column[js.Any, js.Any](col.text) {

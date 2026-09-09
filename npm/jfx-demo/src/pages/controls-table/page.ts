@@ -1,4 +1,4 @@
-import { button, classes, div, onClick, property, style, text, when } from "@anjunar/jfx-core";
+import { attr, button, classes, div, onClick, property, style, text, when } from "@anjunar/jfx-core";
 import { column, remoteSource, tableView } from "@anjunar/jfx-controls";
 import type { RemotePage, RemoteSource, SortSpec, TableViewHandle } from "@anjunar/jfx-controls";
 import { translated } from "../../app/i18n.js";
@@ -91,6 +91,13 @@ export function controlsTablePage(): void {
         ],
         {
           rowHeight: 40,
+          row: (row) => {
+            classes("book-row");
+            const book = row.item.get;
+            if (book !== null) attr("title", `${book.title} · ${book.author} · ${book.year}`);
+            style("font-weight", row.selected.map((selected) => selected ? "600" : "400"));
+            row.renderCells();
+          },
           crawlable: true,
           crawlId: "books",
           header: () => text(translated("Remote catalogue · visible rows load on demand")),
