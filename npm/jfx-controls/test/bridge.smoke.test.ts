@@ -41,6 +41,7 @@ import {
   disposeWith,
   onClick,
   capture,
+  component,
 } from "@anjunar/jfx-core";
 import { div, text } from "@anjunar/jfx-core";
 import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";
@@ -177,6 +178,93 @@ describe("carousel", () => {
 });
 
 describe("table-view", () => {
+  it("opens the column menu in the nearest viewport and keeps visibility, widths and selection coherent", () => {
+    const root = document.createElement("div"); document.body.appendChild(root);
+    const visible = property(true);
+    const enabled = property(true);
+    const changed = vi.fn((next: boolean) => visible.set(next));
+    let table!: TableViewHandle<string>;
+    const app = mount(root, () => component("viewport", {}, () => {
+      table = tableView(listProperty(["Ada"]), [
+        valueColumn("A", row => row, { visible, onVisibilityChange: changed }),
+        valueColumn("B", row => row),
+      ], { paging: true, columnResizePolicy: "unconstrained", tableMenuButtonVisible: enabled });
+    }));
+    const open = (): HTMLElement => {
+      root.querySelector<HTMLButtonElement>(".jfx-table-column-menu-button")!.click();
+      return root.querySelector<HTMLElement>('[role="menu"]')!;
+    };
+    try {
+      table.selectIndex(0); table.resizeColumn(0, 30);
+      const retained = root.querySelectorAll(".jfx-table-cell")[1];
+      const menu = open();
+      expect(menu.closest(".jfx-table-view")).toBeNull();
+      expect(menu.closest(".jfx-viewport")).not.toBeNull();
+      const items = menu.querySelectorAll<HTMLButtonElement>('[role="menuitemcheckbox"]');
+      expect(items).toHaveLength(2); expect(document.activeElement).toBe(items[0]);
+      expect(changed).not.toHaveBeenCalled();
+      items[0]!.click(); expect(visible.get).toBe(false); expect(changed).toHaveBeenCalledTimes(1);
+      expect(items[0]!.getAttribute("aria-checked")).toBe("false");
+      expect(root.querySelector(".jfx-table-cell")).toBe(retained);
+      expect(table.selectedIndex.get).toBe(0);
+      items[1]!.click(); expect(root.querySelector(".jfx-table-placeholder")).not.toBeNull();
+      expect(root.querySelector(".jfx-table-column-menu-button")).not.toBeNull();
+      items[0]!.click(); expect(table.columnWidths.get).toEqual([190]);
+      expect(root.querySelector(".jfx-table-placeholder")).toBeNull();
+      visible.set(false); expect(items[0]!.getAttribute("aria-checked")).toBe("false");
+      enabled.set(false); expect(root.querySelector('[role="menu"]')).toBeNull();
+      enabled.set(true); expect(root.querySelector(".jfx-table-column-menu-button")).not.toBeNull();
+      open(); app.dispose(); expect(root.querySelector(".jfx-viewport-overlay")).toBeNull();
+    } finally { app.dispose(); root.remove(); }
+  });
+
+  it("navigates the menu by keyboard and closes on Escape, Tab, outside pointer/focus, blur and reordering", () => {
+    const root = document.createElement("div"); document.body.appendChild(root);
+    const outside = document.createElement("button"); document.body.appendChild(outside);
+    let table!: TableViewHandle<string>;
+    const app = mount(root, () => component("viewport", {}, () => {
+      table = tableView(listProperty(["Ada"]), [valueColumn("A", row => row), valueColumn("B", row => row)],
+        { paging: true, tableMenuButtonVisible: true });
+    }));
+    const trigger = root.querySelector<HTMLButtonElement>(".jfx-table-column-menu-button")!;
+    const press = (element: Element, key: string): void => { element.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true })); };
+    const items = (): NodeListOf<HTMLButtonElement> => root.querySelectorAll('[role="menuitemcheckbox"]');
+    try {
+      press(trigger, "ArrowUp"); expect(document.activeElement).toBe(items()[1]);
+      press(items()[1]!, "ArrowDown"); expect(document.activeElement).toBe(items()[0]);
+      press(items()[0]!, "End"); expect(document.activeElement).toBe(items()[1]);
+      press(items()[1]!, "Home"); expect(document.activeElement).toBe(items()[0]);
+      press(items()[0]!, "Escape"); expect(document.activeElement).toBe(trigger);
+      expect(trigger.getAttribute("aria-expanded")).toBe("false"); expect(items()).toHaveLength(0);
+      trigger.click(); press(items()[0]!, "Tab"); expect(document.activeElement).toBe(trigger); expect(items()).toHaveLength(0);
+      trigger.click(); outside.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })); expect(items()).toHaveLength(0);
+      trigger.click(); outside.focus(); expect(items()).toHaveLength(0);
+      trigger.click(); window.dispatchEvent(new Event("blur")); expect(items()).toHaveLength(0);
+      trigger.click(); table.moveColumn(0, 1); expect(items()).toHaveLength(0);
+      trigger.click(); expect(Array.from(items()).map(e => e.textContent)).toEqual(["B", "A"]);
+    } finally { app.dispose(); root.remove(); outside.remove(); }
+  });
+
+  it("hydrates a closed menu without an overlay or stolen focus and requires a viewport only when enabled", async () => {
+    const root = document.createElement("div"); document.body.appendChild(root);
+    const build = (): void => { component("viewport", {}, () => {
+      tableView(listProperty(["Ada"]), [valueColumn("Name", row => row)],
+        { paging: true, tableMenuButtonVisible: true, columnMenuText: "Spalten" });
+    }); };
+    root.innerHTML = (await renderToString(build)).html;
+    const before = root.querySelector<HTMLButtonElement>(".jfx-table-column-menu-button")!;
+    expect(before.disabled).toBe(true); expect(root.querySelector('[role="menu"]')).toBeNull();
+    const app = await hydrate(root, build);
+    try {
+      expect(root.querySelector(".jfx-table-column-menu-button")).toBe(before);
+      expect(before.disabled).toBe(false); expect(document.activeElement).not.toBe(before);
+      before.click(); const menu = root.querySelector('[role="menu"]')!;
+      expect(menu.getAttribute("aria-label")).toBe("Spalten");
+      expect(before.getAttribute("aria-controls")).toBe(menu.id);
+    } finally { app.dispose(); root.remove(); }
+    await expect(renderToString(() => { tableView(listProperty(["Ada"]), [], { tableMenuButtonVisible: true }); })).rejects.toThrow("No Viewport");
+  });
+
   // jsdom has no layout engine. Model the CSS max-content result; real geometry is checked
   // against the production demo in a browser, including padding and sort decoration.
   function intrinsicWidths(widths: Map<Element, number>): () => void {
@@ -598,6 +686,170 @@ describe("table-view", () => {
     });
     return viewport;
   }
+
+  it("reveals visible columns using current widths/order without changing rows, editors or selection", () => {
+    const root = document.createElement("div"); document.body.appendChild(root);
+    const visible = property(true);
+    let table!: TableViewHandle<string>;
+    let builds = 0;
+    const app = mount(root, () => {
+      table = tableView(listProperty(["Ada"]), [
+        { text: "Editor", prefWidth: 200, cell: () => { builds++; element("input")(() => attr("value", "Ada")); } },
+        valueColumn("Hidden", row => row, { prefWidth: 900, visible: false }),
+        valueColumn("Middle", row => row, { prefWidth: 150, visible }),
+        valueColumn("Last", row => row, { prefWidth: 300 }),
+      ], { paging: true, columnResizePolicy: "unconstrained" });
+    });
+    try {
+      const viewport = measureTable(root);
+      Object.defineProperty(viewport, "clientWidth", { value: 250 });
+      const header = root.querySelector<HTMLElement>(".jfx-table-header-content")!;
+      const editor = root.querySelector<HTMLInputElement>("input")!;
+      editor.focus(); editor.setSelectionRange(0, 2, "backward"); table.selectIndex(0);
+      viewport.scrollTop = 37;
+      table.scrollToColumnIndex(1);
+      expect(viewport.scrollLeft).toBe(100); // Hidden column does not contribute.
+      expect(header.style.transform).toMatch(/^translateX\(-100(?:\.0)?px\)$/);
+      table.scrollToColumnIndex(1); expect(viewport.scrollLeft).toBe(100);
+      table.scrollToColumnIndex(2); expect(viewport.scrollLeft).toBe(350); // Oversized: start aligned.
+      table.scrollToColumnIndex(0); expect(viewport.scrollLeft).toBe(0);
+      table.resizeColumn(0, 100);
+      table.scrollToColumnIndex(1); expect(viewport.scrollLeft).toBe(200);
+      table.moveColumn(2, 1);
+      table.scrollToColumnIndex(2); expect(viewport.scrollLeft).toBe(500); // Current visual order.
+      visible.set(false);
+      table.scrollToColumnIndex(1); expect(viewport.scrollLeft).toBe(300);
+      for (const invalid of [-1, 2, 0.5, NaN, Infinity, 2 ** 32]) table.scrollToColumnIndex(invalid);
+      expect(viewport.scrollLeft).toBe(300);
+      expect(viewport.scrollTop).toBe(37);
+      expect(table.selectedIndex.get).toBe(0);
+      expect(document.activeElement).toBe(editor);
+      expect([editor.selectionStart, editor.selectionEnd, editor.selectionDirection]).toEqual([0, 2, "backward"]);
+      expect(root.querySelector("input")).toBe(editor); expect(builds).toBe(1);
+      expect(viewport.style.overflowX).toBe("auto");
+      app.dispose(); table.scrollToColumnIndex(0); expect(viewport.scrollLeft).toBe(300);
+    } finally { app.dispose(); root.remove(); }
+  });
+
+  it("navigates an empty headerless table and synchronizes native scroll clamping", () => {
+    const root = document.createElement("div");
+    let table!: TableViewHandle<number>;
+    const app = mount(root, () => {
+      table = tableView(listProperty<number>([]), [
+        valueColumn("A", row => row, { prefWidth: 200 }),
+        valueColumn("B", row => row, { prefWidth: 200 }),
+      ], { paging: true, showHeader: false, columnResizePolicy: "unconstrained" });
+    });
+    try {
+      const viewport = measureTable(root);
+      Object.defineProperty(viewport, "clientWidth", { value: 250 });
+      table.scrollToColumnIndex(1); expect(viewport.scrollLeft).toBe(150);
+      expect(root.querySelector(".jfx-table-header-content")).toBeNull();
+      let nativeOffset = 0;
+      Object.defineProperty(viewport, "scrollLeft", {
+        get: () => nativeOffset, set: (value: number) => { nativeOffset = Math.min(125, Math.max(0, value)); },
+      });
+      table.scrollToColumnIndex(1); expect(nativeOffset).toBe(125);
+      table.scrollToColumnIndex(0); expect(nativeOffset).toBe(0);
+      expect(table.columnWidths.get).toEqual([200, 200]);
+    } finally { app.dispose(); }
+  });
+
+  it("does not fetch remote rows when only the column offset changes", async () => {
+    const load = vi.fn(async (query: { offset: number; limit: number }) => ({
+      items: Array.from({ length: query.limit }, (_, index) => `Row ${query.offset + index}`),
+      offset: query.offset, totalCount: 1000,
+    }));
+    const source = remoteSource({
+      load, initialQuery: { offset: 0, limit: 50 },
+      initial: Array.from({ length: 200 }, (_, index) => `Row ${index}`), totalCount: 1000,
+      rangeQuery: (query, offset, limit) => ({ ...query, offset, limit }),
+    });
+    const root = document.createElement("div");
+    let table!: TableViewHandle<string>;
+    const app = mount(root, () => {
+      table = tableView(source, [valueColumn("A", row => row, { prefWidth: 200 }),
+        valueColumn("B", row => row, { prefWidth: 200 })],
+        { paging: false, rowHeight: 20, columnResizePolicy: "unconstrained" });
+    });
+    try {
+      const viewport = measureTable(root);
+      Object.defineProperty(viewport, "clientWidth", { value: 250 });
+      await new Promise(resolve => setTimeout(resolve, 40));
+      const cells = Array.from(root.querySelectorAll(".jfx-table-cell"));
+      table.scrollToColumnIndex(1); expect(viewport.scrollLeft).toBe(150);
+      viewport.dispatchEvent(new Event("scroll")); // The browser follows the programmatic write.
+      await new Promise(resolve => setTimeout(resolve, 40));
+      expect(load).not.toHaveBeenCalled();
+      expect(Array.from(root.querySelectorAll(".jfx-table-cell"))).toEqual(cells);
+      expect(viewport.scrollTop).toBe(0);
+    } finally { app.dispose(); }
+  });
+
+  it("queues column identity through SSR/hydration and reordering, independently of row navigation", async () => {
+    let table!: TableViewHandle<number>;
+    const build = (): void => {
+      table = tableView(listProperty(Array.from({ length: 100 }, (_, id) => id)),
+        [valueColumn("A", row => row, { prefWidth: 200 }),
+          valueColumn("B", row => row, { prefWidth: 200 }),
+          valueColumn("C", row => row, { prefWidth: 200 })],
+        { paging: false, rowHeight: 20, columnResizePolicy: "unconstrained" });
+      table.scrollToColumnIndex(0);
+      table.scrollToColumnIndex(1); // B, even after B moves to the last position.
+      table.scrollToColumnIndex(-1);
+      table.moveColumn(1, 2);
+      table.scrollToIndex(50);
+      div(() => text("Sibling"));
+    };
+    const rendered = await renderToString(build);
+    const root = document.createElement("div"); root.innerHTML = rendered.html;
+    const viewport = measureTable(root);
+    Object.defineProperty(viewport, "clientWidth", { value: 250 });
+    const sibling = root.lastElementChild;
+    const header = root.querySelector<HTMLElement>(".jfx-table-header-content")!;
+    expect(header.style.transform).toMatch(/^translateX\(-0(?:\.0)?px\)$/);
+    const app = await hydrate(root, build);
+    try {
+      expect(root.querySelector(".jfx-table-viewport")).toBe(viewport);
+      expect(root.lastElementChild).toBe(sibling);
+      expect(viewport.scrollLeft).toBe(350);
+      expect(header.style.transform).toMatch(/^translateX\(-350(?:\.0)?px\)$/);
+      expect(viewport.scrollTop).toBe(920);
+      expect(table.selectedIndex.get).toBe(-1);
+      await new Promise(resolve => setTimeout(resolve, 40));
+      expect(viewport.scrollLeft).toBe(350);
+    } finally { app.dispose(); }
+  });
+
+  it.each(["reveal", "hide", "dispose"])("handles a column request pending in hidden layout: %s", async (action) => {
+    const root = document.createElement("div");
+    const visible = property(true);
+    let table!: TableViewHandle<number>;
+    const app = mount(root, () => {
+      table = tableView(listProperty([1]), [
+        valueColumn("A", row => row, { prefWidth: 200 }),
+        valueColumn("B", row => row, { prefWidth: 200, visible }),
+        valueColumn("C", row => row, { prefWidth: 200 }),
+      ], { paging: true, columnResizePolicy: "unconstrained" });
+      table.scrollToColumnIndex(2);
+      table.scrollToColumnIndex(1);
+    });
+    try {
+      const viewport = measureTable(root);
+      Object.defineProperty(viewport, "clientWidth", { value: 0 });
+      await new Promise(resolve => setTimeout(resolve, 40));
+      expect(viewport.scrollLeft).toBe(0);
+      if (action === "hide") visible.set(false);
+      if (action === "dispose") app.dispose();
+      Object.defineProperty(viewport, "clientWidth", { value: 250 });
+      window.dispatchEvent(new Event("resize"));
+      if (action === "reveal") await vi.waitFor(() => expect(viewport.scrollLeft).toBe(150));
+      else {
+        await new Promise(resolve => setTimeout(resolve, 40));
+        expect(viewport.scrollLeft).toBe(0);
+      }
+    } finally { app.dispose(); }
+  });
 
   it("reveals rows and items with minimal movement, without changing selection or mode", () => {
     const records = Array.from({ length: 100 }, (_, id) => ({ id }));

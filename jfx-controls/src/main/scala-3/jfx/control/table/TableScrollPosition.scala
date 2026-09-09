@@ -1,6 +1,6 @@
 package jfx.control.table
 
-/** Minimal movement to reveal a row; oversized rows align at their start. */
+/** Minimal movement along either table axis; oversized rows/columns align at their start. */
 private[table] object TableScrollPosition {
   def reveal(
       top: Double,

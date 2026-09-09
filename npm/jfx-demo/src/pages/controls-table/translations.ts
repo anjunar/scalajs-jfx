@@ -1,6 +1,10 @@
 import { catalogEntry, i18n, type CatalogEntry } from "@anjunar/jfx-core";
 
 export const entries: readonly CatalogEntry[] = [
+  catalogEntry(i18n`For horizontal navigation, use free widths and widen the columns.`, { de: "Für horizontale Navigation auf freie Breiten umschalten und die Spalten verbreitern." }),
+  catalogEntry(i18n`Show first column`, { de: "Erste Spalte anzeigen" }),
+  catalogEntry(i18n`Show last column`, { de: "Letzte Spalte anzeigen" }),
+  catalogEntry(i18n`Columns`, { de: "Spalten" }),
   catalogEntry(i18n`Double-click a column edge to fit its content, or press Enter on the focused grip.`, { de: "Doppelklicke auf einen Spaltenrand zur Inhaltsanpassung oder drücke Enter am fokussierten Ziehgriff." }),
   catalogEntry(i18n`Drag a column header to move it. Or focus the header and press Alt+Shift+Left/Right.`, { de: "Ziehe einen Spaltenkopf zum Verschieben. Oder fokussiere ihn und drücke Alt+Shift+Links/Rechts." }),
   catalogEntry(i18n`TableView`, { de: "TableView" }),

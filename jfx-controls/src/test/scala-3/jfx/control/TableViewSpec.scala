@@ -22,6 +22,56 @@ import scala.scalajs.js
 
 class TableViewSpec extends AnyFlatSpec with Matchers {
 
+  "Column navigation" should "keep SSR deterministic for reference and index requests" in {
+    val html = renderTable(Seq("Ada")) {
+      val table  = summon[TableView[String]]
+      val target = column[String, String]("Other") { prefWidth = 1200.0 }
+      table.scrollToColumn(target)
+      table.scrollToColumnIndex(1)
+      table.scrollToColumnIndex(-1)
+      table.scrollToColumn(null)
+      val foreign = new jfx.control.table.TableColumn[String, String]("Foreign")
+      table.scrollToColumn(foreign)
+      foreign.dispose()
+      table.scrollLeftProperty.get shouldBe 0.0
+      table.selectedIndexProperty.get shouldBe -1
+    }
+    html should include("Ada")
+    html should include("Other")
+    html should include regex "translateX\\(-0(?:\\.0)?px\\)"
+  }
+
+  "Table menu" should "remain opt-in and disappear with the header" in {
+    renderTable(Seq("Ada")) {} should not include "jfx-table-column-menu"
+    renderTable(Seq("Ada")) {
+      tableMenuButtonVisible = true
+      showHeader = false
+    } should not include "jfx-table-column-menu"
+  }
+
+  it should "render only a disabled trigger during SSR in a Viewport" in {
+    val html = Runtime.renderToString { cursor =>
+      Runtime.mount(
+        new AbstractComponent {
+          override val tagName                       = "main"
+          override def compose(cursor: Cursor): Unit = DslLayer.render(this, cursor) {
+            jfx.viewport.Viewport.viewport {
+              tableView(ListProperty(js.Array("Ada"))) {
+                tableMenuButtonVisible = true
+                column[String, String]("Name") {}
+              }
+            }
+          }
+        },
+        cursor
+      )
+    }
+    html should include("jfx-table-column-menu-button")
+    html should include("aria-expanded=\"false\"")
+    html should include("disabled")
+    html should not include "jfx-table-column-menu-panel"
+  }
+
   "TableView SSR" should "render the crawlable cookie range without URL paging state" in {
     val members = (0 until 20).map(index => s"Member $index")
 

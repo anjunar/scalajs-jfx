@@ -96,6 +96,39 @@ Invalid/hidden/locked columns, unmeasurable layout, protected hosts and active n
 composition are no-ops, not queued retries. A true result means a width changed or a
 hydration-time request was accepted; SSR and disposed handles return false.
 
+### Column visibility menu
+
+Set `tableMenuButtonVisible: true` to show a Columns button above the header. The table
+must be inside `viewport(...)` from `@anjunar/jfx-viewport` when this option is enabled.
+The existing Viewport owns the overlay and anchor positioning; the table owns its lifetime.
+No native popover or second overlay implementation is involved. Without the option,
+tables still work without a viewport. `showHeader: false` also hides the menu button.
+
+The menu lists all columns in their current order, including hidden columns. It stays open
+when toggling a checkbox and remains usable after hiding every column. Existing selection,
+sorting and user widths are preserved. Hiding a column disposes its cells, as with `visible`.
+Arrow keys/Home/End navigate, Enter/Space toggle, Escape closes and returns focus. Tab closes
+and continues navigation from the trigger. Outside pointer/focus, window blur, structural
+column changes, hiding the menu/header and unmount close and clean up the overlay/listeners.
+
+`tableMenuButtonVisible` and `columnMenuText` are reactive; the latter supplies the trigger
+text and accessible menu label. Scala exposes corresponding properties and DSL setters.
+SSR renders only the disabled trigger; hydration enables it without opening or taking focus.
+The trigger is disabled if the table has no columns. Visibility changes from menu actions
+respect active native composition and protected table hosts.
+
+`visible` is a one-way input. To keep application-owned state in sync with menu actions,
+use `onVisibilityChange`, called on changes but not for the initial value:
+
+```ts
+const visible = property(true);
+// Inside viewport(() => ...):
+tableView(books, [valueColumn("Title", book => book.title, {
+  visible,
+  onVisibilityChange: next => visible.set(next),
+})], { tableMenuButtonVisible: true, columnMenuText: "Spalten" });
+```
+
 ### Column reordering
 
 Drag a header (not its resize grip) to an insertion marker. Alternatively, focus the header
@@ -316,7 +349,21 @@ Navigation is browser-only: SSR keeps its deterministic slice. Requests made dur
 composition/hydration or while the viewport has no height/visible columns wait until it can be
 measured. The latest valid request wins, is revalidated against the current extent, and
 supersedes the initial cookie/URL scroll restoration. Disposal cancels pending navigation.
-There is no load-completion promise or `onScrollTo` event yet; column navigation remains pending.
+There is no load-completion promise or `onScrollTo` event yet.
+
+`table.scrollToColumnIndex(index)` reveals a column in the current **visible** order with minimal
+horizontal movement. Oversized columns align at their start. Hidden columns contribute neither
+indices nor width. The operation uses current rendered widths after resizing/reordering, leaves
+vertical position, selection, focus and editors untouched, and does not load remote rows. It also
+works with no rows or a hidden header. Widths and the resize policy are not changed: usually use
+free (`unconstrained`) widths when horizontal scrolling is desired.
+
+Column navigation is browser-only too. The last valid request waits for hydration or a non-zero
+viewport width and remembers the column instance, not an index that could change during reordering.
+The target is revalidated before scrolling; hidden/removed targets and disposed tables are ignored.
+The header offset is synchronized immediately, including browser clamping. Row and column requests
+are independent. Scala additionally accepts a column reference via `scrollToColumn(column)`;
+`onScrollToColumn` events and RTL navigation remain pending.
 
 Paged or scrolling content headers can declare their reserved height with `headerRows`. For
 `dataGrid`, one row is one card height and the header always spans the full responsive grid width;

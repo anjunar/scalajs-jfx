@@ -220,6 +220,50 @@
   color: var(--aj-ink);
   box-shadow: inset 0 0 0 1px var(--aj-accent-ring);
 }
+
+.jfx-table-column-menu {
+  display: flex;
+  justify-content: flex-end;
+  flex: 0 0 auto;
+  padding: 2px 0;
+}
+.jfx-table-column-menu-button,
+.jfx-table-column-menu-item {
+  appearance: none;
+  color: var(--aj-ink);
+  background: var(--aj-surface);
+  border: 1px solid var(--aj-line);
+  border-radius: 4px;
+  padding: 6px 10px;
+  font: inherit;
+  cursor: pointer;
+}
+.jfx-table-column-menu-button:disabled { opacity: 0.5; cursor: default; }
+.jfx-viewport-overlay.jfx-table-column-menu-panel {
+  padding: 4px;
+  box-sizing: border-box;
+  max-width: calc(100vw - 16px);
+  max-height: min(320px, calc(100vh - 16px));
+  overflow: auto;
+  border: 1px solid var(--aj-line);
+  border-radius: 6px;
+  background: var(--aj-surface);
+  color: var(--aj-ink);
+  box-shadow: 0 8px 24px #0004;
+}
+.jfx-table-column-menu-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  text-align: start;
+  border: 0;
+  overflow-wrap: anywhere;
+}
+.jfx-table-column-menu-item::before { content: "✓"; width: 1.5em; flex: 0 0 auto; }
+.jfx-table-column-menu-item[aria-checked="false"]::before { visibility: hidden; }
+.jfx-table-column-menu-item:hover { background: var(--aj-surface-hover); }
+.jfx-table-column-menu-item:focus-visible,
+.jfx-table-column-menu-button:focus-visible { outline: 2px solid var(--aj-accent-strong); outline-offset: -2px; }
 .jfx-table-column-dragging {
   opacity: 0.6;
 }

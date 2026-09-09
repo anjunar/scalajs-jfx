@@ -85,15 +85,16 @@ private[bridge] trait TabFacade extends js.Object {
 
 @js.native
 private[bridge] trait ColumnFacade extends js.Object {
-  val text: String                    = js.native
-  val prefWidth: js.UndefOr[Double]   = js.native
-  val minWidth: js.UndefOr[Double]    = js.native
-  val maxWidth: js.UndefOr[Double]    = js.native
-  val resizable: js.UndefOr[js.Any]   = js.native
-  val reorderable: js.UndefOr[js.Any] = js.native
-  val sortable: js.UndefOr[Boolean]   = js.native
-  val sortKey: js.UndefOr[String]     = js.native
-  val visible: js.UndefOr[js.Any]     = js.native
+  val text: String                                                = js.native
+  val prefWidth: js.UndefOr[Double]                               = js.native
+  val minWidth: js.UndefOr[Double]                                = js.native
+  val maxWidth: js.UndefOr[Double]                                = js.native
+  val resizable: js.UndefOr[js.Any]                               = js.native
+  val reorderable: js.UndefOr[js.Any]                             = js.native
+  val sortable: js.UndefOr[Boolean]                               = js.native
+  val sortKey: js.UndefOr[String]                                 = js.native
+  val visible: js.UndefOr[js.Any]                                 = js.native
+  val onVisibilityChange: js.UndefOr[js.Function1[Boolean, Unit]] = js.native
 
   /** `(row) => (scope) => void` -- the cell body, already wrapped in `withScope` on the TS side. */
   val cell: js.UndefOr[js.Function1[js.Any, js.Function1[ScopeHandleBridge, Unit]]] = js.native
@@ -285,6 +286,17 @@ private[bridge] object TableViewFactory extends ComponentFactory {
         .get("showHeader")
         .foreach(value => TableView.showHeader = ControlFactories.bool(value))
       options
+        .get("tableMenuButtonVisible")
+        .foreach(value =>
+          TableView.tableMenuButtonVisible = ReactiveBridge.asProperty[Boolean](value)
+        )
+      options.get("columnMenuText").foreach { value =>
+        val table = summon[TableView[js.Any]]
+        table.addDisposable(
+          ReactiveBridge.asProperty[String](value).observe(table.columnMenuTextProperty.set)
+        )
+      }
+      options
         .get("showFooter")
         .foreach(value => TableView.showFooter = ControlFactories.bool(value))
       options.get("paging").foreach(value => TableView.paging = ControlFactories.bool(value))
@@ -330,6 +342,12 @@ private[bridge] object TableViewFactory extends ComponentFactory {
           col.visible.foreach(value =>
             TableColumn.visible_=[js.Any, js.Any](ReactiveBridge.asProperty[Boolean](value))
           )
+          col.onVisibilityChange.foreach { callback =>
+            val column = summon[TableColumn[js.Any, js.Any]]
+            column.addDisposable(
+              column.visibleProperty.observeWithoutInitial(value => callback(value))
+            )
+          }
           col.prefWidth.foreach(width => TableColumn.prefWidth_=[js.Any, js.Any](width))
           col.minWidth.foreach(width => TableColumn.minWidth_=[js.Any, js.Any](width))
           col.maxWidth.foreach(width => TableColumn.maxWidth_=[js.Any, js.Any](width))

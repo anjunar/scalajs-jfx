@@ -46,15 +46,17 @@ final class TableViewHandleBridge(private val table: TableView[js.Any]) extends 
       start.isWhole && end.isWhole && start >= Int.MinValue && start <= Int.MaxValue &&
       end >= Int.MinValue && end <= Int.MaxValue
     ) model.selectRange(start.toInt, end.toInt)
-  def selectAll(): Unit                  = model.selectAll()
-  def selectFirst(): Unit                = model.selectFirst()
-  def selectLast(): Unit                 = model.selectLast()
-  def selectNext(): Unit                 = model.selectNext()
-  def selectPrevious(): Unit             = model.selectPrevious()
-  def scrollToIndex(index: Double): Unit = if (validIndex(index)) table.scrollTo(index.toInt)
-  def scrollToItem(item: js.Any): Unit   = table.scrollTo(item)
-  def isDisposed: Boolean                = table.isDisposed
-  def refresh(): Unit                    = table.refresh()
+  def selectAll(): Unit                        = model.selectAll()
+  def selectFirst(): Unit                      = model.selectFirst()
+  def selectLast(): Unit                       = model.selectLast()
+  def selectNext(): Unit                       = model.selectNext()
+  def selectPrevious(): Unit                   = model.selectPrevious()
+  def scrollToIndex(index: Double): Unit       = if (validIndex(index)) table.scrollTo(index.toInt)
+  def scrollToItem(item: js.Any): Unit         = table.scrollTo(item)
+  def scrollToColumnIndex(index: Double): Unit =
+    if (validIndex(index)) table.scrollToColumnIndex(index.toInt)
+  def isDisposed: Boolean = table.isDisposed
+  def refresh(): Unit     = table.refresh()
 }
 
 private[bridge] object TableViewHandleBridge {

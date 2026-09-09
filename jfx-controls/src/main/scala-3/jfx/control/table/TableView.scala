@@ -53,6 +53,8 @@ final class TableView[S] private (
     visibleColumns.map(_.toVector)
   private val placeholderVisibleProperty                       = Property(true)
   val showHeaderProperty: Property[Boolean]                    = Property(true)
+  val tableMenuButtonVisibleProperty: Property[Boolean]        = Property(false)
+  val columnMenuTextProperty: Property[String]                 = Property("Columns")
   val showFooterProperty: Property[Boolean]                    = Property(true)
   val rowHeightProperty: Property[Double]                      = Property(32.0)
   val prefWidthProperty: Property[Option[Double]]              = Property(None)
@@ -85,6 +87,7 @@ final class TableView[S] private (
   private var contentHeaderComponent: Div | Null                               = null
   private var scrollNavigationMounted                                          = false
   private var pendingScrollIndex: Option[Int]                                  = None
+  private var pendingScrollColumn: Option[TableColumn[S, ?]]                   = None
   private var pendingColumnMove: Option[(TableColumn[S, ?], Int)]              = None
   private var pendingAutoFit: Option[TableColumn[S, ?]]                        = None
   private val mountedCells                      = mutable.LinkedHashSet.empty[TableCell[S, ?]]
@@ -193,6 +196,42 @@ final class TableView[S] private (
     if (!isDisposed && browserRendering)
       (0 until renderableCount).find(index => itemAt(index).contains(item)).foreach(scrollTo)
 
+  /** Reveals a visible column with minimal horizontal movement, without selecting or focusing it.
+    * The latest browser request waits for hydration and a measurable viewport. It follows the
+    * column instance across reordering; hidden, removed and foreign columns are ignored.
+    */
+  def scrollToColumn(column: TableColumn[S, ?]): Unit =
+    if (!isDisposed && browserRendering && column != null && getVisibleLeafIndex(column) >= 0) {
+      pendingScrollColumn = Some(column)
+      flushColumnScrollRequest()
+    }
+
+  /** Index in the current visible leaf projection, resolved to a column at request time. */
+  def scrollToColumnIndex(index: Int): Unit = scrollToColumn(getVisibleLeafColumn(index))
+
+  private def flushColumnScrollRequest(): Unit =
+    if (!isDisposed && scrollNavigationMounted)
+      pendingScrollColumn.foreach { column =>
+        val index = getVisibleLeafIndex(column)
+        if (index < 0) pendingScrollColumn = None
+        else
+          domElement(viewportComponent).filter(_.clientWidth > 0).foreach { viewport =>
+            pendingScrollColumn = None
+            val widths = renderedWidthsProperty.get
+            val next   = TableScrollPosition.reveal(
+              widths.take(index).sum,
+              widths(index),
+              viewport.scrollLeft,
+              viewport.clientWidth.toDouble,
+              widths.sum
+            )
+            viewport.scrollLeft = next
+            scrollLeftProperty.set(
+              viewport.scrollLeft
+            ) // Includes native clamping; sync header now.
+          }
+      }
+
   private def flushScrollRequest(): Unit =
     if (!isDisposed && scrollNavigationMounted && visibleColumns.nonEmpty)
       domElement(viewportComponent).filter(_.clientHeight > 0).foreach { viewport =>
@@ -224,6 +263,7 @@ final class TableView[S] private (
   override protected def onViewportMeasured(): Unit = {
     super.onViewportMeasured()
     flushScrollRequest()
+    flushColumnScrollRequest()
   }
 
   /** Fixed row height, one column. This is all that distinguishes TableView from DataGrid and
@@ -428,6 +468,9 @@ final class TableView[S] private (
       })
 
       when(showHeaderProperty) {
+        when(tableMenuButtonVisibleProperty) {
+          DslLayer.child(new TableColumnMenu(TableView.this)) {}
+        }
         headerViewport = div {
           classes = Seq("jfx-table-header-viewport")
           style {
@@ -643,12 +686,14 @@ final class TableView[S] private (
         pendingAutoFit = None
         fit.foreach(autoFitColumn)
         flushScrollRequest()
+        flushColumnScrollRequest()
       }
     }
 
   private def installObservers(): Unit = {
     syncColumns()
     addDisposable(Disposable {
+      pendingScrollColumn = None
       attachedColumns.toVector.foreach { case (column, subscriptions) =>
         subscriptions.dispose()
         column.detach(this)
@@ -817,6 +862,17 @@ final class TableView[S] private (
 }
 
 object TableView {
+  def columnMenuText(using table: TableView[?]): String = table.columnMenuTextProperty.get
+  def columnMenuText_=(value: String)(using table: TableView[?]): Unit =
+    table.columnMenuTextProperty.set(value)
+  def columnMenuText_=(value: ReadOnlyProperty[String])(using table: TableView[?]): Unit =
+    table.addDisposable(value.observe(table.columnMenuTextProperty.set))
+  def tableMenuButtonVisible(using table: TableView[?]): Boolean =
+    table.tableMenuButtonVisibleProperty.get
+  def tableMenuButtonVisible_=(value: Boolean)(using table: TableView[?]): Unit =
+    table.tableMenuButtonVisibleProperty.set(value)
+  def tableMenuButtonVisible_=(value: ReadOnlyProperty[Boolean])(using table: TableView[?]): Unit =
+    table.addDisposable(value.observe(table.tableMenuButtonVisibleProperty.set))
   def columnResizePolicy(using table: TableView[?]): ColumnResizePolicy =
     table.columnResizePolicyProperty.get
   def columnResizePolicy_=(policy: ColumnResizePolicy)(using table: TableView[?]): Unit =

@@ -1,6 +1,6 @@
 # TableView: Feature-Stand und Implementierungsplan
 
-Stand: 09.09.2026 · Ausgangsanalyse: `7295d92` · einschließlich Grundlagenpaket, Spaltensichtbarkeit, Auswahl-/Remote-Vertrag, RowFactory, Mehrfachauswahl, Zeilennavigation, Spalten-Resizing, Drag-Reordering und Auto-Fit · Referenz: JavaFX 26.
+Stand: 09.09.2026 · Ausgangsanalyse: `7295d92` · einschließlich Grundlagenpaket, Spaltensichtbarkeit, Auswahl-/Remote-Vertrag, RowFactory, Mehrfachauswahl, Zeilen-/Spaltennavigation, Spalten-Resizing, Drag-Reordering, Auto-Fit und Spaltenmenü · Referenz: JavaFX 26.
 
 Dieses Dokument beschreibt, welche Funktionen unsere TableView bereits unterstützt und wie wir die fehlenden Fähigkeiten der JavaFX-TableView ergänzen. Es ist ein Implementierungsplan; als **geplant** bezeichnete Modelle, Methoden und Dateien existieren noch nicht.
 
@@ -65,7 +65,7 @@ Paging, SSR, Hydration, Crawl-Zustand und Remote-Nachladen sind vorhandene JFX-E
 
 **Randfälle/Migration:** Wechsel auf Single behält nur den führenden Eintrag. Ein ungültiges `select(index)`/`selectIndex` löscht weiterhin wie bisher die Auswahl (JFX-Kompatibilitätsregel); `selectIndices` ignoriert ungültige/duplizierte Indizes, Bereiche werden auf den gültigen Indexraum begrenzt. Ungültige JavaScript-Bereichsgrenzen wie Brüche/NaN werden ignoriert. `selectAll` ist im Single-Modus wirkungslos. Nach Unmount sind Mutationen wirkungslos. Alle abgeleiteten Properties können auch bei unverändertem Einzelwert benachrichtigen; Beobachter lesen stets einen kohärenten Modellzustand.
 
-**Weiter offen:** Austausch eigener SelectionModels, Zell-/Rechteckauswahl, eigenständiges FocusModel, Scroll-Events/Spaltennavigation, Tastaturnavigation und vollständiger zugänglicher Grid-Vertrag. Maus-Mehrfachauswahl ist nicht gleichbedeutend mit abgeschlossener Accessibility-Abnahme. Referenz für Ergebnislisten und Bereichsoperationen: [MultipleSelectionModel, JavaFX 26](https://openjfx.io/javadoc/26/javafx.controls/javafx/scene/control/MultipleSelectionModel.html).
+**Weiter offen:** Austausch eigener SelectionModels, Zell-/Rechteckauswahl, eigenständiges FocusModel, Scroll-Events, Tastaturnavigation und vollständiger zugänglicher Grid-Vertrag. Maus-Mehrfachauswahl ist nicht gleichbedeutend mit abgeschlossener Accessibility-Abnahme. Referenz für Ergebnislisten und Bereichsoperationen: [MultipleSelectionModel, JavaFX 26](https://openjfx.io/javadoc/26/javafx.controls/javafx/scene/control/MultipleSelectionModel.html).
 
 ### Implementiert: programmatische Zeilennavigation
 
@@ -75,7 +75,18 @@ Paging, SSR, Hydration, Crawl-Zustand und Remote-Nachladen sind vorhandene JFX-E
 - SSR verändert seinen deterministischen Ausschnitt nicht. Browser-Aufrufe während Komposition/Hydration warten auf abgeschlossene Hydration und einen messbaren Viewport mit sichtbaren Spalten. Die letzte gültige Anforderung gewinnt, wird vor Ausführung gegen den aktuellen Umfang geprüft und überschreibt die anfängliche Cookie-/URL-Scrollwiederherstellung. Unmount verhindert spätere Ausführung.
 - Die Demo bietet Sprünge zur 500. Zeile, zur ersten und zur führenden ausgewählten Zeile. Ein Sprung wählt nicht automatisch das Ziel aus.
 
-**Abgrenzung:** Kein `onScrollTo`-Event, kein Ladeabschluss-Promise und keine horizontale Spaltennavigation. V03 bleibt deshalb teilweise offen. Der Sichtbarkeitsvertrag orientiert sich an [JavaFX `scrollTo`](https://openjfx.io/javadoc/26/javafx.controls/javafx/scene/control/TableView.html#scrollTo(int)); SSR, Paging und Remote-Lücken sind JFX-spezifische Ergänzungen. Ein ausstehender Index ist eine Position der dann aktuellen Ansicht, kein stabiler Datensatz-Key.
+**Abgrenzung:** Kein `onScrollTo`-Event und kein Ladeabschluss-Promise. V03 bleibt deshalb teilweise offen. Der Sichtbarkeitsvertrag orientiert sich an [JavaFX `scrollTo`](https://openjfx.io/javadoc/26/javafx.controls/javafx/scene/control/TableView.html#scrollTo(int)); SSR, Paging und Remote-Lücken sind JFX-spezifische Ergänzungen. Ein ausstehender Index ist eine Position der dann aktuellen Ansicht, kein stabiler Datensatz-Key.
+
+### Implementiert: horizontale Spaltennavigation (elfter Ausbau)
+
+- Scala: `scrollToColumn(column)` und `scrollToColumnIndex(index)`; TypeScript: `scrollToColumnIndex(index)`. Indizes beziehen sich auf die aktuelle sichtbare Blattspaltenfolge. Versteckte Spalten zählen nicht mit. Referenz: [JavaFX-Spaltennavigation](https://openjfx.io/javadoc/26/javafx.controls/javafx/scene/control/TableView.html#scrollToColumn(javafx.scene.control.TableColumn)).
+- Minimalbewegung über dieselbe reine Geometrie wie Zeilennavigation; überbreite Spalten richten sich am Anfang aus. Aktuelle Benutzerbreiten/Reihenfolge werden berücksichtigt. Der native Scrolloffset wird zurückgelesen und der Header unmittelbar synchronisiert. Auswahl, DOM-Fokus, Editorzustand, vertikaler Scrolloffset und Resize-Policy bleiben unverändert; kein Remote-Nachladen durch die horizontale API. Auch ohne Zeilen oder sichtbaren Header nutzbar.
+- SSR ist ein No-op. Bei Hydration/verdecktem Layout wartet der letzte gültige Auftrag auf einen messbaren Viewport. Er speichert eine Spaltenreferenz und folgt ihr bei Reordering; vor Ausführung werden Sichtbarkeit und Zugehörigkeit erneut geprüft. Ungültige Aufrufe überschreiben keinen gültigen Auftrag, Disposal löscht ihn. Zeilen- und Spaltenaufträge sind unabhängig.
+- Die TypeScript-Demo bietet Schalter für erste/letzte sichtbare Spalte. Für sichtbares horizontales Scrollen freie Breiten wählen und Spalten über die Tabellenbreite hinaus verbreitern. Die Navigation erzwingt keinen Policy-Wechsel.
+
+**Weiter offen:** `onScrollToColumn`-Events, Gruppen und RTL-Navigation. V04 bleibt wegen der Events teilweise offen.
+
+**Abnahme am 09.09.2026:** Vollständiges Scala-Gate (`Test/testOnly *`), Bridge-Full-Link und Scala-Demo-Fast-Link grün. npm-Gates Controls (60 Integrationstests + 3 Paket-Consumer), Core (114 + 8) und Demo (Client/SSR, Eine-Runtime-Nachweis, 31 Routen) grün. Ein neuer Scala-SSR-Test und sieben neue Integrationstestfälle prüfen Navigation, aktuelle Breiten/Reihenfolge, versteckte Spalten, Editor-/Auswahlerhalt, leere/headerlose Tabellen, native Begrenzung, kein Remote-Nachladen, unabhängige Zeilennavigation, Hydration, verdecktes Layout und Disposal. Im echten Browser: 1.000 px breite Tabelle in 846 px Viewport, Sprünge zwischen horizontal 0 und 154 px, identische Header-/Zellpositionen und bei Zeile 500 unverändert vertikal 19.783 px; keine Browserfehler.
 
 ## 2. Bestandsaufnahme im Repository
 
@@ -176,7 +187,7 @@ Referenzen: [TableColumnBase](https://openjfx.io/javadoc/26/javafx.controls/java
 | C05 | Resize-Policies und `resizeColumn` | Teilweise | Sieben eingebaute Strategien, reine Breitenberechnung und Scala-/TS-API vorhanden. Eigene Policy-Callbacks und Gruppenspalten fehlen. M5. |
 | C06 | Interaktives Resize und Anpassung an Inhalt | Vorhanden | Pointer/Pfeiltasten, Doppelklick/Enter und autoFitColumn; Header plus maximal 100 gemountete geladene Zellen, vorhandene Grenzen/Policy. M5. |
 | C07 | Drag-Reordering und reorderable | Vorhanden | Flache Spalten: Pointer-Drag mit Einfügemarkierung, Alt+Shift+Links/Rechts, reaktives reorderable und moveColumn. Maßgebliche Liste und stabile Runtime-Projektion; Gruppen/Drag-Autoscroll bleiben offen. M5. |
-| C08 | Menü zum Ein-/Ausblenden der Spalten | Offen | `tableMenuButtonVisible` mit beschrifteten Menüeinträgen und Tastaturbedienung. M5/M6. |
+| C08 | Menü zum Ein-/Ausblenden der Spalten | Vorhanden | Optionales Viewport-Overlay mit Checkbox-Menü, Tastaturbedienung und tableMenuButtonVisible. Flache Spalten einschließlich ausgeblendeter Spalten. M5/M6. |
 | C09 | Header-Grafik, Sortierdarstellung, Kontextmenü | Teilweise | Text und Sortier-CSS vorhanden. Slots für graphic/sortNode/Menü sowie Sortierpriorität ergänzen. M5/M6. |
 | C10 | Spalten-ID, Klassen, Stil, Metadaten | Teilweise | Geerbte Komponentenmittel erreichen den separat erzeugten Header nicht automatisch. Anwendung auf Header/Zellen explizit festlegen. M1/M6. |
 
@@ -211,7 +222,7 @@ Referenzen: [Cell-Editierablauf](https://openjfx.io/javadoc/26/javafx.controls/j
 | V01 | Virtuelle Zeilen mit fester Höhe | Vorhanden | Überlappende absolute Slots mit derselben Item-Instanz bleiben erhalten. Datensatzbewegungen sind nicht Bestandteil dieses Vertrags. M1. |
 | V02 | Variable Zeilenhöhen/fixedCellSize-Semantik | Teilweise | Heutiger Alias setzt nur rowHeight. Gemessene Zeilen ergänzen; positive feste Höhe von variabler Höhe unterscheiden. M6. |
 | V03 | `scrollTo(index/item)`, `onScrollTo` | Teilweise | Zeilennavigation in Scala und TypeScript, bekannte ungeladene Remote-Positionen, Paging, Header und Hydration vorhanden. `onScrollTo` bleibt offen. M2. |
-| V04 | Horizontales Scrollen und Spaltennavigation | Teilweise | Header folgt dem Scrolloffset; `scrollToColumn`, `scrollToColumnIndex`, `onScrollToColumn` und Policy-abhängiges overflow ergänzen. M2/M5. |
+| V04 | Horizontales Scrollen und Spaltennavigation | Teilweise | Header-Synchronisation, Policy-abhängiges overflow und `scrollToColumn`/`scrollToColumnIndex` in Scala bzw. Index-API in TypeScript vorhanden. `onScrollToColumn` und RTL fehlen. M2/M5. |
 | V05 | Zeilen-/Zellzustände und CSS-Anpassung | Teilweise | selected/odd/even/loading vorhanden; focused/editing/disabled und Spaltenstil ergänzen. M2/M4/M6. |
 | V06 | Zugänglicher Tabellen-/Grid-Vertrag | Teilweise | Zeilen setzen aria-selected. Rollen, Indizes, Zähler, aktiver Fokus und Sortierinformation fehlen. M2/M5/M6. |
 | V07 | Angepasste Darstellung, Menüs, Tooltips, RTL | Teilweise | Eigene Zellkomposition vorhanden. Zeilen-/Header-Slots, spiegelbare Navigation und Overlay-Integration vervollständigen. M5/M6. |
@@ -235,7 +246,7 @@ Die folgenden Bausteine beschreiben die Zielarchitektur. `TableSelectionModel`, 
 
 Diese tabellenspezifischen Bausteine gehören nach `jfx.control.table`. Quellentausch, allgemeine Datenansichten oder generische Geometrie gehören bei tatsächlichem gemeinsamen Bedarf in `jfx-core` bzw. `jfx.control.virtualized`.
 
-[build.sbt](build.sbt) legt heute fest: Controls hängen produktiv an Core; Forms hängen an Controls und Viewport. **Controls dürfen nicht für Zell-Editoren von Forms abhängig werden**, da sonst ein Zyklus entsteht. Die Editorverträge bleiben in Controls; Standardeditoren auf Basis der vorhandenen Input-/ComboBox-Controls und ihrer Bindings gehören nach Forms oder in ein Integrationsmodul. Für Menüs ist ein UI-unabhängiger Slot/Presenter-Vertrag vorzusehen; ein konkreter Viewport-Adapter kann im Viewport-/Integrationsmodul liegen. Eine neue produktive Modulabhängigkeit wäre eine explizite Architekturentscheidung.
+[build.sbt](build.sbt) legt seit dem zehnten Ausbau fest: Controls hängen produktiv an Core und Viewport; Forms hängen an Controls und Viewport. Das Spaltenmenü verwendet auf ausdrücklichen Wunsch den bestehenden Viewport-/Overlay-Pfad, statt eine zweite Popup-Implementierung einzuführen. Ein aktiviertes Menü benötigt einen umgebenden Viewport; Tabellen ohne Menü weiterhin nicht. **Controls dürfen nicht für Zell-Editoren von Forms abhängig werden**, da sonst ein Zyklus entsteht. Die Editorverträge bleiben in Controls; Standardeditoren auf Basis der vorhandenen Input-/ComboBox-Controls und ihrer Bindings gehören nach Forms oder in ein Integrationsmodul.
 
 ### 4.2 Zellbindung und Erhalt bestehender Editoren
 
@@ -359,6 +370,14 @@ Vorgeschlagene Standardregel für integrierte Editoren: Verlässt die Zeile tats
 Die Standardfabriken decken Text, Boolean, Auswahl und Fortschritt ab. CheckBox-Zellen verdienen einen eigenen Pfad: JavaFX verwendet hier eine direkte bidirektionale Property-Bindung ohne gewöhnlichen Edit-Commit-Zyklus. Das entspricht eher unseren bereits möglichen dauerhaft eingebetteten Controls. Quelle: [CheckBoxTableCell, JavaFX 25](https://openjfx.io/javadoc/25/javafx.controls/javafx/scene/control/cell/CheckBoxTableCell.html); Detailabgleich mit JavaFX 26 bleibt Teil von M4, da diese 26-Einzelseite nicht abrufbar war.
 
 ### 4.7 Spaltenbaum, Breiten und Header
+
+**Umgesetzt im zehnten Ausbau – Spaltenmenü:** `tableMenuButtonVisibleProperty`/Scala-DSL bzw. reaktives TypeScript `tableMenuButtonVisible` blendet eine kleine Schalterzeile oberhalb des Headers ein (Default false). `columnMenuText` ist ein bindbarer Text für Schalter und ARIA-Menüname. Ohne Header erscheint auch kein Menüschalter. `TableColumnMenu` registriert eine `Viewport.OverlayConf` im nächsten Viewport: Ankerpositionierung, Scroll-/Resize-Nachführung und Flip übernimmt die vorhandene Overlay-Implementierung. Es gibt keinen nativen Popover und keine zweite Overlay-Engine. Daher benötigt das eingeschaltete Menü einen Viewport-Kontext; Fehlen wird beim Komponieren gemeldet. Controls hat hierfür jetzt eine produktive Viewport-Abhängigkeit, keine Forms-Abhängigkeit.
+
+Das Overlay enthält beschriftete `menuitemcheckbox`-Buttons für sämtliche Spalten in ihrer aktuellen Reihenfolge. Sichtbarkeit aktualisiert unmittelbar Header/Zellen und Checkbox-Zustand. Alle Spalten dürfen verborgen werden; Menü und Platzhalter erlauben die Wiederherstellung. Auswahl, Sortierung und Benutzerbreiten bleiben erhalten, ausgeblendete Zellen werden wie bisher entsorgt. TypeScript `onVisibilityChange` meldet Änderungen ohne Initialaufruf; zusammen mit `visible` kann die Anwendung Menüänderungen explizit in ihr Property zurückschreiben, statt eine schreibgeschützte abgeleitete Property implizit zu mutieren.
+
+Pfeil auf/ab am Schalter öffnet beim letzten/ersten Eintrag; im Menü navigieren Pfeile/Home/End. Native Enter-/Leertastenaktivierung schaltet um, ohne das Menü zu schließen. Escape schließt mit Fokusrückgabe; Tab schließt und setzt die native Tab-Navigation am Schalter fort. Außenklick/-fokus und Window-Blur schließen ohne fremden Fokus zu stehlen. Strukturänderung/Reordering schließt; erneutes Öffnen zeigt die neue Reihenfolge. Schalter-/Header-Ausblenden, Tabellen-/Viewport-Unmount oder externes Schließen des Viewport-Overlays entfernen auch die Menüzuhörer. Geschützte Tabellenhosts und aktive Composition blockieren die Sichtbarkeitsaktion. SSR rendert nur einen deaktivierten Schalter, Hydration aktiviert ihn ohne Overlay/Fokusübernahme. Die Demo nutzt denselben Viewport-Pfad und hält den bisherigen Autorenspalten-Schalter synchron.
+
+**Abnahme Spaltenmenü am 09.09.2026:** Vollständiger Scala-Testlauf (`Test/testOnly *`) und Bridge-Full-Link grün; npm-Gates Controls (53 Integrationstests + 3 Paket-Consumer), Core (114 + 8) und Demo (Client/SSR, Eine-Runtime-Nachweis, 31 Routen) grün. Tests prüfen Sichtbarkeit, Wiederherstellung aller verborgenen Spalten, Property-Rückmeldung, Erhalt anderer Zellen/Benutzerbreiten/Auswahl, Tastaturnavigation, Außeninteraktionen, Reordering, Disposal und SSR/Hydration. Im echten Browser geprüft: Viewport-Overlay außerhalb der Tabelle und innerhalb des sichtbaren Bereichs, Enter/Leertaste, Escape/Tab, Wiederherstellung nach Ausblenden aller Spalten sowie Synchronisation des bisherigen Autorenspalten-Schalters. Keine Browserfehler; umfassende Screenreader-/IME-Abnahme bleibt offen.
 
 **Umgesetzt im neunten Ausbau – Auto-Fit:** Doppelklick auf den Resize-Griff oder Enter am fokussierten Griff passt die Spalte an den Inhalt an. Scala bietet `autoFitColumn(column)`, TypeScript `autoFitColumn(visibleColumnIndex)`. Header inklusive aktueller Sortierdekoration und maximal 100 gemountete, geladene Zellen nach aufsteigendem absolutem Zeilenindex werden berücksichtigt; Overscan darf teilnehmen. Platzhalter werden nicht gemessen. Kein Nachladen, kein Abtasten sämtlicher Remote-Daten und kein Aufruf zusätzlicher Renderer.
 

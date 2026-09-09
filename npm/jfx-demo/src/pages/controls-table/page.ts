@@ -93,6 +93,9 @@ export function controlsTablePage(): void {
     button(translated("Go to row 500"), {}, () => onClick(() => table.scrollToIndex(499)));
     button(translated("Go to first row"), {}, () => onClick(() => table.scrollToIndex(0)));
     button(translated("Show selected row"), {}, () => onClick(() => table.scrollToIndex(table.selectedIndex.get)));
+    div(() => text(translated("For horizontal navigation, use free widths and widen the columns.")));
+    button(translated("Show first column"), {}, () => onClick(() => table.scrollToColumnIndex(0)));
+    button(translated("Show last column"), {}, () => onClick(() => table.scrollToColumnIndex(table.columnWidths.get.length - 1)));
 
     div(() => {
       style("height", "420px");
@@ -100,11 +103,13 @@ export function controlsTablePage(): void {
         source,
         [
           column(translated("Title").get, (book) => text(book.title), { prefWidth: 280, minWidth: 140, maxWidth: 900, sortable: true, sortKey: "title" }),
-          column(translated("Author").get, (book) => text(book.author), { prefWidth: 220, minWidth: 100, maxWidth: 600, sortable: true, sortKey: "author", visible: showAuthors }),
+          column(translated("Author").get, (book) => text(book.author), { prefWidth: 220, minWidth: 100, maxWidth: 600, sortable: true, sortKey: "author", visible: showAuthors, onVisibilityChange: value => showAuthors.set(value) }),
           column(translated("Year").get, (book) => text(String(book.year)), { prefWidth: 100, minWidth: 70, maxWidth: 300, sortable: true, sortKey: "year" }),
         ],
         {
           rowHeight: 40,
+          tableMenuButtonVisible: true,
+          columnMenuText: translated("Columns"),
           columnResizePolicy: resizePolicy,
           selectionMode,
           row: (row) => {

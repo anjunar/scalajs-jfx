@@ -213,10 +213,8 @@ lazy val jfxJson = Project(id = "scalajs-jfx-json", base = file("jfx-json"))
 // `notification`). A wider `dependsOn` edge costs zero bytes on its own (CLAUDE_REVIEW_3.md §2.1,
 // E1==E2); what the linked bundle pays for is the *registration* in BridgeRuntime, measured in §14.
 //
-// `jfxControls` compile-depends on `jfxCore` alone -- its edge to `jfxViewport` is `test->compile`
-// (see `lazy val jfxControls`), so this `dependsOn` on `jfxViewport` is the first one that actually
-// pulls `jfx.viewport` into the link. The forms facade is the remaining later step; its trigger
-// stands in CLAUDE_REVIEW_3.md §5, not a missed dependency here.
+// Controls also uses Viewport in production for the optional TableView column menu.
+// The bridge retains its explicit edge because it registers viewport factories itself.
 lazy val jfxBridge = Project(id = "scalajs-jfx-bridge", base = file("jfx-bridge"))
   .enablePlugins(ScalaJSPlugin)
   .dependsOn(jfxCore, jfxRouter, jfxControls, jfxViewport, jfxForms, jfxEditor)
@@ -250,7 +248,7 @@ lazy val jfxControls = Project(id = "scalajs-jfx-controls", base = file("jfx-con
   // Kein jfxRouter: eine generische Tabelle darf nicht wissen, dass es Routing
   // gibt. Den aktuellen Pfad liefert jfx.core.context.CrawlScope, den der Router
   // in seiner compose bereitstellt. Siehe CLAUDE_REVIEW_1.md P1-4.
-  .dependsOn(jfxCore, jfxViewport % "test->compile")
+  .dependsOn(jfxCore, jfxViewport)
   .settings(
     name       := "scalajs-jfx-controls",
     moduleName := "scalajs-jfx-controls"

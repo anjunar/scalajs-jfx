@@ -23,6 +23,8 @@ export interface ColumnDef<T> {
   readonly reorderable?: Reactive<boolean>;
   /** Removes the column from layout and rendering without removing its definition. Defaults to true. */
   readonly visible?: Reactive<boolean>;
+  /** Observes changes, not the initial value; use to write menu changes back to app state. */
+  readonly onVisibilityChange?: (visible: boolean) => void;
   /** Enables the sort toggle in this column's header. Needs `sortKey` and a `sortQuery` on the source. */
   readonly sortable?: boolean;
   /** The field name passed back to the source's `sortQuery`. */
@@ -80,6 +82,10 @@ export type ColumnResizePolicy = "unconstrained" | "all-columns" | "last-column"
   | "subsequent-columns" | "flex-next-column" | "flex-last-column";
 
 export interface TableViewOptions<T = unknown> {
+  /** Optional column chooser above the header. Requires a surrounding viewport. Default false. */
+  readonly tableMenuButtonVisible?: Reactive<boolean>;
+  /** Trigger text and menu accessible label. Default Columns. */
+  readonly columnMenuText?: Reactive<string>;
   /** Defaults to flex-last-column. Constrained policies fit the viewport and hide horizontal overflow. */
   readonly columnResizePolicy?: Reactive<ColumnResizePolicy>;
   /** Defaults to single selection. Changes to single retain the lead selection. */
@@ -156,6 +162,12 @@ export interface TableViewHandle<T = unknown> {
   scrollToIndex(index: number): void;
   /** Reveals the first loaded matching item; absent items are ignored, searching never fetches data. */
   scrollToItem(item: T): void;
+  /** Reveals a current visible column with minimal horizontal movement. Oversized columns align
+   * at their start. Does not change row position, selection, focus, widths or resize policy.
+   * Browser-only; the latest valid request waits for hydration/measurable layout, following the
+   * requested column across reordering. Hidden/removed/invalid targets and disposed tables are no-ops.
+   */
+  scrollToColumnIndex(visibleColumnIndex: number): void;
   /** Rebuilds visible cell content to pick up snapshot mutations. Does not request a remote reload. */
   refresh(): void;
   readonly isDisposed: boolean;
@@ -172,6 +184,8 @@ export function tableView<T, Q = unknown>(
     "table-view",
     defined({
       source,
+      tableMenuButtonVisible: options.tableMenuButtonVisible,
+      columnMenuText: options.columnMenuText,
       columnResizePolicy: options.columnResizePolicy,
       selectionMode: options.selectionMode,
       row: options.row
@@ -190,6 +204,7 @@ export function tableView<T, Q = unknown>(
         resizable: col.resizable,
         reorderable: col.reorderable,
         visible: col.visible,
+        onVisibilityChange: col.onVisibilityChange,
         sortable: col.sortable,
         sortKey: col.sortKey,
         cell: col.cell ? rowBody(col.cell) : undefined,

@@ -55,7 +55,7 @@ export const pageManifest: readonly PageDefinition[] = [
   { id: "core-elements", path: "/core/elements", title: "Extending the DSL", pkg: "core", runtime: "stub", render: coreElementsPage },
   { id: "core-lifecycle", path: "/core/lifecycle", title: "Lifetime and hydration", pkg: "core", runtime: "stub", render: coreLifecyclePage },
   { id: "controls-tabs", path: "/controls/tabs", title: "Tabs", pkg: "controls", runtime: "bridge", render: controlsTabsPage },
-  { id: "controls-table", path: "/controls/table", title: "TableView", pkg: "controls", runtime: "bridge", render: controlsTablePage },
+  { id: "controls-table", path: "/controls/table", title: "TableView", pkg: "controls", runtime: "bridge", render: controlsTablePage, wrap: withViewport },
   { id: "controls-carousel", path: "/controls/carousel", title: "Carousel", pkg: "controls", runtime: "bridge", render: controlsCarouselPage },
   { id: "controls-data-grid", path: "/controls/data-grid", title: "DataGrid", pkg: "controls", runtime: "bridge", render: controlsDataGridPage },
   { id: "controls-virtual-list", path: "/controls/virtual-list", title: "VirtualListView", pkg: "controls", runtime: "bridge", render: controlsVirtualListPage },
