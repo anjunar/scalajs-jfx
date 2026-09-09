@@ -113,8 +113,51 @@ may scan the entire index space, so prefer a known index for large remote source
 After unmount, selection operations are no-ops. Reactive `text` bindings follow normal
 component lifecycle; dispose subscriptions that you create manually with `observe`.
 Derived properties may notify even when only the other selection field changes.
-Multi-selection, cell selection, and a separate focus model are not available yet.
+Cell selection and a separate focus model are not available yet; multi-selection is below.
 Selection identity does not guarantee DOM/editor identity across data reordering.
+
+### Multiple selection
+
+Pass `selectionMode: "multiple"` (or a reactive property) to `tableView`. The default
+remains `"single"`. The same runtime-owned handle exposes both modes:
+
+```ts
+const table = tableView(books, [valueColumn("Title", (book) => book.title)], {
+  selectionMode: "multiple",
+});
+table.selectIndices([0, 2]);
+table.selectRange(3, 6); // Adds 3, 4, 5; reversed ranges also exclude the end.
+text(table.selectedIndices.map((indices) => `${indices.length} selected`));
+table.clearIndex(2);
+table.clearAndSelect(0); // Replace the entire selection in one update.
+```
+
+`selectedIndices` is a read-only property of sorted, unique absolute indices;
+`selectedItems` contains their loaded items in index order. `selectedIndex`/`selectedItem`
+describe the **lead** (last valid selection), not the whole result. Removing the lead
+chooses the largest remaining selected index. All properties read from one coherent
+snapshot. Returned arrays cannot mutate the model (item objects remain application-owned).
+
+In multiple mode, `selectIndex`/`selectItem` add to selection. `selectIndices` ignores invalid
+and duplicate values; ranges clip to valid positions. `clearIndex` ignores invalid positions.
+Non-integral/NaN/infinite range boundaries are ignored. Invalid `selectIndex` and
+`clearAndSelect` still clear selection for compatibility with the original single API.
+`selectAll` works only in multiple mode. `selectFirst`, `selectLast`, `selectNext` and
+`selectPrevious` operate on the lead and do not move DOM focus or scroll the viewport.
+
+Plain click replaces selection. Ctrl/Cmd-click toggles a row; Shift-click replaces it with
+the inclusive anchor-to-click range; Ctrl/Cmd+Shift adds that range. Repeated Shift-clicks
+keep the anchor, including after index rebasing. Loaded custom rows use the same membership
+state. Switching to single via `setSelectionMode("single")` retains just the lead.
+The reactive option is one-way: handle calls do not write back to the supplied property.
+
+For sparse remote data, selected indices may outnumber selected items: **do not zip the
+two lists**. Selection never fetches missing values. `selectAll` explicitly selects the
+currently known index space and uses memory proportional to its size; it is not a
+server-side all-results token and does not expand automatically when the source grows.
+Accepted reloads clear the selection; structural deltas preserve surviving occurrences.
+Keyboard range navigation, a replaceable selection model, cell selection and full grid
+accessibility remain separate work.
 
 ### Custom rows
 

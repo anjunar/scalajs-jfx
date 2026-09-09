@@ -69,7 +69,11 @@ export interface TableRowContext<T> {
   renderCells(): void;
 }
 
+export type TableSelectionMode = "single" | "multiple";
+
 export interface TableViewOptions<T = unknown> {
+  /** Defaults to single selection. Changes to single retain the lead selection. */
+  readonly selectionMode?: Reactive<TableSelectionMode>;
   /** Replaces row content. Styles/events apply to the row; call row.renderCells() for standard columns. */
   readonly row?: (row: TableRowContext<T>) => void;
   readonly rowHeight?: number;
@@ -93,9 +97,13 @@ export interface TableViewOptions<T = unknown> {
   readonly placeholder?: () => void;
 }
 
-/** Runtime-owned single-selection and refresh operations. Multi-selection and scrolling APIs remain pending. */
+/** Runtime-owned row selection and refresh. Cell selection, focus and scrolling APIs remain pending. */
 export interface TableViewHandle<T = unknown> {
-  /** Single-row selection in absolute view coordinates; unloaded positions have a null item. */
+  readonly selectionMode: ReadOnlyProperty<TableSelectionMode>;
+  /** Sorted unique absolute positions. Item snapshots omit unloaded positions (no remote fetch). */
+  readonly selectedIndices: ReadOnlyProperty<readonly number[]>;
+  readonly selectedItems: ReadOnlyProperty<readonly T[]>;
+  /** Lead selection in absolute view coordinates; an unloaded lead has a null item. */
   readonly selectedIndex: ReadOnlyProperty<number>;
   readonly selectedItem: ReadOnlyProperty<T | null>;
   /** Invalid positions clear selection. These methods are no-ops after unmount. */
@@ -103,6 +111,20 @@ export interface TableViewHandle<T = unknown> {
   /** Selects the first matching item, or clears when absent. Does not fetch unloaded items. */
   selectItem(item: T): void;
   clearSelection(): void;
+  setSelectionMode(mode: TableSelectionMode): void;
+  clearAndSelect(index: number): void;
+  clearIndex(index: number): void;
+  isSelected(index: number): boolean;
+  /** Adds valid indices, ignoring invalid/duplicate arguments. Last valid index becomes lead. */
+  selectIndices(indices: readonly number[]): void;
+  /** Inclusive start, exclusive end, forward or backward. Adds to existing selection. */
+  selectRange(start: number, end: number): void;
+  /** Multiple mode only; selects currently known positions without loading their items. */
+  selectAll(): void;
+  selectFirst(): void;
+  selectLast(): void;
+  selectNext(): void;
+  selectPrevious(): void;
   /** Rebuilds visible cell content to pick up snapshot mutations. Does not request a remote reload. */
   refresh(): void;
   readonly isDisposed: boolean;
@@ -119,6 +141,7 @@ export function tableView<T, Q = unknown>(
     "table-view",
     defined({
       source,
+      selectionMode: options.selectionMode,
       row: options.row
         ? (row: Omit<TableRowContext<T>, "renderCells">, self: ComponentHandle, scope: ScopeHandle,
            cells: (scope: ScopeHandle) => void) => withScope(scope, self, () => options.row!({

@@ -141,7 +141,7 @@ describe("typechecking a consumer", () => {
       'import type { SsrResult } from "@anjunar/jfx-core";',
       'import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";',
       'import { carousel, column, dataGrid, remoteSource, tab, tableView, tabs, virtualList } from "@anjunar/jfx-controls";',
-      'import type { ColumnDef, RemoteSource, TableViewHandle, TableViewOptions, TableRowContext } from "@anjunar/jfx-controls";',
+      'import type { ColumnDef, RemoteSource, TableViewHandle, TableViewOptions, TableRowContext, TableSelectionMode } from "@anjunar/jfx-controls";',
       "",
       "interface Row { readonly name: string }",
       "",
@@ -161,6 +161,12 @@ describe("typechecking a consumer", () => {
       "    const selectedName: string | undefined = table.selectedItem.get?.name;",
       "    table.selectItem(rows.get[0]!);",
       "    table.clearSelection();",
+      "    const mode: TableSelectionMode = \"multiple\";",
+      "    table.setSelectionMode(mode);",
+      "    table.selectIndices([0]); table.selectRange(0, 1); table.selectAll();",
+      "    const selectedRows: readonly Row[] = table.selectedItems.get;",
+      "    const selectedIndices: readonly number[] = table.selectedIndices.get;",
+      "    table.clearIndex(0); table.clearAndSelect(0);",
       "    carousel(rows, (row) => div(() => text(row.name)));",
       "    dataGrid(rows, (row) => div(() => text(row?.name ?? \"\")));",
       "    virtualList(rows, (row) => div(() => text(row?.name ?? \"\")));",
@@ -210,6 +216,7 @@ describe("rendering controls from a packed install", () => {
       'import { tab, tableView, tabs } from "@anjunar/jfx-controls";',
       "installRuntime(bridgeRuntime);",
       "let selectedTitle;",
+      "let selectedTitles;",
       "const result = await renderToString(() => {",
       "  const rows = listProperty([{ title: \"Dune\" }, { title: \"Solaris\" }]);",
       "  tabs([tab(\"A\", () => div(() => text(\"panel a\"))), tab(\"B\", () => div(() => text(\"panel b\")))], { selectedIndex: 1 });",
@@ -218,6 +225,8 @@ describe("rendering controls from a packed install", () => {
       "  table.refresh();",
       "  table.selectIndex(1);",
       "  selectedTitle = table.selectedItem.get?.title;",
+      "  table.setSelectionMode(\"multiple\"); table.selectIndices([0, 1]);",
+      "  selectedTitles = table.selectedItems.get.map(row => row.title);",
       "});",
       "console.log(JSON.stringify({",
       "  status: result.status,",
@@ -226,6 +235,7 @@ describe("rendering controls from a packed install", () => {
       "  dune: result.html.includes(\"Dune\"),",
       "  solaris: result.html.includes(\"Solaris\"),",
       "  selectedTitle,",
+      "  selectedTitles,",
       "  customRow: result.html.includes(\"custom-row-content\"),",
       "}));",
       "",
@@ -240,6 +250,7 @@ describe("rendering controls from a packed install", () => {
       dune: boolean;
       solaris: boolean;
       selectedTitle: string;
+      selectedTitles: string[];
       customRow: boolean;
     }>(run(process.execPath, ["ssr-controls.mjs"], consumer));
 
@@ -249,6 +260,7 @@ describe("rendering controls from a packed install", () => {
     expect(result.dune).toBe(true);
     expect(result.solaris).toBe(true);
     expect(result.selectedTitle).toBe("Solaris");
+    expect(result.selectedTitles).toEqual(["Dune", "Solaris"]);
     expect(result.customRow).toBe(true);
   });
 });

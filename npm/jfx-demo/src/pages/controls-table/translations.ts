@@ -11,6 +11,10 @@ export const entries: readonly CatalogEntry[] = [
   catalogEntry(i18n`Toggle author column`, { de: "Autorenspalte ein-/ausblenden" }),
   catalogEntry(i18n`No book selected`, { de: "Kein Buch ausgewählt" }),
   catalogEntry(i18n`Clear book selection`, { de: "Buchauswahl aufheben" }),
+  catalogEntry(i18n`Toggle single / multiple selection`, { de: "Einzel-/Mehrfachauswahl umschalten" }),
+  catalogEntry(i18n`Ctrl/Cmd-click toggles rows; Shift-click selects a range.`, { de: "Ctrl/Cmd-Klick wählt Zeilen an oder ab; Shift-Klick wählt einen Bereich." }),
+  catalogEntry(i18n`Selection mode`, { de: "Auswahlmodus" }),
+  catalogEntry(i18n`Selected rows`, { de: "Ausgewählte Zeilen" }),
   catalogEntry(i18n`Remote catalogue · visible rows load on demand`, { de: "Remote-Katalog · sichtbare Zeilen werden bei Bedarf geladen" }),
   catalogEntry(i18n`No books found.`, { de: "Keine Bücher gefunden." }),
 ];

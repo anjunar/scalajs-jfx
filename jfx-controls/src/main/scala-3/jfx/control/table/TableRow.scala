@@ -9,6 +9,7 @@ import jfx.core.render.Cursor
 import jfx.core.state.{Property, ReadOnlyProperty}
 import jfx.core.statement.Foreach.foreach
 import jfx.core.statement.DynamicComponentRenderer.dynamic
+import org.scalajs.dom
 
 class TableRow[S] private[control] (
     initialize: TableRow[S] ?=> Cursor ?=> Unit
@@ -53,8 +54,8 @@ class TableRow[S] private[control] (
       } else {
         val table = requireTableView()
         addDisposable(
-          table.selectedIndexProperty.observe(index =>
-            selectedState.set(index == indexProperty.get)
+          table.selectedIndicesProperty.observe(_ =>
+            selectedState.set(table.selectionModel.isSelected(indexProperty.get))
           )
         )
         classIf("jfx-table-row-selected", selectedProperty)
@@ -62,7 +63,16 @@ class TableRow[S] private[control] (
           selectedProperty.observe(value => setAttribute("aria-selected", value.toString))
         )
 
-        onClick(_ => table.select(indexProperty.get))
+        onClick { event =>
+          if (cursor.isBrowser && event.raw != null) {
+            val mouse = event.raw.asInstanceOf[dom.MouseEvent]
+            table.selectionModel.click(
+              indexProperty.get,
+              mouse.ctrlKey || mouse.metaKey,
+              mouse.shiftKey
+            )
+          } else table.selectionModel.click(indexProperty.get, toggle = false, extend = false)
+        }
         onDoubleClick { _ =>
           itemProperty.get match {
             case item: S @unchecked => table.fireRowDoubleClick(item)
@@ -104,7 +114,7 @@ class TableRow[S] private[control] (
     itemState.set(value.orNull)
     placeholder = value.isEmpty
     emptyState.set(placeholder)
-    selectedState.set(!placeholder && owner.selectedIndexProperty.get == rowIndex)
+    selectedState.set(!placeholder && owner.selectionModel.isSelected(rowIndex))
   }
 
   private[control] def bind(

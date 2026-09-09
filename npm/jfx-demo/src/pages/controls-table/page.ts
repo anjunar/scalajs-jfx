@@ -1,6 +1,6 @@
 import { attr, button, classes, div, onClick, property, style, text, when } from "@anjunar/jfx-core";
 import { column, remoteSource, tableView } from "@anjunar/jfx-controls";
-import type { RemotePage, RemoteSource, SortSpec, TableViewHandle } from "@anjunar/jfx-controls";
+import type { RemotePage, RemoteSource, SortSpec, TableSelectionMode, TableViewHandle } from "@anjunar/jfx-controls";
 import { translated } from "../../app/i18n.js";
 
 interface Book {
@@ -50,6 +50,7 @@ function loadPage(query: Query): Promise<RemotePage<Book, Query>> {
 
 export function controlsTablePage(): void {
   const showAuthors = property(true);
+  const selectionMode = property<TableSelectionMode>("multiple");
   let table!: TableViewHandle<Book>;
   const initialQuery: Query = { offset: 0, limit: PAGE_SIZE, sorting: [] };
   const source: RemoteSource<Book, Query> = remoteSource({
@@ -79,6 +80,10 @@ export function controlsTablePage(): void {
     button(translated("Toggle author column"), {}, () => {
       onClick(() => showAuthors.set(!showAuthors.get));
     });
+    button(translated("Toggle single / multiple selection"), {}, () => {
+      onClick(() => selectionMode.set(selectionMode.get === "multiple" ? "single" : "multiple"));
+    });
+    div(() => text(translated("Ctrl/Cmd-click toggles rows; Shift-click selects a range.")));
 
     div(() => {
       style("height", "420px");
@@ -91,6 +96,7 @@ export function controlsTablePage(): void {
         ],
         {
           rowHeight: 40,
+          selectionMode,
           row: (row) => {
             classes("book-row");
             const book = row.item.get;
@@ -107,6 +113,14 @@ export function controlsTablePage(): void {
     });
     div(() => {
       classes("showcase-result");
+      div(() => {
+        div(() => text(translated("Selection mode")));
+        div(() => text(table.selectionMode));
+      });
+      div(() => {
+        div(() => text(translated("Selected rows")));
+        div(() => text(table.selectedIndices.map((indices) => String(indices.length))));
+      });
       when(
         table.selectedItem.map((book) => book === null),
         () => text(translated("No book selected")),

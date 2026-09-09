@@ -265,6 +265,12 @@ private[bridge] object TableViewFactory extends ComponentFactory {
 
     val table = TableView.tableView[js.Any](src) {
       options.get("rowHeight").foreach(value => TableView.rowHeight = ControlFactories.dbl(value))
+      options.get("selectionMode").foreach { value =>
+        val table = summon[TableView[js.Any]]
+        table.addDisposable(ReactiveBridge.asProperty[String](value).observe { mode =>
+          table.selectionModel.selectionMode = TableViewHandleBridge.parseSelectionMode(mode)
+        })
+      }
       options
         .get("showHeader")
         .foreach(value => TableView.showHeader = ControlFactories.bool(value))

@@ -45,7 +45,7 @@ import {
 import { div, text } from "@anjunar/jfx-core";
 import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";
 import { carousel, dataGrid, remoteSource, tab, tableView, tabs, valueColumn, virtualList } from "../src/index.js";
-import type { TableViewHandle, TableRowContext, RemotePage } from "../src/index.js";
+import type { TableViewHandle, TableRowContext, TableSelectionMode, RemotePage } from "../src/index.js";
 
 const linkedArtifact = resolve(process.cwd(), "../scalajs-jfx-bridge/dist/fullopt/main.js");
 
@@ -169,6 +169,142 @@ describe("carousel", () => {
 });
 
 describe("table-view", () => {
+  it("exposes atomic multi-selection operations, independent snapshots and reactive modes", () => {
+    const source = listProperty([{ name: "a" }, { name: "b" }, { name: "c" }, { name: "d" }]);
+    const mode = property<TableSelectionMode>("multiple");
+    const root = document.createElement("div");
+    let table!: TableViewHandle<{ name: string }>;
+    const app = mount(root, () => {
+      table = tableView(source, [valueColumn("Name", (row) => row.name)], { paging: true, selectionMode: mode });
+    });
+    let notifications = 0;
+    const subscription = table.selectedIndices.observeWithoutInitial((indices) => {
+      notifications++;
+      expect(table.selectedItems.get).toEqual(indices.map((i) => source.get[i]));
+      expect(table.selectedItem.get).toBe(source.get[table.selectedIndex.get] ?? null);
+      if (table.selectionMode.get === "single") expect(indices.length).toBeLessThanOrEqual(1);
+    });
+    try {
+      table.selectIndices([3, 1, 1, -1, 99, 0.5, NaN, Infinity]);
+      expect(notifications).toBe(1);
+      expect(table.selectedIndices.get).toEqual([1, 3]);
+      expect(table.selectedIndex.get).toBe(1);
+      const copy = table.selectedIndices.get as number[];
+      copy.push(99);
+      expect(table.selectedIndices.get).toEqual([1, 3]);
+      table.selectIndex(2);
+      expect(table.selectedIndices.get).toEqual([1, 2, 3]);
+      table.clearIndex(2);
+      expect(table.selectedIndex.get).toBe(3);
+      mode.set("single");
+      expect(table.selectedIndices.get).toEqual([3]);
+      table.selectAll();
+      expect(table.selectedIndices.get).toEqual([3]);
+      table.setSelectionMode("multiple");
+      table.clearAndSelect(0);
+      table.selectRange(3, 0);
+      expect(table.selectedIndices.get).toEqual([0, 1, 2, 3]);
+      expect(table.selectedIndex.get).toBe(1);
+      table.selectRange(NaN, 3);
+      expect(table.selectedIndex.get).toBe(1);
+      table.clearAndSelect(2);
+      table.selectNext(); table.selectPrevious(); table.selectFirst(); table.selectLast();
+      expect(table.selectedIndices.get).toEqual([0, 2, 3]);
+      expect(table.isSelected(2)).toBe(true);
+      expect(table.isSelected(0.5)).toBe(false);
+    } finally { subscription.dispose(); app.dispose(); }
+    const before = table.selectedIndices.get;
+    mode.set("multiple");
+    table.selectAll(); table.clearAndSelect(0); table.clearIndex(3); table.clearSelection();
+    table.setSelectionMode("single");
+    expect(table.selectedIndices.get).toEqual(before);
+  });
+
+  it("handles Ctrl, Cmd and anchored Shift row clicks without recomposing custom rows", () => {
+    const source = listProperty(Array.from({ length: 8 }, (_, index) => ({ name: `row:${index}` })));
+    const root = document.createElement("div");
+    let table!: TableViewHandle<{ name: string }>;
+    let compositions = 0;
+    const app = mount(root, () => {
+      table = tableView(source, [valueColumn("Name", (row) => row.name)], {
+        paging: true, selectionMode: "multiple",
+        row: (row) => { compositions++; classIf("custom-chosen", row.selected); row.renderCells(); },
+      });
+    });
+    const rows = root.querySelectorAll(".jfx-table-row");
+    const click = (index: number, options: MouseEventInit = {}): void => {
+      rows[index]!.dispatchEvent(new MouseEvent("click", { bubbles: true, ...options }));
+      expect(Array.from(root.querySelectorAll('.jfx-table-row[aria-selected="true"]')).map(row => row.textContent))
+        .toEqual(table.selectedIndices.get.map(index => `row:${index}`));
+      expect(root.querySelectorAll(".custom-chosen")).toHaveLength(table.selectedIndices.get.length);
+    };
+    try {
+      click(1);
+      click(3, { ctrlKey: true });
+      expect(table.selectedIndices.get).toEqual([1, 3]);
+      click(5, { metaKey: true });
+      expect(table.selectedIndices.get).toEqual([1, 3, 5]);
+      click(7, { shiftKey: true });
+      expect(table.selectedIndices.get).toEqual([5, 6, 7]);
+      click(6, { shiftKey: true });
+      expect(table.selectedIndices.get).toEqual([5, 6]);
+      click(3, { shiftKey: true, ctrlKey: true });
+      expect(table.selectedIndices.get).toEqual([3, 4, 5, 6]);
+      click(3, { ctrlKey: true });
+      expect(table.selectedIndices.get).toEqual([4, 5, 6]);
+      click(2);
+      expect(table.selectedIndices.get).toEqual([2]);
+      expect(compositions).toBe(8);
+      expect(root.querySelectorAll(".jfx-table-row")[0]).toBe(rows[0]);
+    } finally { app.dispose(); }
+  });
+
+  it("hydrates a multi-selected table and preserves selections when columns are hidden", async () => {
+    const source = listProperty(["a", "b", "c"]);
+    const shown = property(true);
+    let table!: TableViewHandle<string>;
+    const build = (): void => {
+      table = tableView(source, [valueColumn("Name", row => row, { visible: shown })], {
+        paging: true, selectionMode: "multiple",
+      });
+      table.selectIndices([0, 2]);
+    };
+    const rendered = await renderToString(build);
+    const root = document.createElement("div");
+    root.innerHTML = rendered.html;
+    const rows = Array.from(root.querySelectorAll(".jfx-table-row"));
+    const app = await hydrate(root, build);
+    try {
+      root.querySelectorAll(".jfx-table-row").forEach((row, index) => expect(row).toBe(rows[index]));
+      expect(root.querySelectorAll('[aria-selected="true"]')).toHaveLength(2);
+      shown.set(false);
+      expect(table.selectedIndices.get).toEqual([0, 2]);
+      shown.set(true);
+      expect(root.querySelectorAll('[aria-selected="true"]')).toHaveLength(2);
+      source.removeAt(0);
+      expect(table.selectedIndices.get).toEqual([1]);
+      expect(table.selectedItems.get).toEqual(["c"]);
+    } finally { app.dispose(); }
+  });
+
+  it("keeps unloaded remote selections out of the selected-item snapshot without fetching", async () => {
+    const load = vi.fn(async () => ({ items: ["later"], offset: 0, totalCount: 100 }));
+    const source = remoteSource<string, { offset: number }>({
+      load, initialQuery: { offset: 50 }, initial: ["fifty", "fifty-one"], initialOffset: 50, totalCount: 100,
+    });
+    await renderToString(() => {
+      const table = tableView(source, [valueColumn("Value", row => row)], { paging: true, selectionMode: "multiple" });
+      table.selectIndices([50, 80]);
+      expect(table.selectedIndices.get).toEqual([50, 80]);
+      expect(table.selectedItems.get).toEqual(["fifty"]);
+      expect(table.selectedItem.get).toBeNull();
+      table.selectAll();
+      expect(table.selectedIndices.get).toHaveLength(100);
+      expect(table.selectedItems.get).toEqual(["fifty", "fifty-one"]);
+    });
+    expect(load).not.toHaveBeenCalled();
+  });
+
   it("exposes coherent selection and follows a duplicate occurrence through list mutations", () => {
     const same = { name: "Same" };
     const rows = listProperty([same, same, { name: "Last" }]);

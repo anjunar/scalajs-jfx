@@ -1,6 +1,6 @@
 # TableView: Feature-Stand und Implementierungsplan
 
-Stand: 09.09.2026 · Ausgangsanalyse: `7295d92` · einschließlich Grundlagenpaket, Spaltensichtbarkeit, Auswahl-/Remote-Vertrag und RowFactory · Referenz: JavaFX 26.
+Stand: 09.09.2026 · Ausgangsanalyse: `7295d92` · einschließlich Grundlagenpaket, Spaltensichtbarkeit, Auswahl-/Remote-Vertrag, RowFactory und Mehrfachauswahl · Referenz: JavaFX 26.
 
 Dieses Dokument beschreibt, welche Funktionen unsere TableView bereits unterstützt und wie wir die fehlenden Fähigkeiten der JavaFX-TableView ergänzen. Es ist ein Implementierungsplan; als **geplant** bezeichnete Modelle, Methoden und Dateien existieren noch nicht.
 
@@ -50,7 +50,22 @@ Paging, SSR, Hydration, Crawl-Zustand und Remote-Nachladen sind vorhandene JFX-E
 
 **Migration Scala:** `selectedIndexProperty` und `selectedItemProperty` sind jetzt `ReadOnlyProperty`. Direkte Schreibzugriffe durch `select(index)`, `select(item)` bzw. `clearSelection()` ersetzen. Beobachter sehen stets ein zusammengehöriges Paar; abgeleitete Properties können auch bei unverändertem Einzelwert benachrichtigen. Item-Auswahl sucht das erste gleiche geladene Item, lädt nichts nach und kann den gesamten Indexraum durchsuchen. Für große Remote-Quellen deshalb einen bekannten absoluten Index verwenden.
 
-**Grenze:** Dies ist noch kein austauschbares SelectionModel, keine Mehrfach-/Zellselektion und kein FocusModel. Erhaltene Auswahl bedeutet nicht erhaltene DOM-/Editorinstanzen über Datenverschiebungen. Quellentausch und identitätsbasierte Wiederherstellung über Remote-Abfragen bleiben offen.
+**Grenze dieses Pakets:** Noch kein austauschbares SelectionModel, keine Mehrfach-/Zellselektion und kein FocusModel. Das nachfolgende Mehrfachauswahl-Paket ergänzt ein zentrales Zeilenauswahlmodell. Erhaltene Auswahl bedeutet nicht erhaltene DOM-/Editorinstanzen über Datenverschiebungen. Quellentausch und identitätsbasierte Wiederherstellung über Remote-Abfragen bleiben offen.
+
+### Implementiert: Zeilen-Mehrfachauswahl und Mausmodifikatoren
+
+- `TableView.selectionModel: TableSelectionModel[S]` besitzt den gesamten Auswahlzustand. Modus, Ergebnislisten, führender Index/Datensatz und Shift-Anker werden in einem gemeinsamen Snapshot veröffentlicht. Die bisherigen Tabellenmethoden und `selectedIndexProperty`/`selectedItemProperty` delegieren an dieses Modell.
+- Scala: `TableSelectionMode.Single` (Default) / `Multiple`, DSL `selectionMode = ...` und `table.selectionModel.selectionMode = ...`. Der Modus ist lesbar über `selectionModeProperty`; Änderungen laufen kontrolliert über den Setter. TypeScript: `selectionMode: Reactive<"single" | "multiple">` als Option sowie `setSelectionMode(...)` am Handle.
+- Lesbare `selectedIndicesProperty`/`selectedItemsProperty` liefern unveränderliche Vektoren; TypeScript stellt `selectedIndices`/`selectedItems` als Properties über schreibgeschützten Array-Snapshots bereit. Indizes sind eindeutig und aufsteigend sortiert. Der zuletzt gültig ausgewählte Index ist der führende Index, nicht notwendigerweise der größte. Bei seinem Entfernen wird der größte verbleibende ausgewählte Index führend.
+- Operationen: `select`, `selectIndices`, `selectRange` (Start inklusive, Ende exklusiv; beide Richtungen), `selectAll`, `clearAndSelect`, `clearSelection(index)`/ohne Index, `isSelected`, `isEmpty` sowie erste/letzte/nächste/vorige Auswahl. Das TypeScript-Handle verwendet `selectIndex`, `selectItem` und `clearIndex` für die ansonsten überladenen Aufrufe. `select` fügt im Mehrfachmodus hinzu; `clearAndSelect` ersetzt die Auswahl atomar.
+- Einfacher Klick ersetzt die Auswahl; Ctrl/Cmd-Klick schaltet ein Vorkommen um. Shift-Klick ersetzt sie durch den inklusiven Bereich ab dem Anker; Ctrl/Cmd+Shift fügt diesen Bereich hinzu. Wiederholtes Shift verlängert oder verkürzt denselben Ankerbereich. Einfügen/Entfernen rebasiert auch den Anker; wird er entfernt, beginnt der nächste Shift-Klick eine neue Einzelauswahl.
+- Alle ausgewählten Vorkommen folgen lokalen und absoluten Remote-Strukturänderungen. Reset sucht eindeutige Instanzidentitäten in einem gemeinsamen Quellendurchlauf; weder gleiche Werte noch dichte Remote-Cache-Indizes werden als Identität verwendet. Remote-Replacements löschen weiterhin erst bei erfolgreicher Übernahme die Auswahl.
+- `selectAll` wirkt nur im Mehrfachmodus auf den **aktuell bekannten Indexraum**, einschließlich ungeladener Positionen. Es lädt nichts und ist keine serverseitige „alle Treffer“-Auswahl. `selectedItems` enthält nur geladene Werte; deshalb dürfen die beiden Ergebnislisten bei lückenhaften Quellen nicht einfach positionsweise verknüpft werden. Die explizite Indexauswahl benötigt Speicher proportional zur Anzahl gewählter Positionen.
+- Eigene und normale Rows beziehen `selected`/CSS/`aria-selected` jetzt aus der Mitgliedschaft, nicht aus dem führenden Index. Die Demo startet bewusst im Mehrfachmodus, zeigt die Anzahl und erlaubt einen Moduswechsel. Allgemeiner Tabellen-Default und ComboBox-Verhalten bleiben Einzelauswahl.
+
+**Randfälle/Migration:** Wechsel auf Single behält nur den führenden Eintrag. Ein ungültiges `select(index)`/`selectIndex` löscht weiterhin wie bisher die Auswahl (JFX-Kompatibilitätsregel); `selectIndices` ignoriert ungültige/duplizierte Indizes, Bereiche werden auf den gültigen Indexraum begrenzt. Ungültige JavaScript-Bereichsgrenzen wie Brüche/NaN werden ignoriert. `selectAll` ist im Single-Modus wirkungslos. Nach Unmount sind Mutationen wirkungslos. Alle abgeleiteten Properties können auch bei unverändertem Einzelwert benachrichtigen; Beobachter lesen stets einen kohärenten Modellzustand.
+
+**Weiter offen:** Austausch eigener SelectionModels, Zell-/Rechteckauswahl, eigenständiges FocusModel, Scroll-API, Tastaturnavigation und vollständiger zugänglicher Grid-Vertrag. Maus-Mehrfachauswahl ist nicht gleichbedeutend mit abgeschlossener Accessibility-Abnahme. Referenz für Ergebnislisten und Bereichsoperationen: [MultipleSelectionModel, JavaFX 26](https://openjfx.io/javadoc/26/javafx.controls/javafx/scene/control/MultipleSelectionModel.html).
 
 ## 2. Bestandsaufnahme im Repository
 
@@ -92,7 +107,8 @@ Für eigene Inhalte `renderCells` ersetzen oder ergänzen. TypeScript-Beispiel u
 | [ItemGeometry.scala](jfx-controls/src/main/scala-3/jfx/control/virtualized/ItemGeometry.scala) | `FixedRowGeometry` und bereits vorhandene `MeasuredRowGeometry` als Grundlage für variable Zeilenhöhen. |
 | [ListDataSource.scala](jfx-core/src/main/scala-3/jfx/core/state/ListDataSource.scala), [ListProperty.scala](jfx-core/src/main/scala-3/jfx/core/state/ListProperty.scala) | Lesender Datenquellenvertrag und veränderbare lokale Liste. |
 | [RemoteListProperty.scala](jfx-core/src/main/scala-3/jfx/core/remote/RemoteListProperty.scala) | Lückenhaft geladene Daten, Bereichsabfragen, Sortierdeskriptoren und Schutz vor veralteten Ladeantworten. |
-| [table.ts](npm/jfx-controls/src/table.ts), [ControlFactories.scala](jfx-bridge/src/main/scala-3/jfx/bridge/ControlFactories.scala), [TableViewHandleBridge.scala](jfx-bridge/src/main/scala-3/jfx/bridge/TableViewHandleBridge.scala) | Deklarative TypeScript-Tabellenoptionen, reaktive Sichtbarkeit und typisiertes Handle für Einzelauswahl, Refresh und Lifecycle. Weitere Modelle und Operationen sind offen. |
+| [TableSelectionModel.scala](jfx-controls/src/main/scala-3/jfx/control/table/TableSelectionModel.scala) | Zentrales Einzel-/Mehrfachauswahlmodell mit kohärenten Ergebnislisten, führendem Eintrag, Shift-Anker und absoluter Datenänderungsabbildung. |
+| [table.ts](npm/jfx-controls/src/table.ts), [ControlFactories.scala](jfx-bridge/src/main/scala-3/jfx/bridge/ControlFactories.scala), [TableViewHandleBridge.scala](jfx-bridge/src/main/scala-3/jfx/bridge/TableViewHandleBridge.scala) | Deklarative TypeScript-Tabellenoptionen, reaktive Sichtbarkeit/Modus und typisiertes Handle für Einzel-/Mehrfachauswahl, Refresh und Lifecycle. Weitere Modelle und Operationen sind offen. |
 
 ### Technische Voraussetzungen und Bearbeitungsstand
 
@@ -130,12 +146,12 @@ Referenzen: [TableViewSelectionModel](https://openjfx.io/javadoc/26/javafx.contr
 
 | ID | Funktion | Stand | Umsetzung |
 | --- | --- | --- | --- |
-| S01 | Einzelauswahl, selectedIndex/selectedItem | Teilweise | Konsistenter lesbarer Zustand, Scala-Auswahlmethoden und typisiertes TypeScript-Handle vorhanden. Austauschbares SelectionModel ergänzen. M2. |
-| S02 | Mehrfachauswahl und beobachtbare Ergebnislisten | Offen | SINGLE/MULTIPLE, selectedIndices/selectedItems, clear/selectAll/selectIndices sowie erste/letzte/nächste/vorige Auswahl. M2. |
+| S01 | Einzelauswahl, selectedIndex/selectedItem | Teilweise | Zentrales `TableSelectionModel`, kohärenter lesbarer Zustand und Scala-/TypeScript-Operationen vorhanden. Austauschbarkeit des Modells bleibt offen. M2. |
+| S02 | Mehrfachauswahl und beobachtbare Ergebnislisten | Vorhanden | Single/Multiple, selectedIndices/selectedItems, clear/selectAll/selectIndices/selectRange sowie erste/letzte/nächste/vorige Auswahl. Remote-Index-/Item-Semantik ausdrücklich dokumentiert. M2. |
 | S03 | Zellselektion und Bereiche | Offen | `TablePosition`, selectedCells, cellSelectionEnabled, Richtungsoperationen und Rechteckauswahl. M2. |
 | S04 | Eigenständiges FocusModel | Offen | Fokusposition, fokussierter Index/Datensatz, Richtungsnavigation und Modellaustausch; Fokus und Auswahl unabhängig. M2. |
-| S05 | Maus-/Tastaturbedienung mit Modifikatoren | Teilweise | Einfacher Zeilenklick vorhanden. Shift-Anker, Ctrl/Cmd-Toggle, Navigation, Home/End und PageUp/PageDown ergänzen. M2. |
-| S06 | Konsistenz bei Daten-/Spaltenänderungen | Teilweise | Einzelauswahl folgt lokalen/absoluten Remote-Deltas; Reset, Duplikate, Entfernen, ungeladene Positionen und akzeptierter Querywechsel geregelt. Keys, Quellen-/Modellwechsel und Zellselektion bleiben offen. M0/M2/M3. |
+| S05 | Maus-/Tastaturbedienung mit Modifikatoren | Teilweise | Klick, Ctrl/Cmd-Toggle und Shift-Ankerbereiche vorhanden. Tastatur-/Fokusnavigation, Home/End und PageUp/PageDown bleiben offen. M2. |
+| S06 | Konsistenz bei Daten-/Spaltenänderungen | Teilweise | Einzel-/Mehrfachauswahl und Shift-Anker folgen Strukturänderungen; Reset, Duplikate, ungeladene Positionen und akzeptierter Querywechsel geregelt. Keys, Quellen-/Modellwechsel und Zellselektion bleiben offen. M0/M2/M3. |
 
 ### 3.3 Spalten und Header
 
@@ -192,14 +208,14 @@ Referenzen: [Cell-Editierablauf](https://openjfx.io/javadoc/26/javafx.controls/j
 
 ## 4. Wie wir es implementieren
 
-Alle folgenden Namen und Schnittstellen sind **Entwurfsvorschläge**. Zunächst Verträge und Tests konkretisieren, dann die jeweilige Implementierung hinzufügen.
+Die folgenden Bausteine beschreiben die Zielarchitektur. `TableSelectionModel`, `TableRow` und `TableCell` sind inzwischen in dem oben abgegrenzten Umfang integriert; die übrigen Modelle bleiben **Entwurfsvorschläge**.
 
 ### 4.1 Verantwortung und Modulgrenzen
 
-| Geplanter Baustein | Verantwortung |
+| Baustein / Zielmodell | Verantwortung |
 | --- | --- |
 | `TableColumnModel[S]` | Spaltenbaum, Ownership, stabile Spaltenidentität, sichtbare Blattliste und Indexabbildung. |
-| `TableSelectionModel[S]` | Auswahlmodus, Anker und ausgewählte Zeilen/Zellen; lesbare Ergebnis-Properties. |
+| `TableSelectionModel[S]` | Implementiert für Modus, Shift-Anker und ausgewählte Zeilen mit lesbaren Ergebnis-Properties. Zellselektion und Modellaustausch bleiben offen. |
 | `TableFocusModel[S]` | Logische Fokusposition unabhängig von Auswahl und gemountetem DOM. |
 | `TableSortModel[S]` | Sortierreihenfolge, Richtungen, Vergleicher und Delegation an lokale/remote Policy. |
 | `TableEditModel[S]` | Aktive Editiersitzung, Originalwert/Entwurf, Abschluss und Ereignisse. |
@@ -360,7 +376,7 @@ ARIA umfasst Grid/Row/ColumnHeader/GridCell, sichtbare Spaltenindizes, absolute 
 
 ### 4.9 Scala- und TypeScript-Vertrag gemeinsam liefern
 
-Die öffentliche Tabellenfassade liegt in `npm/jfx-controls`; `tableView(...)` liefert ein `TableViewHandle<T>` für `refresh()`, `isDisposed`, lesbare Einzelauswahl und kontrollierte Auswahloperationen. `scrollTo`, `sort`, `edit` und umfassende Modell-Handles bleiben offen.
+Die öffentliche Tabellenfassade liegt in `npm/jfx-controls`; `tableView(...)` liefert ein `TableViewHandle<T>` für `refresh()`, `isDisposed`, lesbare Einzel-/Mehrfachauswahl und kontrollierte Auswahloperationen. `scrollTo`, `sort`, `edit` und umfassende Modell-Handles bleiben offen.
 
 Mit M0 den vorhandenen minimalen Handle-Vertrag um typsichere Modellzustände und kontrollierte Operationen erweitern. Die Rückgabe wird bereits nach abgeschlossenem Mount über einen internen Factory-Callback aus der Bridge an die TypeScript-Fassade übergeben. Spalten benötigen zusätzlich stabile Handles oder IDs für ihre Operationen.
 
@@ -386,6 +402,7 @@ Die Größen S/M/L bezeichnen relative Komplexität, keine Zeitversprechen. M0 i
 - [x] M0: Dokumentations-/Testvertrag für Einzelauswahl nach Vorkommen, absolute Remote-Koordinaten und akzeptierte Reloads.
 - [ ] M0: Quellentausch, stabile Keys und allgemeine Transformations-/Identitätsabbildung.
 - [x] M0/M2: Typisiertes TypeScript-Handle für konsistente Einzelauswahl und kontrollierte Mutationen.
+- [x] M2: Zentrales Zeilen-Auswahlmodell, Mehrfachauswahl/Ergebnislisten, Bereichsoperationen und Ctrl/Cmd-/Shift-Mausbedienung in Scala und TypeScript.
 - [x] M1: Erhalt überlappender Zeilenfenster; gebundenes Eingabefeld einschließlich Fokus/Textauswahl in den Bridge-Integrationstests absichern.
 - [ ] M1: Reale Browserabnahme für Eingabefelder/IME, nicht nur jsdom.
 - [x] M1: `cellValueFactory` vervollständigen und `TableCell` in den Renderpfad integrieren; `cell(row)` bleibt nutzbar.
@@ -397,6 +414,10 @@ Die Größen S/M/L bezeichnen relative Komplexität, keine Zeitversprechen. M0 i
 - [ ] Anschließend M2 und M3; auf dieser Basis M4 und M5 vervollständigen.
 
 ## 6. Verifikation
+
+Der fünfte Ausbau ergänzt sieben Scala-Mehrfachauswahltests und vier TypeScript-Integrationstests: atomare Ergebnisse/Moduswechsel, vorwärts/rückwärts begrenzte Bereiche, Bulk-Operationen und Navigation, Duplikate und Reset-Identität, Shift-Anker-Rebasing, lückenhafte Remote-Auswahl ohne Fetch sowie Disposal. Browsernahe Tests prüfen Ctrl/Cmd-/Shift-Klicks, RowFactory-Mitgliedschaft ohne Neukomposition, Hydration mit DOM-Identität, Spaltensichtbarkeit und unabhängige Array-Snapshots. Der Paket-Consumer prüft die exportierten Typen und echte Mehrfachauswahl über die installierten Tarballs.
+
+Abnahme des fünften Ausbaus: **375 Scala-Tests**, Bridge-Full-Link und alle npm-Gates für Controls/Core/Demo grün. Controls: 28 Integrationstests plus 3 Paket-Consumer-Tests; Core: 114 Tests plus 8 Paket-Consumer-Tests; Demo: Typecheck, Client-/SSR-Builds, Eine-Runtime-Prüfung und 31 Routen. Echte Browserprüfung am Produktionsbuild: Ctrl-Klick von einer auf zwei Zeilen, Shift-Bereich auf vier und zurück auf zwei, Wechsel auf Single mit Erhalt des führenden Datensatzes, passende RowFactory-Hervorhebung und keine Browserfehler. Der lokale Produktionsserver benötigte keinen Entwicklungs-WebSocket-Port; Testtab und Testserver wurden geschlossen. Fokus-/Tastatur-/Screenreader-Abnahme bleibt offen.
 
 Der vierte Ausbau ergänzt sechs Scala-RowFactory-Tests und vier TypeScript-Integrationstests: gebundener Kontext, Auswahl, eigene/normale Zellinhalte, Factory-Wechsel und Disposal, erhaltene Scrollslots, ungeladene Remote-Zeilen, Refresh, ungültige Factory-Ergebnisse, unsichtbare Spalten sowie SSR/Hydration mit DOM-Identität. Doppelte oder verzögerte TypeScript-`renderCells`-Aufrufe werden geprüft. Der Tarball-Consumer verwendet die exportierten generischen Options-/Kontexttypen und rendert eigene Zeilen über die gelinkte Runtime.
 

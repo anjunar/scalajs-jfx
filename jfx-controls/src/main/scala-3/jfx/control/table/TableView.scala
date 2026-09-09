@@ -51,18 +51,20 @@ final class TableView[S] private (
   private[table] val visibleColumns = ListProperty[TableColumn[S, ?]]()
   val visibleLeafColumns: ReadOnlyProperty[Vector[TableColumn[S, ?]]] =
     visibleColumns.map(_.toVector)
-  private val placeholderVisibleProperty            = Property(true)
-  val showHeaderProperty: Property[Boolean]         = Property(true)
-  val showFooterProperty: Property[Boolean]         = Property(true)
-  val rowHeightProperty: Property[Double]           = Property(32.0)
-  val prefWidthProperty: Property[Option[Double]]   = Property(None)
-  val fixedHeightProperty: Property[Option[Double]] = Property(None)
-  val scrollLeftProperty: Property[Double]          = Property(0.0)
-  val viewportWidthProperty: Property[Double]       = Property(800.0)
-  private final case class Selection(index: Int, item: S | Null)
-  private val selectionState                                     = Property(Selection(-1, null))
-  val selectedIndexProperty: ReadOnlyProperty[Int]               = selectionState.map(_.index)
-  val selectedItemProperty: ReadOnlyProperty[S | Null]           = selectionState.map(_.item)
+  private val placeholderVisibleProperty                     = Property(true)
+  val showHeaderProperty: Property[Boolean]                  = Property(true)
+  val showFooterProperty: Property[Boolean]                  = Property(true)
+  val rowHeightProperty: Property[Double]                    = Property(32.0)
+  val prefWidthProperty: Property[Option[Double]]            = Property(None)
+  val fixedHeightProperty: Property[Option[Double]]          = Property(None)
+  val scrollLeftProperty: Property[Double]                   = Property(0.0)
+  val viewportWidthProperty: Property[Double]                = Property(800.0)
+  val selectionModel                                         = new TableSelectionModel(this)
+  val selectedIndexProperty: ReadOnlyProperty[Int]           = selectionModel.selectedIndexProperty
+  val selectedItemProperty: ReadOnlyProperty[S | Null]       = selectionModel.selectedItemProperty
+  val selectedIndicesProperty: ReadOnlyProperty[Vector[Int]] =
+    selectionModel.selectedIndicesProperty
+  val selectedItemsProperty: ReadOnlyProperty[Vector[S]] = selectionModel.selectedItemsProperty
   val rowDoubleClickHandlerProperty: Property[Option[S => Unit]] = Property(None)
   val headerRowsProperty: Property[Int]                          = Property(0)
 
@@ -98,7 +100,7 @@ final class TableView[S] private (
     * following rows.
     */
   override protected def handleLocalItemsChange(change: ListProperty.Change[S]): Unit = {
-    reconcileSelection(change)
+    selectionModel.reconcile(change)
     change match {
       case ListProperty.Reset(_) => refresh()
       case _                     => refreshItemState()
@@ -108,44 +110,10 @@ final class TableView[S] private (
   override protected def handleRemoteItemsChange(change: RemoteListChange[S]): Unit = {
     change match {
       case RemoteListChange.Reset()            => clearSelection()
-      case RemoteListChange.Structural(change) => reconcileSelection(change)
+      case RemoteListChange.Structural(change) => selectionModel.reconcile(change)
       case RemoteListChange.RangeLoaded(_, _)  => ()
     }
     super.handleRemoteItemsChange(change)
-  }
-
-  /** Structural deltas preserve the selected occurrence even when values/instances are duplicated.
-    * A Reset has no occurrence mapping: retain only an unambiguous identical instance.
-    */
-  private def reconcileSelection(change: ListDataSource.Change[S]): Unit = {
-    val selected = selectedIndexProperty.get
-    if (selected < 0) return
-    def splice(from: Int, removed: Int, inserted: Int): Int =
-      if (selected < from) selected
-      else if (selected < from + removed) -1
-      else selected + inserted - removed
-    val next = change match {
-      case ListDataSource.Insert(index, _, _)               => splice(index, 0, 1)
-      case ListDataSource.InsertAll(index, elements, _)     => splice(index, 0, elements.length)
-      case ListDataSource.RemoveAt(index, _, _)             => splice(index, 1, 0)
-      case ListDataSource.RemoveRange(index, elements, _)   => splice(index, elements.length, 0)
-      case ListDataSource.Patch(from, removed, inserted, _) =>
-        splice(from, removed.length, inserted.length)
-      case ListDataSource.Clear(_, _) => -1
-      case ListDataSource.Reset(_)    =>
-        val previous = selectedItemProperty.get
-        val matches  = (0 until renderableCount).iterator
-          .filter { index =>
-            itemAt(index).exists(value =>
-              value.asInstanceOf[AnyRef] eq previous.asInstanceOf[AnyRef]
-            )
-          }
-          .take(2)
-          .toVector
-        if (matches.size == 1) matches.head else -1
-      case _ => selected // Add at the end or an explicit UpdateAt keeps the position.
-    }
-    select(next)
   }
 
   /** Only TableView scrolls horizontally. */
@@ -550,17 +518,7 @@ final class TableView[S] private (
     refreshSelectedItem()
   }
 
-  private def refreshSelectedItem(): Unit = updateSelection(selectedIndexProperty.get)
-
-  private def updateSelection(requestedIndex: Int): Unit = {
-    val index = if (requestedIndex >= 0 && requestedIndex < renderableCount) requestedIndex else -1
-    val next  = if (index >= 0) itemAt(index).orNull else null
-    val previous = selectionState.get
-    if (
-      previous.index != index || !(previous.item.asInstanceOf[AnyRef] eq next.asInstanceOf[AnyRef])
-    )
-      selectionState.setAlways(Selection(index, next))
-  }
+  private def refreshSelectedItem(): Unit = selectionModel.refresh()
 
   private def contentHeightProperty: ReadOnlyProperty[String] =
     itemStateRevisionProperty.flatMap(_ =>
@@ -619,18 +577,9 @@ final class TableView[S] private (
       case _ => ()
     }
 
-  def select(index: Int): Unit = {
-    if (isDisposed) return
-    updateSelection(index)
-  }
-
-  def clearSelection(): Unit = select(-1)
-
-  def select(item: S): Unit = {
-    if (isDisposed) return
-    val index = (0 until dataSource.totalLength).find(i => itemAt(i).contains(item)).getOrElse(-1)
-    select(index)
-  }
+  def select(index: Int): Unit = selectionModel.select(index)
+  def clearSelection(): Unit   = selectionModel.clearSelection()
+  def select(item: S): Unit    = selectionModel.select(item)
 
   def setRowDoubleClickHandler(handler: S => Unit): Unit =
     rowDoubleClickHandlerProperty.set(Option(handler))
@@ -704,6 +653,11 @@ object TableView {
     DslLayer.child(new TableView[S](source, body)) {}
 
   def items[S](using table: TableView[S]): ListDataSource[S] = table.items
+
+  def selectionMode(using table: TableView[?]): TableSelectionMode =
+    table.selectionModel.selectionMode
+  def selectionMode_=(mode: TableSelectionMode)(using table: TableView[?]): Unit =
+    table.selectionModel.selectionMode = mode
 
   def rowFactory[S](using table: TableView[S]): Option[TableView[S] => TableRow[S]] =
     table.rowFactoryProperty.get
