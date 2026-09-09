@@ -9,6 +9,7 @@ export interface Preferences {
 }
 export const designs: readonly Design[];
 export const defaultDesign: string;
+export const defaultColorScheme: ColorScheme;
 export const storageKeys: Readonly<{ design: string; colorScheme: string }>;
 export function serverPreferences(url?: string): PreferenceState;
 export function bootstrapScript(legacyKey: string): string;

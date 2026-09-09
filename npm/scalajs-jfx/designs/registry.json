@@ -1,6 +1,7 @@
 {
   "contractVersion": 1,
-  "defaultDesign": "atlas",
+  "defaultDesign": "ember",
+  "defaultColorScheme": "dark",
   "colorSchemes": [
     "light",
     "dark"

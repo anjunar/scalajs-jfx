@@ -10,7 +10,7 @@ import scala.scalajs.js.annotation.JSImport
 final class AppTheme private (initialUrl: String) {
   private val controller = DesignPreferences.createPreferences(SiteConfig.themeStorageKey, initialUrl)
   val serverState: PreferenceState = DesignPreferences.serverPreferences(initialUrl)
-  private val mode = Property(AppTheme.Mode.parse(controller.getState().colorScheme).getOrElse(AppTheme.Mode.Light))
+  private val mode = Property(AppTheme.Mode.parse(controller.getState().colorScheme).getOrElse(AppTheme.Mode.Dark))
   private val design = Property(controller.getState().design)
   private val storageAvailable = Property(true)
   def modeProperty: ReadOnlyProperty[AppTheme.Mode] = mode
@@ -19,7 +19,7 @@ final class AppTheme private (initialUrl: String) {
 
   def install(owner: AbstractComponent): Unit = {
     val cancel = controller.subscribe { state =>
-      mode.set(AppTheme.Mode.parse(state.colorScheme).getOrElse(AppTheme.Mode.Light))
+      mode.set(AppTheme.Mode.parse(state.colorScheme).getOrElse(AppTheme.Mode.Dark))
       design.set(state.design)
       storageAvailable.set(state.storageAvailable)
     }

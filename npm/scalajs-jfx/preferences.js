@@ -2,9 +2,10 @@ import registry from "./designs/registry.json" with { type: "json" };
 
 export const designs = Object.freeze(registry.designs.map(({ id, name, description }) => Object.freeze({ id, name, description })));
 export const defaultDesign = registry.defaultDesign;
+export const defaultColorScheme = registry.defaultColorScheme;
 export const storageKeys = Object.freeze({ design: "jfx.design", colorScheme: "jfx.color-scheme" });
 const validDesign = (value) => designs.some((design) => design.id === value) ? value : defaultDesign;
-const validScheme = (value) => value === "dark" ? "dark" : "light";
+const validScheme = (value) => value === "light" || value === "dark" ? value : defaultColorScheme;
 
 /** URL previews are page-local and never write storage. No browser globals are read by SSR. */
 export function serverPreferences(url = "/") {
@@ -14,7 +15,7 @@ export function serverPreferences(url = "/") {
 
 /** Literal source keeps the head script identical in minified client and SSR builds. */
 export function bootstrapScript(legacyKey) {
-  const config = JSON.stringify({ ids: designs.map((design) => design.id), defaultDesign, keys: storageKeys, legacyKey }).replaceAll("<", "\\u003c");
+  const config = JSON.stringify({ ids: designs.map((design) => design.id), defaultDesign, defaultColorScheme, keys: storageKeys, legacyKey }).replaceAll("<", "\\u003c");
   return `/* jfx-preferences */\n(function (config) {
     var root = document.documentElement;
     if (root.getAttribute('data-preference-source') === 'server') return;
@@ -28,7 +29,7 @@ export function bootstrapScript(legacyKey) {
     var design = params.has('design') ? params.get('design') : storedDesign;
     var scheme = params.has('colorScheme') ? params.get('colorScheme') : storedScheme;
     root.setAttribute('data-design', config.ids.indexOf(design) >= 0 ? design : config.defaultDesign);
-    root.setAttribute('data-color-scheme', scheme === 'dark' ? 'dark' : 'light');
+    root.setAttribute('data-color-scheme', scheme === 'light' || scheme === 'dark' ? scheme : config.defaultColorScheme);
   })(${config});`;
 }
 

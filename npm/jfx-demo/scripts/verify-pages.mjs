@@ -115,6 +115,14 @@ async function main() {
     const homeResponse = await fetch(`http://localhost:${port}/`);
     const homeHtml = await homeResponse.text();
     check(
+      "/ -- Ember/dark default",
+      homeHtml.includes('data-design="ember"') &&
+        homeHtml.includes('data-color-scheme="dark"') &&
+        homeHtml.includes('<option value="ember" selected="">') &&
+        homeHtml.includes('<option value="dark" selected="">'),
+      "default root attributes or selected preference options are missing"
+    );
+    check(
       "/ -- one semantic H1 introduces the TypeScript API",
       (homeHtml.match(/<h1\b/g) ?? []).length === 1 &&
         homeHtml.includes("JFX 3 · TypeScript") &&

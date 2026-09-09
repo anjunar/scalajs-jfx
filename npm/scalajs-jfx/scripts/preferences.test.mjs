@@ -1,11 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { runInNewContext } from "node:vm";
-import { bootstrapScript, createPreferences, designs, serverPreferences, storageKeys } from "../preferences.js";
+import { bootstrapScript, createPreferences, defaultColorScheme, defaultDesign, designs, serverPreferences, storageKeys } from "../preferences.js";
 import { verifyThemeBootstrap } from "../../../tools/verify-theme.mjs";
 
 function browser(url = "http://jfx.local/") {
-  const attrs = new Map([["data-design", "atlas"], ["data-color-scheme", "light"]]);
+  const initial = serverPreferences(url);
+  const attrs = new Map([["data-design", initial.design], ["data-color-scheme", initial.colorScheme]]);
   const stored = new Map();
   const events = new Set();
   const win = {
@@ -23,8 +24,10 @@ test("all four designs resolve on the server in both explicit schemes", () => {
   for (const design of designs) for (const scheme of ["light", "dark"]) {
     assert.deepEqual(serverPreferences(`/?design=${design.id}&colorScheme=${scheme}`), { design: design.id, colorScheme: scheme, storageAvailable: true });
   }
-  assert.equal(serverPreferences("/?design=unknown&colorScheme=auto").design, "atlas");
-  assert.equal(serverPreferences("/?colorScheme=auto").colorScheme, "light");
+  assert.equal(defaultDesign, "ember");
+  assert.equal(defaultColorScheme, "dark");
+  assert.equal(serverPreferences("/?design=unknown&colorScheme=auto").design, "ember");
+  assert.equal(serverPreferences("/?colorScheme=auto").colorScheme, "dark");
 });
 
 test("bootstrap validates stored preferences and never reads the system theme", () => {
@@ -84,5 +87,5 @@ test("SSR state belongs to one render, not the Node process", () => {
   const first = createPreferences("legacy", "/?design=flora", null);
   const second = createPreferences("legacy", "/", null);
   first.setColorScheme("dark");
-  assert.deepEqual(second.getState(), { design: "atlas", colorScheme: "light", storageAvailable: true });
+  assert.deepEqual(second.getState(), { design: "ember", colorScheme: "dark", storageAvailable: true });
 });

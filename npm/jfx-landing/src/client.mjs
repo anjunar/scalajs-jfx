@@ -1,11 +1,40 @@
 import "./style.css";
 import { mountPresentation } from "./presentation.mjs";
 
-mountPresentation(document.querySelector('[data-presentation-root]'));
-
 import { createPreferences } from "@anjunar/scalajs-jfx/preferences";
 import { uiText } from "./ui-text.mjs";
 const t = source => uiText(source, document.documentElement.lang);
+mountPresentation(document, () => {
+  document.querySelector('#view-status').textContent = t('Selection applies to this page only: browser storage is unavailable.');
+});
+const header = document.querySelector('.site-header');
+const menu = document.querySelector('.header-menu');
+const measureHeader = () => {
+  document.documentElement.style.setProperty('--landing-header-height', `${header.getBoundingClientRect().height}px`);
+};
+measureHeader();
+const headerObserver = new ResizeObserver(measureHeader);
+headerObserver.observe(header);
+window.addEventListener('pagehide', event => { if (!event.persisted) headerObserver.disconnect(); });
+menu.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && menu.open) {
+    menu.open = false;
+    menu.querySelector('summary').focus();
+  }
+});
+document.addEventListener('click', event => {
+  if (!menu.contains(event.target)) menu.open = false;
+});
+menu.addEventListener('focusout', event => {
+  if (event.relatedTarget && !menu.contains(event.relatedTarget)) menu.open = false;
+});
+for (const anchor of menu.querySelectorAll('.section-links a')) anchor.addEventListener('click', event => {
+  if (event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+  menu.open = false;
+  const target = document.getElementById(anchor.dataset.pageAnchor);
+  target.setAttribute('tabindex', '-1');
+  target.focus({ preventScroll: true });
+});
 const preferences = createPreferences("scalajs-jfx.theme", location.href);
 const design = document.querySelector("#design-choice");
 const scheme = document.querySelector("#scheme-choice");

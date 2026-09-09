@@ -7,14 +7,13 @@
   :root[data-design="atlas"] .landing .capabilities .number { grid-row: 1 / 3; }
   :root[data-design="atlas"] .landing .capabilities p { grid-column: 2; }
 
-  :root[data-design="flora"] .landing .site-header { border-bottom: 0; }
   :root[data-design="flora"] .landing .hero { padding-block-start: var(--space-6); }
   :root[data-design="flora"] .landing .hero-intro { grid-template-columns: minmax(0,1.25fr) minmax(0,1fr); gap: var(--space-8); }
   :root[data-design="flora"] .landing .eyebrow { font-family: var(--font-interface); font-weight: 400; letter-spacing: 0; }
   :root[data-design="flora"] .landing .signals { border-top: 0; }
   :root[data-design="flora"] .landing .capabilities article { border-top: 0; }
   :root[data-design="flora"] .landing .capabilities .number { font: italic var(--text-h3)/1.2 var(--font-heading); }
-  :root[data-design="flora"] .landing :is(.preview, .code-card) { border-color: transparent; padding: var(--space-6); }
+  :root[data-design="flora"] .landing :is(.preview, .code-card) { padding: var(--space-6); }
   :root[data-design="flora"] .landing .code-card :is(header, pre, .code-note) { padding-inline: 0; }
   :root[data-design="flora"] .landing .proof { padding: var(--space-6); border: 0; background: var(--color-elevated); }
   :root[data-design="flora"] .landing .origin h2 { font-style: italic; }
@@ -41,9 +40,27 @@
   }
   @media (max-width: 46rem) {
     :root[data-design="flora"] .landing :is(.preview, .code-card, .proof) { padding: var(--space-4); }
-    :root[data-design="flora"] .landing .site-header { padding-block: var(--space-5); }
   }
   @media (max-width: 30rem) {
     :root[data-design="terra"] .landing .capabilities { grid-template-columns: 1fr; }
   }
+}
+
+/* Landing-only role contract. The demos retain their shared design packages.
+   Muted text already contrasts against each design's canvas and surfaces. */
+@layer utilities {
+  :root {
+    --landing-header-height: calc(max(44px, 2.75rem) + 2 * var(--space-2) + 1px);
+    --font-interface: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-heading: var(--font-interface);
+    --color-border: var(--color-text-muted);
+    --color-focus: var(--color-interactive);
+  }
+}
+/* Compatibility aliases are unlayered in base/Theme.css. */
+:root {
+  --aj-code-keyword: var(--color-text-primary);
+  --aj-code-type: var(--color-text-primary);
+  --aj-code-function: var(--color-text-primary);
+  --aj-code-constant: var(--color-text-primary);
 }

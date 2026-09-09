@@ -79,7 +79,7 @@ class AppSsrSpec extends AsyncFlatSpec with Matchers {
         Runtime.mount(documentFor(desktopRequest, "/de/router"), cursor)
       )
       .map { html =>
-        html should startWith("<html data-design=\"atlas\" data-color-scheme=\"light\" lang=\"de\"><head>")
+        html should startWith("<html data-design=\"ember\" data-color-scheme=\"dark\" lang=\"de\"><head>")
         html should include("<div id=\"root\"><app>")
         html should include("<title data-jfx-head=\"title\">Router | scalajs-jfx</title>")
         html should include(
@@ -214,7 +214,7 @@ class AppSsrSpec extends AsyncFlatSpec with Matchers {
     I18nRuntime.current(using app) should not be empty
     AppTheme.current(using app) should not be empty
 
-    AppTheme.current(using app).map(_.modeProperty.get) shouldBe Some(AppTheme.Mode.Light)
+    AppTheme.current(using app).map(_.modeProperty.get) shouldBe Some(AppTheme.Mode.Dark)
   }
 
   it should "give every instance its own theme, not a shared one" in {
@@ -226,10 +226,10 @@ class AppSsrSpec extends AsyncFlatSpec with Matchers {
 
     firstTheme should not be theSameInstanceAs(secondTheme)
 
-    firstTheme.set(AppTheme.Mode.Dark)
+    firstTheme.set(AppTheme.Mode.Light)
 
-    firstTheme.modeProperty.get shouldBe AppTheme.Mode.Dark
-    secondTheme.modeProperty.get shouldBe AppTheme.Mode.Light
+    firstTheme.modeProperty.get shouldBe AppTheme.Mode.Light
+    secondTheme.modeProperty.get shouldBe AppTheme.Mode.Dark
   }
 
   it should "carry a mobile user agent through to the request context" in {

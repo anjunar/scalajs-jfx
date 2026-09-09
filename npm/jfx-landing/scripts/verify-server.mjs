@@ -23,6 +23,7 @@ for (const mode of ["production", "development"]) {
     }
     const response = await fetch(`${origin}/?nojs`);
     const html = await response.text();
+    assert(html.includes('data-design="ember" data-color-scheme="dark"'));
     assert.equal(response.headers.get("content-security-policy"), "script-src 'none'");
     const css = html.match(/<link rel="stylesheet" href="([^"]+)"/)[1];
     const stylesheet = await fetch(new URL(css, origin), { headers: { accept: "text/css" } });

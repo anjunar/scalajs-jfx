@@ -18,8 +18,8 @@ export function verifyThemeBootstrap(html) {
         matchMedia() { systemReads++; return { matches: true }; },
       },
     });
-    assert.equal(attrs.get("data-color-scheme"), stored === "dark" ? "dark" : "light");
-    assert.equal(attrs.get("data-design"), stored instanceof Error ? "atlas" : "flora");
+    assert.equal(attrs.get("data-color-scheme"), stored === "light" ? "light" : "dark");
+    assert.equal(attrs.get("data-design"), stored instanceof Error ? "ember" : "flora");
     assert.equal(systemReads, 0);
   }
 }

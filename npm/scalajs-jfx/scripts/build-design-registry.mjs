@@ -16,7 +16,7 @@ for (const directory of await readdir(root, { withFileTypes: true })) {
   designs.push(design);
 }
 designs.sort((a, b) => a.order - b.order);
-const registry = JSON.stringify({ contractVersion: 1, defaultDesign: "atlas", colorSchemes: ["light", "dark"], designs }, null, 2) + "\n";
+const registry = JSON.stringify({ contractVersion: 1, defaultDesign: "ember", defaultColorScheme: "dark", colorSchemes: ["light", "dark"], designs }, null, 2) + "\n";
 const target = resolve(root, "registry.json");
 if (process.argv.includes("--check")) {
   if (await readFile(target, "utf8") !== registry) throw new Error("Regenerate the design registry with npm run build:registry");

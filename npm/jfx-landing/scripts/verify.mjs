@@ -14,13 +14,24 @@ const source = name => readFile(resolve(output, "starters", name), "utf8");
 assert.equal(document.querySelectorAll("h1").length, 1);
 assert.equal(document.querySelector("h1").textContent, "One runtime. Two APIs.");
 assert.equal(document.querySelector("#same-code").textContent, "Same UI. Two languages.");
+assert.equal(document.documentElement.dataset.design, "ember");
+assert.equal(document.documentElement.dataset.colorScheme, "dark");
 assert(!/JFX\s*[23]|production.ready|fastest/i.test(document.title));
 assert.equal(document.querySelector("#scala-main").textContent.trim(), (await source("Counter.scala")).trim());
 assert.equal(document.querySelector("#ts-main").textContent.trim(), (await source("main.ts")).trim());
 assert(document.querySelector("#counter-root").textContent.includes("Count: 0"));
 assert(document.querySelector("#counter-root").innerHTML.includes("jfx:BridgeRoot:start"));
 assert(document.querySelector("#counter-root > .vbox"), "Landing proof must target the VBox class emitted by SSR.");
-assert.equal(document.querySelectorAll(".hero-actions > .action.primary").length, 2, "Both API demos must have equal CTA weight.");
+assert.equal(document.querySelectorAll(".hero-actions > .action.primary").length, 1, "The hero has one primary entry point.");
+assert.equal(document.querySelectorAll('.hero-actions > .action').length, 2, 'Both APIs remain directly accessible.');
+assert.equal(document.querySelector('.hero-actions > .signals').children.length, 5);
+assert.equal(document.querySelectorAll('.capabilities article').length, 6);
+assert.equal(document.querySelectorAll('.capabilities').length, 1, 'All core capabilities share one section.');
+assert(!document.querySelector('html[data-presentation]'), 'SSR defaults to natural reading flow.');
+assert(document.querySelector('body > .site-header'), 'Navigation must not be trapped inside a chapter.');
+assert.equal(document.querySelectorAll('.header-links > a').length, 2, 'Mobile navigation prioritizes Docs and GitHub.');
+assert.equal(document.querySelectorAll('.header-menu .section-links a').length, 8);
+for (const eyebrow of document.querySelectorAll('.eyebrow')) assert(!/^\d+\s*\//.test(eyebrow.textContent));
 assert(document.querySelector(".preview input[name=name][value=Mira]"));
 assert(document.querySelector(".jfx-table-view").textContent.includes("Workspace"));
 assert(document.querySelector(".jfx-editor__readonly h2"));
@@ -32,7 +43,6 @@ assert.deepEqual(
     "Same UI. Two languages.",
     "From server HTML to interaction",
     "What you get",
-    "Built for application UI",
     "Application building blocks",
     "Forms that connect to your model",
     "Data views with room to grow",
@@ -53,7 +63,7 @@ assert.deepEqual(
   "Landing sections must present product proof before setup instructions."
 );
 const comparison = document.querySelector('.comparison');
-assert.equal(document.querySelectorAll('main > [data-presentation-section]').length, 21, 'Every content section is a presentation chapter.');
+assert.equal(document.querySelectorAll('main > [data-presentation-section]').length, 20, 'All content is available in either view.');
 assert(comparison.caption, 'The comparison retains a table caption.');
 assert.equal(comparison.closest('[role="region"]').tabIndex, 0, 'The table scroll region must be keyboard reachable.');
 for (const header of comparison.querySelectorAll('thead th')) assert.equal(header.scope, 'col');
@@ -107,6 +117,7 @@ for (const doc of [document, german]) {
   assert.deepEqual([...doc.querySelector('#design-choice').options].map(o => o.value), ['atlas', 'flora', 'terra', 'ember']);
   assert.deepEqual([...doc.querySelector('#scheme-choice').options].map(o => o.value), ['light', 'dark']);
   assert.deepEqual([...doc.querySelector('#language-choice').options].map(o => o.value), ['en', 'de']);
+  assert.deepEqual([...doc.querySelector('#view-choice').options].map(o => o.value), ['reading', 'presentation']);
   for (const select of doc.querySelectorAll('.preference-choice select')) {
     assert(select.disabled, 'Static controls must be inert without JavaScript');
     assert(select.labels[0].querySelector('.sr-only'), 'Controls retain their accessible labels');

@@ -22,7 +22,7 @@ Alternatively, import `@anjunar/scalajs-jfx` as a JavaScript side effect when yo
 
 ## Styling ownership
 
-`designs/*/tokens.css` owns the semantic roles from the neighbouring `lob-der-reinen-intuition/design` Multi Constitution. The four designs are `atlas`, `flora`, `terra` and `ember`. Set `data-design` and `data-color-scheme="light"` or `"dark"` on `<html>`. The defaults are Atlas and light, independent of the operating system.
+`designs/*/tokens.css` owns the semantic roles from the neighbouring `lob-der-reinen-intuition/design` Multi Constitution. The four designs are `atlas`, `flora`, `terra` and `ember`. Set `data-design` and `data-color-scheme="light"` or `"dark"` on `<html>`. The defaults are Ember and dark, independent of the operating system.
 
 `base/Theme.css` maps these roles to the existing `--aj-*` interface shared with Lexical. `base/Tokens.css` supplies structural aliases. Cascade layers separate component patterns, design decisions, utilities and accessibility invariants. Application styles belong in `layer(patterns)` so they do not accidentally override the chosen design.
 
