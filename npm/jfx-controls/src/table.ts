@@ -8,6 +8,7 @@
  * (`ControlFactories.scala`).
  */
 import { component } from "@anjunar/jfx-core";
+import type { Reactive, ReadOnlyProperty } from "@anjunar/jfx-core";
 import { body, defined, rowBody } from "./internal.js";
 import type { Source } from "./data-source.js";
 
@@ -19,7 +20,32 @@ export interface ColumnDef<T> {
   /** The field name passed back to the source's `sortQuery`. */
   readonly sortKey?: string;
   /** Composes one cell's content for `row`, with the core DSL. */
-  readonly cell: (row: T) => void;
+  readonly cell?: (row: T) => void;
+  /** A snapshot or observed cell value. Used by the default text cell when `cell` is absent. */
+  readonly value?: (row: T) => Reactive<unknown>;
+  /** Prefer `valueColumn` for a renderer whose observed value retains its concrete type. */
+  readonly valueCell?: (value: ReadOnlyProperty<unknown>, row: T) => void;
+}
+
+export interface ValueColumnOptions<S, V> extends Omit<ColumnDef<S>, "text" | "cell" | "value" | "valueCell"> {
+  readonly cell?: (value: ReadOnlyProperty<V | null>, row: S) => void;
+}
+
+/** A typed value column backed by the runtime's observed TableCell binding. */
+export function valueColumn<S, V>(
+  text: string,
+  value: (row: S) => Reactive<V>,
+  options: ValueColumnOptions<S, V> = {}
+): ColumnDef<S> {
+  const { cell, ...metadata } = options;
+  const result: ColumnDef<S> = {
+    text,
+    value,
+    ...metadata,
+  };
+  return cell
+    ? { ...result, valueCell: (observed, row) => cell(observed as ReadOnlyProperty<V | null>, row) }
+    : result;
 }
 
 /** Builds one {@link ColumnDef}. */
@@ -68,7 +94,11 @@ export function tableView<T, Q = unknown>(
         prefWidth: col.prefWidth,
         sortable: col.sortable,
         sortKey: col.sortKey,
-        cell: rowBody(col.cell),
+        cell: col.cell ? rowBody(col.cell) : undefined,
+        value: col.value,
+        valueCell: col.valueCell
+          ? (value: ReadOnlyProperty<unknown>, row: T) => body(() => col.valueCell!(value, row))
+          : undefined,
       })),
       rowHeight: options.rowHeight,
       showHeader: options.showHeader,

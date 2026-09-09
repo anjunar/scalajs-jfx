@@ -1,13 +1,14 @@
 package jfx.control.table
 
 import jfx.core.component.AbstractComponent
-import jfx.core.dsl.ClassDsl.{addClass, classIf, classes}
+import jfx.core.dsl.ClassDsl.{addClass, classIf}
 import jfx.core.dsl.DslLayer
 import jfx.core.dsl.EventDsl.{onClick, onDoubleClick}
 import jfx.core.dsl.StyleDsl.*
-import jfx.core.layout.Div.div
 import jfx.core.render.Cursor
 import jfx.core.state.Property
+import jfx.core.statement.Foreach.foreachIndexed
+import jfx.core.statement.DynamicComponentRenderer.dynamic
 
 class TableRow[S] private[control] (
     initialize: TableRow[S] ?=> Cursor ?=> Unit
@@ -18,8 +19,8 @@ class TableRow[S] private[control] (
   val indexProperty: Property[Int]     = Property(-1)
 
   private var tableView: TableView[S] | Null  = null
-  private var columns: Seq[TableColumn[S, ?]] = Seq.empty
   private var placeholder                     = false
+  private[control] def isPlaceholder: Boolean = placeholder
 
   override def compose(cursor: Cursor): Unit = {
     initialize(using this)(using cursor)
@@ -54,33 +55,14 @@ class TableRow[S] private[control] (
         }
       }
 
-      columns.zipWithIndex.foreach { case (column, columnIndex) =>
+      foreachIndexed(requireTableView().columns) { (column, columnIndex) =>
         val typedColumn = column.asInstanceOf[TableColumn[S, Any]]
-        div {
-          classes = Seq("jfx-table-cell") ++
-            Option.when(columnIndex == columns.length - 1)("jfx-table-cell-last") ++
-            Option.when(placeholder)("jfx-table-cell-empty") ++
-            Option.when(placeholder)("jfx-table-cell-loading-placeholder")
-
-          val widthProperty = requireTableView().renderedWidthsProperty.map { widths =>
-            s"${widths.lift(columnIndex).getOrElse(typedColumn.prefWidth)}px"
-          }
-          style {
-            width = widthProperty
-            minWidth = widthProperty
-            flex = "0 0 auto"
-          }
-
-          if (!placeholder) {
-            itemProperty.get match {
-              case item: S @unchecked =>
-                typedColumn.cellRenderer.get.foreach { renderer =>
-                  renderer(item)
-                }
-              case null => ()
-            }
-          }
-        }
+        dynamic(typedColumn.rendererRevisionProperty.map { _ =>
+          val cell = typedColumn.cellFactoryProperty.get
+            .fold(new TableCell[S, Any])(_(typedColumn))
+          cell.bind(TableRow.this, typedColumn, columnIndex)
+          cell
+        })
       }
     }
   }
@@ -94,7 +76,6 @@ class TableRow[S] private[control] (
     indexProperty.set(rowIndex)
     itemProperty.set(rowValue)
     tableView = owner
-    columns = rowColumns
     placeholder = false
   }
 
@@ -106,7 +87,6 @@ class TableRow[S] private[control] (
     indexProperty.set(rowIndex)
     itemProperty.set(null)
     tableView = owner
-    columns = rowColumns
     placeholder = true
   }
 

@@ -32,6 +32,36 @@ tableView(books, [
 
 ## Usage
 
+### Observed table values
+
+`column(text, cell)` still composes arbitrary row content, including embedded editors.
+`valueColumn` adds a typed snapshot/property accessor and an optional renderer over the
+observed cell value:
+
+```ts
+import { listProperty, property, text } from "@anjunar/jfx-core";
+import { tableView, valueColumn } from "@anjunar/jfx-controls";
+
+const person = { name: property("Ada"), year: 1815 };
+tableView(listProperty([person]), [
+  valueColumn("Name", (row) => row.name),
+  valueColumn("Greeting", (row) => row.name, {
+    cell: (value) => text(value.map((name) => `Hello ${name ?? ""}`)),
+  }),
+  valueColumn("Year", (row) => row.year),
+]);
+person.name.set("Grace"); // Updates both observed cells without recomposing them.
+```
+
+Snapshots do not observe mutations. Custom value renderers receive a read-only property;
+editing still requires the row's writable property or an explicit application callback.
+Cells at overlapping absolute row positions retain their component/DOM identity during
+scrolling and measurement when the item instance is unchanged. Leaving the virtual window,
+replacing an item, resetting the source list, or changing the renderer can recreate cells.
+Identity across data reordering and table-managed start/commit/cancel are not implemented yet.
+
+### Other controls
+
 `tabs` accepts `tab(title, body)` definitions and supports `active-only` or `keep-mounted` rendering. `carousel` accepts a list property and a slide renderer; `autoAdvanceMs` controls browser auto-advance. `tableView`, `dataGrid`, and `virtualList` accept a local `ListProperty` or a `RemoteSource`.
 
 ```ts
@@ -67,7 +97,7 @@ SSR renders a stable paged or crawl slice. After successful hydration, `tableVie
 ## API overview
 
 - `tab`, `tabs`, `carousel`
-- `column`, `tableView`, `dataGrid`, `virtualList`
+- `column`, `valueColumn`, `ValueColumnOptions`, `tableView`, `dataGrid`, `virtualList`
 - `remoteSource`, `RemoteSource`, `RemotePage`, `SortSpec`
 - `TabsOptions`, `CarouselOptions`, `TableViewOptions`, `DataGridOptions`, `VirtualListOptions`
 

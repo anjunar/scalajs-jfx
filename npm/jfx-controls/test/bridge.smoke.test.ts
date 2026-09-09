@@ -31,10 +31,15 @@ import {
   renderToString,
   resetRuntime,
   runtime,
+  property,
+  element,
+  attr,
+  self,
+  onInput,
 } from "@anjunar/jfx-core";
 import { div, text } from "@anjunar/jfx-core";
 import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";
-import { carousel, dataGrid, remoteSource, tab, tableView, tabs, virtualList } from "../src/index.js";
+import { carousel, dataGrid, remoteSource, tab, tableView, tabs, valueColumn, virtualList } from "../src/index.js";
 
 const linkedArtifact = resolve(process.cwd(), "../scalajs-jfx-bridge/dist/fullopt/main.js");
 
@@ -158,6 +163,117 @@ describe("carousel", () => {
 });
 
 describe("table-view", () => {
+  it("updates typed default and custom value cells without recomposing them", () => {
+    const root = document.createElement("div");
+    const name = property("Ada");
+    const rows = listProperty([{ name, year: 1815 }]);
+    let compositions = 0;
+    const app = mount(root, () => tableView(rows, [
+      valueColumn("Name", (row) => row.name),
+      valueColumn("Formatted", (row) => row.name, {
+        cell: (value) => {
+          compositions++;
+          text(value.map((name) => `Hello ${name ?? ""}`));
+        },
+      }),
+      valueColumn("Year", (row) => row.year),
+    ]));
+    const cells = Array.from(root.querySelectorAll(".jfx-table-cell"));
+    expect(cells.map((cell) => cell.textContent)).toEqual(["Ada", "Hello Ada", "1815"]);
+    name.set("Grace");
+    expect(cells.map((cell) => cell.textContent)).toEqual(["Grace", "Hello Grace", "1815"]);
+    root.querySelectorAll(".jfx-table-cell").forEach((cell, index) => expect(cell).toBe(cells[index]));
+    expect(compositions).toBe(1);
+    app.dispose();
+    name.set("Detached");
+    expect(cells[0]!.textContent).not.toContain("Detached");
+  });
+
+  it("preserves an embedded editor's identity, focus, selection and binding in overlapping scroll windows", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+    const records = Array.from({ length: 60 }, (_, id) => ({ id, name: property(`Person ${id}`) }));
+    const rows = listProperty(records);
+    const app = mount(root, () => tableView(rows, [{
+      text: "Editor",
+      cell: (row) => element("input")(() => {
+        attr("data-row", String(row.id));
+        const field = self();
+        field.addDisposable(row.name.observe((value) => field.setDomProperty("value", value)));
+        onInput((event) => row.name.set((event.target as HTMLInputElement).value));
+      }),
+    }], { paging: false, rowHeight: 32 }));
+    try {
+      const viewport = root.querySelector<HTMLElement>(".jfx-table-viewport")!;
+      Object.defineProperties(viewport, {
+        clientHeight: { configurable: true, value: 64 },
+        clientWidth: { configurable: true, value: 800 },
+      });
+      viewport.dispatchEvent(new Event("scroll"));
+      const editor = root.querySelector<HTMLInputElement>('input[data-row="3"]')!;
+      editor.focus();
+      editor.value = "Edited person";
+      editor.dispatchEvent(new Event("input", { bubbles: true }));
+      editor.setSelectionRange(2, 6);
+      viewport.scrollTop = 256;
+      viewport.dispatchEvent(new Event("scroll"));
+      expect(root.querySelector('input[data-row="0"]')).toBeNull();
+      expect(root.querySelector('input[data-row="14"]')).not.toBeNull();
+      expect(root.querySelector('input[data-row="3"]')).toBe(editor);
+      expect(document.activeElement).toBe(editor);
+      expect([editor.selectionStart, editor.selectionEnd]).toEqual([2, 6]);
+      expect(records[3]!.name.get).toBe("Edited person");
+      Object.defineProperty(viewport, "clientWidth", { value: 1000 });
+      viewport.dispatchEvent(new Event("scroll"));
+      expect(document.activeElement).toBe(editor);
+      expect(editor.closest<HTMLElement>(".jfx-table-cell")!.style.width).toBe("1000px");
+      records[3]!.name.set("Model update");
+      expect(editor.value).toBe("Model update");
+    } finally {
+      app.dispose();
+      root.remove();
+    }
+  });
+
+  it("hydrates typed and legacy cells with their server DOM identity", async () => {
+    const build = (): void => tableView(listProperty([{ name: property("Ada") }]), [
+      valueColumn("Name", (row) => row.name),
+      { text: "Legacy", cell: (row) => text(row.name) },
+    ], { paging: true });
+    const rendered = await renderToString(build);
+    const root = document.createElement("div");
+    root.innerHTML = rendered.html;
+    document.body.appendChild(root);
+    const before = Array.from(root.querySelectorAll(".jfx-table-cell"));
+    const app = await hydrate(root, build);
+    expect(before).toHaveLength(2);
+    root.querySelectorAll(".jfx-table-cell").forEach((cell, index) => expect(cell).toBe(before[index]));
+    expect(before.map((cell) => cell.textContent)).toEqual(["Ada", "Ada"]);
+    app.dispose();
+    root.remove();
+  });
+
+  it("does not sort a remote column whose sortable flag is false", () => {
+    let sorts = 0;
+    const source = remoteSource({
+      initialQuery: { offset: 0, limit: 10 },
+      initial: ["Ada"],
+      totalCount: 1,
+      rangeQuery: (query, offset, limit) => ({ ...query, offset, limit }),
+      sortQuery: (query) => { sorts++; return query; },
+      load: async () => ({ items: ["Ada"], offset: 0, totalCount: 1 }),
+    });
+    const root = document.createElement("div");
+    const app = mount(root, () => tableView(source, [
+      { text: "Name", cell: (row) => text(row), sortable: false, sortKey: "name" },
+    ]));
+    const header = root.querySelector(".jfx-table-header-cell")!;
+    expect(header).not.toBeNull();
+    header.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(sorts).toBe(0);
+    app.dispose();
+  });
+
   interface Book {
     readonly title: string;
     readonly author: string;

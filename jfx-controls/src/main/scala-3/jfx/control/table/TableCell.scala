@@ -1,25 +1,86 @@
 package jfx.control.table
 
-import jfx.control.table.TableCell
 import jfx.core.component.AbstractComponent
 import jfx.core.dsl.ClassDsl.{addClass, classIf}
 import jfx.core.dsl.DslLayer
+import jfx.core.dsl.StyleDsl.*
 import jfx.core.layout.TextComponent.text
 import jfx.core.render.Cursor
-import jfx.core.state.Property
+import jfx.core.state.{Disposable, Property, ReadOnlyProperty}
 
 class TableCell[S, T] extends AbstractComponent {
   override val tagName: String = "div"
 
-  val itemProperty: Property[T | Null] = Property(null)
-  val emptyProperty: Property[Boolean] = Property(true)
+  val itemProperty: Property[T | Null]              = Property(null)
+  val emptyProperty: Property[Boolean]              = Property(true)
+  private val indexState: Property[Int]             = Property(-1)
+  val indexProperty: ReadOnlyProperty[Int]          = indexState
+  private var boundRow: TableRow[S] | Null          = null
+  private var boundColumn: TableColumn[S, T] | Null = null
+  private var columnIndex                           = -1
+  private var valueSubscription: Disposable         = Disposable.empty
 
-  override def compose(cursor: Cursor): Unit =
+  def tableRow: TableRow[S] | Null          = boundRow
+  def tableColumn: TableColumn[S, T] | Null = boundColumn
+  def tableView: TableView[S] | Null        =
+    Option(boundColumn).fold[TableView[S] | Null](null)(_.tableViewProperty.get)
+
+  private[control] def bind(row: TableRow[S], column: TableColumn[S, T], index: Int): Unit = {
+    require(
+      boundRow == null && !isBound && !isDisposed,
+      "A cell factory must return a fresh, unmounted TableCell"
+    )
+    boundRow = row
+    boundColumn = column
+    columnIndex = index
+    indexState.set(row.indexProperty.get)
+    emptyProperty.set(row.isPlaceholder)
+  }
+
+  override final def compose(cursor: Cursor): Unit =
     DslLayer.render(this, cursor) {
       addClass("jfx-table-cell")
       classIf("jfx-table-cell-empty", emptyProperty)
-      text(itemProperty.map(item => Option(item).fold("")(_.toString))) {}
+      for (column <- Option(boundColumn); table <- Option(tableView)) {
+        classIf("jfx-table-cell-last", table.columns.map(cols => columnIndex == cols.length - 1))
+        if (emptyProperty.get) addClass("jfx-table-cell-loading-placeholder")
+        val widthProperty = table.renderedWidthsProperty.map { widths =>
+          s"${widths.lift(columnIndex).getOrElse(column.prefWidth)}px"
+        }
+        style {
+          width = widthProperty
+          minWidth = widthProperty
+          flex = "0 0 auto"
+        }
+        addDisposable(Disposable(valueSubscription.dispose()))
+        addDisposable(column.cellValueFactoryProperty.observe(_ => bindValue()))
+      }
+      if (!emptyProperty.get || boundRow == null) renderContent(using this, cursor)
     }
+
+  /** Override content, not composition, so table binding and disposal remain owned by the cell. */
+  protected def renderContent(using AbstractComponent, Cursor): Unit =
+    Option(boundColumn).flatMap(_.cellRenderer.get) match {
+      case Some(renderer) =>
+        Option(boundRow).foreach(row => renderer(row.itemProperty.get.asInstanceOf[S]))
+      case None => text(itemProperty.map(item => Option(item).fold("")(_.toString))) {}
+    }
+
+  private def bindValue(): Unit = {
+    valueSubscription.dispose()
+    valueSubscription = Disposable.empty
+    val value = for {
+      row      <- Option(boundRow) if !row.isPlaceholder
+      column   <- Option(boundColumn)
+      property <- Option(
+        column.observableValue(row.itemProperty.get.asInstanceOf[S], row.indexProperty.get)
+      )
+    } yield property
+    value match {
+      case Some(property) => valueSubscription = property.observe(itemProperty.setAlways)
+      case None           => itemProperty.set(null)
+    }
+  }
 
   private[control] def applyRenderedItem(item: T | Null, empty: Boolean): Unit = {
     itemProperty.set(item)

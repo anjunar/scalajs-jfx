@@ -31,6 +31,7 @@ import org.scalajs.dom
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.collection.mutable
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.*
 
@@ -44,7 +45,7 @@ final class TableView[S] private (
 
   override val tagName: String = "div"
 
-  val columns: ListProperty[TableColumn[S, ?]]                   = ListProperty()
+  val columns: ListProperty[TableColumn[S, ?]]                   = new TableColumnList(this)
   val showHeaderProperty: Property[Boolean]                      = Property(true)
   val showFooterProperty: Property[Boolean]                      = Property(true)
   val rowHeightProperty: Property[Double]                        = Property(32.0)
@@ -57,12 +58,13 @@ final class TableView[S] private (
   val rowDoubleClickHandlerProperty: Property[Option[S => Unit]] = Property(None)
   val headerRowsProperty: Property[Int]                          = Property(0)
 
-  private final case class VisibleRow(index: Int, item: Option[S])
+  private final class VisibleRow(val index: Int, val item: Option[S])
 
   private val visibleRowsProperty         = ListProperty[VisibleRow]()
   private val columnStateRevisionProperty = Property(0)
   private val headerStateRevisionProperty = Property(0)
   private val contentHeaderHeightProperty = Property(0.0)
+  private val attachedColumns = mutable.LinkedHashMap.empty[TableColumn[S, ?], CompositeDisposable]
 
   private var contentHeaderBody: Option[AbstractComponent ?=> Cursor ?=> Unit] = None
   private var placeholderBody: Option[AbstractComponent ?=> Cursor ?=> Unit]   = None
@@ -88,7 +90,10 @@ final class TableView[S] private (
     * following rows.
     */
   override protected def handleLocalItemsChange(change: ListProperty.Change[S]): Unit =
-    refreshItemState()
+    change match {
+      case ListProperty.Reset(_) => refresh()
+      case _                     => refreshItemState()
+    }
 
   /** Only TableView scrolls horizontally. */
   override protected def onScrollLeftChanged(scrollLeft: Double): Unit =
@@ -114,13 +119,33 @@ final class TableView[S] private (
   def setFixedCellSize(value: Double): Unit        = rowHeightProperty.set(value)
 
   private[control] def registerColumn(column: TableColumn[S, ?]): Unit = {
-    if (!columns.contains(column)) {
-      columns.addOne(column)
-      addDisposable(column.prefWidthProperty.observeWithoutInitial(_ => bumpColumnState()))
-      addDisposable(column.sortableProperty.observeWithoutInitial(_ => bumpHeaderState()))
-      addDisposable(column.sortKeyProperty.observeWithoutInitial(_ => bumpHeaderState()))
-      addDisposable(Disposable(column.dispose()))
+    if (!columns.contains(column)) columns.addOne(column)
+  }
+
+  /** Detaching releases table-owned listeners; a removed column can be reused by its caller. */
+  private def syncColumns(): Unit = {
+    val current = columns.toVector
+    attachedColumns.keys.filterNot(current.contains).toVector.foreach { column =>
+      attachedColumns.remove(column).foreach(_.dispose())
+      column.detach(this)
     }
+    current.filterNot(attachedColumns.contains).foreach { column =>
+      column.attach(this)
+      val subscriptions = new CompositeDisposable()
+      subscriptions.add(column.prefWidthProperty.observeWithoutInitial(_ => bumpColumnState()))
+      subscriptions.add(column.sortableProperty.observeWithoutInitial(_ => bumpHeaderState()))
+      subscriptions.add(column.sortKeyProperty.observeWithoutInitial(_ => bumpHeaderState()))
+      attachedColumns.put(column, subscriptions)
+    }
+    bumpColumnState()
+  }
+
+  /** Re-evaluates visible cells, including unobserved mutable data, without reloading the source.
+    */
+  def refresh(): Unit = {
+    if (isDisposed) return
+    refreshItemState()
+    attachedColumns.keys.toVector.foreach(_.invalidateRenderer())
   }
 
   private[control] def setContentHeader(
@@ -199,8 +224,11 @@ final class TableView[S] private (
             foreachIndexed(columns) { (column, columnIndex) =>
               val typedColumn = column.asInstanceOf[TableColumn[S, Any]]
               val headerCell  = div {
-                classes = Seq("jfx-table-header-cell") ++
-                  Option.when(columnIndex == columns.length - 1)("jfx-table-header-cell-last")
+                classes = Seq("jfx-table-header-cell")
+                classIf(
+                  "jfx-table-header-cell-last",
+                  columns.map(cols => columnIndex == cols.length - 1)
+                )
                 val widthProperty = renderedWidthsProperty.map { widths =>
                   s"${widths.lift(columnIndex).getOrElse(typedColumn.prefWidth)}px"
                 }
@@ -302,10 +330,12 @@ final class TableView[S] private (
                   classes = Seq("jfx-table-row-slot")
                   style {
                     position = "absolute"
-                    top = s"${layoutIndex(rowDefinition.index) * rowHeightProperty.get}px"
+                    top = itemStateRevisionProperty.map(_ =>
+                      s"${layoutIndex(rowDefinition.index) * rowHeightProperty.get}px"
+                    )
                     left = "0"
                     width = totalColumnWidthProperty.map(value => s"${value}px")
-                    height = s"${rowHeightProperty.get}px"
+                    height = rowHeightProperty.map(value => s"${value}px")
                     display = "flex"
                   }
 
@@ -367,6 +397,15 @@ final class TableView[S] private (
     }
 
   private def installObservers(): Unit = {
+    syncColumns()
+    addDisposable(Disposable {
+      attachedColumns.toVector.foreach { case (column, subscriptions) =>
+        subscriptions.dispose()
+        column.detach(this)
+        column.dispose()
+      }
+      attachedColumns.clear()
+    })
     addDisposable(displayModeProperty.observeWithoutInitial(_ => refreshItemState()))
     addDisposable(pageSizeProperty.observeWithoutInitial { _ =>
       pageIndexProperty.set(0)
@@ -379,10 +418,7 @@ final class TableView[S] private (
     })
     addDisposable(viewportHeightProperty.observeWithoutInitial(_ => recomputeVisible()))
     addDisposable(viewportWidthProperty.observeWithoutInitial(_ => recomputeVisible()))
-    addDisposable(columns.observeChanges(_ => {
-      bumpColumnState()
-      recomputeVisible()
-    }))
+    addDisposable(columns.observeChanges(_ => syncColumns()))
     addDisposable(rowHeightProperty.observeWithoutInitial(_ => refreshItemState()))
     addDisposable(headerRowsProperty.observeWithoutInitial(_ => refreshItemState()))
     addDisposable(crawlableProperty.observeWithoutInitial(_ => refreshConfiguredCrawlState()))
@@ -397,7 +433,30 @@ final class TableView[S] private (
     if (total == 0) visibleRowsProperty.clear()
     else {
       val (start, end) = visibleRange(total)
-      visibleRowsProperty.setAll((start until end).map(index => VisibleRow(index, itemAt(index))))
+      // Absolute slots in an overlapping window stay mounted. Source mutations may replace an
+      // item at a slot; they are not interpreted as dense remote indices or stable entity keys.
+      val dropBefore = visibleRowsProperty.iterator.takeWhile(_.index < start).length
+      if (dropBefore > 0) visibleRowsProperty.remove(0, dropBefore)
+      val keepUntil = visibleRowsProperty.iterator.takeWhile(_.index < end).length
+      if (keepUntil < visibleRowsProperty.length)
+        visibleRowsProperty.remove(keepUntil, visibleRowsProperty.length - keepUntil)
+
+      var position = 0
+      (start until end).foreach { index =>
+        val item = itemAt(index)
+        if (position >= visibleRowsProperty.length || visibleRowsProperty(position).index != index)
+          visibleRowsProperty.insert(position, new VisibleRow(index, item))
+        else {
+          val previous = visibleRowsProperty(position).item
+          val sameItem = (previous, item) match {
+            case (Some(a), Some(b)) => a.asInstanceOf[AnyRef] eq b.asInstanceOf[AnyRef]
+            case (None, None)       => true
+            case _                  => false
+          }
+          if (!sameItem) visibleRowsProperty.update(position, new VisibleRow(index, item))
+        }
+        position += 1
+      }
       if (browserRendering) {
         if (isPaging) requestPageLoad(start, end)
         else requestLazyLoadIfNecessary(start, end)
@@ -469,7 +528,7 @@ final class TableView[S] private (
 
   private def toggleRemoteSort(column: TableColumn[S, Any]): Unit =
     (Option(currentRemoteItems), sortKeyOf(column)) match {
-      case (Some(remote), Some(sortKey)) if remote.supportsSorting =>
+      case (Some(remote), Some(sortKey)) if isRemoteSortable(column) =>
         val next = currentSortFor(column) match {
           case Some(sort) if sort.ascending =>
             Vector(RemoteSort(sort.field, ascending = false))

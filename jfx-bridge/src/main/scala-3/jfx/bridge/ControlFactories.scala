@@ -2,7 +2,7 @@ package jfx.bridge
 
 import jfx.control.carousel.Carousel
 import jfx.control.datagrid.DataGrid
-import jfx.control.table.{TableColumn, TableView}
+import jfx.control.table.{TableCell, TableColumn, TableView}
 import jfx.control.tabs.Tabs
 import jfx.control.virtuallist.VirtualListView
 import jfx.core.component.AbstractComponent
@@ -30,8 +30,8 @@ import scala.scalajs.js.JSConverters.*
   *
   * What is *not* projected in this pass (each has a trigger in CLAUDE_REVIEW_3.md, Nachtrag Lauf
   * 4): imperative handles (`carousel.next()`, `tableView.select(item)`, `dataGrid.scrollTo`), the
-  * `onRowDoubleClick` / `selectedItem` readback, and `TableColumn.cellValueFactory` (which already
-  * throws in Scala). The facade is reactive-input only: reactive options in, no handle out.
+  * `onRowDoubleClick` / `selectedItem` readback. Observed cell values and value-cell renderers are
+  * projected below; imperative control handles remain a separate step.
   */
 
 @js.native
@@ -91,7 +91,10 @@ private[bridge] trait ColumnFacade extends js.Object {
   val sortKey: js.UndefOr[String]   = js.native
 
   /** `(row) => (scope) => void` -- the cell body, already wrapped in `withScope` on the TS side. */
-  val cell: js.Function1[js.Any, js.Function1[ScopeHandleBridge, Unit]] = js.native
+  val cell: js.UndefOr[js.Function1[js.Any, js.Function1[ScopeHandleBridge, Unit]]] = js.native
+  val value: js.UndefOr[js.Function1[js.Any, js.Any]] = js.native
+  val valueCell: js.UndefOr[js.Function2[ReadOnlyPropertyHandle[js.Any], js.Any,
+    js.Function1[ScopeHandleBridge, Unit]]] = js.native
 }
 
 private[bridge] object ControlFactories {
@@ -277,9 +280,22 @@ private[bridge] object TableViewFactory extends ComponentFactory {
           col.prefWidth.foreach(width => TableColumn.prefWidth_=[js.Any, js.Any](width))
           col.sortable.foreach(flag => TableColumn.sortable_=[js.Any, js.Any](flag))
           col.sortKey.foreach(key => TableColumn.sortKey_=[js.Any, js.Any](key))
-          TableColumn.cell[js.Any, js.Any] {
-            (row: js.Any) => (_: AbstractComponent) ?=> (_: Cursor) ?=>
-              col.cell(row)(new ScopeHandleBridge(summon[AbstractComponent], summon[Cursor]))
+          col.value.foreach { accessor =>
+            TableColumn.cellValueFactory_=[js.Any, js.Any](features =>
+              ReactiveBridge.asProperty[js.Any](accessor(features.value)))
+          }
+          col.cell.foreach { renderer =>
+            TableColumn.cell[js.Any, js.Any] {
+              (row: js.Any) => (_: AbstractComponent) ?=> (_: Cursor) ?=>
+                renderer(row)(new ScopeHandleBridge(summon[AbstractComponent], summon[Cursor]))
+            }
+          }
+          col.valueCell.foreach { renderer =>
+            TableColumn.cellFactory_=[js.Any, js.Any](_ => new TableCell[js.Any, js.Any] {
+              override protected def renderContent(using parent: AbstractComponent, cursor: Cursor): Unit =
+                renderer(new ReadOnlyPropertyHandle(itemProperty), tableRow.asInstanceOf[jfx.control.table.TableRow[js.Any]].itemProperty.get)(
+                  new ScopeHandleBridge(parent, cursor))
+            })
           }
         }
       }

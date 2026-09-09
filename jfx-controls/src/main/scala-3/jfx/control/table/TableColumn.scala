@@ -5,13 +5,66 @@ import jfx.core.render.Cursor
 import jfx.core.state.{Property, ReadOnlyProperty}
 
 class TableColumn[S, T](initialText: String = "") extends AbstractCustomComponent {
-  import TableColumn.CellRenderer
+  import TableColumn.{CellFactory, CellRenderer, CellValueFactory}
 
-  val textProperty: Property[String]                  = Property(initialText)
-  val prefWidthProperty: Property[Double]             = Property(160.0)
-  val cellRenderer: Property[Option[CellRenderer[S]]] = Property(None)
-  val sortableProperty: Property[Boolean]             = Property(false)
-  val sortKeyProperty: Property[Option[String]]       = Property(None)
+  val textProperty: Property[String]                                     = Property(initialText)
+  val prefWidthProperty: Property[Double]                                = Property(160.0)
+  val cellRenderer: Property[Option[CellRenderer[S]]]                    = Property(None)
+  val sortableProperty: Property[Boolean]                                = Property(false)
+  val sortKeyProperty: Property[Option[String]]                          = Property(None)
+  val cellValueFactoryProperty: Property[Option[CellValueFactory[S, T]]] = Property(None)
+  val cellFactoryProperty: Property[Option[CellFactory[S, T]]]           = Property(None)
+
+  private val ownerProperty: Property[TableView[S] | Null]     = Property(null)
+  val tableViewProperty: ReadOnlyProperty[TableView[S] | Null] = ownerProperty
+  private[control] val rendererRevisionProperty: Property[Int] = Property(0)
+
+  addDisposable(cellRenderer.observeWithoutInitial(_ => invalidateRenderer()))
+  addDisposable(cellFactoryProperty.observeWithoutInitial(_ => invalidateRenderer()))
+
+  private[control] def invalidateRenderer(): Unit =
+    rendererRevisionProperty.set(rendererRevisionProperty.get + 1)
+
+  private[control] def attach(table: TableView[S]): Unit = {
+    require(!isDisposed, "Cannot attach a disposed TableColumn")
+    require(
+      ownerProperty.get == null || (ownerProperty.get eq table),
+      "A TableColumn cannot belong to two TableViews"
+    )
+    ownerProperty.set(table)
+  }
+
+  private[control] def detach(table: TableView[S]): Unit =
+    if (ownerProperty.get eq table) ownerProperty.set(null)
+
+  private[control] def observableValue(item: S, index: Int): ReadOnlyProperty[T] | Null =
+    ownerProperty.get match {
+      case null  => null
+      case table =>
+        cellValueFactoryProperty.get.fold[ReadOnlyProperty[T] | Null](null) { factory =>
+          factory(TableColumn.CellDataFeatures(table, this, item, index))
+        }
+    }
+
+  def getCellObservableValue(index: Int): ReadOnlyProperty[T] | Null =
+    Option(ownerProperty.get)
+      .flatMap(_.items.itemAt(index))
+      .fold[ReadOnlyProperty[T] | Null](null)(observableValue(_, index))
+
+  def getCellObservableValue(item: S): ReadOnlyProperty[T] | Null = {
+    val index = Option(ownerProperty.get).fold(-1) { table =>
+      (0 until table.items.totalLength)
+        .find(i => table.items.itemAt(i).contains(item))
+        .getOrElse(-1)
+    }
+    observableValue(item, index)
+  }
+
+  def getCellData(index: Int): T | Null =
+    Option(getCellObservableValue(index)).fold[T | Null](null)(_.get)
+
+  def getCellData(item: S): T | Null =
+    Option(getCellObservableValue(item)).fold[T | Null](null)(_.get)
 
   def text: String                = textProperty.get
   def text_=(value: String): Unit = textProperty.set(value)
@@ -24,7 +77,9 @@ class TableColumn[S, T](initialText: String = "") extends AbstractCustomComponen
 }
 
 object TableColumn {
-  type CellRenderer[S] = S => AbstractComponent ?=> Cursor ?=> Unit
+  type CellRenderer[S]        = S => AbstractComponent ?=> Cursor ?=> Unit
+  type CellValueFactory[S, T] = CellDataFeatures[S, T] => ReadOnlyProperty[T] | Null
+  type CellFactory[S, T]      = TableColumn[S, T] => TableCell[S, T]
 
   def tableColumn[S, T](text: String)(
       body: TableColumn[S, T] ?=> Cursor ?=> Unit
@@ -63,7 +118,22 @@ object TableColumn {
   def cellValueFactory[S, T](using
       tableColumn: TableColumn[S, T]
   ): CellDataFeatures[S, T] => ReadOnlyProperty[T] | Null =
-    throw new UnsupportedOperationException("Not implemented in JFX 3 yet")
+    tableColumn.cellValueFactoryProperty.get.orNull
+
+  def cellValueFactory_=[S, T](using
+      column: TableColumn[S, T]
+  )(
+      factory: CellValueFactory[S, T]
+  ): Unit = column.cellValueFactoryProperty.set(Option(factory))
+
+  def cellFactory[S, T](using column: TableColumn[S, T]): CellFactory[S, T] | Null =
+    column.cellFactoryProperty.get.orNull
+
+  def cellFactory_=[S, T](using
+      column: TableColumn[S, T]
+  )(
+      factory: CellFactory[S, T]
+  ): Unit = column.cellFactoryProperty.set(Option(factory))
 
   def sortable[S, T](using column: TableColumn[S, T]): Boolean =
     column.sortableProperty.get
