@@ -277,6 +277,18 @@ Core erlaubt eine leere Root. Das Rich-Text-Profil stellt für eine editierbare 
 
 Text-Marks sind typisierte, normalisierte Werte; Built-ins: Strong, Emphasis, Underline, Strike, InlineCode. Widersprüche und gegenseitiger Ausschluss werden vom Profil bestimmt. Links sind Inline-Container, keine Text-Mark. SoftBreak und HardBreak bleiben unterscheidbar, damit Markdown und semantisches HTML ihre Bedeutung erhalten.
 
+**Getrennte Textläufe wachsen nach dem Entfernen einer Formatierung wieder zusammen.** Direkt benachbarte, zusammenführbare TextNodes desselben Parents mit identischen normalisierten Marks und sonstigen semantischen Eigenschaften werden zu einem maximalen Textlauf normalisiert. Beispiel innerhalb eines Paragraphen:
+
+```text
+Ausgang:             Text("Hallo Welt!", {})
+"Welt" fett:         Text("Hallo ", {}), Text("Welt", {Strong}), Text("!", {})
+Fett wieder entfernt: Text("Hallo Welt!", {})
+```
+
+Diese Zusammenführung ist Teil derselben Formatierungs-Transaktion vor deren Commit, kein späterer DOM-Cleanup und kein zusätzlicher Undo-Schritt. Die linke ID bleibt erhalten; Punkte und Bookmarks der aufgenommenen Nodes werden um die vorangestellte Textlänge versetzt. Caret und vorwärts/rückwärts gerichtete Auswahl bleiben logisch erhalten. Wiederholtes Formatieren/Entformatieren darf daher keine anwachsende Fragmentierung hinterlassen; erneute Normalisierung ist ein No-op.
+
+Nicht zusammengeführt wird über Paragraph-, Link-, Break- oder Atomgrenzen hinweg, bei verschiedenen Marks/semantischen Eigenschaften oder bei einem Node-Typ mit ausdrücklich nicht zusammenführbarer Semantik. Während einer geschützten Composition wird die optimierende Zusammenführung bis zu deren Abschluss aufgeschoben (§15.3); danach gilt dieselbe Normalform. Dies wird durch eine Transform-Regel im Rich-Text-Modul umgesetzt, nicht durch eine DOM-Heuristik.
+
 ### 8.3 IDs, Ersetzung und Effizienz
 
 IDs gelten innerhalb eines Dokuments; die Browserzuordnung verwendet zusätzlich eine Editor-Instance-ID. Server- und Client-Snapshot erhalten dieselben IDs. Ein injizierter Generator reserviert vorhandene IDs und liefert neue ohne globale Zähler; Testgeneratoren sind deterministisch. Paste aus fremden Dokumenten remappt IDs vollständig. Reorder erhält IDs, Split behält die linke Text-ID und erzeugt rechts eine neue, Merge behält links und liefert Mapping für rechts.

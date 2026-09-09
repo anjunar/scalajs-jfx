@@ -2,6 +2,7 @@ package jfx.core.render
 
 import jfx.core.async.AsyncRenderContext
 import org.scalajs.dom
+import jfx.core.state.Disposable
 
 trait Cursor {
   def supportsAnchors: Boolean = false
@@ -31,6 +32,19 @@ trait Cursor {
     * is the boundary for browser-only state changes whose initial DOM must still match SSR.
     */
   def afterHydration(callback: () => Unit): Unit = callback()
+
+  /** Isolates claim validation and callbacks. The returned resource cancels deferred callbacks. */
+  def withHydrationBoundary(body: Cursor => Unit): Disposable = {
+    body(this)
+    Disposable.empty
+  }
+
+  /** Insertion after a failed isolated claim; does not attempt to claim server nodes again. */
+  def insertion: Cursor = fresh
+
+  def claimTextAreaContent(initial: String): TextAreaContent =
+    TextAreaContent.attach(parentHost.getOrElse(
+      throw new IllegalStateException("Textarea content needs a physical host.")), initial, false)
 
   def claimElement(tag: String): HostElement
 

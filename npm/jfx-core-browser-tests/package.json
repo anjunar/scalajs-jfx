@@ -1,0 +1,13 @@
+{
+  "name": "jfx-core-browser-tests",
+  "version": "3.0.4",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "verify": "npm run test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  }
+}

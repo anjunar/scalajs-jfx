@@ -7,12 +7,22 @@ final class SsrHostElement(val tagName: String) extends HostElement, SsrNode {
   private val styles     = mutable.LinkedHashMap.empty[String, String]
   private val children   = mutable.ArrayBuffer.empty[HostNode]
   private val properties = mutable.LinkedHashMap.empty[String, Any]
+  private[render] var textAreaContent: Option[TextAreaContent] = None
 
-  def setAttribute(name: String, value: String): Unit = attrs(name) = value
-  def removeAttribute(name: String): Unit             = attrs.remove(name)
+  def setAttribute(name: String, value: String): Unit = {
+    if (attrs.get(name).contains(value)) return
+    HostMutationGuard.checkWrite(this)
+    attrs(name) = value
+  }
+  def removeAttribute(name: String): Unit = {
+    if (!attrs.contains(name)) return
+    HostMutationGuard.checkWrite(this)
+    attrs.remove(name)
+  }
   def attribute(name: String): Option[String]         = attrs.get(name)
 
   def setProperty(name: String, value: Any): Unit = {
+    HostMutationGuard.checkRemoval(this)
     properties(name) = value
     value match {
       case boolean: Boolean if boolean => attrs(name) = name
@@ -25,20 +35,43 @@ final class SsrHostElement(val tagName: String) extends HostElement, SsrNode {
   def property[T](name: String): Option[T] =
     properties.get(name).asInstanceOf[Option[T]]
 
-  def setStyle(name: String, value: String): Unit = styles(name) = value
+  def setStyle(name: String, value: String): Unit = {
+    HostMutationGuard.checkWrite(this)
+    styles(name) = value
+  }
   def style(name: String): Option[String]         = styles.get(name)
-  def removeStyle(name: String): Unit             = styles.remove(name)
+  def removeStyle(name: String): Unit = {
+    HostMutationGuard.checkWrite(this)
+    styles.remove(name)
+  }
 
   def setClassNames(names: Seq[String]): Unit =
-    if (names.isEmpty) attrs.remove("class")
-    else attrs("class") = names.mkString(" ")
+    if (names.isEmpty) removeAttribute("class")
+    else setAttribute("class", names.mkString(" "))
 
   // Insertion goes through SsrNode, which explains why an insertion marker's position is no longer
   // found by linear search. See CHANGE.md P4-2.
   def insertChild(index: Int, child: HostNode): Unit =
-    SsrNode.insertInto(children, index, child)
+    insertBefore(child, children.lift(index))
 
-  def insertBefore(child: HostNode, before: Option[HostNode]): Unit =
+  def insertBefore(child: HostNode, before: Option[HostNode]): Unit = {
+    require(textAreaContent.isEmpty, "Textarea content does not accept child components.")
+    require(before.forall {
+      case node: SsrNode => node.parentElement.contains(this)
+      case _ => false
+    }, "Insertion anchor does not belong to this host.")
+    if (before.contains(child)) return
+    val ssr = child match {
+      case node: SsrNode => node
+      case _ => throw new IllegalArgumentException("An SSR host requires SSR children.")
+    }
+    var ancestor: Option[SsrHostElement] = Some(this)
+    while (ancestor.nonEmpty) {
+      require(!(ancestor.get eq child), "Cannot insert a host into its own subtree.")
+      ancestor = ancestor.get.parentElement
+    }
+    HostMutationGuard.checkInsertion(this, child)
+    ssr.parentElement.foreach(_.removeChild(child))
     before match {
       case Some(node) =>
         SsrNode.indexIn(children, node) match {
@@ -53,14 +86,25 @@ final class SsrHostElement(val tagName: String) extends HostElement, SsrNode {
       case None =>
         SsrNode.appendTo(children, child)
     }
+    ssr.parentElement = Some(this)
+  }
 
   def removeChild(child: HostNode): Unit = {
-    children -= child
+    val index = SsrNode.indexIn(children, child)
+    if (index < 0) return
+    HostMutationGuard.checkWrite(this)
+    HostMutationGuard.checkRemoval(child)
+    children.remove(index)
     SsrNode.setHint(child, -1)
+    child.asInstanceOf[SsrNode].parentElement = None
   }
 
   def clearChildren(): Unit = {
-    children.foreach(SsrNode.setHint(_, -1))
+    HostMutationGuard.checkRemoval(this)
+    children.foreach { child =>
+      SsrNode.setHint(child, -1)
+      child.asInstanceOf[SsrNode].parentElement = None
+    }
     children.clear()
   }
 
@@ -85,6 +129,11 @@ final class SsrHostElement(val tagName: String) extends HostElement, SsrNode {
         )
       }
       open
+    } else if (textAreaContent.nonEmpty) {
+      val value = textAreaContent.get.value
+      // HTML parsing consumes one leading LF in textarea. An extra LF preserves the actual value.
+      val prefix = if (value.startsWith("\n")) "\n" else ""
+      s"$open$prefix${SsrTextNode.escape(value)}</$tagName>"
     } else {
       s"$open${renderChildrenHtml()}</$tagName>"
     }

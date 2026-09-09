@@ -2,7 +2,17 @@ package jfx.core.render
 
 import org.scalajs.dom
 
-private[jfx] object DomNodes {
+/** Explicit browser interop for integrations such as selection and native input adapters.
+  * Document writes should use JFX hosts; raw DOM writes cannot be checked by mutation guards.
+  */
+object DomNodes {
+  def option(node: HostNode): Option[dom.Node] = node match {
+    case host: DomHostElement => Some(host.node)
+    case text: DomTextNode => Some(text.node)
+    case comment: DomCommentNode => Some(comment.node)
+    case _ => None
+  }
+
   def raw(node: HostNode): dom.Node =
     node match {
       case host: DomHostElement    => host.node
@@ -14,11 +24,11 @@ private[jfx] object DomNodes {
 
   /** Counterpart to [[raw]]: wraps a DOM node in the matching HostNode. */
   def wrap(node: dom.Node): HostNode =
-    node match {
-      case element: dom.Element => new DomHostElement(element)
-      case text: dom.Text       => new DomTextNode(text)
-      case comment: dom.Comment => new DomCommentNode(comment)
-      case other                =>
-        throw new IllegalArgumentException(s"Unsupported DOM node type: ${other.nodeType}")
+    node.nodeType match {
+      case kind if kind == dom.Node.ELEMENT_NODE => new DomHostElement(node.asInstanceOf[dom.Element])
+      case kind if kind == dom.Node.TEXT_NODE => new DomTextNode(node.asInstanceOf[dom.Text])
+      case kind if kind == dom.Node.COMMENT_NODE => new DomCommentNode(node.asInstanceOf[dom.Comment])
+      case other =>
+        throw new IllegalArgumentException(s"Unsupported DOM node type: $other")
     }
 }

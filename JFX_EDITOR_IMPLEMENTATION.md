@@ -13,10 +13,11 @@ Vor Beginn: `AGENTS.md`, Architekturabschnitte der Phase, tatsächliche Quelldat
 Pfadkonventionen in den Phasen:
 
 - `C` = `jfx-editor-core/src/main/scala-3/jfx/editor/core/`.
-- Für Modulkurzname `M` steht `M/Foo.scala` für `jfx-editor-M/src/main/scala-3/jfx/editor/M/Foo.scala`; bei `rich-text` heißt das Scala-Paket `richtext`.
+- Für Modulkurzname `M` steht `M/Foo.scala` für `jfx-editor-M/src/main/scala-3/jfx/editor/<paket>/Foo.scala`; Bindestriche entfallen im Scala-Paketnamen (`rich-text` → `richtext`, `browser-support` → `browsersupport`, `code-highlighting` → `codehighlighting`). Die folgenden Dateien ohne erneut angegebenen Präfix liegen jeweils im selben Modul-/Paketverzeichnis wie die erste Datei ihrer Gruppe.
 - Scala-Tests liegen entsprechend unter `src/test/scala-3/jfx/editor/<paket>/` und haben die angegebenen Suite-Namen. Dies sind konkrete geplante Pfade, keine bereits existierenden Dateien.
 - `IT` = neues **nicht publiziertes** `editor-integration/` mit Scala-Test-App unter `src/main/scala-3/jfx/editor/integration/` und Browser-Harness unter `browser/`. Es wird in P07 eingerichtet.
 - JFX-Core-Pfade und vorhandene npm-Pfade werden vollständig relativ zum Repository angegeben. Modulnamen/Projekt-IDs folgen der Tabelle in Architektur §6.
+- Verkürztes `jfx-core/.../` bezeichnet in Quelldateigruppen `jfx-core/src/main/scala-3/jfx/core/`, in Testdateigruppen `jfx-core/src/test/scala-3/jfx/core/`; ein nachfolgendes `.../` behält den Basispräfix der unmittelbar davor ausgeschriebenen Datei. Geschweifte Dateigruppen sind einzelne Dateien desselben Verzeichnisses.
 
 Beim ersten Anlegen eines Moduls werden `build.sbt`, `dependsOn`, Root-Aggregation, Test- und Publishing-Settings angepasst. Produktionsabhängigkeiten entstehen nur in Pfeilrichtung des Architekturgraphen. Noch nicht benötigte Projekte werden nicht als leere Platzhalter angelegt. Abhängigkeiten auf spätere Browserintegration werden erst in deren Phase ergänzt; §6 beschreibt den endgültigen Graphen.
 
@@ -221,11 +222,12 @@ P10, P11 und P17 sind nach ihren jeweiligen Voraussetzungen unabhängig vom Rend
 
 - **Ziel:** Bereichsformatierung und grundlegende Blocktypen auf den primitiven Operationen aufbauen.
 - **Module:** rich-text; standard; IT.
-- **Neue Dateien:** `rich-text/HeadingNode.scala`, `QuoteNode.scala`, `BreakNode.scala`, `StandardMarks.scala`, `TypingMarks.scala`, `RichTextCommands.scala`, `RangeFormatting.scala`; zugehörige `standard/*Support.scala`; Tests `RangeFormattingSpec.scala`, `RichTextStructureSpec.scala`, `TypingMarksSpec.scala`.
+- **Neue Dateien:** `rich-text/HeadingNode.scala`, `QuoteNode.scala`, `BreakNode.scala`, `StandardMarks.scala`, `TypingMarks.scala`, `RichTextCommands.scala`, `RangeFormatting.scala`, `TextRunNormalization.scala`; zugehörige `standard/*Support.scala`; Tests `RangeFormattingSpec.scala`, `RichTextStructureSpec.scala`, `TypingMarksSpec.scala`, `TextRunNormalizationSpec.scala`.
 - **Ändern:** `RichText.scala`, Textnormalisierung und Renderer-Support.
 - **API:** Strong/Emphasis/Underline/Strike/InlineCode, ToggleMark, SetHeading, Quote/Unquote, Hard-/Softbreak, ThematicBreak; typisierte Level und Markkonflikte; transaktionales `TypingMarks(Inherit|Explicit)` mit Caret-Mapping und History-Restore-Policy.
 - **Tests:** Format über mehrere Leaves/Blöcke, teilweise ausgewählte Läufe, Toggle am leeren Caret beeinflusst nächste Eingabe, Caretsprung setzt Inherit, Mapping erhält explizite Marks, Undo/Redo restauriert sie; Backward Selection, Split/Merge-Normalisierung, History-Grenzen, semantischer Export.
-- **Akzeptanz:** Formatierung wird durch Nodes/Marks bestimmt; kein Browser-execCommand; Selection bleibt nach Node-Split/Mark-Änderung korrekt.
+- **Konkreter Normalisierungstest:** Aus einem TextNode `"Hallo Welt!"` entstehen beim Fettformatieren von `"Welt"` drei TextNodes; Entfernen von Strong erzeugt im selben Commit wieder genau einen TextNode mit identischem Gesamttext und erhaltener linker ID. Caret/Backward Range/Bookmarks werden korrekt gemappt, Undo stellt den formatierten Zustand wieder her, Redo den zusammengeführten. Wiederholte Zyklen fragmentieren nicht; erneute Normalisierung ist No-op. Gegenfälle: unterschiedliche Marks/Metadaten, verschiedene Parents/Links sowie Breaks/Atoms werden nicht zusammengeführt. P23 ergänzt Aufschub während Composition und Merge nach Abschluss.
+- **Akzeptanz:** Formatierung wird durch Nodes/Marks bestimmt; kein Browser-execCommand; Selection bleibt nach Node-Split/Mark-Änderung korrekt. Nach abgeschlossener Normalisierung existieren keine direkt benachbarten, semantisch identischen und zusammenführbaren Textläufe desselben Parents; Entformatieren erzeugt keinen eigenen History-Schritt für den Merge.
 - **Risiken:** Zu aggressive Text-Merges verlieren Selection/Composition-Identität. Stored-Marks benötigen einen expliziten Selection-/StateField-Vertrag.
 - **Dependencies:** P06, P09, P11; Architektur §§8, 11, 15.
 

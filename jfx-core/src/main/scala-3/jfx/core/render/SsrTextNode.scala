@@ -1,7 +1,11 @@
 package jfx.core.render
 
 final class SsrTextNode(private var value: String) extends TextNode, SsrNode {
-  def setText(next: String): Unit = value = next
+  def setText(next: String): Unit =
+    if (value != next) {
+      HostMutationGuard.checkWrite(this)
+      value = next
+    }
   def getText: String             = value
 
   // An empty text node serializes to nothing, and a browser then parses no node at all — but the

@@ -105,10 +105,14 @@ abstract class AbstractComponent
 
   def compose(cursor: Cursor): Unit = ()
 
+  /** Runs after claiming a host, before bindings can overwrite server values. */
+  def beforeHostBinding(node: HostNode, cursor: Cursor): Unit = ()
+
   def afterCompose(cursor: Cursor): Unit = ()
 
   def addClass(name: String): Unit = {
     if (!baseClasses.contains(name)) {
+      checkClassWrite()
       baseClasses += name
       syncClasses()
     }
@@ -117,6 +121,7 @@ abstract class AbstractComponent
   def removeClass(name: String): Unit = {
     val idx = baseClasses.indexOf(name)
     if (idx >= 0) {
+      checkClassWrite()
       baseClasses.remove(idx)
       syncClasses()
     }
@@ -125,10 +130,15 @@ abstract class AbstractComponent
   def getClasses: Seq[String] = userClasses.toSeq
 
   def setClasses(names: Seq[String]): Unit = {
+    checkClassWrite()
     userClasses.clear()
     userClasses ++= names
     syncClasses()
   }
+
+  private def checkClassWrite(): Unit =
+    if (!isVirtual && !isText && _host != null)
+      jfx.core.render.HostMutationGuard.checkWrite(_host)
 
   private[jfx] def hostBound(): Unit =
     syncClasses()
@@ -141,6 +151,7 @@ abstract class AbstractComponent
 
   def dispose(): Unit = {
     if (disposed) return
+    physicalHosts.foreach(jfx.core.render.HostMutationGuard.checkRemoval)
     disposed = true
     var firstFailure: Throwable | Null = null
     _children.foreach { child =>

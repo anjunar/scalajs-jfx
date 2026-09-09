@@ -13,8 +13,19 @@ class TextComponent(initial: String = "") extends AbstractComponent {
   private var pendingText: String = initial
 
   def setText(value: String): Unit = {
-    pendingText = value
     if (textNode != null) textNode.setText(value)
+    pendingText = value
+  }
+
+  def spliceText(start: Int, deleteCount: Int, inserted: String): Unit = {
+    if (textNode != null) {
+      textNode.spliceText(start, deleteCount, inserted)
+      pendingText = textNode.getText
+    } else {
+      require(start >= 0 && start <= pendingText.length && deleteCount >= 0 &&
+        deleteCount <= pendingText.length - start, "Text splice is outside the UTF-16 range.")
+      pendingText = pendingText.take(start) + inserted + pendingText.drop(start + deleteCount)
+    }
   }
 
   def getText: String =

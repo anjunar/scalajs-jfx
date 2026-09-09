@@ -9,6 +9,7 @@ import scala.collection.mutable
   */
 private[render] trait SsrNode {
   private[render] var siblingHint: Int = -1
+  private[render] var parentElement: Option[SsrHostElement] = None
 }
 
 private[render] object SsrNode {

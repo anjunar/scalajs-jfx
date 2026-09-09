@@ -2,6 +2,7 @@ package jfx.core.render
 
 import jfx.core.async.AsyncRenderContext
 import org.scalajs.dom
+import jfx.core.state.Disposable
 
 final class HydratingCursor private (
     parent: dom.Node,
@@ -40,6 +41,34 @@ final class HydratingCursor private (
 
   override def afterHydration(callback: () => Unit): Unit =
     session.afterComplete(callback)
+
+  override def insertion: Cursor =
+    new DeferredHydrationCursor(DomCursor.append(parent, stopBefore, currentAsyncContext),
+      callback => session.afterComplete(callback))
+
+  override def withHydrationBoundary(body: Cursor => Unit): Disposable = {
+    val local = new HydratingCursor.HydrationSession(Some(session))
+    val cursor = new HydratingCursor(parent, nextNode, stopBefore, mode, currentAsyncContext, local)
+    // This scope owns the complete remaining range, on success and on recovery.
+    nextNode = stopBefore
+    try {
+      body(cursor)
+      local.complete()
+      Disposable(local.cancel())
+    } catch {
+      case error: Throwable =>
+        local.cancel()
+        throw error
+    }
+  }
+
+  override def claimTextAreaContent(initial: String): TextAreaContent = {
+    val host = parentHost.getOrElse(throw new IllegalStateException("Missing textarea host."))
+    val content = TextAreaContent.attach(host, initial, true)
+    // Textarea RCDATA is owned by the value adapter, not individual TextComponents.
+    nextNode = stopBefore
+    content
+  }
 
   def claimElement(tag: String): HostElement = {
     val node =
@@ -97,7 +126,9 @@ final class HydratingCursor private (
       // An empty text node left an anchor comment behind during SSR, because an empty text
       // serializes to nothing at all. Swap it for the text node the client tree expects.
       case comment: dom.Comment if comment.data == SsrTextNode.EmptyAnchorLabel =>
-        val text = dom.document.createTextNode("")
+        val text = parent.ownerDocument.createTextNode("")
+        HostMutationGuard.checkDom(parent, destructive = false)
+        HostMutationGuard.checkDom(comment, destructive = true)
         comment.parentNode.replaceChild(text, comment)
         new DomTextNode(text)
 
@@ -191,10 +222,10 @@ final class HydratingCursor private (
 
   override def fresh: Cursor =
     if (!session.isCompleted) this
-    else DomCursor.append(parent, stopBefore, currentAsyncContext)
+    else insertion
 
   override def before(node: HostNode): Cursor =
-    DomCursor.before(parent, DomNodes.raw(node), currentAsyncContext)
+    insertion.before(node)
 
   private def take(): dom.Node =
     nextNode match {
@@ -412,15 +443,17 @@ final class HydratingCursor private (
 
 object HydratingCursor {
 
-  private final class HydrationSession {
+  private final class HydrationSession(enclosing: Option[HydrationSession] = None) {
     private val cursors   = scala.collection.mutable.ArrayBuffer.empty[HydratingCursor]
     private val callbacks = scala.collection.mutable.ArrayBuffer.empty[() => Unit]
     private var completed = false
+    private var activated = false
+    private var cancelled = false
 
     def isCompleted: Boolean = completed
 
     def register(cursor: HydratingCursor): Unit =
-      if (completed) {
+      if (completed || cancelled) {
         throw new IllegalStateException(
           "Another HydratingCursor was created after hydration completed."
         )
@@ -429,16 +462,33 @@ object HydratingCursor {
       }
 
     def afterComplete(callback: () => Unit): Unit =
-      if (completed) callback()
+      if (cancelled) ()
+      else if (activated) callback()
       else callbacks += callback
+
+    def cancel(): Unit = {
+      cancelled = true
+      callbacks.clear()
+      cursors.clear()
+    }
+
+    private def activate(): Unit =
+      if (!cancelled) {
+        activated = true
+        val pending = callbacks.toVector
+        callbacks.clear()
+        pending.foreach(callback => if (!cancelled) callback())
+      }
 
     def complete(): Unit =
       if (!completed) {
         cursors.toVector.foreach(_.assertFullyClaimed())
         completed = true
-        val pending = callbacks.toVector
-        callbacks.clear()
-        pending.foreach(_())
+        cursors.clear()
+        enclosing match {
+          case Some(parent) => parent.afterComplete(() => activate())
+          case None => activate()
+        }
       }
   }
 

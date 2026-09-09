@@ -43,6 +43,9 @@ object Runtime {
       parent: Option[AbstractComponent] = None,
       childIndex: Option[Int] = None
   ): (C, Cursor) = {
+    require(!component.isBound && !component.isDisposed, "Component is already mounted or disposed.")
+    parent.foreach(owner => require(owner.isBound && !owner.isDisposed, "Parent is not mounted."))
+    cursor.parentHost.foreach(HostMutationGuard.checkWrite)
     component._parent = parent
     parent.foreach { owner =>
       childIndex match {
@@ -76,15 +79,16 @@ object Runtime {
           case _                   => ""
         }
         val textNode = cursor.claimText(initial)
-        component match {
-          case text: TextComponent => text.setTextNode(textNode)
-          case _                   => ()
-        }
         textNode
       } else {
         cursor.claimElement(component.tagName)
       }
 
+      component.beforeHostBinding(component._host, cursor)
+      component match {
+        case text: TextComponent => text.setTextNode(component._host.asInstanceOf[TextNode])
+        case _ => ()
+      }
       component.hostBound()
 
       val subCursor: Cursor =
@@ -155,8 +159,73 @@ object Runtime {
   }
 
   def unmount(component: AbstractComponent): Unit = {
+    component.physicalHosts.foreach(HostMutationGuard.checkRemoval)
     detach(component)
     component.dispose()
+  }
+
+  /** Cursor for a mounted component's content, including a virtual component's end anchor. */
+  def contentCursor(component: AbstractComponent): Cursor = {
+    require(component.isBound && !component.isDisposed, "Component is not mounted.")
+    component._host match {
+      case host: VirtualHost if host.end.nonEmpty => component._contentCursor.before(host.end.get)
+      case _ => component._contentCursor.fresh
+    }
+  }
+
+  /** Move a physical element component. Index is its final position, after removing it from the
+    * source. Virtual/text roots and changes to inherited services or render contexts are rejected.
+    * Descendant cursors stay rooted in the same physical element, so later updates remain valid.
+    */
+  def move(component: AbstractComponent, destination: AbstractComponent, index: Int): Unit = {
+    require(component.isBound && !component.isDisposed && !component.isVirtual && !component.isText,
+      "Only mounted physical element components can be moved.")
+    val source = component._parent.getOrElse(
+      throw new IllegalArgumentException("A mounted root cannot be reparented."))
+    require(destination.isBound && !destination.isDisposed, "Destination is not mounted.")
+    var ancestor: Option[AbstractComponent] = Some(destination)
+    while (ancestor.nonEmpty) {
+      require(!(ancestor.get eq component), "Cannot move a component into its own subtree.")
+      ancestor = ancestor.get._parent
+    }
+    val remaining = destination._children.filterNot(_ eq component).toVector
+    require(index >= 0 && index <= remaining.length, "Move index is outside destination children.")
+    if ((source eq destination) && source._children.indexOf(component) == index) return
+    val previousContext = effectiveContext(component, source)
+    val nextContext = effectiveContext(component, destination)
+    require(previousContext.keySet == nextContext.keySet &&
+      previousContext.forall { case (key, value) => value eq nextContext(key) },
+      "Moving across different inherited contexts is not supported.")
+    val cursor = contentCursor(destination)
+    require(component._contentCursor.asyncContext == cursor.asyncContext,
+      "Moving across render contexts is not supported.")
+    val targetHost = cursor.parentHost.getOrElse(
+      throw new IllegalArgumentException("Destination has no physical parent host."))
+    HostMutationGuard.checkWrite(targetHost)
+    HostMutationGuard.checkRemoval(component._host)
+    val before = remaining.drop(index).iterator.flatMap(_.firstPhysicalHost).nextOption()
+      .orElse(destination._host match {
+        case host: VirtualHost => host.end
+        case _ => None
+      })
+    // Physical insertion validates the backend/anchor before logical ownership changes.
+    targetHost.insertBefore(component._host, before)
+    source._children -= component
+    destination._children.insert(index, component)
+    component._parent = Some(destination)
+    component._mountParentHost = Some(targetHost)
+  }
+
+  private def effectiveContext(component: AbstractComponent, parent: AbstractComponent): Map[AnyRef, AnyRef] = {
+    val values = scala.collection.mutable.HashMap.from(component._contextValues)
+    var current: Option[AbstractComponent] = Some(parent)
+    while (current.nonEmpty) {
+      current.get._contextValues.foreach { case (key, value) =>
+        if (!values.contains(key)) values(key) = value
+      }
+      current = current.get._parent
+    }
+    values.toMap
   }
 
   private def detach(component: AbstractComponent): Unit = {

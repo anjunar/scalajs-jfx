@@ -9,6 +9,10 @@ final class DomCursor private (
     currentAsyncContext: Option[AsyncRenderContext]
 ) extends Cursor {
 
+  private def document: dom.Document =
+    if (parent.nodeType == dom.Node.DOCUMENT_NODE) parent.asInstanceOf[dom.Document]
+    else parent.ownerDocument
+
   override def supportsAnchors: Boolean =
     true
 
@@ -22,25 +26,23 @@ final class DomCursor private (
     currentAsyncContext
 
   override def parentHost: Option[HostElement] =
-    parent match {
-      case element: dom.Element => Some(new DomHostElement(element))
-      case _                    => None
-    }
+    Option.when(parent.nodeType == dom.Node.ELEMENT_NODE)(
+      new DomHostElement(parent.asInstanceOf[dom.Element]))
 
   def claimElement(tag: String): HostElement = {
-    val element = dom.document.createElement(tag)
+    val element = document.createElement(tag)
     insert(element)
     new DomHostElement(element)
   }
 
   def claimText(initial: String): TextNode = {
-    val text = dom.document.createTextNode(initial)
+    val text = document.createTextNode(initial)
     insert(text)
     new DomTextNode(text)
   }
 
   override def claimComment(text: String): CommentNode = {
-    val comment = dom.document.createComment(text)
+    val comment = document.createComment(text)
     insert(comment)
     new DomCommentNode(comment)
   }
@@ -57,7 +59,7 @@ final class DomCursor private (
     new DomCursor(parent, Some(DomNodes.raw(node)), currentAsyncContext)
 
   private def insert(node: dom.Node): Unit =
-    parent.insertBefore(node, beforeNode.orNull)
+    DomMove.insert(parent, node, beforeNode.orNull)
 }
 
 object DomCursor {
