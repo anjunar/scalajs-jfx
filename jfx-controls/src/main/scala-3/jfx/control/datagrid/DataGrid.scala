@@ -164,10 +164,9 @@ final class DataGrid[T] private (
           width = "100%"
           flex = "1 1 auto"
           minHeight = "0"
-          overflow = displayModeProperty.map {
-            case CollectionDisplayMode.Paging    => "hidden"
-            case CollectionDisplayMode.Scrolling => "auto"
-          }
+          // A paging window can contain more card rows than the host happens to be high. Those
+          // rows must remain reachable; virtualization is disabled for the page slice anyway.
+          overflow = "auto"
           position = "relative"
         }
 
@@ -200,14 +199,18 @@ final class DataGrid[T] private (
             headerComponent = div { currentHeader ?=>
               classes = Seq("jfx-data-grid-header-slot")
               style {
+                display = itemStateRevisionProperty.map(_ => if (headerVisible) "block" else "none")
                 width = "100%"
                 minHeight = itemStateRevisionProperty.map(_ => px(declaredHeaderHeight))
                 boxSizing = "border-box"
-                marginBottom = px(gap)
+                marginBottom = itemStateRevisionProperty.map(_ => px(if (headerVisible) gap else 0.0))
               }
               currentHeader.addDisposable(
                 gapProperty.observe(value =>
-                  currentHeader.setStyle("margin-bottom", px(math.max(0.0, value)))
+                  currentHeader.setStyle(
+                    "margin-bottom",
+                    px(if (headerVisible) math.max(0.0, value) else 0.0)
+                  )
                 )
               )
               body
@@ -396,12 +399,14 @@ final class DataGrid[T] private (
   private def preferredColumnStep: Double  = itemWidth + gap
   private def rowStep: Double              = itemHeight + gap
   private def declaredHeaderHeight: Double =
-    if (headerBody.nonEmpty && headerRowsProperty.get > 0)
+    if (headerVisible && headerRowsProperty.get > 0)
       headerRowsProperty.get * itemHeight + math.max(0, headerRowsProperty.get - 1) * gap
     else 0.0
   private def headerHeight: Double =
-    if (headerBody.isEmpty) 0.0
+    if (!headerVisible) 0.0
     else math.max(declaredHeaderHeight, math.max(0.0, headerHeightProperty.get))
+  private def headerVisible: Boolean =
+    headerBody.nonEmpty && (!isPaging || pageStart == 0)
   private def contentTopOffset: Double =
     outerGap + headerHeight + (if (headerHeight > 0.5) gap else 0.0)
 

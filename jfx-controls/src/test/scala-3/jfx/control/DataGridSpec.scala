@@ -3,6 +3,7 @@ package jfx.control
 import jfx.control.datagrid.DataGrid
 import jfx.control.datagrid.DataGrid.*
 import jfx.core.component.{AbstractComponent, Runtime}
+import jfx.core.context.UrlScope
 import jfx.core.remote.{RemoteListProperty, RemoteLoader, RemotePage}
 import jfx.core.dsl.ClassDsl.addClass
 import jfx.core.dsl.DslLayer
@@ -27,6 +28,7 @@ class DataGridSpec extends AnyFlatSpec with Matchers {
 
     html should include("jfx-data-grid")
     html should not include "jfx-data-grid-header-slot"
+    html should include regex "jfx-data-grid-viewport[^>]*overflow: auto"
     html should include("0:Item 0")
     html should include("9:Item 9")
     html should not include "10:Item 10"
@@ -159,6 +161,40 @@ class DataGridSpec extends AnyFlatSpec with Matchers {
     html should include("0:Item 0")
     html should include("2:Item 2")
     html should not include "3:Item 3"
+  }
+
+  it should "page the content header away after the first page" in {
+    val html = Runtime.renderToString { cursor =>
+      Runtime.mount(
+        new AbstractComponent {
+          override val tagName: String = "main"
+
+          override def compose(contentCursor: Cursor): Unit =
+            DslLayer.render(this, contentCursor) {
+              UrlScope.provide(
+                UrlScope(() => "/grid?articles.offset=3&articles.limit=3") { (_, _) => () }
+              )
+              dataGrid[String](ListProperty(js.Array((0 until 8).map(index => s"Item $index")*))) {
+                itemWidthPx = 400
+                itemHeightPx = 100
+                gapPx = 0
+                paging = true
+                pageSize = 3
+                crawlId = "articles"
+                header {
+                  div { text("Article introduction") {} }
+                }
+                cellRenderer = cellBody
+              }
+            }
+        },
+        cursor
+      )
+    }
+
+    html should include regex "jfx-data-grid-header-slot[^>]*style=\"[^\"]*display: none"
+    html should include("3:Item 3")
+    html should not include "2:Item 2"
   }
 
   "DataGrid list lifecycle" should "track mutations and detach renderers on unmount" in {
