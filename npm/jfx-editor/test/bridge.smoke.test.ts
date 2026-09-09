@@ -26,13 +26,18 @@ import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  button,
+  forEach,
   hydrate,
   installRuntime,
+  listProperty,
   mount,
+  onClick,
   property,
   renderToString,
   resetRuntime,
   runtime,
+  when,
 } from "@anjunar/jfx-core";
 import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";
 import { form } from "@anjunar/jfx-forms";
@@ -158,6 +163,131 @@ describe("form + editor", () => {
     expect(surface.getAttribute("contenteditable")).toBe("true");
     expect(surface.getAttribute("aria-readonly")).toBe("false");
     expect(window.location.search).toBe("?body.editor=editable");
+
+    app.dispose();
+  });
+
+  it("binds editable to an external Property in both directions", () => {
+    const editable = property(false);
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const app = mount(root, () => {
+      viewport(() =>
+        editor("body", {
+          standalone: true,
+          value: "## Stable Markdown",
+          editable,
+          plugins: ["base"],
+        })
+      );
+    });
+
+    const surface = root.querySelector(".jfx-editor__surface") as HTMLElement;
+    expect(surface.getAttribute("contenteditable")).toBe("false");
+
+    editable.set(true);
+    expect(surface.getAttribute("contenteditable")).toBe("true");
+
+    (root.querySelector(".jfx-editor__readonly-link") as HTMLAnchorElement).click();
+    expect(editable.get).toBe(false);
+    expect(surface.getAttribute("contenteditable")).toBe("false");
+
+    app.dispose();
+  });
+
+  it("keeps an external editable Property authoritative inside a form", () => {
+    const editable = property(false);
+    const model = { body: property("## Initially readonly") };
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const app = mount(root, () => {
+      viewport(() => {
+        form(model, {}, () => {
+          editor("body", { editable, plugins: ["base"] });
+        });
+      });
+    });
+
+    const surface = root.querySelector(".jfx-editor__surface") as HTMLElement;
+    expect(editable.get).toBe(false);
+    expect(surface.getAttribute("contenteditable")).toBe("false");
+
+    editable.set(true);
+    expect(surface.getAttribute("contenteditable")).toBe("true");
+
+    app.dispose();
+  });
+
+  it("restores Markdown through repeated Edit and Cancel button clicks", () => {
+    const editable = property(false);
+    const model = { body: property("## Original") };
+    const original = model.body.get;
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const app = mount(root, () => {
+      viewport(() => {
+        when(editable.map(value => !value), () => {
+          button("Edit comment", { type: "button" }, () => onClick(() => editable.set(true)));
+        });
+        form(model, {}, () => {
+          editor("body", { editable, plugins: ["base"] });
+          when(editable, () => {
+            button("Cancel", { type: "button" }, () => {
+              onClick(() => {
+                model.body.set(original);
+                editable.set(false);
+              });
+            });
+          });
+        });
+      });
+    });
+
+    const findButton = (label: string) => Array.from(root.querySelectorAll("button"))
+      .find(candidate => candidate.textContent === label)!;
+    try {
+      for (let cycle = 0; cycle < 3; cycle++) {
+        findButton("Edit comment").click();
+        expect(editable.get).toBe(true);
+        model.body.set("## Unsaved change");
+        findButton("Cancel").click();
+        expect(editable.get).toBe(false);
+        expect(model.body.get).toBe(original);
+        expect(root.querySelector(".jfx-editor__surface")?.getAttribute("contenteditable")).toBe("false");
+        expect(root.querySelector(".jfx-editor__surface")?.textContent).toBe("Original");
+        expect(findButton("Cancel")).toBeUndefined();
+      }
+    } finally {
+      app.dispose();
+    }
+  });
+  it("can cancel a draft by removing its own foreach item", () => {
+    const drafts = listProperty([{ body: property(""), editable: property(true) }]);
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const app = mount(root, () => {
+      viewport(() => {
+        forEach(drafts, (draft) => {
+          form(draft, {}, () => {
+            editor("body", { editable: draft.editable, plugins: ["base"] });
+            when(draft.editable, () => {
+              button("Cancel draft", { type: "button" }, () => {
+                onClick(() => drafts.setAll([]));
+              });
+            });
+          });
+        });
+      });
+    });
+
+    const cancel = Array.from(root.querySelectorAll("button"))
+      .find((candidate) => candidate.textContent === "Cancel draft") as HTMLButtonElement;
+    expect(() => cancel.click()).not.toThrow();
+    expect(drafts.get).toHaveLength(0);
 
     app.dispose();
   });

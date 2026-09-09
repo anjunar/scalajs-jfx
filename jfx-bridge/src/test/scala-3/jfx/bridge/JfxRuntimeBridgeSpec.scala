@@ -348,6 +348,8 @@ class JfxRuntimeBridgeSpec extends AsyncFlatSpec with Matchers {
         js.Dictionary(
           "source"       -> items,
           "cellRenderer" -> cellRenderer(item => s"cell: ${item.asInstanceOf[String]}"),
+          "toolbar"      -> scopeBody("grid controls"),
+          "header"       -> scopeBody("grid introduction"),
           "crawlable"    -> true,
           "crawlId"      -> "grid"
         ),
@@ -358,8 +360,12 @@ class JfxRuntimeBridgeSpec extends AsyncFlatSpec with Matchers {
 
     render(build).map { result =>
       result.html should include("jfx-data-grid")
+      result.html should include("jfx-data-grid-toolbar-slot")
+      result.html should include("grid controls")
+      result.html should include("grid introduction")
       result.html should include("cell: alpha")
       result.html should include("cell: gamma")
+      result.html.indexOf("grid controls") should be < result.html.indexOf("grid introduction")
     }
   }
 

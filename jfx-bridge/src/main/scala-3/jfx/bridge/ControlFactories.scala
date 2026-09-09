@@ -268,6 +268,7 @@ private[bridge] object TableViewFactory extends ComponentFactory {
         .foreach(value => TableView.showFooter = ControlFactories.bool(value))
       options.get("paging").foreach(value => TableView.paging = ControlFactories.bool(value))
       options.get("pageSize").foreach(value => TableView.pageSize = ControlFactories.int(value))
+      options.get("headerRows").foreach(value => TableView.headerRows = ControlFactories.int(value))
       options.get("crawlable").foreach(value => TableView.crawlable = ControlFactories.bool(value))
       options.get("crawlId").foreach(value => TableView.crawlId = ControlFactories.str(value))
 
@@ -326,9 +327,15 @@ private[bridge] object DataGridFactory extends ComponentFactory {
         .foreach(value => DataGrid.prefetchItems = ControlFactories.int(value))
       options.get("paging").foreach(value => DataGrid.paging = ControlFactories.bool(value))
       options.get("pageSize").foreach(value => DataGrid.pageSize = ControlFactories.int(value))
+      options.get("headerRows").foreach(value => DataGrid.headerRows = ControlFactories.int(value))
       options.get("crawlable").foreach(value => DataGrid.crawlable = ControlFactories.bool(value))
       options.get("crawlId").foreach(value => DataGrid.crawlId = ControlFactories.str(value))
 
+      options.get("toolbar").foreach { slot =>
+        DataGrid.toolbar[js.Any](
+          ControlFactories.slotBody(slot.asInstanceOf[js.Function1[ScopeHandleBridge, Unit]])
+        )
+      }
       options.get("header").foreach { slot =>
         DataGrid.header[js.Any](
           ControlFactories.slotBody(slot.asInstanceOf[js.Function1[ScopeHandleBridge, Unit]])
@@ -375,6 +382,9 @@ private[bridge] object VirtualListFactory extends ComponentFactory {
       options
         .get("pageSize")
         .foreach(value => VirtualListView.pageSize = ControlFactories.int(value))
+      options
+        .get("headerRows")
+        .foreach(value => VirtualListView.headerRows = ControlFactories.int(value))
       options
         .get("crawlable")
         .foreach(value => VirtualListView.crawlable = ControlFactories.bool(value))

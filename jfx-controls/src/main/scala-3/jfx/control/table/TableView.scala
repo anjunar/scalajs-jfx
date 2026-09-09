@@ -55,6 +55,7 @@ final class TableView[S] private (
   val selectedIndexProperty: Property[Int]                       = Property(-1)
   val selectedItemProperty: Property[S | Null]                   = Property(null)
   val rowDoubleClickHandlerProperty: Property[Option[S => Unit]] = Property(None)
+  val headerRowsProperty: Property[Int]                          = Property(0)
 
   private final case class VisibleRow(index: Int, item: Option[S])
 
@@ -281,6 +282,7 @@ final class TableView[S] private (
               style {
                 width = totalColumnWidthProperty.map(value => s"${value}px")
                 minWidth = totalColumnWidthProperty.map(value => s"${value}px")
+                minHeight = itemStateRevisionProperty.map(_ => s"${declaredContentHeaderHeight}px")
                 boxSizing = "border-box"
               }
               contentHeaderBody.foreach { body => body }
@@ -380,7 +382,8 @@ final class TableView[S] private (
       bumpColumnState()
       recomputeVisible()
     }))
-    addDisposable(rowHeightProperty.observeWithoutInitial(_ => recomputeVisible()))
+    addDisposable(rowHeightProperty.observeWithoutInitial(_ => refreshItemState()))
+    addDisposable(headerRowsProperty.observeWithoutInitial(_ => refreshItemState()))
     addDisposable(crawlableProperty.observeWithoutInitial(_ => refreshConfiguredCrawlState()))
     addDisposable(crawlIdProperty.observeWithoutInitial(_ => refreshConfiguredCrawlState()))
     addDisposable(selectedIndexProperty.observeWithoutInitial(_ => refreshSelectedItem()))
@@ -427,6 +430,15 @@ final class TableView[S] private (
     itemStateRevisionProperty.flatMap(_ =>
       rowHeightProperty.map(rowHeight => s"${layoutCount(displayItemCount) * rowHeight}px")
     )
+
+  private def declaredContentHeaderHeight: Double =
+    if (contentHeaderBody.nonEmpty && headerRowsProperty.get > 0)
+      math.max(1.0, rowHeightProperty.get) * headerRowsProperty.get
+    else 0.0
+
+  private def contentHeaderHeight: Double =
+    if (contentHeaderBody.isEmpty) 0.0
+    else math.max(declaredContentHeaderHeight, math.max(0.0, contentHeaderHeightProperty.get))
 
   private def placeholderTextProperty: ReadOnlyProperty[String] =
     remoteStateRevisionProperty.map { _ =>
@@ -492,8 +504,6 @@ final class TableView[S] private (
 
   private def bumpHeaderState(): Unit =
     headerStateRevisionProperty.set(headerStateRevisionProperty.get + 1)
-
-  private def contentHeaderHeight: Double = math.max(0.0, contentHeaderHeightProperty.get)
 
   private def resolveRenderedColumnWidths(
       columns: Seq[TableColumn[S, ?]],
@@ -595,6 +605,10 @@ object TableView {
   def pageSize(using table: TableView[?]): Int                = table.pageSizeProperty.get
   def pageSize_=(value: Int)(using table: TableView[?]): Unit =
     table.pageSizeProperty.set(math.max(1, value))
+
+  def headerRows(using table: TableView[?]): Int                = table.headerRowsProperty.get
+  def headerRows_=(value: Int)(using table: TableView[?]): Unit =
+    table.headerRowsProperty.set(math.max(0, value))
 
   def crawlable(using table: TableView[?]): Boolean                = table.crawlableProperty.get
   def crawlable_=(value: Boolean)(using table: TableView[?]): Unit =

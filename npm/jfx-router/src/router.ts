@@ -84,7 +84,7 @@ export function errorRoute(
 
 export type RouteFailure =
   | { readonly kind: "not-matched"; readonly path: string }
-  | { readonly kind: "load-failed"; readonly path: string };
+  | { readonly kind: "load-failed"; readonly path: string; readonly error: unknown };
 
 export interface RouterConfig {
   readonly basePath?: string;

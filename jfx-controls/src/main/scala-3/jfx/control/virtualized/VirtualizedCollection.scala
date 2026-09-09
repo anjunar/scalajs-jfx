@@ -83,6 +83,7 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
   protected var viewportComponent: Div | Null   = null
 
   protected var viewportMeasureScheduled = false
+  private var viewportMeasureFrame        = 0
   protected var browserRendering         = false
   protected var hydrating                = false
   protected var initialScrollIndex       = -1
@@ -482,14 +483,21 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
   protected def scheduleViewportMeasure(): Unit =
     if (!viewportMeasureScheduled && browserRendering) {
       viewportMeasureScheduled = true
-      dom.window.requestAnimationFrame { _ =>
-        viewportMeasureScheduled = false
-        domElement(viewportComponent).foreach { viewport =>
-          measureViewport(viewport.clientWidth.toDouble, viewport.clientHeight.toDouble)
+      viewportMeasureFrame = dom.window.requestAnimationFrame { _ =>
+        runScheduledViewportMeasure {
+          domElement(viewportComponent).foreach { viewport =>
+            measureViewport(viewport.clientWidth.toDouble, viewport.clientHeight.toDouble)
+          }
         }
       }
       ()
     }
+
+  private[control] def runScheduledViewportMeasure(measure: => Unit): Unit = {
+    viewportMeasureScheduled = false
+    viewportMeasureFrame = 0
+    if (!isDisposed) measure
+  }
 
   /** Body of a viewport measurement: apply size, then notify follow-ups.
     *
@@ -524,6 +532,12 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
     * viewport plus a window resize listener, both targeting scheduleViewportMeasure.
     */
   protected def observeViewportSize(): Unit = {
+    addDisposable(Disposable {
+      if (viewportMeasureFrame != 0) dom.window.cancelAnimationFrame(viewportMeasureFrame)
+      viewportMeasureFrame = 0
+      viewportMeasureScheduled = false
+    })
+
     domElement(viewportComponent).foreach { element =>
       val observer = new dom.ResizeObserver((_, _) => scheduleViewportMeasure())
       observer.observe(element)

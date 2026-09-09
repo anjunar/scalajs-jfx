@@ -22,7 +22,7 @@
  * `defaultWidthPx`, ...), a custom `dialogService`, and per-plugin toolbar
  * bodies -- each has an obvious trigger to add later.
  */
-import { component } from "@anjunar/jfx-core";
+import { component, type Property } from "@anjunar/jfx-core";
 import { defined } from "./internal.js";
 
 /** The only public value representation of an editor document. */
@@ -53,8 +53,8 @@ export interface EditorOptions {
   /** Initial Markdown for a standalone editor; a form binding takes precedence. */
   readonly value?: Markdown;
   readonly placeholder?: string;
-  /** Whether the field is editable. SSR emits a textarea when true and semantic HTML when false. */
-  readonly editable?: boolean;
+  /** Whether the field is editable. A Property keeps external controls and the editor in sync. */
+  readonly editable?: boolean | Property<boolean>;
   /** Optional override for the Edit link; defaults to `?${name}.editor=editable`. */
   readonly editUrl?: string;
   /** Label for `editUrl`; defaults to `"Edit"`. */

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";
 import { StubRuntime } from "../src/stub/index.js";
 import {
-  capture, currentScope, disposeWith, div, hasScope, hydrate, installRuntime,
+  button, capture, currentScope, disposeWith, div, hasScope, hydrate, installRuntime,
   mount, onClick, property, renderToString, resetRuntime, span, text, when,
 } from "../src/index.js";
 
@@ -52,6 +52,39 @@ describe.each([bridgeRuntime, new StubRuntime()])("$name captured scope lifetime
     expect(() => restore(() => text("too late"))).toThrow(/disposed/);
   });
 
+  it("keeps replacement button callbacks alive after Edit removes its own scope", () => {
+    const editable = property(false);
+    const errors: unknown[] = [];
+    const onError = (event: ErrorEvent): void => {
+      errors.push(event.error);
+      event.preventDefault();
+    };
+    window.addEventListener("error", onError);
+    const root = document.createElement("div");
+    const app = mount(root, () => div(() => {
+      when(editable.map(value => !value), () => {
+        button("Edit", { type: "button" }, () => onClick(() => editable.set(true)));
+      });
+      when(editable, () => {
+        button("Cancel", { type: "button" }, () => onClick(() => editable.set(false)));
+      });
+    }));
+    try {
+      for (let cycle = 0; cycle < 3; cycle++) {
+        expect(root.querySelector("button")?.textContent).toBe("Edit");
+        root.querySelector("button")!.click();
+        expect(editable.get).toBe(true);
+        expect(root.querySelector("button")?.textContent).toBe("Cancel");
+        root.querySelector("button")!.click();
+        expect(errors).toEqual([]);
+        expect(editable.get).toBe(false);
+      }
+      expect(hasScope()).toBe(false);
+    } finally {
+      app.dispose();
+      window.removeEventListener("error", onError);
+    }
+  });
   it("keeps deferred nodes inside a virtual range and expires each removed body", () => {
     let restore!: Restore;
     const visible = property(true);

@@ -24,8 +24,13 @@ export interface DataGridOptions {
   readonly prefetchItems?: number;
   readonly paging?: boolean;
   readonly pageSize?: number;
+  /** Header height in grid-card rows. The header itself always spans the full grid width. */
+  readonly headerRows?: number;
   readonly crawlable?: boolean;
   readonly crawlId?: string;
+  /** Fixed controls above the scrolling viewport. */
+  readonly toolbar?: () => void;
+  /** Content that scrolls before the grid cells. */
   readonly header?: () => void;
   readonly loadingPlaceholder?: () => void;
   readonly emptyPlaceholder?: () => void;
@@ -48,8 +53,10 @@ export function dataGrid<T, Q = unknown>(
       prefetchItems: options.prefetchItems,
       paging: options.paging,
       pageSize: options.pageSize,
+      headerRows: options.headerRows,
       crawlable: options.crawlable,
       crawlId: options.crawlId,
+      toolbar: options.toolbar ? body(options.toolbar) : undefined,
       header: options.header ? body(options.header) : undefined,
       loadingPlaceholder: options.loadingPlaceholder ? body(options.loadingPlaceholder) : undefined,
       emptyPlaceholder: options.emptyPlaceholder ? body(options.emptyPlaceholder) : undefined,
@@ -63,6 +70,8 @@ export interface VirtualListOptions {
   readonly prefetchItems?: number;
   readonly paging?: boolean;
   readonly pageSize?: number;
+  /** Minimum header height in estimated item rows. */
+  readonly headerRows?: number;
   readonly crawlable?: boolean;
   readonly crawlId?: string;
   readonly header?: () => void;
@@ -83,6 +92,7 @@ export function virtualList<T, Q = unknown>(
       prefetchItems: options.prefetchItems,
       paging: options.paging,
       pageSize: options.pageSize,
+      headerRows: options.headerRows,
       crawlable: options.crawlable,
       crawlId: options.crawlId,
       header: options.header ? body(options.header) : undefined,

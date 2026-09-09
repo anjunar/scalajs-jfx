@@ -172,13 +172,21 @@ describe("table-view", () => {
           { text: "Title", cell: (book) => text(book.title) },
           { text: "Author", cell: (book) => text(book.author) },
         ],
-        { crawlable: true, crawlId: "books", rowHeight: 40 }
+        {
+          crawlable: true,
+          crawlId: "books",
+          rowHeight: 40,
+          headerRows: 2,
+          header: () => div(() => text("book introduction")),
+        }
       );
     };
 
     const result = await renderToString(build);
     const html = withoutAnchors(result.html);
     expect(html).toContain("jfx-table-view");
+    expect(html).toContain("book introduction");
+    expect(html).toContain("min-height: 80px");
     expect(html).toContain("Title");
     expect(html).toContain("1984");
     expect(html).toContain("Orwell");
@@ -228,23 +236,34 @@ describe("data-grid and virtual-list-view", () => {
       dataGrid(items, (item) => div(() => text(`cell:${String(item)}`)), {
         crawlable: true,
         crawlId: "grid",
+        headerRows: 2,
+        toolbar: () => div(() => text("grid controls")),
+        header: () => div(() => text("grid introduction")),
       });
     };
     const list = (): void => {
       const items = listProperty<string>(["one", "two", "three"]);
       virtualList(items, (item) => div(() => text(`row:${String(item)}`)), {
+        headerRows: 2,
         crawlable: true,
         crawlId: "list",
+        header: () => div(() => text("list introduction")),
       });
     };
 
     const gridHtml = withoutAnchors((await renderToString(grid)).html);
     expect(gridHtml).toContain("jfx-data-grid");
+    expect(gridHtml).toContain("jfx-data-grid-toolbar-slot");
+    expect(gridHtml).toContain("grid controls");
+    expect(gridHtml.indexOf("grid controls")).toBeLessThan(gridHtml.indexOf("grid introduction"));
+    expect(gridHtml).toContain("min-height: 456px");
     expect(gridHtml).toContain("cell:alpha");
     expect(gridHtml).toContain("cell:gamma");
 
     const listHtml = withoutAnchors((await renderToString(list)).html);
     expect(listHtml).toContain("jfx-virtual-list");
+    expect(listHtml).toContain("list introduction");
+    expect(listHtml).toContain("min-height: 88px");
     expect(listHtml).toContain("row:one");
     expect(listHtml).toContain("row:three");
   });

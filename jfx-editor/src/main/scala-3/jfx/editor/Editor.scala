@@ -61,6 +61,7 @@ final class Editor private[editor] (
   private var surfaceHost: Div                            = uninitialized
   private var lexicalAdapter: LexicalEditorAdapter | Null = null
   private var browserRendering                            = false
+  private var configuredEditable: Option[Either[Boolean, Property[Boolean]]] = None
 
   override def compose(cursor: Cursor): Unit = {
     configure(using this)(using cursor)
@@ -71,6 +72,7 @@ final class Editor private[editor] (
       // claim a different subtree than SSR produced.
       installControlObservers()
       registerWithForm()
+      installConfiguredEditable()
       initializeUrlMode()
 
       browserRendering = cursor.isBrowser
@@ -202,6 +204,23 @@ final class Editor private[editor] (
 
   private[editor] def readonlyLabel_=(value: String): Unit =
     readonlyLabelValue = Option(value).map(_.trim).filter(_.nonEmpty).getOrElse("Readonly")
+
+  private[jfx] def configureEditable(value: Boolean): Unit = {
+    configuredEditable = Some(Left(value))
+    editableProperty.set(value)
+  }
+
+  private[jfx] def configureEditable(value: Property[Boolean]): Unit = {
+    configuredEditable = Some(Right(value))
+    editableProperty.set(value.get)
+  }
+
+  private def installConfiguredEditable(): Unit =
+    configuredEditable.foreach {
+      case Left(value) => editableProperty.set(value)
+      case Right(value) =>
+        addDisposable(Property.subscribeBidirectional(value, editableProperty))
+    }
 
   private def initializeUrlMode(): Unit =
     UrlScope

@@ -2,6 +2,7 @@ package jfx.bridge
 
 import jfx.core.component.AbstractComponent
 import jfx.core.render.Cursor
+import jfx.core.state.{Property as CoreProperty}
 import jfx.editor.Editor
 import jfx.editor.plugins.{
   basePlugin,
@@ -53,9 +54,13 @@ private[bridge] object EditorFactory extends ComponentFactory {
 
       options.get("value").foreach(value => self.valueProperty.set(ControlFactories.str(value)))
       options.get("placeholder").foreach(value => self.placeholder(ControlFactories.strProp(value)))
-      options
-        .get("editable")
-        .foreach(value => self.editableProperty.set(ControlFactories.bool(value)))
+      options.get("editable").foreach {
+        case handle: PropertyHandle[?] =>
+          self.configureEditable(
+            handle.underlyingProperty.asInstanceOf[CoreProperty[Boolean]]
+          )
+        case value => self.configureEditable(ControlFactories.bool(value))
+      }
       options
         .get("editUrl")
         .foreach(value => Editor.editUrl_=(ControlFactories.str(value))(using self))

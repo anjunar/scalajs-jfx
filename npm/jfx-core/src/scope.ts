@@ -94,8 +94,8 @@ export function withScope<T>(
 }
 
 /**
- * Freezes the current component stack so a later callback can run inside it.
- * Each scope is refreshed on invocation: it claims nodes while hydration is
+ * Captures the current component scope so a later callback can run inside it.
+ * The scope is refreshed on invocation: it claims nodes while hydration is
  * running and appends after hydration completes. Disposed scopes reject reuse.
  *
  * Use this at every boundary the runtime does not own: a `setTimeout`, a
@@ -103,10 +103,13 @@ export function withScope<T>(
  * DSL's own asynchronous helpers already do it.
  */
 export function capture(): <T>(body: () => T) => T {
-  const frozen = [...stack];
+  // Reactive composition can run inside an event handler belonging to a sibling
+  // that has just been unmounted. Only the current frame owns this callback;
+  // earlier frames are call history, not component ancestry.
+  const frame = stack[stack.length - 1];
   return <T>(body: () => T): T => {
     const previous = stack;
-    stack = frozen.map((frame) => ({ self: frame.self, scope: frame.scope.fresh() }));
+    stack = frame === undefined ? [] : [{ self: frame.self, scope: frame.scope.fresh() }];
     try {
       return body();
     } finally {

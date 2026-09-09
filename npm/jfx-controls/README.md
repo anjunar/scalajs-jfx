@@ -55,6 +55,11 @@ virtualList(source, (item, index) => text(item === null ? `Loading ${index}` : i
 
 `crawlable` and `crawlId` render a deterministic server slice with ordinary pager links. Imperative control handles such as selection and scrolling are not projected by this facade.
 
+Paged or scrolling content headers can declare their reserved height with `headerRows`. For
+`dataGrid`, one row is one card height and the header always spans the full responsive grid width;
+for `tableView` and `virtualList`, rows use the table row height and estimated item height
+respectively. If `headerRows` is omitted, the browser continues to measure the rendered header.
+
 ## SSR and non-JavaScript behavior
 
 SSR renders the visible or crawl slice. Hydration adds measurement, scrolling, range loading, sorting, and efficient visible-window updates. A crawler cannot scroll; use crawlability or paging when deeper collection content must be addressable without JavaScript.

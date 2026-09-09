@@ -43,6 +43,7 @@ final class DataGrid[T] private (
   val gapProperty: Property[Double]           = Property(16.0)
   val overscanRowsProperty: Property[Int]     = Property(2)
   val viewportWidthProperty: Property[Double] = Property(800.0)
+  val headerRowsProperty: Property[Int]       = Property(0)
 
   prefetchItemsProperty.set(40)
 
@@ -71,6 +72,7 @@ final class DataGrid[T] private (
 
   private var lastVisibleCells                               = Vector.empty[DataGrid.VisibleCell[T]]
   private var cellRendererBody: Option[DataGrid.Renderer[T]] = None
+  private var toolbarBody: Option[AbstractComponent ?=> Cursor ?=> Unit]            = None
   private var headerBody: Option[AbstractComponent ?=> Cursor ?=> Unit]             = None
   private var loadingPlaceholderBody: Option[AbstractComponent ?=> Cursor ?=> Unit] = None
   private var emptyPlaceholderBody: Option[AbstractComponent ?=> Cursor ?=> Unit]   = None
@@ -89,6 +91,9 @@ final class DataGrid[T] private (
 
   private[control] def setHeader(body: AbstractComponent ?=> Cursor ?=> Unit): Unit =
     headerBody = Some(body)
+
+  private[control] def setToolbar(body: AbstractComponent ?=> Cursor ?=> Unit): Unit =
+    toolbarBody = Some(body)
 
   private[control] def setLoadingPlaceholder(
       body: AbstractComponent ?=> Cursor ?=> Unit
@@ -146,6 +151,13 @@ final class DataGrid[T] private (
         position = "relative"
       }
 
+      toolbarBody.foreach { body =>
+        div {
+          classes = Seq("jfx-data-grid-toolbar-slot")
+          body
+        }
+      }
+
       viewportComponent = div {
         classes = Seq("jfx-data-grid-viewport")
         style {
@@ -188,6 +200,7 @@ final class DataGrid[T] private (
             classes = Seq("jfx-data-grid-header-slot")
             style {
               width = "100%"
+              minHeight = itemStateRevisionProperty.map(_ => px(declaredHeaderHeight))
               boxSizing = "border-box"
               marginBottom = px(if (headerBody.nonEmpty) gap else 0.0)
             }
@@ -220,7 +233,10 @@ final class DataGrid[T] private (
         when(itemStateRevisionProperty.map(_ => renderableCount == 0)) {
           div {
             classes = Seq("jfx-data-grid-placeholder")
-            style { display = "flex" }
+            style {
+              display = "flex"
+              top = itemStateRevisionProperty.map(_ => px(headerHeight))
+            }
 
             when(remoteStateRevisionProperty.map(_ => remoteLoading)) {
               loadingPlaceholderBody match {
@@ -285,6 +301,7 @@ final class DataGrid[T] private (
     addDisposable(itemWidthProperty.observeWithoutInitial(_ => refreshItemState()))
     addDisposable(itemHeightProperty.observeWithoutInitial(_ => refreshItemState()))
     addDisposable(gapProperty.observeWithoutInitial(_ => refreshItemState()))
+    addDisposable(headerRowsProperty.observeWithoutInitial(_ => refreshItemState()))
     addDisposable(overscanRowsProperty.observeWithoutInitial(_ => recomputeVisible()))
     addDisposable(prefetchItemsProperty.observeWithoutInitial(_ => recomputeVisible()))
     addDisposable(crawlableProperty.observeWithoutInitial(_ => refreshConfiguredCrawlState()))
@@ -371,15 +388,21 @@ final class DataGrid[T] private (
     math.max(1.0, available / columns)
   }
 
-  private def itemWidth: Double           = math.max(1.0, itemWidthProperty.get)
-  private def itemHeight: Double          = math.max(1.0, itemHeightProperty.get)
-  private def gap: Double                 = math.max(0.0, gapProperty.get)
-  private def outerGap: Double            = gap
-  private def columnStep: Double          = renderedItemWidth + gap
-  private def preferredColumnStep: Double = itemWidth + gap
-  private def rowStep: Double             = itemHeight + gap
-  private def headerHeight: Double        = math.max(0.0, headerHeightProperty.get)
-  private def contentTopOffset: Double    =
+  private def itemWidth: Double            = math.max(1.0, itemWidthProperty.get)
+  private def itemHeight: Double           = math.max(1.0, itemHeightProperty.get)
+  private def gap: Double                  = math.max(0.0, gapProperty.get)
+  private def outerGap: Double             = gap
+  private def columnStep: Double           = renderedItemWidth + gap
+  private def preferredColumnStep: Double  = itemWidth + gap
+  private def rowStep: Double              = itemHeight + gap
+  private def declaredHeaderHeight: Double =
+    if (headerBody.nonEmpty && headerRowsProperty.get > 0)
+      headerRowsProperty.get * itemHeight + math.max(0, headerRowsProperty.get - 1) * gap
+    else 0.0
+  private def headerHeight: Double =
+    if (headerBody.isEmpty) 0.0
+    else math.max(declaredHeaderHeight, math.max(0.0, headerHeightProperty.get))
+  private def contentTopOffset: Double =
     outerGap + headerHeight + (if (headerHeight > 0.5) gap else 0.0)
 
   private def px(value: Double): String = s"${value}px"
@@ -422,6 +445,10 @@ object DataGrid {
   def gapPx(using grid: DataGrid[?]): Double                = grid.gapProperty.get
   def gapPx_=(value: Double)(using grid: DataGrid[?]): Unit = grid.gapProperty.set(value)
 
+  def headerRows(using grid: DataGrid[?]): Int                = grid.headerRowsProperty.get
+  def headerRows_=(value: Int)(using grid: DataGrid[?]): Unit =
+    grid.headerRowsProperty.set(math.max(0, value))
+
   def overscanRows(using grid: DataGrid[?]): Int                = grid.overscanRowsProperty.get
   def overscanRows_=(value: Int)(using grid: DataGrid[?]): Unit =
     grid.overscanRowsProperty.set(math.max(0, value))
@@ -456,6 +483,9 @@ object DataGrid {
 
   def header[T](body: AbstractComponent ?=> Cursor ?=> Unit)(using grid: DataGrid[T]): Unit =
     grid.setHeader(body)
+
+  def toolbar[T](body: AbstractComponent ?=> Cursor ?=> Unit)(using grid: DataGrid[T]): Unit =
+    grid.setToolbar(body)
 
   def loadingPlaceholder[T](body: AbstractComponent ?=> Cursor ?=> Unit)(using
       grid: DataGrid[T]

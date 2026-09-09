@@ -143,6 +143,18 @@ class ViewportMeasurementSpec extends AnyFlatSpec with Matchers {
     probe.hydratingNow shouldBe false
   }
 
+  it should "ignore an animation-frame callback after disposal" in {
+    val probe = new MeasurementProbe
+    var measured = false
+
+    probe.dispose()
+    probe.runScheduledViewportMeasure {
+      measured = true
+    }
+
+    measured shouldBe false
+  }
+
   private def renderer[C]: (C | Null, Int) => AbstractComponent ?=> Cursor ?=> Unit =
     (item, index) => div { text(if (item == null) s"Loading $index" else String.valueOf(item)) {} }
 

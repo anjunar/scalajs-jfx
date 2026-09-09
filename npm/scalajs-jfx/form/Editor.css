@@ -164,6 +164,7 @@
 .jfx-editor__surface-wrap {
     position: relative;
     min-height: 180px;
+    height: 100%;
 }
 
 .jfx-editor__surface {
@@ -657,7 +658,6 @@
     color: var(--aj-accent);
 }
 
-.jfx-editor .lexical-editor-input,
 .jfx-editor .lexical-read-only {
     flex: 0 1 auto;
     min-height: 0;
@@ -775,15 +775,6 @@
 .jfx-editor .lexical-editor-input {
     display: block;
     overflow: auto;
-}
-
-.jfx-editor div:has(> .lexical-editor-input),
-.jfx-editor div:has(> .lexical-read-only) {
-    display: flex;
-    flex-direction: column;
-    flex: 0 1 auto;
-    min-height: 0;
-    height: auto;
 }
 
 .jfx-editor .lexical-editor-input table,

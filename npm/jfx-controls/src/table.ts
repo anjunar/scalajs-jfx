@@ -38,6 +38,8 @@ export interface TableViewOptions {
   /** Page through the data instead of scrolling it. */
   readonly paging?: boolean;
   readonly pageSize?: number;
+  /** Minimum content-header height in table rows. */
+  readonly headerRows?: number;
   /**
    * Render a fixed slice on the server with a pager link, so a crawler can reach
    * past the first screen. Needs `crawlId`. Only meaningful for a table rendered
@@ -73,6 +75,7 @@ export function tableView<T, Q = unknown>(
       showFooter: options.showFooter,
       paging: options.paging,
       pageSize: options.pageSize,
+      headerRows: options.headerRows,
       crawlable: options.crawlable,
       crawlId: options.crawlId,
       header: options.header ? body(options.header) : undefined,

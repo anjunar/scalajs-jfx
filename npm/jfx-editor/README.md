@@ -38,7 +38,7 @@ The value supports CommonMark-shaped headings, paragraphs, block quotes, lists, 
 
 ## SSR and non-JavaScript behavior
 
-`editable: false` renders semantic readonly HTML. `editable: true` renders a Markdown textarea on the server. `editUrl` and `readonlyUrl` provide ordinary mode-switch links; without overrides they use `<name>.editor=editable|readonly`. Hydration claims the fallback and enhances it to Lexical.
+`editable: false` renders semantic readonly HTML. `editable: true` renders a Markdown textarea on the server. Pass a `Property<boolean>` to control the mode from outside the editor and keep both sides synchronized. `editUrl` and `readonlyUrl` provide ordinary mode-switch links; without overrides they use `<name>.editor=editable|readonly`. Hydration claims the fallback and enhances it to Lexical.
 
 ## API overview
 

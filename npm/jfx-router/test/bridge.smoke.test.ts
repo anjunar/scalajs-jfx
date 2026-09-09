@@ -106,6 +106,31 @@ describe("renderToString", () => {
     expect(withoutAnchors(result.html)).toContain("nothing here");
   });
 
+  it("projects the original rejected loader error to onFailure", async () => {
+    const expected = Object.assign(new Error("forbidden"), { status: 403 });
+    let received: unknown;
+    const result = await renderToString(() =>
+      router(
+        [
+          view("/private", async () => { throw expected; }),
+          errorRoute("/403", 403, () => () => text("access denied")),
+        ],
+        {
+          url: "/private",
+          onFailure: (failure) => {
+            if (failure.kind === "load-failed") received = failure.error;
+            return "/403";
+          },
+          renderErrorsOnServer: true,
+        },
+      )
+    );
+
+    expect(received).toBe(expected);
+    expect(result.status).toBe(403);
+    expect(withoutAnchors(result.html)).toContain("access denied");
+  });
+
   it("keeps an error route's status when the router is mounted by async work", async () => {
     const result = await renderToString(() =>
       fetchInto(

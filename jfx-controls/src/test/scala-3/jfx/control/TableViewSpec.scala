@@ -73,6 +73,18 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
     html.indexOf("jfx-table-header-cell") should be < html.indexOf("jfx:Foreach:end")
   }
 
+  it should "reserve content-header height in table-row units" in {
+    val html = renderTable(Seq("Alice", "Bob", "Cara")) {
+      rowHeight = 40
+      headerRows = 2
+      header {
+        div { text("Two table rows") {} }
+      }
+    }
+
+    html should include regex "min-height: 80(?:\\.0)?px"
+  }
+
   it should "restore the page from the route URL" in {
     val members = (0 until 25).map(index => s"Member $index")
     val html    = Runtime.renderToString { cursor =>

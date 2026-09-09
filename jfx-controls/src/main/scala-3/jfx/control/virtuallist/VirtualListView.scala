@@ -38,6 +38,7 @@ final class VirtualListView[T] private (
 
   val estimateHeightProperty: Property[Double] = Property(44.0)
   val overscanPxProperty: Property[Double]     = Property(240.0)
+  val headerRowsProperty: Property[Int]        = Property(0)
 
   private val visibleSlotsProperty = ListProperty[VirtualListView.VisibleSlot[T]]()
   private val headerHeightProperty = Property(0.0)
@@ -159,6 +160,7 @@ final class VirtualListView[T] private (
             classes = Seq("jfx-virtual-list-header-slot")
             style {
               width = "100%"
+              minHeight = itemStateRevisionProperty.map(_ => s"${declaredHeaderHeight}px")
               boxSizing = "border-box"
             }
             headerBody.foreach { body => body }
@@ -210,6 +212,7 @@ final class VirtualListView[T] private (
     })
     addDisposable(viewportHeightProperty.observeWithoutInitial(_ => recomputeVisible()))
     addDisposable(overscanPxProperty.observeWithoutInitial(_ => recomputeVisible()))
+    addDisposable(headerRowsProperty.observeWithoutInitial(_ => refreshItemState()))
     addDisposable(prefetchItemsProperty.observeWithoutInitial(_ => recomputeVisible()))
     addDisposable(crawlableProperty.observeWithoutInitial(_ => refreshConfiguredCrawlState()))
     addDisposable(crawlIdProperty.observeWithoutInitial(_ => refreshConfiguredCrawlState()))
@@ -313,8 +316,14 @@ final class VirtualListView[T] private (
       geometry.contentHeight(end) - geometry.offsetFor(start)
     } else geometry.contentHeight(renderableCount)
 
-  private def estimateHeight: Double  = math.max(1.0, estimateHeightProperty.get)
-  private def headerHeight: Double    = math.max(0.0, headerHeightProperty.get)
+  private def estimateHeight: Double       = math.max(1.0, estimateHeightProperty.get)
+  private def declaredHeaderHeight: Double =
+    if (headerBody.nonEmpty && headerRowsProperty.get > 0)
+      estimateHeight * headerRowsProperty.get
+    else 0.0
+  private def headerHeight: Double =
+    if (headerBody.isEmpty) 0.0
+    else math.max(declaredHeaderHeight, math.max(0.0, headerHeightProperty.get))
   private def defaultTailPadding: Int = math.max(1, prefetchItemsProperty.get) * 3
 
 }
@@ -372,6 +381,10 @@ object VirtualListView {
   def pageSize(using list: VirtualListView[?]): Int                = list.pageSizeProperty.get
   def pageSize_=(value: Int)(using list: VirtualListView[?]): Unit =
     list.pageSizeProperty.set(math.max(1, value))
+
+  def headerRows(using list: VirtualListView[?]): Int                = list.headerRowsProperty.get
+  def headerRows_=(value: Int)(using list: VirtualListView[?]): Unit =
+    list.headerRowsProperty.set(math.max(0, value))
 
   def crawlable(using list: VirtualListView[?]): Boolean                = list.crawlableProperty.get
   def crawlable_=(value: Boolean)(using list: VirtualListView[?]): Unit =

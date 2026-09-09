@@ -90,7 +90,7 @@ class DataGridSpec extends AnyFlatSpec with Matchers {
     html should not include "limit="
   }
 
-  it should "compose contextual header and placeholder slots" in {
+  it should "compose fixed toolbar, scrolling header and placeholder slots" in {
     val loading = remoteMembers(pageSize = 5)
     loading.loadingProperty.set(true)
 
@@ -107,12 +107,28 @@ class DataGridSpec extends AnyFlatSpec with Matchers {
           text("Grid header") {}
         }
       }
+      toolbar {
+        div {
+          addClass("custom-grid-toolbar")
+          text("Grid controls") {}
+        }
+      }
     }
 
     loadingHtml should include("custom-grid-loading")
     loadingHtml should include("Custom loading")
     loadingHtml should include("jfx-data-grid-header-slot")
     loadingHtml should include("custom-grid-header")
+    loadingHtml should include("jfx-data-grid-toolbar-slot")
+    loadingHtml should include("custom-grid-toolbar")
+    loadingHtml should include("Grid controls")
+    loadingHtml should include("jfx-data-grid-footer")
+    loadingHtml.indexOf("custom-grid-toolbar") should be < loadingHtml.indexOf(
+      "jfx-data-grid-viewport"
+    )
+    loadingHtml.indexOf("custom-grid-header") should be > loadingHtml.indexOf(
+      "jfx-data-grid-viewport"
+    )
 
     val emptyHtml = renderConfiguredGrid(ListProperty[String]()) {
       emptyPlaceholder {
@@ -125,6 +141,23 @@ class DataGridSpec extends AnyFlatSpec with Matchers {
 
     emptyHtml should include("custom-grid-empty")
     emptyHtml should include("Nothing here yet")
+  }
+
+  it should "reserve a full-width paging header in card-row units" in {
+    val html = renderGrid((0 until 5).map(index => s"Item $index")) {
+      pageSize = 3
+      gapPx = 16
+      headerRows = 2
+      header {
+        div { text("Two card rows") {} }
+      }
+    }
+
+    html should include regex "jfx-data-grid-header-slot[^>]*style=\"[^\"]*width: 100%"
+    html should include regex "min-height: 216(?:\\.0)?px"
+    html should include("0:Item 0")
+    html should include("2:Item 2")
+    html should not include "3:Item 3"
   }
 
   "DataGrid list lifecycle" should "track mutations and detach renderers on unmount" in {

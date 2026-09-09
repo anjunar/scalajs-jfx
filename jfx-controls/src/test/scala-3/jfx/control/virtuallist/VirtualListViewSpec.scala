@@ -65,6 +65,19 @@ class VirtualListViewSpec extends AnyFlatSpec with Matchers {
     html should include("0:Item 0")
   }
 
+  it should "reserve header height in estimated item-row units" in {
+    val items = ListProperty[String](js.Array((0 until 8).map(index => s"Item $index")*))
+
+    val html = renderList(items) {
+      headerRows = 3
+      header {
+        div { text("Three estimated rows") {} }
+      }
+    }
+
+    html should include regex "min-height: 120(?:\\.0)?px"
+  }
+
   it should "render its component-local crawl window from a cookie" in {
     val html = Runtime.renderToString { cursor =>
       Runtime.mount(

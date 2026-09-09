@@ -15,6 +15,7 @@ import jfx.router.{
 
 import scala.concurrent.ExecutionContext
 import scala.scalajs.js
+import scala.scalajs.js.JavaScriptException
 import scala.scalajs.js.JSConverters.*
 
 /** Step 5 of JAVASCRIPT_API.md §9: the router facade.
@@ -129,6 +130,13 @@ private[bridge] object RouterFactories {
                   kind = failureKind(failure),
                   path = failure.state.browserPath
                 )
+                failure match {
+                  case RouteFailure.LoadFailed(JavaScriptException(error), _) =>
+                    projected.updateDynamic("error")(error.asInstanceOf[js.Any])
+                  case RouteFailure.LoadFailed(error, _) =>
+                    projected.updateDynamic("error")(error.getMessage)
+                  case _: RouteFailure.NotMatched => ()
+                }
                 val result = fn(projected.asInstanceOf[js.Object])
                 if (js.isUndefined(result) || result == null) None
                 else Some(result.asInstanceOf[String])
