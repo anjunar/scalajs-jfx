@@ -15,6 +15,12 @@ import type { Source } from "./data-source.js";
 export interface ColumnDef<T> {
   readonly text: string;
   readonly prefWidth?: number;
+  readonly minWidth?: number;
+  readonly maxWidth?: number;
+  /** Disables pointer/API resizing and automatic width compensation. Defaults to true. */
+  readonly resizable?: Reactive<boolean>;
+  /** Disables header drag/keyboard reordering, not programmatic moves. Defaults to true. */
+  readonly reorderable?: Reactive<boolean>;
   /** Removes the column from layout and rendering without removing its definition. Defaults to true. */
   readonly visible?: Reactive<boolean>;
   /** Enables the sort toggle in this column's header. Needs `sortKey` and a `sortQuery` on the source. */
@@ -70,8 +76,12 @@ export interface TableRowContext<T> {
 }
 
 export type TableSelectionMode = "single" | "multiple";
+export type ColumnResizePolicy = "unconstrained" | "all-columns" | "last-column" | "next-column"
+  | "subsequent-columns" | "flex-next-column" | "flex-last-column";
 
 export interface TableViewOptions<T = unknown> {
+  /** Defaults to flex-last-column. Constrained policies fit the viewport and hide horizontal overflow. */
+  readonly columnResizePolicy?: Reactive<ColumnResizePolicy>;
   /** Defaults to single selection. Changes to single retain the lead selection. */
   readonly selectionMode?: Reactive<TableSelectionMode>;
   /** Replaces row content. Styles/events apply to the row; call row.renderCells() for standard columns. */
@@ -99,6 +109,15 @@ export interface TableViewOptions<T = unknown> {
 
 /** Runtime-owned row selection, row navigation and refresh. Cell selection and focus remain pending. */
 export interface TableViewHandle<T = unknown> {
+  /** Rendered widths in visible-column order; independent read-only snapshots. */
+  readonly columnWidths: ReadOnlyProperty<readonly number[]>;
+  /** Resizes a visible column by a pixel delta; true if any movement was possible. */
+  resizeColumn(visibleColumnIndex: number, delta: number): boolean;
+  /** Browser-only: moves to a final visible index without recreating cells. During hydration,
+   * the latest valid request waits until claiming completes. Hidden columns keep relative order.
+   * Returns false for invalid/no-op requests, protected hosts or active IME composition.
+   */
+  moveColumn(fromVisibleIndex: number, toVisibleIndex: number): boolean;
   readonly selectionMode: ReadOnlyProperty<TableSelectionMode>;
   /** Sorted unique absolute positions. Item snapshots omit unloaded positions (no remote fetch). */
   readonly selectedIndices: ReadOnlyProperty<readonly number[]>;
@@ -148,6 +167,7 @@ export function tableView<T, Q = unknown>(
     "table-view",
     defined({
       source,
+      columnResizePolicy: options.columnResizePolicy,
       selectionMode: options.selectionMode,
       row: options.row
         ? (row: Omit<TableRowContext<T>, "renderCells">, self: ComponentHandle, scope: ScopeHandle,
@@ -160,6 +180,10 @@ export function tableView<T, Q = unknown>(
       columns: columns.map((col) => ({
         text: col.text,
         prefWidth: col.prefWidth,
+        minWidth: col.minWidth,
+        maxWidth: col.maxWidth,
+        resizable: col.resizable,
+        reorderable: col.reorderable,
         visible: col.visible,
         sortable: col.sortable,
         sortKey: col.sortKey,

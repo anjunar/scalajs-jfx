@@ -32,6 +32,69 @@ tableView(books, [
 
 ## Usage
 
+### Column widths and resizing
+
+Columns accept `minWidth` (default 40), `prefWidth` (160), `maxWidth` (unbounded),
+and reactive `resizable` (true). Drag the grip at the right edge of a header, or focus it and
+press Left/Right (10 px; Shift: 1 px). Resizing does not sort the column or rebuild its cells.
+Pointer-up/cancel, lost capture, window blur, hiding/removing the column, locking it, changing
+the policy and unmount all end the gesture. Cancellation retains the last applied width.
+
+```ts
+const policy = property<ColumnResizePolicy>("flex-last-column");
+const table = tableView(books, [
+  valueColumn("Title", book => book.title, { minWidth: 140, prefWidth: 280, maxWidth: 900 }),
+  valueColumn("Year", book => book.year, { minWidth: 70, prefWidth: 100, maxWidth: 300 }),
+], { columnResizePolicy: policy });
+table.resizeColumn(0, 40); // Visible-column index, pixel delta; true if any change was applied.
+const widths: readonly number[] = table.columnWidths.get;
+```
+
+`ColumnResizePolicy` is exported by `@anjunar/jfx-controls`. Available policies:
+
+| Policy | Compensation for a resized column |
+| --- | --- |
+| `unconstrained` | None; horizontal scrolling works in both paging and scrolling modes. |
+| `all-columns` | Proportionally across all other resizable columns. |
+| `subsequent-columns` | Proportionally across following resizable columns. |
+| `next-column` / `last-column` | Only the next / last following column. |
+| `flex-next-column` / `flex-last-column` | Following columns in forward / reverse order, continuing at limits. |
+
+Constrained policies fit the viewport and suppress horizontal scrolling; impossible bounds
+leave unused space or clipped columns. Locked columns do not participate in compensation.
+The default is `flex-last-column`, preserving JFX's existing fit-to-width layout. Automatic
+viewport fitting uses bounded proportional distribution; policies govern user/API deltas.
+Column groups and custom policy callbacks are not implemented yet.
+
+User widths are separate from `prefWidth` and survive measurements and hide/show. A Scala
+preferred-width change resets that column's user override; detaching it discards its override.
+Scala exposes the same model via `minWidthProperty`, `maxWidthProperty`, `resizableProperty`,
+read-only `widthProperty`, `columnResizePolicyProperty` and `resizeColumn(column, delta)`.
+Hidden/detached columns report bounded preferred width through `widthProperty`; the table's
+width snapshot only includes visible columns. Defaults remain JFX-specific (40/160 px).
+Negative minima normalize to zero, invalid non-finite minima/preferences use their defaults,
+non-finite maxima are unbounded, and a conflicting minimum takes precedence over the maximum.
+Invalid resize deltas/indices, hidden/foreign columns and disposed tables are no-ops.
+
+Auto-fit remains planned.
+
+### Column reordering
+
+Drag a header (not its resize grip) to an insertion marker. Alternatively, focus the header
+and press Alt+Shift+Left/Right. `reorderable: false` (also reactive) disables these gestures,
+but not `table.moveColumn(fromVisibleIndex, toVisibleIndex)` or Scala column-list changes.
+Indices refer to the current visible order; the destination is the final index, not a boundary.
+Hidden columns keep their relative order. Moves change the canonical column list, preserving
+mounted cells, bindings, focus/text selection, row selection, sorting and width overrides.
+
+`moveColumn` is browser-only; SSR keeps the declared order and hydration applies the latest
+valid command after claiming. Invalid/no-op requests, disposed tables, protected hosts and
+active IME composition return false. Scala uses `moveColumn(column, toVisibleIndex)`.
+Native composition is not interrupted to perform a move; retry after composition ends.
+Escape, pointer cancellation/capture loss, blur, hiding/locking/removing the dragged column
+or disposal cancel a drag. Dropping outside the header cancels too; drag release never sorts.
+Column groups, drag-edge autoscrolling and a visibility menu are not implemented yet.
+
 ### Observed table values
 
 `column(text, cell)` still composes arbitrary row content, including embedded editors.

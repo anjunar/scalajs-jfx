@@ -85,11 +85,15 @@ private[bridge] trait TabFacade extends js.Object {
 
 @js.native
 private[bridge] trait ColumnFacade extends js.Object {
-  val text: String                  = js.native
-  val prefWidth: js.UndefOr[Double] = js.native
-  val sortable: js.UndefOr[Boolean] = js.native
-  val sortKey: js.UndefOr[String]   = js.native
-  val visible: js.UndefOr[js.Any]   = js.native
+  val text: String                    = js.native
+  val prefWidth: js.UndefOr[Double]   = js.native
+  val minWidth: js.UndefOr[Double]    = js.native
+  val maxWidth: js.UndefOr[Double]    = js.native
+  val resizable: js.UndefOr[js.Any]   = js.native
+  val reorderable: js.UndefOr[js.Any] = js.native
+  val sortable: js.UndefOr[Boolean]   = js.native
+  val sortKey: js.UndefOr[String]     = js.native
+  val visible: js.UndefOr[js.Any]     = js.native
 
   /** `(row) => (scope) => void` -- the cell body, already wrapped in `withScope` on the TS side. */
   val cell: js.UndefOr[js.Function1[js.Any, js.Function1[ScopeHandleBridge, Unit]]] = js.native
@@ -265,6 +269,12 @@ private[bridge] object TableViewFactory extends ComponentFactory {
 
     val table = TableView.tableView[js.Any](src) {
       options.get("rowHeight").foreach(value => TableView.rowHeight = ControlFactories.dbl(value))
+      options.get("columnResizePolicy").foreach { value =>
+        val table = summon[TableView[js.Any]]
+        table.addDisposable(ReactiveBridge.asProperty[String](value).observe { policy =>
+          table.columnResizePolicyProperty.set(TableViewHandleBridge.parseResizePolicy(policy))
+        })
+      }
       options.get("selectionMode").foreach { value =>
         val table = summon[TableView[js.Any]]
         table.addDisposable(ReactiveBridge.asProperty[String](value).observe { mode =>
@@ -321,6 +331,17 @@ private[bridge] object TableViewFactory extends ComponentFactory {
             TableColumn.visible_=[js.Any, js.Any](ReactiveBridge.asProperty[Boolean](value))
           )
           col.prefWidth.foreach(width => TableColumn.prefWidth_=[js.Any, js.Any](width))
+          col.minWidth.foreach(width => TableColumn.minWidth_=[js.Any, js.Any](width))
+          col.maxWidth.foreach(width => TableColumn.maxWidth_=[js.Any, js.Any](width))
+          col.resizable.foreach { value =>
+            val column = summon[TableColumn[js.Any, js.Any]]
+            column.addDisposable(
+              ReactiveBridge.asProperty[Boolean](value).observe(column.resizableProperty.set)
+            )
+          }
+          col.reorderable.foreach { value =>
+            TableColumn.reorderable_=[js.Any, js.Any](ReactiveBridge.asProperty[Boolean](value))
+          }
           col.sortable.foreach(flag => TableColumn.sortable_=[js.Any, js.Any](flag))
           col.sortKey.foreach(key => TableColumn.sortKey_=[js.Any, js.Any](key))
           col.value.foreach { accessor =>

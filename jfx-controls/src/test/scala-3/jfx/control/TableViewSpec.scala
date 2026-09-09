@@ -69,8 +69,8 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
     html should include("custom-table-body-header")
     html should include("Table body header")
     html should include("Alice")
-    html.indexOf("jfx:Foreach:start") should be < html.indexOf("jfx-table-header-cell")
-    html.indexOf("jfx-table-header-cell") should be < html.indexOf("jfx:Foreach:end")
+    html.indexOf("jfx:KeyedChildren:start") should be < html.indexOf("jfx-table-header-cell")
+    html.indexOf("jfx-table-header-cell") should be < html.indexOf("jfx:KeyedChildren:end")
   }
 
   it should "reserve content-header height in table-row units" in {
@@ -155,7 +155,7 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
     html should include("min-height: 240px")
     html should include("max-height: 240px")
     html should include("class=\"jfx-table-viewport\"")
-    html should include("overflow: auto")
+    html should include("overflow-y: auto")
   }
 
   it should "omit the previous and next links in scrolling mode" in {
@@ -174,7 +174,7 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
       showFooter = false
     }
 
-    html should include("overflow: auto")
+    html should include("overflow-y: auto")
     html should not include "jfx-table-footer"
     html should not include "jfx-virtualized-footer"
   }

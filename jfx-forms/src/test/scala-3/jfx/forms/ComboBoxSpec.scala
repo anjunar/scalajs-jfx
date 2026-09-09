@@ -83,7 +83,8 @@ class ComboBoxSpec extends AnyFlatSpec with Matchers {
       html should include("jfx-viewport-overlay")
       html should include("jfx-combo-box__dropdown")
       html should include("jfx-combo-box__table")
-      html should include("overflow: auto")
+      html should include("overflow-y: auto")
+      html should include("overflow-x: hidden")
       html should not include "jfx-table-footer"
       html should not include "jfx-virtualized-footer"
       html should include("member-row")

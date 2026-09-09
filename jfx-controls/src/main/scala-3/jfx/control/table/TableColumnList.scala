@@ -8,6 +8,7 @@ private[table] final class TableColumnList[S](table: TableView[S])
 
   private def validate(candidate: Seq[TableColumn[S, ?]]): Unit = {
     require(!table.isDisposed, "Cannot change the columns of a disposed TableView")
+    table.checkColumnMutation()
     require(
       candidate.distinct.size == candidate.size,
       "A TableColumn may occur only once in a table"

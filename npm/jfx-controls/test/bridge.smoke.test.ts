@@ -45,7 +45,7 @@ import {
 import { div, text } from "@anjunar/jfx-core";
 import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";
 import { carousel, dataGrid, remoteSource, tab, tableView, tabs, valueColumn, virtualList } from "../src/index.js";
-import type { TableViewHandle, TableRowContext, TableSelectionMode, RemotePage } from "../src/index.js";
+import type { ColumnResizePolicy, TableViewHandle, TableRowContext, TableSelectionMode, RemotePage } from "../src/index.js";
 
 const linkedArtifact = resolve(process.cwd(), "../scalajs-jfx-bridge/dist/fullopt/main.js");
 
@@ -69,6 +69,14 @@ beforeAll(() => {
   window.requestAnimationFrame ??= (callback: FrameRequestCallback): number =>
     window.setTimeout(() => callback(performance.now()), 0);
   window.cancelAnimationFrame ??= (handle: number): void => window.clearTimeout(handle);
+  // jsdom does not provide pointer capture; the component also owns window listeners.
+  globalThis.PointerEvent ??= class extends MouseEvent {
+    readonly pointerId: number;
+    constructor(type: string, init: PointerEventInit = {}) {
+      super(type, init);
+      this.pointerId = init.pointerId ?? 1;
+    }
+  } as typeof PointerEvent;
 });
 
 beforeEach(() => {
@@ -169,6 +177,279 @@ describe("carousel", () => {
 });
 
 describe("table-view", () => {
+  it("moves columns without rebuilding cells, losing focus, selection or width overrides", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+    const visible = property(false);
+    const value = property("Ada");
+    let table!: TableViewHandle<string>;
+    let builds = 0;
+    const app = mount(root, () => {
+      table = tableView(listProperty(["Ada"]), [
+        { text: "Editor", prefWidth: 200, reorderable: false, cell: () => {
+          builds++; element("input")(() => attr("value", "Lovelace"));
+        } },
+        valueColumn("Hidden", () => "hidden", { visible }),
+        valueColumn("Value", () => value, { prefWidth: 100 }),
+      ], { paging: true, columnResizePolicy: "unconstrained" });
+    });
+    try {
+      const editor = root.querySelector<HTMLInputElement>("input")!;
+      const headers = Array.from(root.querySelectorAll(".jfx-table-header-cell"));
+      const cells = Array.from(root.querySelectorAll(".jfx-table-cell"));
+      editor.focus(); editor.setSelectionRange(1, 4, "backward");
+      table.selectIndex(0); table.resizeColumn(0, 30);
+      expect(table.moveColumn(0, 1)).toBe(true); // reorderable only restricts gestures.
+      expect(Array.from(root.querySelectorAll(".jfx-table-header-cell"))).toEqual([...headers].reverse());
+      expect(Array.from(root.querySelectorAll(".jfx-table-cell"))).toEqual([...cells].reverse());
+      expect(table.columnWidths.get).toEqual([100, 230]);
+      expect(table.selectedIndex.get).toBe(0);
+      expect(document.activeElement).toBe(editor);
+      expect([editor.selectionStart, editor.selectionEnd, editor.selectionDirection]).toEqual([1, 4, "backward"]);
+      expect(builds).toBe(1);
+      value.set("Grace"); expect(cells[1]!.textContent).toBe("Grace");
+      expect(table.moveColumn(1, 0)).toBe(true);
+      for (const index of [-1, 2, 0.5, NaN, Infinity]) {
+        expect(table.moveColumn(index, 0)).toBe(false);
+        expect(table.moveColumn(0, index)).toBe(false);
+      }
+      expect(table.moveColumn(0, 0)).toBe(false);
+      editor.dispatchEvent(new CompositionEvent("compositionstart", { bubbles: true }));
+      expect(table.moveColumn(0, 1)).toBe(false);
+      editor.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true }));
+      expect(table.moveColumn(0, 1)).toBe(true);
+      visible.set(true);
+      expect(Array.from(root.querySelectorAll(".jfx-table-header-cell")).map(e => e.textContent)).toEqual(["Hidden", "Value", "Editor"]);
+      app.dispose(); expect(table.moveColumn(0, 1)).toBe(false);
+    } finally { app.dispose(); root.remove(); }
+  });
+
+  it("defers column commands until hydration finishes and retains server nodes", async () => {
+    let table!: TableViewHandle<string>;
+    const build = (): void => {
+      table = tableView(listProperty(["Ada"]), [
+        valueColumn("A", row => row), valueColumn("B", row => row), valueColumn("C", row => row),
+      ], { paging: true });
+      table.moveColumn(0, 1);
+      table.moveColumn(0, 2); // Latest request wins; both address the original declaration.
+    };
+    const root = document.createElement("div");
+    root.innerHTML = (await renderToString(build)).html;
+    const before = Array.from(root.querySelectorAll(".jfx-table-header-cell"));
+    const cells = Array.from(root.querySelectorAll(".jfx-table-cell"));
+    expect(before.map(e => e.textContent)).toEqual(["A", "B", "C"]);
+    const app = await hydrate(root, build);
+    try {
+      expect(Array.from(root.querySelectorAll(".jfx-table-header-cell"))).toEqual([before[1], before[2], before[0]]);
+      expect(Array.from(root.querySelectorAll(".jfx-table-cell"))).toEqual([cells[1], cells[2], cells[0]]);
+    } finally { app.dispose(); }
+  });
+
+  function measureHeaders(root: HTMLElement): HTMLElement[] {
+    const headers = Array.from(root.querySelectorAll<HTMLElement>(".jfx-table-header-cell"));
+    const rect = (left: number, width: number): DOMRect => ({ left, right: left + width, top: 0,
+      bottom: 40, x: left, y: 0, width, height: 40, toJSON: () => ({}) });
+    root.querySelector<HTMLElement>(".jfx-table-header-viewport")!.getBoundingClientRect = () => rect(0, headers.length * 100);
+    headers.forEach((header, index) => { header.getBoundingClientRect = () => rect(index * 100, 100); });
+    return headers;
+  }
+
+  it("shows a drop marker, reorders by pointer/keyboard and never sorts on drag or resize", () => {
+    const sortQuery = vi.fn((query: { offset: number }) => query);
+    const source = remoteSource({ initialQuery: { offset: 0 }, initial: ["Ada"], totalCount: 1,
+      load: async () => ({ items: ["Ada"], offset: 0, totalCount: 1 }), sortQuery });
+    const root = document.createElement("div");
+    const app = mount(root, () => tableView(source, ["A", "B", "C"].map(name =>
+      valueColumn(name, row => row, { sortable: true, sortKey: name })), { paging: true }));
+    try {
+      const headers = measureHeaders(root);
+      headers[0]!.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, clientX: 20, clientY: 20, pointerId: 7 }));
+      window.dispatchEvent(new PointerEvent("pointermove", { clientX: 280, clientY: 20, pointerId: 8 }));
+      expect(root.querySelector(".jfx-table-column-dragging")).toBeNull();
+      window.dispatchEvent(new PointerEvent("pointermove", { clientX: 280, clientY: 20, pointerId: 7 }));
+      expect(headers[2]!.classList.contains("jfx-table-column-drop-after")).toBe(true);
+      window.dispatchEvent(new PointerEvent("pointerup", { clientX: 280, clientY: 20, pointerId: 7 }));
+      headers[0]!.click();
+      expect(sortQuery).not.toHaveBeenCalled();
+      expect(Array.from(root.querySelectorAll(".jfx-table-header-cell"))).toEqual([headers[1], headers[2], headers[0]]);
+      expect(root.querySelector(".jfx-table-column-drop-after")).toBeNull();
+      headers[0]!.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "ArrowLeft", altKey: true, shiftKey: true }));
+      expect(Array.from(root.querySelectorAll(".jfx-table-header-cell"))).toEqual([headers[1], headers[0], headers[2]]);
+      headers[0]!.querySelector<HTMLElement>(".jfx-table-column-resize-handle")!.dispatchEvent(
+        new PointerEvent("pointerdown", { bubbles: true, clientX: 100, clientY: 20 }));
+      window.dispatchEvent(new PointerEvent("pointermove", { clientX: 290, clientY: 20 }));
+      window.dispatchEvent(new PointerEvent("pointerup", { clientX: 290, clientY: 20 }));
+      expect(Array.from(root.querySelectorAll(".jfx-table-header-cell"))).toEqual([headers[1], headers[0], headers[2]]);
+      // A new short gesture still performs ordinary sorting.
+      headers[0]!.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, clientX: 20, clientY: 20 }));
+      window.dispatchEvent(new PointerEvent("pointerup", { clientX: 22, clientY: 20 }));
+      headers[0]!.click(); expect(sortQuery).toHaveBeenCalledTimes(1);
+    } finally { app.dispose(); }
+  });
+
+  it("cancels reorder gestures on Escape, outside drop, capture loss, hiding, locking and disposal", () => {
+    const visible = property(true);
+    const reorderable = property(true);
+    const root = document.createElement("div");
+    const app = mount(root, () => tableView(listProperty(["Ada"]), [
+      valueColumn("A", row => row, { visible, reorderable }), valueColumn("B", row => row),
+    ], { paging: true }));
+    const begin = (): HTMLElement => {
+      const first = measureHeaders(root)[0]!;
+      first.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, clientX: 20, clientY: 20 }));
+      window.dispatchEvent(new PointerEvent("pointermove", { clientX: 180, clientY: 20 }));
+      return first;
+    };
+    const up = (y = 20): void => { window.dispatchEvent(new PointerEvent("pointerup", { clientX: 180, clientY: y })); };
+    const unchanged = (): void => { expect(Array.from(root.querySelectorAll(".jfx-table-header-cell")).map(e => e.textContent)).toEqual(["A", "B"]); };
+    try {
+      begin(); window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" })); up(); unchanged();
+      begin(); up(100); unchanged();
+      begin().dispatchEvent(new Event("lostpointercapture")); up(); unchanged();
+      begin(); window.dispatchEvent(new PointerEvent("pointercancel")); up(); unchanged();
+      begin(); window.dispatchEvent(new Event("blur")); up(); unchanged();
+      begin(); reorderable.set(false); up(); unchanged();
+      begin(); up(); unchanged();
+      reorderable.set(true);
+      begin(); visible.set(false); visible.set(true); up(); unchanged();
+      begin(); app.dispose(); up();
+      expect(root.querySelector(".jfx-table-column-dragging")).toBeNull();
+    } finally { app.dispose(); }
+  });
+
+  it("projects bounded column widths and reactive resize policies through the handle", () => {
+    const policy = property<ColumnResizePolicy>("unconstrained");
+    const locked = property(false);
+    const root = document.createElement("div");
+    let table!: TableViewHandle<string>;
+    const app = mount(root, () => {
+      table = tableView(listProperty(["Ada"]), [
+        valueColumn("Name", row => row, { prefWidth: 200, minWidth: 100, maxWidth: 300 }),
+        valueColumn("Fixed", row => row, { prefWidth: 150, resizable: locked }),
+      ], { paging: true, columnResizePolicy: policy });
+    });
+    try {
+      expect(table.columnWidths.get).toEqual([200, 150]);
+      expect(table.resizeColumn(0, 200)).toBe(true);
+      expect(table.columnWidths.get).toEqual([300, 150]);
+      expect(table.resizeColumn(0, 1)).toBe(false);
+      expect(table.resizeColumn(1, 20)).toBe(false);
+      for (const index of [-1, 2, NaN, Infinity, 0.5]) expect(table.resizeColumn(index, 10)).toBe(false);
+      expect(table.resizeColumn(0, NaN)).toBe(false);
+      const snapshot = table.columnWidths.get as number[];
+      snapshot[0] = 999;
+      expect(table.columnWidths.get).toEqual([300, 150]);
+      const viewport = measureTable(root);
+      expect(viewport.style.overflowX).toBe("auto");
+      expect(viewport.style.overflowY).toBe("hidden");
+      locked.set(true);
+      policy.set("flex-last-column");
+      expect(table.columnWidths.get.reduce((sum, width) => sum + width, 0)).toBe(800);
+      expect(viewport.style.overflowX).toBe("hidden");
+      expect(table.resizeColumn(0, -50)).toBe(true);
+      expect(table.columnWidths.get).toEqual([250, 550]);
+      app.dispose();
+      expect(table.resizeColumn(0, 10)).toBe(false);
+    } finally { app.dispose(); }
+  });
+
+  it("resizes by pointer and keyboard without replacing or defocusing an embedded editor", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+    let table!: TableViewHandle<string>;
+    const app = mount(root, () => {
+      table = tableView(listProperty(["Ada"]), [{
+        text: "Editor", prefWidth: 200, minWidth: 120, maxWidth: 260,
+        cell: () => element("input")(() => attr("value", "Lovelace")),
+      }, valueColumn("Other", row => row, { prefWidth: 200 })], { paging: true, columnResizePolicy: "unconstrained" });
+    });
+    try {
+      const handle = root.querySelector<HTMLElement>(".jfx-table-column-resize-handle")!;
+      const editor = root.querySelector<HTMLInputElement>("input")!;
+      editor.focus(); editor.setSelectionRange(1, 4);
+      handle.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, cancelable: true, clientX: 100, pointerId: 7 }));
+      window.dispatchEvent(new PointerEvent("pointermove", { clientX: 200, pointerId: 8 }));
+      expect(table.columnWidths.get).toEqual([200, 200]);
+      window.dispatchEvent(new PointerEvent("pointermove", { clientX: 200, pointerId: 7 }));
+      expect(table.columnWidths.get).toEqual([260, 200]);
+      window.dispatchEvent(new PointerEvent("pointermove", { clientX: 140, pointerId: 7 }));
+      expect(table.columnWidths.get).toEqual([240, 200]);
+      window.dispatchEvent(new PointerEvent("pointerup", { pointerId: 7 }));
+      window.dispatchEvent(new PointerEvent("pointermove", { clientX: 0, pointerId: 7 }));
+      expect(table.columnWidths.get).toEqual([240, 200]);
+      handle.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+      handle.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", shiftKey: true, bubbles: true }));
+      expect(table.columnWidths.get).toEqual([249, 200]);
+      expect(handle.getAttribute("aria-valuenow")).toBe("249");
+      expect(root.querySelector("input")).toBe(editor);
+      expect(document.activeElement).toBe(editor);
+      expect([editor.selectionStart, editor.selectionEnd]).toEqual([1, 4]);
+      expect(editor.closest<HTMLElement>(".jfx-table-cell")!.style.width).toBe("249px");
+      expect(handle.parentElement!.style.width).toBe("249px");
+    } finally { app.dispose(); root.remove(); }
+  });
+
+  it("ends a drag on cancellation, column locking/hiding, policy change and disposal", () => {
+    const visible = property(true);
+    const resizable = property(true);
+    const policy = property<ColumnResizePolicy>("unconstrained");
+    const root = document.createElement("div");
+    let table!: TableViewHandle<string>;
+    const app = mount(root, () => {
+      table = tableView(listProperty(["Ada"]), [valueColumn("Name", row => row, { visible, resizable })],
+        { paging: true, columnResizePolicy: policy });
+    });
+    const begin = (): void => { root.querySelector(".jfx-table-column-resize-handle")!.dispatchEvent(
+      new PointerEvent("pointerdown", { bubbles: true, clientX: 100, pointerId: 1 })); };
+    const move = (): void => { window.dispatchEvent(new PointerEvent("pointermove", { clientX: 140, pointerId: 1 })); };
+    try {
+      begin(); window.dispatchEvent(new PointerEvent("pointercancel", { pointerId: 1 })); move();
+      expect(table.columnWidths.get).toEqual([160]);
+      begin(); resizable.set(false); resizable.set(true); move();
+      expect(table.columnWidths.get).toEqual([160]);
+      begin(); visible.set(false); visible.set(true); move();
+      expect(table.columnWidths.get).toEqual([160]);
+      begin(); policy.set("flex-last-column"); policy.set("unconstrained"); move();
+      expect(table.columnWidths.get).toEqual([160]);
+      begin(); app.dispose(); move();
+      expect(table.resizeColumn(0, 5)).toBe(false);
+    } finally { app.dispose(); }
+  });
+
+  it("hydrates resize handles and cell widths without replacing the server nodes", async () => {
+    const build = (): void => { tableView(listProperty(["Ada"]),
+      [valueColumn("Name", row => row, { minWidth: 120, prefWidth: 200, maxWidth: 300 })],
+      { paging: true, columnResizePolicy: "unconstrained" }); };
+    const root = document.createElement("div");
+    root.innerHTML = (await renderToString(build)).html;
+    const before = root.querySelector(".jfx-table-column-resize-handle");
+    const cell = root.querySelector(".jfx-table-cell");
+    const app = await hydrate(root, build);
+    try {
+      expect(root.querySelector(".jfx-table-column-resize-handle")).toBe(before);
+      expect(root.querySelector(".jfx-table-cell")).toBe(cell);
+      before!.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+      expect((cell as HTMLElement).style.width).toBe("210px");
+    } finally { app.dispose(); }
+  });
+
+  it("does not bubble resize clicks into remote sorting", () => {
+    const sortQuery = vi.fn((query: { offset: number }) => query);
+    const source = remoteSource({ initialQuery: { offset: 0 }, initial: ["Ada"], totalCount: 1,
+      load: async () => ({ items: ["Ada"], offset: 0, totalCount: 1 }), sortQuery });
+    const root = document.createElement("div");
+    const app = mount(root, () => tableView(source,
+      [valueColumn("Name", row => row, { sortable: true, sortKey: "name" })], { paging: true }));
+    try {
+      const handle = root.querySelector<HTMLElement>(".jfx-table-column-resize-handle")!;
+      handle.click();
+      handle.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
+      expect(sortQuery).not.toHaveBeenCalled();
+      handle.parentElement!.click();
+      expect(sortQuery).toHaveBeenCalledTimes(1);
+    } finally { app.dispose(); }
+  });
+
   function measureTable(root: HTMLElement, height = 100): HTMLElement {
     const viewport = root.querySelector<HTMLElement>(".jfx-table-viewport")!;
     Object.defineProperties(viewport, {
@@ -203,7 +484,7 @@ describe("table-view", () => {
       table.scrollToIndex(0);
       expect(viewport.scrollTop).toBe(40);
       expect(table.selectedIndex.get).toBe(3);
-      expect(viewport.style.overflow).toBe("auto");
+      expect(viewport.style.overflowY).toBe("auto");
       app.dispose();
       table.scrollToIndex(90);
       expect(viewport.scrollTop).toBe(40);
@@ -223,7 +504,7 @@ describe("table-view", () => {
       expect(Array.from(root.querySelectorAll(".jfx-table-cell"), cell => cell.textContent))
         .toEqual(Array.from({ length: 10 }, (_, id) => String(50 + id)));
       expect(viewport.scrollTop).toBe(60);
-      expect(viewport.style.overflow).toBe("hidden");
+      expect(viewport.style.overflowY).toBe("hidden");
       table.scrollToIndex(0);
       expect(viewport.scrollTop).toBe(0);
       expect(root.querySelector(".jfx-table-cell")!.textContent).toBe("0");
@@ -254,7 +535,7 @@ describe("table-view", () => {
       expect(root.lastElementChild).toBe(sibling);
       expect(root.textContent).toContain("60");
       expect(viewport.scrollTop).toBe(paging === true ? 0 : 1120);
-      expect(viewport.style.overflow).toBe(paging === true ? "hidden" : "auto");
+      expect(viewport.style.overflowY).toBe(paging === true ? "hidden" : "auto");
       await new Promise(resolve => setTimeout(resolve, 40));
       expect(viewport.scrollTop).toBe(paging === true ? 0 : 1120); // No late restore overrides it.
     } finally { app.dispose(); }
@@ -664,7 +945,7 @@ describe("table-view", () => {
     try {
       const rows = root.querySelectorAll(".custom-row");
       expect(rows).toHaveLength(2);
-      expect(rows[1]!.querySelector(".cell-wrapper > .jfx-table-cell")!.textContent).toBe("Grace");
+      expect(rows[1]!.querySelector(".cell-wrapper > .jfx-table-column-slot > .jfx-table-cell")!.textContent).toBe("Grace");
       rows[1]!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
       expect(clicks).toBe(1);
       expect(table.selectedItem.get).toBe(source.get[1]);

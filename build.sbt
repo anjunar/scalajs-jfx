@@ -331,9 +331,22 @@ lazy val app = Project(id = "scalajs-jfx-demo", base = file("application"))
   )
   .settings(commonJsSettings)
 
+// Isolated test application: exercises the public Scala core API in real browsers. Never published
+// or linked into the production bridge; no editor implementation belongs to this repository.
+lazy val jfxCoreBrowserTests = Project(id = "scalajs-jfx-core-browser-tests", base = file("jfx-core-browser-tests"))
+  .enablePlugins(ScalaJSPlugin)
+  .dependsOn(jfxCore)
+  .settings(commonJsSettings)
+  .settings(
+    publish / skip := true,
+    Compile / fullLinkJS / scalaJSLinkerOutputDirectory :=
+      (LocalRootProject / baseDirectory).value / "target" / "core-browser-tests"
+  )
+
 lazy val root = Project(id = "scalajs-jfx-root", base = file("."))
   .aggregate(
     jfxCore,
+    jfxCoreBrowserTests,
     jfxRouter,
     jfxViewport,
     jfxJson,

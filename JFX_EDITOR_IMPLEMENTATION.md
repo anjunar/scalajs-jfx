@@ -1,6 +1,9 @@
 # JFX Editor: ausführbarer Implementierungsplan
 
-Status: Plan, keine Implementierung der nachfolgend beschriebenen APIs. Stand: 9. September 2026.
+Status: Editor-Implementierung im eigenen Repository weiterhin offen. Die generischen
+JFX-Core-Anteile aus P08/P09, P19a, P20 und P23 sind in diesem Repository implementiert;
+siehe [JFX_CORE_INTEGRATION.md](JFX_CORE_INTEGRATION.md). Das erledigt nicht die jeweiligen
+Editor-Integrationsphasen. Stand: 9. September 2026.
 
 Verbindliche Grundlage ist [JFX_EDITOR_ARCHITECTURE.md](JFX_EDITOR_ARCHITECTURE.md). Der Editor wird neu gebaut. Der Prototyp wird weder analysiert noch intern weiterentwickelt; öffentliche API-Namen können als Inspiration dienen. Bestehende Nutzerdaten und öffentliche Konsumenten werden erst bei der bewussten Ablösung betrachtet.
 
@@ -8,7 +11,7 @@ Verbindliche Grundlage ist [JFX_EDITOR_ARCHITECTURE.md](JFX_EDITOR_ARCHITECTURE.
 
 Eine Ausführung bearbeitet eine Phase, prüft deren Dependencies und Abnahme und aktualisiert anschließend den belegten Status. Ist ein Vertrag widerlegt, zuerst Architektur und Plan mit Ursache korrigieren. Kein Ersatzrenderer, keine zweite Property-Runtime und kein Kopieren unverständlicher Lexical-Browserzweige. Kein vorzeitiges Umstellen produktiver Einstiege.
 
-Vor Beginn: `AGENTS.md`, Architekturabschnitte der Phase, tatsächliche Quelldateien und `git status --short` lesen. Fremde Änderungen bleiben erhalten. Der vorliegende Auftrag erzeugt nur die beiden Dokumente; alle Phasen P01–P30 stehen noch auf **offen**. Keine Freigabe durch einen grünen Prototyptest ableiten.
+Vor Beginn: `AGENTS.md`, Architekturabschnitte der Phase, tatsächliche Quelldateien und `git status --short` lesen. Fremde Änderungen bleiben erhalten. Die Editor-Phasen stehen noch auf **offen**; die bereits verfügbaren JFX-Voraussetzungen werden im separaten Core-Vertrag beschrieben. Keine Freigabe durch einen grünen Prototyptest ableiten.
 
 Pfadkonventionen in den Phasen:
 
@@ -39,6 +42,8 @@ Bei Änderungen an Bridge/npm zusätzlich:
 
 ```powershell
 sbt --server "scalajs-jfx-bridge/fullLinkJS"
+sbt --server "scalajs-jfx-core-browser-tests/fullLinkJS"
+npm exec --workspace npm/jfx-core-browser-tests -- playwright install chromium firefox webkit
 npm run verify --workspaces --if-present
 ```
 

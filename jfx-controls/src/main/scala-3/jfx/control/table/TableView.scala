@@ -16,7 +16,7 @@ import jfx.core.layout.Condition.when
 import jfx.core.layout.Div
 import jfx.core.layout.Div.div
 import jfx.core.layout.TextComponent.text
-import jfx.core.render.{Cursor, DomHostElement}
+import jfx.core.render.{Cursor, DomHostElement, HostMutationGuard, HostWriteBlocked}
 import jfx.core.state.{
   CompositeDisposable,
   Disposable,
@@ -51,16 +51,20 @@ final class TableView[S] private (
   private[table] val visibleColumns = ListProperty[TableColumn[S, ?]]()
   val visibleLeafColumns: ReadOnlyProperty[Vector[TableColumn[S, ?]]] =
     visibleColumns.map(_.toVector)
-  private val placeholderVisibleProperty                     = Property(true)
-  val showHeaderProperty: Property[Boolean]                  = Property(true)
-  val showFooterProperty: Property[Boolean]                  = Property(true)
-  val rowHeightProperty: Property[Double]                    = Property(32.0)
-  val prefWidthProperty: Property[Option[Double]]            = Property(None)
-  val fixedHeightProperty: Property[Option[Double]]          = Property(None)
-  val scrollLeftProperty: Property[Double]                   = Property(0.0)
-  val viewportWidthProperty: Property[Double]                = Property(800.0)
-  val selectionModel                                         = new TableSelectionModel(this)
-  val selectedIndexProperty: ReadOnlyProperty[Int]           = selectionModel.selectedIndexProperty
+  private val placeholderVisibleProperty                       = Property(true)
+  val showHeaderProperty: Property[Boolean]                    = Property(true)
+  val showFooterProperty: Property[Boolean]                    = Property(true)
+  val rowHeightProperty: Property[Double]                      = Property(32.0)
+  val prefWidthProperty: Property[Option[Double]]              = Property(None)
+  val fixedHeightProperty: Property[Option[Double]]            = Property(None)
+  val scrollLeftProperty: Property[Double]                     = Property(0.0)
+  val viewportWidthProperty: Property[Double]                  = Property(800.0)
+  val columnResizePolicyProperty: Property[ColumnResizePolicy] = Property(
+    ColumnResizePolicy.FlexLastColumn
+  )
+  private val userColumnWidths                     = mutable.Map.empty[TableColumn[S, ?], Double]
+  val selectionModel                               = new TableSelectionModel(this)
+  val selectedIndexProperty: ReadOnlyProperty[Int] = selectionModel.selectedIndexProperty
   val selectedItemProperty: ReadOnlyProperty[S | Null]       = selectionModel.selectedItemProperty
   val selectedIndicesProperty: ReadOnlyProperty[Vector[Int]] =
     selectionModel.selectedIndicesProperty
@@ -81,6 +85,67 @@ final class TableView[S] private (
   private var contentHeaderComponent: Div | Null                               = null
   private var scrollNavigationMounted                                          = false
   private var pendingScrollIndex: Option[Int]                                  = None
+  private var pendingColumnMove: Option[(TableColumn[S, ?], Int)]              = None
+  private var composingTarget: Option[dom.Node]                                = None
+  private var headerViewport: Div | Null                                       = null
+  private[table] val columnHeaders    = mutable.Map.empty[TableColumn[S, ?], Div]
+  private[table] val columnDropMarker = Property[Option[(TableColumn[S, ?], Boolean)]](None)
+  private[table] var cancelColumnDrag: () => Unit = () => ()
+
+  private[table] def checkColumnMutation(): Unit =
+    if (isBound) HostMutationGuard.checkRemoval(host)
+
+  private[table] def canMoveColumns: Boolean =
+    if (isDisposed || composingTarget.exists(_.isConnected)) false
+    else {
+      try { checkColumnMutation(); true }
+      catch { case _: HostWriteBlocked => false }
+    }
+
+  /** Browser command: move to a final visible index. Hidden columns retain their relative order.
+    * Reorderable restricts user gestures, not this API. Hydration defers the latest valid request.
+    */
+  def moveColumn(column: TableColumn[S, ?], toVisibleIndex: Int): Boolean = {
+    val visible = columns.toVector.filter(_.visible)
+    val from    = visible.indexOf(column)
+    if (
+      !browserRendering || from < 0 || toVisibleIndex < 0 || toVisibleIndex >= visible.size ||
+      from == toVisibleIndex || !canMoveColumns
+    ) false
+    else if (!scrollNavigationMounted) {
+      pendingColumnMove = Some((column, toVisibleIndex))
+      true
+    } else {
+      val target    = visible(toVisibleIndex)
+      val remaining = columns.toVector.filterNot(_ eq column)
+      val insertion = remaining.indexOf(target) + (if (from < toVisibleIndex) 1 else 0)
+      columns.setAll(remaining.patch(insertion, Seq(column), 0))
+      true
+    }
+  }
+
+  /** Drop boundary in visible coordinates; outside the clipped header is not a valid drop. */
+  private[table] def columnDropAt(x: Double, y: Double): Option[Int] =
+    domElement(headerViewport).flatMap { viewport =>
+      val bounds = viewport.getBoundingClientRect()
+      if (x < bounds.left || x > bounds.right || y < bounds.top || y > bounds.bottom) None
+      else {
+        val visible = visibleLeafColumns.get
+        Some(visible.indexWhere { column =>
+          columnHeaders.get(column).flatMap(header => domElement(header)).exists { header =>
+            val rect = header.getBoundingClientRect()
+            x < (rect.left + rect.right) / 2
+          }
+        } match { case -1 => visible.size; case index => index })
+      }
+    }
+
+  private[table] def markColumnDrop(boundary: Option[Int]): Unit = {
+    val visible = visibleLeafColumns.get
+    columnDropMarker.set(boundary.flatMap { index =>
+      visible.lift(index).map(_ -> true).orElse(visible.lastOption.map(_ -> false))
+    })
+  }
 
   /** Makes an absolute view position visible without selecting it or changing the display mode.
     * Browser-only: requests during composition/hydration wait for the mounted viewport. Unknown
@@ -177,9 +242,35 @@ final class TableView[S] private (
   val renderedWidthsProperty: ReadOnlyProperty[Vector[Double]] =
     viewportWidthProperty.flatMap { viewportWidth =>
       columnStateRevisionProperty.map { _ =>
-        resolveRenderedColumnWidths(visibleColumns.toSeq, viewportWidth)
+        TableColumnLayout.layout(columnWidthSpecs, viewportWidth, columnResizePolicyProperty.get)
       }
     }
+
+  private def columnWidthSpecs: Vector[TableColumnLayout.Column] =
+    visibleColumns.toVector.map(column =>
+      column.widthSpec(userColumnWidths.getOrElse(column, column.prefWidth))
+    )
+
+  /** Resizes a visible column by a pixel delta. True when any part of the request was applied. */
+  def resizeColumn(column: TableColumn[S, ?], delta: Double): Boolean = {
+    if (isDisposed || column == null || !delta.isFinite) return false
+    val before = renderedWidthsProperty.get
+    val next   = TableColumnLayout.resize(
+      columnWidthSpecs,
+      before,
+      getVisibleLeafIndex(column),
+      delta,
+      columnResizePolicyProperty.get
+    )
+    if (before == next) false
+    else {
+      visibleColumns.toVector.zip(next).foreach { (col, width) =>
+        userColumnWidths.update(col, width)
+      }
+      bumpColumnState()
+      true
+    }
+  }
 
   private val totalColumnWidthProperty: ReadOnlyProperty[Double] =
     renderedWidthsProperty.map(_.sum)
@@ -200,12 +291,19 @@ final class TableView[S] private (
     val current = columns.toVector
     attachedColumns.keys.filterNot(current.contains).toVector.foreach { column =>
       attachedColumns.remove(column).foreach(_.dispose())
+      userColumnWidths.remove(column)
       column.detach(this)
     }
     current.filterNot(attachedColumns.contains).foreach { column =>
       column.attach(this)
       val subscriptions = new CompositeDisposable()
-      subscriptions.add(column.prefWidthProperty.observeWithoutInitial(_ => bumpColumnState()))
+      subscriptions.add(column.prefWidthProperty.observeWithoutInitial { _ =>
+        userColumnWidths.remove(column)
+        bumpColumnState()
+      })
+      subscriptions.add(column.minWidthProperty.observeWithoutInitial(_ => bumpColumnState()))
+      subscriptions.add(column.maxWidthProperty.observeWithoutInitial(_ => bumpColumnState()))
+      subscriptions.add(column.resizableProperty.observeWithoutInitial(_ => bumpColumnState()))
       subscriptions.add(column.sortableProperty.observeWithoutInitial(_ => bumpHeaderState()))
       subscriptions.add(column.sortKeyProperty.observeWithoutInitial(_ => bumpHeaderState()))
       subscriptions.add(column.visibleProperty.observeWithoutInitial(_ => syncVisibleColumns()))
@@ -217,16 +315,7 @@ final class TableView[S] private (
   /** A visibility change removes only hidden cells, retaining all other column instances. */
   private def syncVisibleColumns(): Unit = {
     val wanted = columns.toVector.filter(_.visible)
-    visibleColumns.toVector.filterNot(wanted.contains).foreach { column =>
-      visibleColumns.remove(visibleColumns.indexOf(column))
-    }
-    wanted.zipWithIndex.foreach { (column, index) =>
-      if (visibleColumns.lift(index) != Some(column)) {
-        val previous = visibleColumns.indexOf(column)
-        if (previous >= 0) visibleColumns.remove(previous)
-        visibleColumns.insert(index, column)
-      }
-    }
+    if (visibleColumns.toVector != wanted) visibleColumns.setAll(wanted)
     bumpColumnState()
     placeholderVisibleProperty.set(renderableCount == 0 || visibleColumns.isEmpty)
     recomputeVisible()
@@ -272,6 +361,17 @@ final class TableView[S] private (
     DslLayer.render(this, cursor) {
       addClass("jfx-table-view")
       resolvedCrawlId.foreach(setAttribute("id", _))
+      if (browserRendering) {
+        on("compositionstart") { event =>
+          event.raw match {
+            case raw: dom.Event =>
+              composingTarget = Option(raw.target).collect { case node: dom.Node => node }
+            case _ => ()
+          }
+          cancelColumnDrag()
+        }
+        on("compositionend")(_ => composingTarget = None)
+      }
       classIf("jfx-table-view-loading", remoteStateRevisionProperty.map(_ => remoteLoading))
       classIf("jfx-table-view-error", remoteStateRevisionProperty.map(_ => remoteError.nonEmpty))
 
@@ -297,7 +397,7 @@ final class TableView[S] private (
       })
 
       when(showHeaderProperty) {
-        div {
+        headerViewport = div {
           classes = Seq("jfx-table-header-viewport")
           style {
             position = "relative"
@@ -317,47 +417,64 @@ final class TableView[S] private (
               transform = scrollLeftProperty.map(value => s"translateX(-${value}px)")
             }
 
-            foreach(visibleColumns) { column =>
-              val typedColumn = column.asInstanceOf[TableColumn[S, Any]]
-              val headerCell  = div {
-                classes = Seq("jfx-table-header-cell")
-                classIf(
-                  "jfx-table-header-cell-last",
-                  visibleLeafColumns.map(_.lastOption.contains(column))
-                )
-                val widthProperty = renderedWidthsProperty.map { widths =>
-                  s"${widths.lift(getVisibleLeafIndex(column)).getOrElse(typedColumn.prefWidth)}px"
+            DslLayer.child(
+              new TableColumnProjection(
+                TableView.this,
+                column => {
+                  val typedColumn = column.asInstanceOf[TableColumn[S, Any]]
+                  val headerCell  = div {
+                    classes = Seq("jfx-table-header-cell")
+                    classIf(
+                      "jfx-table-header-cell-last",
+                      visibleLeafColumns.map(_.lastOption.contains(column))
+                    )
+                    val widthProperty = renderedWidthsProperty.map { widths =>
+                      s"${widths.lift(getVisibleLeafIndex(column)).getOrElse(typedColumn.prefWidth)}px"
+                    }
+                    style {
+                      position = "relative"
+                      width = widthProperty
+                      minWidth = widthProperty
+                      flex = "0 0 auto"
+                      boxSizing = "border-box"
+                    }
+                    text(column.textProperty) {}
+                    DslLayer.child(new TableColumnResizeHandle(TableView.this, column)) {}
+                  }
+                  columnHeaders.update(column, headerCell)
+                  headerCell.addDisposable(Disposable { columnHeaders.remove(column) })
+                  headerCell.addDisposable(
+                    new TableColumnReorderGesture(
+                      TableView.this,
+                      column,
+                      headerCell,
+                      () => toggleRemoteSort(typedColumn),
+                      cursor.isBrowser
+                    )
+                  )
+                  headerCell.classCondition(
+                    "jfx-table-header-cell-sortable",
+                    headerStateRevisionProperty.map(_ => isRemoteSortable(typedColumn))
+                  )
+                  headerCell.classCondition(
+                    "jfx-table-header-cell-sorted",
+                    headerStateRevisionProperty.map(_ => currentSortFor(typedColumn).nonEmpty)
+                  )
+                  headerCell.classCondition(
+                    "jfx-table-header-cell-sorted-asc",
+                    headerStateRevisionProperty.map(_ =>
+                      currentSortFor(typedColumn).exists(_.ascending)
+                    )
+                  )
+                  headerCell.classCondition(
+                    "jfx-table-header-cell-sorted-desc",
+                    headerStateRevisionProperty.map(_ =>
+                      currentSortFor(typedColumn).exists(!_.ascending)
+                    )
+                  )
                 }
-                style {
-                  width = widthProperty
-                  minWidth = widthProperty
-                  flex = "0 0 auto"
-                  boxSizing = "border-box"
-                }
-                onClick(_ => toggleRemoteSort(typedColumn))
-                text(column.textProperty) {}
-              }
-              headerCell.classCondition(
-                "jfx-table-header-cell-sortable",
-                headerStateRevisionProperty.map(_ => isRemoteSortable(typedColumn))
               )
-              headerCell.classCondition(
-                "jfx-table-header-cell-sorted",
-                headerStateRevisionProperty.map(_ => currentSortFor(typedColumn).nonEmpty)
-              )
-              headerCell.classCondition(
-                "jfx-table-header-cell-sorted-asc",
-                headerStateRevisionProperty.map(_ =>
-                  currentSortFor(typedColumn).exists(_.ascending)
-                )
-              )
-              headerCell.classCondition(
-                "jfx-table-header-cell-sorted-desc",
-                headerStateRevisionProperty.map(_ =>
-                  currentSortFor(typedColumn).exists(!_.ascending)
-                )
-              )
-            }
+            ) {}
           }
         }
       }
@@ -378,9 +495,13 @@ final class TableView[S] private (
             display = placeholderVisibleProperty.map(empty => if (empty) "none" else "block")
             width = "100%"
             height = "100%"
-            overflow = displayModeProperty.map {
+            overflowY = displayModeProperty.map {
               case CollectionDisplayMode.Paging    => "hidden"
               case CollectionDisplayMode.Scrolling => "auto"
+            }
+            overflowX = columnResizePolicyProperty.map {
+              case ColumnResizePolicy.Unconstrained => "auto"
+              case _                                => "hidden"
             }
           }
 
@@ -484,6 +605,9 @@ final class TableView[S] private (
       observeViewportSize()
       cursor.afterHydration { () =>
         scrollNavigationMounted = true
+        val move = pendingColumnMove
+        pendingColumnMove = None
+        move.foreach { case (column, index) => moveColumn(column, index) }
         flushScrollRequest()
       }
     }
@@ -499,6 +623,12 @@ final class TableView[S] private (
       attachedColumns.clear()
     })
     addDisposable(displayModeProperty.observeWithoutInitial(_ => refreshItemState()))
+    addDisposable(columnResizePolicyProperty.observeWithoutInitial { _ =>
+      bumpColumnState()
+      scrollLeftProperty.set(0.0)
+      domElement(viewportComponent).foreach(_.scrollLeft = 0.0)
+      scheduleViewportMeasure()
+    })
     addDisposable(pageSizeProperty.observeWithoutInitial { _ =>
       pageIndexProperty.set(0)
       refreshItemState()
@@ -650,52 +780,13 @@ final class TableView[S] private (
   private def bumpHeaderState(): Unit =
     headerStateRevisionProperty.set(headerStateRevisionProperty.get + 1)
 
-  private def resolveRenderedColumnWidths(
-      columns: Seq[TableColumn[S, ?]],
-      viewportWidth: Double
-  ): Vector[Double] = {
-    if (columns.isEmpty) return Vector.empty
-
-    val widths   = columns.map(_.prefWidth).toVector
-    val minimums = Vector.fill(columns.length)(40.0)
-    val target   = math.max(minimums.sum, viewportWidth)
-    val delta    = target - widths.sum
-
-    if (math.abs(delta) < 0.5) widths
-    else distributeWidthDelta(widths, minimums, delta)
-  }
-
-  private def distributeWidthDelta(
-      widths: Vector[Double],
-      minimums: Vector[Double],
-      delta: Double
-  ): Vector[Double] = {
-    val result     = widths.toArray
-    var remaining  = delta
-    var active     = widths.indices.toVector
-    var iterations = 0
-
-    while (active.nonEmpty && math.abs(remaining) > 0.5 && iterations < 12) {
-      iterations += 1
-      if (remaining < 0) active = active.filter(index => result(index) - 0.5 > minimums(index))
-
-      if (active.nonEmpty) {
-        val totalWeight = active.map(index => math.max(1.0, result(index) - minimums(index))).sum
-        var consumed    = 0.0
-        active.foreach { index =>
-          val share   = remaining * math.max(1.0, result(index) - minimums(index)) / totalWeight
-          val updated = math.max(minimums(index), result(index) + share)
-          consumed += updated - result(index)
-          result(index) = updated
-        }
-        if (math.abs(consumed) < 0.1) remaining = 0.0 else remaining -= consumed
-      }
-    }
-    result.toVector
-  }
 }
 
 object TableView {
+  def columnResizePolicy(using table: TableView[?]): ColumnResizePolicy =
+    table.columnResizePolicyProperty.get
+  def columnResizePolicy_=(policy: ColumnResizePolicy)(using table: TableView[?]): Unit =
+    table.columnResizePolicyProperty.set(policy)
   private[control] val overscanRows          = 6
   private[control] val lazyLoadThresholdRows = 3
   private val defaultLimit                   = 50

@@ -10,6 +10,10 @@ class TableColumn[S, T](initialText: String = "") extends AbstractCustomComponen
   val textProperty: Property[String]                                     = Property(initialText)
   val visibleProperty: Property[Boolean]                                 = Property(true)
   val prefWidthProperty: Property[Double]                                = Property(160.0)
+  val minWidthProperty: Property[Double]                                 = Property(40.0)
+  val maxWidthProperty: Property[Double]                                 = Property(Double.MaxValue)
+  val resizableProperty: Property[Boolean]                               = Property(true)
+  val reorderableProperty: Property[Boolean]                             = Property(true)
   val cellRenderer: Property[Option[CellRenderer[S]]]                    = Property(None)
   val sortableProperty: Property[Boolean]                                = Property(false)
   val sortKeyProperty: Property[Option[String]]                          = Property(None)
@@ -18,6 +22,25 @@ class TableColumn[S, T](initialText: String = "") extends AbstractCustomComponen
 
   private val ownerProperty: Property[TableView[S] | Null]     = Property(null)
   val tableViewProperty: ReadOnlyProperty[TableView[S] | Null] = ownerProperty
+
+  /** Rendered width when visible/attached; otherwise the bounded preferred width. */
+  val widthProperty: ReadOnlyProperty[Double] = ownerProperty.flatMap {
+    case null =>
+      prefWidthProperty.flatMap(_ =>
+        minWidthProperty.flatMap(_ => maxWidthProperty.map(_ => widthSpec(prefWidth).initial))
+      )
+    case table =>
+      table.renderedWidthsProperty.map(widths =>
+        widths.lift(table.getVisibleLeafIndex(this)).getOrElse(widthSpec(prefWidth).initial)
+      )
+  }
+  private[table] def widthSpec(preferred: Double): TableColumnLayout.Column =
+    TableColumnLayout.Column(
+      minWidthProperty.get,
+      preferred,
+      maxWidthProperty.get,
+      resizableProperty.get
+    )
   private[control] val rendererRevisionProperty: Property[Int] = Property(0)
 
   addDisposable(cellRenderer.observeWithoutInitial(_ => invalidateRenderer()))
@@ -73,14 +96,38 @@ class TableColumn[S, T](initialText: String = "") extends AbstractCustomComponen
   def visible: Boolean                = visibleProperty.get
   def visible_=(value: Boolean): Unit = visibleProperty.set(value)
 
-  def prefWidth: Double                = prefWidthProperty.get
-  def prefWidth_=(value: Double): Unit = prefWidthProperty.set(value)
+  def prefWidth: Double                   = prefWidthProperty.get
+  def prefWidth_=(value: Double): Unit    = prefWidthProperty.set(value)
+  def minWidth: Double                    = minWidthProperty.get
+  def minWidth_=(value: Double): Unit     = minWidthProperty.set(value)
+  def maxWidth: Double                    = maxWidthProperty.get
+  def maxWidth_=(value: Double): Unit     = maxWidthProperty.set(value)
+  def resizable: Boolean                  = resizableProperty.get
+  def resizable_=(value: Boolean): Unit   = resizableProperty.set(value)
+  def width: Double                       = widthProperty.get
+  def reorderable: Boolean                = reorderableProperty.get
+  def reorderable_=(value: Boolean): Unit = reorderableProperty.set(value)
 
   def setCellRenderer(renderer: CellRenderer[S]): Unit =
     cellRenderer.set(Some(renderer))
 }
 
 object TableColumn {
+  def reorderable[S, T](using column: TableColumn[S, T]): Boolean = column.reorderable
+  def reorderable_=[S, T](value: Boolean)(using column: TableColumn[S, T]): Unit =
+    column.reorderable = value
+  def reorderable_=[S, T](value: ReadOnlyProperty[Boolean])(using column: TableColumn[S, T]): Unit =
+    column.addDisposable(value.observe(column.reorderableProperty.set))
+  def minWidth[S, T](using column: TableColumn[S, T]): Double                = column.minWidth
+  def minWidth_=[S, T](value: Double)(using column: TableColumn[S, T]): Unit = column.minWidth =
+    value
+  def maxWidth[S, T](using column: TableColumn[S, T]): Double                = column.maxWidth
+  def maxWidth_=[S, T](value: Double)(using column: TableColumn[S, T]): Unit = column.maxWidth =
+    value
+  def resizable[S, T](using column: TableColumn[S, T]): Boolean                = column.resizable
+  def resizable_=[S, T](value: Boolean)(using column: TableColumn[S, T]): Unit = column.resizable =
+    value
+  def width[S, T](using column: TableColumn[S, T]): Double    = column.width
   def visible[S, T](using column: TableColumn[S, T]): Boolean = column.visibleProperty.get
 
   def visible_=[S, T](value: Boolean)(using column: TableColumn[S, T]): Unit =

@@ -1,12 +1,20 @@
 package jfx.bridge
 
-import jfx.control.table.{TableSelectionMode, TableView}
+import jfx.control.table.{ColumnResizePolicy, TableSelectionMode, TableView}
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.*
 
 /** Minimal imperative table contract; all operations remain owned by the Scala component. */
 final class TableViewHandleBridge(private val table: TableView[js.Any]) extends js.Object {
   private val model = table.selectionModel
+  val columnWidths  = new ReadOnlyPropertyHandle(table.renderedWidthsProperty.map(_.toJSArray))
+  def moveColumn(from: Double, to: Double): Boolean =
+    validIndex(from) && validIndex(to) && table.moveColumn(
+      table.getVisibleLeafColumn(from.toInt),
+      to.toInt
+    )
+  def resizeColumn(index: Double, delta: Double): Boolean =
+    validIndex(index) && table.resizeColumn(table.getVisibleLeafColumn(index.toInt), delta)
   val selectionMode = new ReadOnlyPropertyHandle(model.selectionModeProperty.map {
     case TableSelectionMode.Single   => "single"
     case TableSelectionMode.Multiple => "multiple"
@@ -48,6 +56,16 @@ final class TableViewHandleBridge(private val table: TableView[js.Any]) extends 
 }
 
 private[bridge] object TableViewHandleBridge {
+  def parseResizePolicy(policy: String): ColumnResizePolicy = policy match {
+    case "unconstrained"      => ColumnResizePolicy.Unconstrained
+    case "all-columns"        => ColumnResizePolicy.AllColumns
+    case "last-column"        => ColumnResizePolicy.LastColumn
+    case "next-column"        => ColumnResizePolicy.NextColumn
+    case "subsequent-columns" => ColumnResizePolicy.SubsequentColumns
+    case "flex-next-column"   => ColumnResizePolicy.FlexNextColumn
+    case "flex-last-column"   => ColumnResizePolicy.FlexLastColumn
+    case _ => throw new IllegalArgumentException(s"Unknown column resize policy: $policy")
+  }
   def parseSelectionMode(mode: String): TableSelectionMode = mode match {
     case "single"   => TableSelectionMode.Single
     case "multiple" => TableSelectionMode.Multiple

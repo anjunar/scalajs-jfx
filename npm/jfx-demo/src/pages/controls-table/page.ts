@@ -1,6 +1,6 @@
 import { attr, button, classes, div, onClick, property, style, text, when } from "@anjunar/jfx-core";
 import { column, remoteSource, tableView } from "@anjunar/jfx-controls";
-import type { RemotePage, RemoteSource, SortSpec, TableSelectionMode, TableViewHandle } from "@anjunar/jfx-controls";
+import type { ColumnResizePolicy, RemotePage, RemoteSource, SortSpec, TableSelectionMode, TableViewHandle } from "@anjunar/jfx-controls";
 import { translated } from "../../app/i18n.js";
 
 interface Book {
@@ -51,6 +51,7 @@ function loadPage(query: Query): Promise<RemotePage<Book, Query>> {
 export function controlsTablePage(): void {
   const showAuthors = property(true);
   const selectionMode = property<TableSelectionMode>("multiple");
+  const resizePolicy = property<ColumnResizePolicy>("flex-last-column");
   let table!: TableViewHandle<Book>;
   const initialQuery: Query = { offset: 0, limit: PAGE_SIZE, sorting: [] };
   const source: RemoteSource<Book, Query> = remoteSource({
@@ -84,6 +85,10 @@ export function controlsTablePage(): void {
       onClick(() => selectionMode.set(selectionMode.get === "multiple" ? "single" : "multiple"));
     });
     div(() => text(translated("Ctrl/Cmd-click toggles rows; Shift-click selects a range.")));
+    div(() => text(translated("Drag a column edge to resize. Focus its grip and use arrow keys for keyboard resizing.")));
+    div(() => text(translated("Drag a column header to move it. Or focus the header and press Alt+Shift+Left/Right.")));
+    button(translated("Toggle constrained / free column widths"), {}, () => onClick(() =>
+      resizePolicy.set(resizePolicy.get === "unconstrained" ? "flex-last-column" : "unconstrained")));
     button(translated("Go to row 500"), {}, () => onClick(() => table.scrollToIndex(499)));
     button(translated("Go to first row"), {}, () => onClick(() => table.scrollToIndex(0)));
     button(translated("Show selected row"), {}, () => onClick(() => table.scrollToIndex(table.selectedIndex.get)));
@@ -93,12 +98,13 @@ export function controlsTablePage(): void {
       table = tableView(
         source,
         [
-          column(translated("Title").get, (book) => text(book.title), { prefWidth: 280, sortable: true, sortKey: "title" }),
-          column(translated("Author").get, (book) => text(book.author), { prefWidth: 220, sortable: true, sortKey: "author", visible: showAuthors }),
-          column(translated("Year").get, (book) => text(String(book.year)), { prefWidth: 100, sortable: true, sortKey: "year" }),
+          column(translated("Title").get, (book) => text(book.title), { prefWidth: 280, minWidth: 140, maxWidth: 900, sortable: true, sortKey: "title" }),
+          column(translated("Author").get, (book) => text(book.author), { prefWidth: 220, minWidth: 100, maxWidth: 600, sortable: true, sortKey: "author", visible: showAuthors }),
+          column(translated("Year").get, (book) => text(String(book.year)), { prefWidth: 100, minWidth: 70, maxWidth: 300, sortable: true, sortKey: "year" }),
         ],
         {
           rowHeight: 40,
+          columnResizePolicy: resizePolicy,
           selectionMode,
           row: (row) => {
             classes("book-row");

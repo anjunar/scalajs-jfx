@@ -7,7 +7,6 @@ import jfx.core.dsl.EventDsl.{onClick, onDoubleClick}
 import jfx.core.dsl.StyleDsl.*
 import jfx.core.render.Cursor
 import jfx.core.state.{Property, ReadOnlyProperty}
-import jfx.core.statement.Foreach.foreach
 import jfx.core.statement.DynamicComponentRenderer.dynamic
 import org.scalajs.dom
 
@@ -96,15 +95,20 @@ class TableRow[S] private[control] (
       "Standard cells can only be rendered once per live TableRow"
     )
     cellsRendered = true
-    foreach(requireTableView().visibleColumns) { column =>
-      val typedColumn = column.asInstanceOf[TableColumn[S, Any]]
-      dynamic(typedColumn.rendererRevisionProperty.map { _ =>
-        val cell = typedColumn.cellFactoryProperty.get
-          .fold(new TableCell[S, Any])(_(typedColumn))
-        cell.bind(TableRow.this, typedColumn)
-        cell
-      })
-    }
+    DslLayer.child(
+      new TableColumnProjection(
+        requireTableView(),
+        column => {
+          val typedColumn = column.asInstanceOf[TableColumn[S, Any]]
+          dynamic(typedColumn.rendererRevisionProperty.map { _ =>
+            val cell = typedColumn.cellFactoryProperty.get
+              .fold(new TableCell[S, Any])(_(typedColumn))
+            cell.bind(TableRow.this, typedColumn)
+            cell
+          })
+        }
+      )
+    ) {}
   }
 
   private[control] def bindItem(rowIndex: Int, value: Option[S], owner: TableView[S]): Unit = {

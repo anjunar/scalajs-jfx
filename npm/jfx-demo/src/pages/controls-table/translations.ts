@@ -1,6 +1,7 @@
 import { catalogEntry, i18n, type CatalogEntry } from "@anjunar/jfx-core";
 
 export const entries: readonly CatalogEntry[] = [
+  catalogEntry(i18n`Drag a column header to move it. Or focus the header and press Alt+Shift+Left/Right.`, { de: "Ziehe einen Spaltenkopf zum Verschieben. Oder fokussiere ihn und drücke Alt+Shift+Links/Rechts." }),
   catalogEntry(i18n`TableView`, { de: "TableView" }),
   catalogEntry(i18n`A virtualized remote catalogue with sortable columns and request-aware SSR ranges.`, { de: "Ein virtualisierter Remote-Katalog mit sortierbaren Spalten und anfragebasierten SSR-Bereichen." }),
   catalogEntry(i18n`tableView(), column(), remoteSource(): a virtualized table over 1,000 rows, with sortable columns and request-aware SSR ranges.`, { de: "tableView(), column(), remoteSource(): eine virtualisierte Tabelle über 1.000 Zeilen mit sortierbaren Spalten und anfragebasierten SSR-Bereichen." }),
@@ -15,6 +16,8 @@ export const entries: readonly CatalogEntry[] = [
   catalogEntry(i18n`Ctrl/Cmd-click toggles rows; Shift-click selects a range.`, { de: "Ctrl/Cmd-Klick wählt Zeilen an oder ab; Shift-Klick wählt einen Bereich." }),
   catalogEntry(i18n`Selection mode`, { de: "Auswahlmodus" }),
   catalogEntry(i18n`Selected rows`, { de: "Ausgewählte Zeilen" }),
+  catalogEntry(i18n`Drag a column edge to resize. Focus its grip and use arrow keys for keyboard resizing.`, { de: "Ziehe am Spaltenrand, um die Breite zu ändern. Fokussiere den Ziehgriff und nutze die Pfeiltasten für die Tastaturbedienung." }),
+  catalogEntry(i18n`Toggle constrained / free column widths`, { de: "Angepasste/freie Spaltenbreiten umschalten" }),
   catalogEntry(i18n`Go to row 500`, { de: "Zu Zeile 500 springen" }),
   catalogEntry(i18n`Go to first row`, { de: "Zur ersten Zeile springen" }),
   catalogEntry(i18n`Show selected row`, { de: "Ausgewählte Zeile anzeigen" }),

@@ -1,6 +1,6 @@
 # TableView: Feature-Stand und Implementierungsplan
 
-Stand: 09.09.2026 · Ausgangsanalyse: `7295d92` · einschließlich Grundlagenpaket, Spaltensichtbarkeit, Auswahl-/Remote-Vertrag, RowFactory, Mehrfachauswahl und Zeilennavigation · Referenz: JavaFX 26.
+Stand: 09.09.2026 · Ausgangsanalyse: `7295d92` · einschließlich Grundlagenpaket, Spaltensichtbarkeit, Auswahl-/Remote-Vertrag, RowFactory, Mehrfachauswahl, Zeilennavigation, Spalten-Resizing und Drag-Reordering · Referenz: JavaFX 26.
 
 Dieses Dokument beschreibt, welche Funktionen unsere TableView bereits unterstützt und wie wir die fehlenden Fähigkeiten der JavaFX-TableView ergänzen. Es ist ein Implementierungsplan; als **geplant** bezeichnete Modelle, Methoden und Dateien existieren noch nicht.
 
@@ -35,7 +35,7 @@ Paging, SSR, Hydration, Crawl-Zustand und Remote-Nachladen sind vorhandene JFX-E
 - `tableView(...)` gibt jetzt ein `TableViewHandle` mit `refresh()` und lesbarem `isDisposed` zurück. Das Handle delegiert an Scala; nach Unmount ist Refresh wirkungslos. Es gibt keine zweite Tabellenimplementierung in TypeScript und keine neuen Core-/Forms-Abhängigkeiten.
 - In der TypeScript-Demo `/controls/table` zeigt ein Schalter das Ein-/Ausblenden der Autorenspalte. Dieser Weg wurde im In-app-Browser geprüft, einschließlich Wiederherstellung von Header/Werten und ohne gemeldete Browserfehler.
 
-**Abgrenzung dieses Ausbaus:** Die Spaltenliste ist weiterhin flach. „Blatt“ bedeutet bis zum Spaltenbaum-Ausbau eine normale Spalte. Gruppenheader, `rowFactory` und umfassende Handles bleiben offen; Auswahlidentität und Remote-Koordinaten behandelt das folgende Paket. Verstecken einer sortierten Spalte ändert die bestehende Remote-Sortierung nicht. Programmatisches Spalten-Reordering garantiert noch keinen Erhalt aller verschobenen Zellen.
+**Abgrenzung dieses Ausbaus:** Die Spaltenliste ist weiterhin flach. „Blatt“ bedeutet bis zum Spaltenbaum-Ausbau eine normale Spalte. Gruppenheader, `rowFactory` und umfassende Handles bleiben offen; Auswahlidentität und Remote-Koordinaten behandelt das folgende Paket. Verstecken einer sortierten Spalte ändert die bestehende Remote-Sortierung nicht. Der spätere achte Ausbau ergänzt den Instanzerhalt bei Spalten-Reordering (siehe §4.7).
 
 **Migration TypeScript:** Aufrufe dürfen den Rückgabewert weiter ignorieren. Explizit `void`-annotierte Expression-Arrows benötigen einen Block, beispielsweise `(): void => { tableView(source, columns); }`. Die Fassade erwartet die dazu passende neu gelinkte Bridge. Refresh ist für Snapshot-Änderungen gedacht und darf lokale Editorentwürfe zurücksetzen; live editierte Werte bleiben beobachtbar gebunden.
 
@@ -172,10 +172,10 @@ Referenzen: [TableColumnBase](https://openjfx.io/javadoc/26/javafx.controls/java
 | C01 | Dynamische Spaltenliste und Ownership | Vorhanden | Validierung vor Mutation, Attach/Detach und wiederverwendbare entfernte Spalten; neue/ersetzte Zellen werden verwaltet. Baumstruktur bleibt C03. M1. |
 | C02 | Sichtbarkeit und sichtbare Blattspalten | Teilweise | Flache Spalten: `visible`, beobachtbare Projektion, Index-Lookups und gemeinsamer Render-/Breitenpfad vorhanden. Spaltenbaum und spätere Auswahl-/Fokusmodelle noch anbinden. M1/M5. |
 | C03 | Verschachtelte Spalten/Gruppenheader | Offen | Kindspalten, parentColumn/tableView, rekursive Header; Gruppenbreite aus Blattspalten. `headerRows` bleibt ein separater Inhaltsheader. M1/M5. |
-| C04 | minWidth/prefWidth/maxWidth/width/resizable | Teilweise | Nur prefWidth und pauschale Mindestbreite vorhanden. Breitenmodell mit echten Grenzen und beobachtbarem Ergebnis ergänzen. M5. |
-| C05 | Resize-Policies und `resizeColumn` | Offen | Reine Breitenberechnung und austauschbare Policy, einschließlich der JavaFX-26-Varianten. M5. |
-| C06 | Interaktives Resize und Anpassung an Inhalt | Offen | Pointer-Griffe, begrenzte Inhaltsmessung und Auto-Fit; Messung nur im Browser. M5. |
-| C07 | Drag-Reordering und reorderable | Teilweise | Spaltenliste ist veränderbar; Bedienung und belastbarer Strukturabgleich fehlen. Verschieben aktualisiert die maßgebliche Spaltenliste. M5. |
+| C04 | minWidth/prefWidth/maxWidth/width/resizable | Vorhanden | Getrennte bevorzugte/Benutzer-/Ergebnisbreite, Min-/Max-Grenzen, resizable und lesbare Breiten; JFX-Defaults dokumentiert. M5. |
+| C05 | Resize-Policies und `resizeColumn` | Teilweise | Sieben eingebaute Strategien, reine Breitenberechnung und Scala-/TS-API vorhanden. Eigene Policy-Callbacks und Gruppenspalten fehlen. M5. |
+| C06 | Interaktives Resize und Anpassung an Inhalt | Teilweise | Pointer-Griffe und Pfeiltasten vorhanden; begrenzte Inhaltsmessung und Auto-Fit bleiben offen. M5. |
+| C07 | Drag-Reordering und reorderable | Vorhanden | Flache Spalten: Pointer-Drag mit Einfügemarkierung, Alt+Shift+Links/Rechts, reaktives reorderable und moveColumn. Maßgebliche Liste und stabile Runtime-Projektion; Gruppen/Drag-Autoscroll bleiben offen. M5. |
 | C08 | Menü zum Ein-/Ausblenden der Spalten | Offen | `tableMenuButtonVisible` mit beschrifteten Menüeinträgen und Tastaturbedienung. M5/M6. |
 | C09 | Header-Grafik, Sortierdarstellung, Kontextmenü | Teilweise | Text und Sortier-CSS vorhanden. Slots für graphic/sortNode/Menü sowie Sortierpriorität ergänzen. M5/M6. |
 | C10 | Spalten-ID, Klassen, Stil, Metadaten | Teilweise | Geerbte Komponentenmittel erreichen den separat erzeugten Header nicht automatisch. Anwendung auf Header/Zellen explizit festlegen. M1/M6. |
@@ -360,6 +360,22 @@ Die Standardfabriken decken Text, Boolean, Auswahl und Fortschritt ab. CheckBox-
 
 ### 4.7 Spaltenbaum, Breiten und Header
 
+**Umgesetzt im achten Ausbau – Reordering:** Header und Zeilenzellen verwenden `TableColumnProjection` mit Core-`KeyedChildren`. Stabile Spaltenreferenzen sind die Schlüssel. Ein physischer `.jfx-table-column-slot` mit `display: contents` umschließt auch virtuelle/dynamische Zellrenderer; `Runtime.move` verschiebt diesen Slot ohne Compose/Dispose. Eigene direkte CSS-Kindselektoren müssen diesen zusätzlichen Slot berücksichtigen. Die sichtbare Spaltenliste wird atomar als Snapshot abgeglichen. Factory-Wechsel ersetzen weiterhin gezielt den jeweiligen Zellrenderer; Ausblenden entsorgt nur die versteckte Spalte.
+
+**Abnahme am 09.09.2026:** Vollständiger Scala-Lauf (`Test/testOnly *`), Bridge-Full-Link und npm-Gates für Controls (46 Integrationstests + 3 Paket-Consumer), Core (114 + 8) und Demo (Client/SSR, Eine-Runtime-Nachweis, 31 Routen) grün. Modelltests prüfen Zellinstanzen, Ownership, Breiten, Sichtbarkeit, Disposal und atomare Ablehnung geschützter Permutationen. Integrationstests prüfen zusätzlich Editorfokus/direktionale Textauswahl, Bindungen, Hydration, Composition-Sperre und Drag-Abbrüche. Im echten Browser: Title hinter Year ziehen, per Tastatur zurückbewegen und anschließend erneut resizen; Sortierung unverändert, Header-/Zellbreiten und X-Positionen identisch, keine Fehler. Dabei den bestehenden 10-px-Versatz durch `scrollbar-gutter: stable both-edges` behoben: Die Tabelle reserviert nun nur die Scrollleistenkante. Kein Ersatz für die noch offene umfassende IME-/Accessibility-Abnahme.
+
+`TableColumnReorderGesture` trennt Klick-Sortierung, Resize-Griff und Drag ab 5 px Bewegung. Eine Einfügemarkierung zeigt die Zielgrenze. Pointer-up innerhalb des sichtbaren Headers übernimmt die neue Reihenfolge; außerhalb wird abgebrochen. Escape, Pointer-cancel, Captureverlust, Blur, Spaltenstrukturänderung, Sperren und Unmount räumen Capture/Window-Listener/Marker auf. Alt+Shift+Links/Rechts verschiebt den fokussierten Header um eine sichtbare Position. `reorderableProperty`/DSL bzw. TypeScript `reorderable: Reactive<boolean>` sperrt ausschließlich Benutzeraktionen.
+
+Scala `moveColumn(column, toVisibleIndex)` und TypeScript `moveColumn(fromVisibleIndex, toVisibleIndex)` verwenden finale sichtbare Indizes. Versteckte Spalten behalten untereinander ihre Reihenfolge. Benutzerbreiten, Sortierung, Auswahl, Zellen, Wertbindungen und Editorfokus/Textauswahl bleiben an ihren Instanzen. Der Befehl ist browser-only: SSR behält die Deklaration, während Hydration wird der letzte gültige Auftrag nach dem Claim erneut validiert und ausgeführt. Ungültige/no-op/entsorgte Ziele liefern false. Aktive native Composition und geschützte Hosts blockieren den Befehl; nach Ende/Freigabe kann erneut angefragt werden. Listen-Permutationen prüfen Host-Schutz vor der Quellmutation. Gruppenheader, Drag-Autoscroll, Auto-Fit und umfassende Screenreader-/IME-Abnahme bleiben offen.
+
+**Umgesetzt im siebten Ausbau:** `TableColumnLayout` berechnet Grenzen, Viewport-Verteilung und Benutzer-Deltas seiteneffektfrei. `ColumnResizePolicy` enthält alle sieben unten genannten Strategien; eigene Callback-Policies und Gruppen fehlen weiterhin. `TableView.resizeColumn(column, delta)` bzw. TypeScript `resizeColumn(visibleIndex, delta)` liefert true, wenn ein Teil des Deltas angewendet wurde. Die TypeScript-Option `columnResizePolicy` ist reaktiv; `columnWidths` liefert unabhängige lesbare Snapshots. Scala-Spalten besitzen lesbare `widthProperty` sowie Min-/Max-/Resizable-Properties und DSL-Zuweisungen.
+
+Benutzerbreiten bleiben separat von `prefWidth`, überstehen Messungen und Aus-/Einblenden und werden beim Entfernen aus der Tabelle verworfen. Ändern von `prefWidth` verwirft den Override dieser Spalte. Versteckte/abgetrennte Spalten melden die begrenzte bevorzugte Breite; die gemeinsame Tabellenprojektion enthält nur sichtbare Breiten. Nicht resizable Spalten werden weder vom Benutzer noch zur Kompensation verändert. Ungültige Deltas/Indizes, Fremdspalten und Unmount werden ohne Änderung behandelt.
+
+**Defaults/Migration:** JFX behält 40 px Minimum und 160 px bevorzugte Breite. Maximum ist standardmäßig unbegrenzt. Der Tabellen-Default `FlexLastColumn` erhält das bisherige Fit-to-width-Verhalten; die normale Viewport-Anpassung verteilt freien Platz begrenzt proportional, während die ausgewählte Strategie Benutzer-/API-Deltas steuert. Nicht-finite Min-/Pref-Werte fallen auf Defaults zurück, negative Minima werden null, nicht-finite Maxima sind unbegrenzt; bei widersprüchlichen Grenzen gewinnt das Minimum. Unmögliche constrained Grenzen ergeben Leerraum oder Clipping statt einer Verletzung der Grenzen.
+
+Der neue `TableColumnResizeHandle` gehört zum Header-Lifecycle. Pointer-Capture und temporäre Window-Listener erlauben Ziehen außerhalb des Griffs; Pointer-up/-cancel, Captureverlust, Blur, Policywechsel, Sperren/Verbergen/Entfernen und Unmount beenden die Geste. Bereits angewendete Breiten bleiben bei Abbruch erhalten. Griff-Klicks lösen keine Sortierung aus. Fokussierbare Separator-Griffe mit Breiten-ARIA unterstützen Links/Rechts in 10-px-, mit Shift in 1-px-Schritten. Dies ist keine vollständige Grid-/Accessibility-Abnahme. Horizontales Overflow hängt nun getrennt vom vertikalen Paging-/Scrollmodus an der Breitenpolicy. Der achte Ausbau ergänzt Drag-Reordering; Auto-Fit bleibt offen.
+
 Alle Verbraucher verwenden dieselbe sichtbare Blattspaltenliste: Header, Zeilenzellen, Breiten, Navigation, Auswahl, Editing und ARIA. Gruppenspalten besitzen Kinder; ihre Breite ergibt sich aus deren sichtbaren Blättern. Zyklen, doppelte Zugehörigkeit und Fremdspalten werden bei Änderungen abgefangen.
 
 Breitenzustand trennt bevorzugte Breite, tatsächlich berechnete Breite, Grenzen und Benutzeränderung. Die Policy erhält einen konsistenten Snapshot und liefert das Ergebnis. Dafür sind alle folgenden Varianten aus JavaFX 26 im Umfang:
@@ -414,6 +430,7 @@ Die Größen S/M/L bezeichnen relative Komplexität, keine Zeitversprechen. M0 i
 - [x] M0/M2: Typisiertes TypeScript-Handle für konsistente Einzelauswahl und kontrollierte Mutationen.
 - [x] M2: Zentrales Zeilen-Auswahlmodell, Mehrfachauswahl/Ergebnislisten, Bereichsoperationen und Ctrl/Cmd-/Shift-Mausbedienung in Scala und TypeScript.
 - [x] M2: Programmatische Zeilennavigation per Index/Item, einschließlich Paging, Remote-Lücken und Hydration.
+- [x] M5 vorgezogen: begrenztes Breitenmodell, sieben Resize-Strategien, Pointer-/Tastatur-Resizing und Scala-/TypeScript-API.
 - [x] M1: Erhalt überlappender Zeilenfenster; gebundenes Eingabefeld einschließlich Fokus/Textauswahl in den Bridge-Integrationstests absichern.
 - [ ] M1: Reale Browserabnahme für Eingabefelder/IME, nicht nur jsdom.
 - [x] M1: `cellValueFactory` vervollständigen und `TableCell` in den Renderpfad integrieren; `cell(row)` bleibt nutzbar.
@@ -425,6 +442,10 @@ Die Größen S/M/L bezeichnen relative Komplexität, keine Zeitversprechen. M0 i
 - [ ] Anschließend M2 und M3; auf dieser Basis M4 und M5 vervollständigen.
 
 ## 6. Verifikation
+
+Der siebte Ausbau ergänzt zwölf Scala-Tests für Breitenberechnung und Tabellenintegration sowie fünf TypeScript-Integrationstests für API/Policies, Pointer-/Tastaturbedienung, Editor-Identität/Fokus, Gesture-Lifecycle, Hydration und die Trennung von Resize und Sortierung. TableView-/ComboBox-SSR-Assertions prüfen jetzt die getrennten horizontalen und vertikalen Scrollachsen. Der Paket-Consumer prüft die exportierten Breiten-/Resize-Methoden gegen die echte Bridge.
+
+Abnahme des siebten Ausbaus am 09.09.2026: **406 Scala-Tests** im gesamten aktuellen Workspace, Bridge-Full-Link und npm-Gates für Controls (42 Integrationstests + 3 Paket-Consumer), Core (114 + 8) und Demo (Client-/SSR-Builds, Eine-Runtime-Nachweis, 31 Routen) grün. Der Gesamtlauf wurde nach Abschluss paralleler Core-Arbeiten wiederholt. Im frischen Produktionsbuild wurden Pfeiltasten und echtes Pointer-Ziehen geprüft: Die letzte Spalte erreicht ihr Minimum, die nächste kompensiert weiter, Header-/Zellbreiten stimmen überein und die aktive Sortierung bleibt unverändert. Freie Breiten erzeugen horizontales Overflow. Keine Browserfehler; Testtab und Testserver geschlossen. Der achte Ausbau ergänzt Drag-Reordering; Auto-Fit und umfassende Accessibility-Abnahme bleiben offen.
 
 Der sechste Ausbau ergänzt vier Scala-Geometrietests und neun TypeScript-Integrationstests für Zeilennavigation: minimale Bewegung, Inhaltsende/Header, Paging, ungültige Indizes/fehlende Items, Remote-Range-Loading, SSR-No-op, strikte Hydration mit allen drei Moduskonfigurationen, verdecktes Layout und Disposal. Die Paket-Consumer prüfen die neuen Methoden über exportierte Typen und die echte SSR-Bridge. Ein Testzwischenlauf deckte eine nicht isolierte Crawl-ID auf: Der Browser-Cookie des vorherigen Falls stimmte nicht mit dem cookie-losen SSR-Aufruf überein. Die Varianten verwenden jetzt eigene Crawl-IDs.
 

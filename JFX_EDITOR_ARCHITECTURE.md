@@ -2,6 +2,11 @@
 
 Status: Architekturentwurf, noch keine implementierte Editor-API. Stand: 9. September 2026.
 
+Repository-Aufteilung: Der Editor entsteht in einem eigenen Repository. Die generischen
+JFX-Core-Voraussetzungen sind inzwischen implementiert; der tatsächliche API-Vertrag
+steht in [JFX_CORE_INTEGRATION.md](JFX_CORE_INTEGRATION.md). Editorbezogene Module und
+APIs dieses Entwurfs bleiben Planung.
+
 Dieser Entwurf berücksichtigt die Präzisierung des Auftrags: **Der Editor wird vollständig neu entwickelt. Der vorhandene Editor ist ein Prototyp und keine Architektur- oder Implementierungsgrundlage.** Seine öffentliche API dient allenfalls als Inspiration. Die Bestandsanalyse unten betrifft deshalb die gemeinsame JFX3-Infrastruktur. Eine interne Bewertung oder schrittweise Reparatur des Prototyps ist ausdrücklich nicht Teil dieses Vorhabens.
 
 Der zugehörige [Implementierungsplan](JFX_EDITOR_IMPLEMENTATION.md) zerlegt die Entscheidungen in einzeln abnehmbare Arbeitspakete. Alle dort und hier genannten neuen Module, Dateinamen und APIs sind Vorschläge. Vorhandene Fähigkeiten sind als Befund gekennzeichnet; gewünschte Fähigkeiten werden nicht als bereits vorhanden ausgegeben.
@@ -464,7 +469,8 @@ Die Projektion hält einen Index der von JFX besessenen Node-Komponenten. Das is
 | Eingaben, IME, fremde Mutationen, Koordination geschützter Bereiche | BrowserInputController |
 | History und Dokumentinvarianten | Core/Feature-Module |
 
-Erforderliche JFX-Erweiterungen, bislang **nicht vorhanden**:
+Erforderliche JFX-Erweiterungen, inzwischen als generische Core-APIs implementiert
+(Verträge und Grenzen: [JFX_CORE_INTEGRATION.md](JFX_CORE_INTEGRATION.md)):
 
 1. `TextNode.spliceText(startUtf16, deleteCountUtf16, inserted)` mit gleichem DOM-/SSR-Ergebnis und unverändertem Textknoten; No-op schreibt nichts. Keine Graphemsemantik im Host.
 2. Keyed Child-Komposition mit stabilen Component-Instanzen und explizitem Datenupdate; `Runtime.move` besitzt die logische und physische Änderung gemeinsam.
