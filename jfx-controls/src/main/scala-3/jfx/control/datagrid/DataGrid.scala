@@ -196,23 +196,22 @@ final class DataGrid[T] private (
             )
           )
 
-          headerComponent = div { currentHeader ?=>
-            classes = Seq("jfx-data-grid-header-slot")
-            style {
-              width = "100%"
-              minHeight = itemStateRevisionProperty.map(_ => px(declaredHeaderHeight))
-              boxSizing = "border-box"
-              marginBottom = px(if (headerBody.nonEmpty) gap else 0.0)
-            }
-            currentHeader.addDisposable(
-              gapProperty.observe(value =>
-                currentHeader.setStyle(
-                  "margin-bottom",
-                  px(if (headerBody.nonEmpty) math.max(0.0, value) else 0.0)
+          headerBody.foreach { body =>
+            headerComponent = div { currentHeader ?=>
+              classes = Seq("jfx-data-grid-header-slot")
+              style {
+                width = "100%"
+                minHeight = itemStateRevisionProperty.map(_ => px(declaredHeaderHeight))
+                boxSizing = "border-box"
+                marginBottom = px(gap)
+              }
+              currentHeader.addDisposable(
+                gapProperty.observe(value =>
+                  currentHeader.setStyle("margin-bottom", px(math.max(0.0, value)))
                 )
               )
-            )
-            headerBody.foreach { body => body }
+              body
+            }
           }
 
           div {
@@ -280,6 +279,7 @@ final class DataGrid[T] private (
   override def afterCompose(cursor: Cursor): Unit =
     if (browserRendering) {
       initializeBrowserCrawlState()
+      enableDefaultBrowserScrolling(cursor)
       scheduleViewportMeasure()
       observeHeaderHeight(headerComponent, headerHeightProperty)
       observeViewportSize()
@@ -460,7 +460,7 @@ object DataGrid {
   def paging(using grid: DataGrid[?]): Boolean =
     grid.displayModeProperty.get == CollectionDisplayMode.Paging
   def paging_=(value: Boolean)(using grid: DataGrid[?]): Unit =
-    grid.displayModeProperty.set(
+    grid.configureDisplayMode(
       if (value) CollectionDisplayMode.Paging else CollectionDisplayMode.Scrolling
     )
 

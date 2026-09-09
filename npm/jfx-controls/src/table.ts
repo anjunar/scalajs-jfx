@@ -35,7 +35,7 @@ export interface TableViewOptions {
   readonly rowHeight?: number;
   readonly showHeader?: boolean;
   readonly showFooter?: boolean;
-  /** Page through the data instead of scrolling it. */
+  /** Keep paging after hydration. Omit or set to false to use browser scrolling. */
   readonly paging?: boolean;
   readonly pageSize?: number;
   /** Minimum content-header height in table rows. */

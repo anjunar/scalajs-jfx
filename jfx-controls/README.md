@@ -43,7 +43,7 @@ The three collection controls accept local `ListProperty` values or remote list 
 
 ## SSR and non-JavaScript behavior
 
-SSR renders a stable slice of a collection. With crawlability enabled, the slice is addressable through ordinary pager links and a crawl cookie stores the visitor's position. JavaScript adds viewport measurement, scrolling, range loading, sorting interaction, and efficient replacement of the visible window. A crawler cannot scroll, so do not rely on scrolling alone to expose important content.
+SSR renders a stable paged slice of a collection. With crawlability enabled, the slice is addressable through ordinary pager links and a crawl cookie stores the visitor's position. After successful hydration, `TableView`, `DataGrid`, and `VirtualListView` automatically switch that default fallback to scrolling and retain the server-rendered offset. Setting `paging = true` keeps paging in the browser; an explicit `scrolling = true` also remains available. A crawler cannot scroll, so do not rely on scrolling alone to expose important content.
 
 ## API overview
 

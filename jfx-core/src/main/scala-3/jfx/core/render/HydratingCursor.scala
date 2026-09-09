@@ -38,6 +38,9 @@ final class HydratingCursor private (
   override def completeHydration(): Unit =
     session.complete()
 
+  override def afterHydration(callback: () => Unit): Unit =
+    session.afterComplete(callback)
+
   def claimElement(tag: String): HostElement = {
     val node =
       if (mode == HydrationMode.Head)
@@ -411,6 +414,7 @@ object HydratingCursor {
 
   private final class HydrationSession {
     private val cursors   = scala.collection.mutable.ArrayBuffer.empty[HydratingCursor]
+    private val callbacks = scala.collection.mutable.ArrayBuffer.empty[() => Unit]
     private var completed = false
 
     def isCompleted: Boolean = completed
@@ -424,10 +428,17 @@ object HydratingCursor {
         cursors += cursor
       }
 
+    def afterComplete(callback: () => Unit): Unit =
+      if (completed) callback()
+      else callbacks += callback
+
     def complete(): Unit =
       if (!completed) {
-        completed = true
         cursors.toVector.foreach(_.assertFullyClaimed())
+        completed = true
+        val pending = callbacks.toVector
+        callbacks.clear()
+        pending.foreach(_())
       }
   }
 

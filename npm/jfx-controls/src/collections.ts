@@ -22,6 +22,7 @@ export interface DataGridOptions {
   readonly gapPx?: number;
   readonly overscanRows?: number;
   readonly prefetchItems?: number;
+  /** Keep paging after hydration. Omit or set to false to use browser scrolling. */
   readonly paging?: boolean;
   readonly pageSize?: number;
   /** Header height in grid-card rows. The header itself always spans the full grid width. */
@@ -68,6 +69,7 @@ export interface VirtualListOptions {
   readonly estimateHeightPx?: number;
   readonly overscanPx?: number;
   readonly prefetchItems?: number;
+  /** Keep paging after hydration. Omit or set to false to use browser scrolling. */
   readonly paging?: boolean;
   readonly pageSize?: number;
   /** Minimum header height in estimated item rows. */

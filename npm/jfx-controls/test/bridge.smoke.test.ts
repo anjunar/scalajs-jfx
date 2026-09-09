@@ -55,6 +55,9 @@ beforeAll(() => {
   };
   (globalThis as { ResizeObserver?: unknown }).ResizeObserver ??= noop;
   (globalThis as { IntersectionObserver?: unknown }).IntersectionObserver ??= noop;
+  window.requestAnimationFrame ??= (callback: FrameRequestCallback): number =>
+    window.setTimeout(() => callback(performance.now()), 0);
+  window.cancelAnimationFrame ??= (handle: number): void => window.clearTimeout(handle);
 });
 
 beforeEach(() => {
@@ -226,6 +229,53 @@ describe("table-view", () => {
     const html = withoutAnchors(result.html);
     expect(html).toContain("Remote #1");
     expect(html).toContain("Remote #5");
+  });
+
+  it("pages locally without native navigation after browser enhancement", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const build = (): void => {
+      const books = listProperty<Book>(
+        Array.from({ length: 25 }, (_, index) => ({
+          title: `Book ${index}`,
+          author: "Author",
+        }))
+      );
+      tableView(books, [{ text: "Title", cell: (book) => text(book.title) }], {
+        paging: true,
+        pageSize: 10,
+      });
+    };
+
+    const app = mount(root, build);
+    const pageButtons = root.querySelectorAll<HTMLAnchorElement>("a.jfx-virtualized-page-button");
+    expect(pageButtons).toHaveLength(2);
+    const previous = pageButtons[0]!;
+    const next = pageButtons[1]!;
+
+    expect(previous.getAttribute("aria-disabled")).toBe("true");
+    expect(next.getAttribute("aria-disabled")).toBe("false");
+    expect(next.hasAttribute("href")).toBe(false);
+    expect(root.textContent).toContain("Book 0");
+
+    const stayedOnPage = !next.dispatchEvent(
+      new MouseEvent("click", { bubbles: true, cancelable: true })
+    );
+
+    expect(stayedOnPage).toBe(true);
+    expect(window.location.pathname).toBe("/");
+    expect(root.textContent).not.toContain("Book 0");
+    expect(root.textContent).toContain("Book 10");
+    expect(previous.getAttribute("aria-disabled")).toBe("false");
+
+    const stayedOnSecondPage = !previous.dispatchEvent(
+      new MouseEvent("click", { bubbles: true, cancelable: true })
+    );
+
+    expect(stayedOnSecondPage).toBe(true);
+    expect(root.textContent).toContain("Book 0");
+    app.dispose();
   });
 });
 

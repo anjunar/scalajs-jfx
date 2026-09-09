@@ -360,6 +360,7 @@ final class TableView[S] private (
   override def afterCompose(cursor: Cursor): Unit =
     if (browserRendering) {
       initializeBrowserCrawlState()
+      enableDefaultBrowserScrolling(cursor)
       scheduleViewportMeasure()
       observeHeaderHeight(contentHeaderComponent, contentHeaderHeightProperty)
       observeViewportSize()
@@ -595,7 +596,7 @@ object TableView {
   def paging(using table: TableView[?]): Boolean =
     table.displayModeProperty.get == CollectionDisplayMode.Paging
   def paging_=(value: Boolean)(using table: TableView[?]): Unit =
-    table.displayModeProperty.set(
+    table.configureDisplayMode(
       if (value) CollectionDisplayMode.Paging else CollectionDisplayMode.Scrolling
     )
 

@@ -3,7 +3,12 @@ package jfx.control
 import jfx.control.datagrid.DataGrid
 import jfx.control.table.TableView
 import jfx.control.virtuallist.VirtualListView
-import jfx.control.virtualized.{FixedRowGeometry, ItemGeometry, VirtualizedCollection}
+import jfx.control.virtualized.{
+  CollectionDisplayMode,
+  FixedRowGeometry,
+  ItemGeometry,
+  VirtualizedCollection
+}
 import jfx.core.component.{AbstractComponent, Runtime}
 import jfx.core.dsl.DslLayer
 import jfx.core.layout.Div.div
@@ -144,7 +149,7 @@ class ViewportMeasurementSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "ignore an animation-frame callback after disposal" in {
-    val probe = new MeasurementProbe
+    val probe    = new MeasurementProbe
     var measured = false
 
     probe.dispose()
@@ -153,6 +158,47 @@ class ViewportMeasurementSpec extends AnyFlatSpec with Matchers {
     }
 
     measured shouldBe false
+  }
+
+  "A virtualized collection" should "switch its default paging fallback only after hydration" in {
+    val probe  = new MeasurementProbe
+    val cursor = new BrowserLifecycleCursor(deferred = true)
+
+    probe.initializeBrowserMode(cursor)
+    probe.displayModeNow shouldBe CollectionDisplayMode.Paging
+
+    cursor.completeHydration()
+    probe.displayModeNow shouldBe CollectionDisplayMode.Scrolling
+  }
+
+  it should "keep an explicitly configured paging mode after hydration" in {
+    val probe  = new MeasurementProbe
+    val cursor = new BrowserLifecycleCursor(deferred = true)
+
+    probe.initializeBrowserMode(cursor, explicitPaging = true)
+    cursor.completeHydration()
+
+    probe.displayModeNow shouldBe CollectionDisplayMode.Paging
+  }
+
+  it should "use scrolling immediately for a client-only browser mount" in {
+    val probe = new MeasurementProbe
+
+    probe.initializeBrowserMode(new BrowserLifecycleCursor(deferred = false))
+
+    probe.displayModeNow shouldBe CollectionDisplayMode.Scrolling
+  }
+
+  it should "retain the server-rendered crawl offset when hydration completes later" in {
+    val probe  = new MeasurementProbe(itemCount = 30, crawlOffset = 10)
+    val cursor = new BrowserLifecycleCursor(deferred = true)
+
+    probe.initializeBrowserMode(cursor)
+    probe.measureViewport(800.0, 400.0) // releases the local hydration flag first
+    cursor.completeHydration()
+
+    probe.initialScrollIndexNow shouldBe 10
+    probe.displayModeNow shouldBe CollectionDisplayMode.Scrolling
   }
 
   private def renderer[C]: (C | Null, Int) => AbstractComponent ?=> Cursor ?=> Unit =
@@ -175,7 +221,10 @@ class ViewportMeasurementSpec extends AnyFlatSpec with Matchers {
 
 /** Minimal VirtualizedCollection that observes only whether a measurement notifies its follow-ups.
   */
-private final class MeasurementProbe extends VirtualizedCollection[String](ListProperty[String]()) {
+private final class MeasurementProbe(itemCount: Int = 0, crawlOffset: Int = 0)
+    extends VirtualizedCollection[String](
+      ListProperty(scala.scalajs.js.Array((0 until itemCount).map(_.toString)*))
+    ) {
 
   override val tagName: String = "div"
 
@@ -200,7 +249,50 @@ private final class MeasurementProbe extends VirtualizedCollection[String](ListP
   def startHydrating(): Unit = hydrating = true
   def hydratingNow: Boolean  = hydrating
 
+  override protected def crawlWindow: Option[(Int, Int)] =
+    Option.when(crawlOffset > 0)(crawlOffset -> 5)
+
+  override protected def scheduleViewportMeasure(): Unit = ()
+
+  def initializeBrowserMode(cursor: Cursor, explicitPaging: Boolean = false): Unit = {
+    browserRendering = true
+    hydrating = cursor.isHydrating
+    if (explicitPaging) configureDisplayMode(CollectionDisplayMode.Paging)
+    enableDefaultBrowserScrolling(cursor)
+  }
+
+  def displayModeNow: CollectionDisplayMode = displayModeProperty.get
+  def initialScrollIndexNow: Int            = initialScrollIndex
+
   override def compose(cursor: Cursor): Unit = ()
+}
+
+private final class BrowserLifecycleCursor(deferred: Boolean) extends Cursor {
+
+  private val callbacks = scala.collection.mutable.ArrayBuffer.empty[() => Unit]
+  private var completed = !deferred
+
+  override def isBrowser: Boolean   = true
+  override def isHydrating: Boolean = !completed
+
+  override def afterHydration(callback: () => Unit): Unit =
+    if (completed) callback()
+    else callbacks += callback
+
+  override def completeHydration(): Unit = {
+    completed = true
+    val pending = callbacks.toVector
+    callbacks.clear()
+    pending.foreach(_())
+  }
+
+  override def claimElement(tag: String): jfx.core.render.HostElement =
+    throw new UnsupportedOperationException("BrowserLifecycleCursor does not render")
+
+  override def claimText(initial: String): jfx.core.render.TextNode =
+    throw new UnsupportedOperationException("BrowserLifecycleCursor does not render")
+
+  override def sub(host: jfx.core.render.HostElement): Cursor = this
 }
 
 /** TableView adds two follow-ups to inherited counters: bumpRemoteState triggers bumpHeaderState,

@@ -24,6 +24,14 @@ trait Cursor {
     */
   def completeHydration(): Unit = ()
 
+  /** Runs work once the complete server-rendered tree has been claimed successfully.
+    *
+    * Ordinary cursors are already past hydration and run the callback immediately. A
+    * [[HydratingCursor]] defers it until [[completeHydration]], after all claim checks passed. This
+    * is the boundary for browser-only state changes whose initial DOM must still match SSR.
+    */
+  def afterHydration(callback: () => Unit): Unit = callback()
+
   def claimElement(tag: String): HostElement
 
   def claimText(initial: String): TextNode

@@ -194,6 +194,7 @@ final class VirtualListView[T] private (
   override def afterCompose(cursor: Cursor): Unit =
     if (browserRendering) {
       initializeBrowserCrawlState()
+      enableDefaultBrowserScrolling(cursor)
       scheduleViewportMeasure()
       observeHeaderHeight(headerComponent, headerHeightProperty)
       observeViewportSize()
@@ -371,7 +372,7 @@ object VirtualListView {
   def paging(using list: VirtualListView[?]): Boolean =
     list.displayModeProperty.get == CollectionDisplayMode.Paging
   def paging_=(value: Boolean)(using list: VirtualListView[?]): Unit =
-    list.displayModeProperty.set(
+    list.configureDisplayMode(
       if (value) CollectionDisplayMode.Paging else CollectionDisplayMode.Scrolling
     )
 

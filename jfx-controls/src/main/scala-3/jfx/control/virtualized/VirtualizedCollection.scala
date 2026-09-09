@@ -83,11 +83,12 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
   protected var viewportComponent: Div | Null   = null
 
   protected var viewportMeasureScheduled = false
-  private var viewportMeasureFrame        = 0
+  private var viewportMeasureFrame       = 0
   protected var browserRendering         = false
   protected var hydrating                = false
   protected var initialScrollIndex       = -1
   protected var urlPagingStatePresent    = false
+  private var displayModeConfigured      = false
 
   /** The item list as a remote list, or null.
     */
@@ -103,6 +104,12 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
   protected def pagingUrlKey: String = getClass.getSimpleName.stripSuffix("$").toLowerCase
 
   protected def isPaging: Boolean = displayModeProperty.get == CollectionDisplayMode.Paging
+
+  /** Records an explicit API choice so automatic browser enhancement does not override it. */
+  private[control] def configureDisplayMode(mode: CollectionDisplayMode): Unit = {
+    displayModeConfigured = true
+    displayModeProperty.set(mode)
+  }
 
   protected def pageSize: Int = math.max(1, pageSizeProperty.get)
 
@@ -151,13 +158,11 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
 
     pageSizeProperty.set(limit)
     if (requestedOffset.nonEmpty) pageIndexProperty.set(offset / limit)
-    displayModeProperty.set(
-      mode match {
-        case Some("scroll") => CollectionDisplayMode.Scrolling
-        case Some("page")   => CollectionDisplayMode.Paging
-        case _              => displayModeProperty.get
-      }
-    )
+    mode match {
+      case Some("scroll") => configureDisplayMode(CollectionDisplayMode.Scrolling)
+      case Some("page")   => configureDisplayMode(CollectionDisplayMode.Paging)
+      case _              => ()
+    }
 
     if (!isPaging && offset > 0) {
       initialScrollIndex = offset
@@ -200,33 +205,54 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
   }
 
   protected def setPageOffset(offset: Int): Unit = {
+    configureDisplayMode(CollectionDisplayMode.Paging)
     val nextOffset = pageIndexForOffset(offset) * pageSize
     pageIndexProperty.set(pageIndexForOffset(nextOffset))
     scrollTopProperty.set(0.0)
     requestPageLoad(pageStart, pageStart + pageSize)
-    navigatePagingUrl(nextOffset, scrolling = false)
     recomputeVisible()
   }
 
   protected def toggleDisplayMode(): Unit = {
     if (isPaging) {
-      displayModeProperty.set(CollectionDisplayMode.Scrolling)
+      configureDisplayMode(CollectionDisplayMode.Scrolling)
       val offset = pageStart
       scrollTopProperty.set(topForIndex(offset))
       domElement(viewportComponent).foreach(_.scrollTop = scrollTopProperty.get)
-      navigatePagingUrl(pageStart, scrolling = true)
     } else {
       val offset =
         geometry.indexForOffset(math.max(0.0, scrollTopProperty.get - geometry.headerOffset))
       val nextPage = math.max(0, offset / pageSize)
       pageIndexProperty.set(nextPage)
-      displayModeProperty.set(CollectionDisplayMode.Paging)
+      configureDisplayMode(CollectionDisplayMode.Paging)
       scrollTopProperty.set(0.0)
       domElement(viewportComponent).foreach(_.scrollTop = 0.0)
-      navigatePagingUrl(nextPage * pageSize, scrolling = false)
       recomputeVisible()
     }
   }
+
+  /** Enhances the SSR paging fallback to scrolling after successful hydration.
+    *
+    * The rendered slice and footer must remain unchanged while HydratingCursor claims them. The
+    * callback therefore crosses the real hydration-completion boundary rather than relying on an
+    * animation-frame timing guess. Explicit DSL/bridge choices and URL modes keep their requested
+    * behavior. Client-only mounts run the same transition immediately.
+    */
+  protected def enableDefaultBrowserScrolling(cursor: jfx.core.render.Cursor): Unit =
+    if (browserRendering && !displayModeConfigured && isPaging) {
+      // Capture this while the control still exposes the exact SSR slice. A viewport measurement
+      // may release the control's local `hydrating` flag before an async hydration session as a
+      // whole has completed.
+      val total         = displayItemCount
+      val initialOffset = if (total <= 0) 0 else visibleRange(total)._1
+      cursor.afterHydration { () =>
+        if (!isDisposed && !displayModeConfigured && isPaging) {
+          initialScrollIndex = initialOffset
+          displayModeProperty.set(CollectionDisplayMode.Scrolling)
+          scheduleViewportMeasure()
+        }
+      }
+    }
 
   protected def renderPagingFooter(
       cssPrefix: String
@@ -234,14 +260,14 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
     div {
       classes = Seq(s"$cssPrefix-footer", "jfx-virtualized-footer")
 
-      renderPagingControl("Previous", pageStart - pageSize, hasPreviousPage)
+      renderPagingControl("Previous", pageDelta = -1)
 
       div {
         classes = Seq("jfx-virtualized-page-status")
         text(pageStatusProperty) {}
       }
 
-      renderPagingControl("Next", pageStart + pageSize, hasNextPage)
+      renderPagingControl("Next", pageDelta = 1)
 
       button(
         displayModeProperty.map {
@@ -259,26 +285,49 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
     * link with a button because it claims the existing DOM tree. An enabled link still gets the
     * client-side pager behavior after hydration; without JavaScript its href remains usable.
     */
-  private def renderPagingControl(label: String, offset: Int, enabled: Boolean)(using
-      AbstractComponent,
-      jfx.core.render.Cursor
+  private def renderPagingControl(label: String, pageDelta: Int)(using
+      parent: AbstractComponent,
+      cursor: jfx.core.render.Cursor
   ): Unit =
-    pagingHref(offset, scrolling = false) match {
-      case Some(target) if enabled =>
-        anchor(label) {
-          classes = Seq("jfx-virtualized-page-button")
-          href = target
-          if (browserRendering)
-            onClick { event =>
-              event.preventDefault()
-              setPageOffset(offset)
-            }
+    anchor(label) { link ?=>
+      classes = Seq("jfx-virtualized-page-button")
+      setAttribute("role", "button")
+
+      var browserEnhanced = false
+
+      def enabled: Boolean =
+        if (pageDelta < 0) hasPreviousPage else hasNextPage
+
+      def offset: Int = pageStart + pageDelta * pageSize
+
+      def updateState(): Unit = {
+        val active = enabled
+        link.setAttribute("aria-disabled", (!active).toString)
+        link.setAttribute("tabindex", if (active) "0" else "-1")
+
+        if (active && !browserEnhanced) {
+          pagingHref(offset) match {
+            case Some(target) => link.href = target
+            case None         => link.removeAttribute("href")
+          }
+        } else link.removeAttribute("href")
+      }
+
+      link.addDisposable(itemStateRevisionProperty.observe(_ => updateState()))
+
+      if (browserRendering) {
+        onClick { event =>
+          event.preventDefault()
+          if (enabled) setPageOffset(offset)
         }
-      case _ =>
-        button(label) {
-          classes = Seq("jfx-virtualized-page-button")
-          disabled = true
+
+        cursor.afterHydration { () =>
+          if (!link.isDisposed) {
+            browserEnhanced = true
+            updateState()
+          }
         }
+      }
     }
 
   protected def requestPageLoad(start: Int, end: Int): Unit =
@@ -295,19 +344,14 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
       }
     }
 
-  private def navigatePagingUrl(offset: Int, scrolling: Boolean): Unit =
-    UrlScope.current(using this).foreach { scope =>
-      pagingHref(offset, scrolling).foreach(next => scope.navigate(next, replace = false))
-    }
-
-  private def pagingHref(offset: Int, scrolling: Boolean): Option[String] =
+  private def pagingHref(offset: Int): Option[String] =
     UrlScope.current(using this).map { scope =>
       val normalizedOffset = math.max(0, offset / pageSize) * pageSize
       val withOffset       =
         replaceQueryParameter(scope.url, s"$pagingUrlKey.offset", normalizedOffset.toString)
-      val withLimit = replaceQueryParameter(withOffset, s"$pagingUrlKey.limit", pageSize.toString)
-      if (scrolling) replaceQueryParameter(withLimit, s"$pagingUrlKey.mode", "scroll")
-      else removeQueryParameter(withLimit, s"$pagingUrlKey.mode")
+      val withLimit =
+        replaceQueryParameter(withOffset, s"$pagingUrlKey.limit", pageSize.toString)
+      removeQueryParameter(withLimit, s"$pagingUrlKey.mode")
     }
 
   private def queryValue(url: String, name: String): Option[String] =

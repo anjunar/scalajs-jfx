@@ -26,6 +26,7 @@ class DataGridSpec extends AnyFlatSpec with Matchers {
     }
 
     html should include("jfx-data-grid")
+    html should not include "jfx-data-grid-header-slot"
     html should include("0:Item 0")
     html should include("9:Item 9")
     html should not include "10:Item 10"
