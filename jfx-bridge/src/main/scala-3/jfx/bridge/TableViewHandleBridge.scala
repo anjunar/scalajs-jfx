@@ -6,8 +6,14 @@ import scala.scalajs.js.JSConverters.*
 
 /** Minimal imperative table contract; all operations remain owned by the Scala component. */
 final class TableViewHandleBridge(private val table: TableView[js.Any]) extends js.Object {
-  private val model = table.selectionModel
-  val columnWidths  = new ReadOnlyPropertyHandle(table.renderedWidthsProperty.map(_.toJSArray))
+  private val model                   = table.selectionModel
+  val focusedIndex                    = new ReadOnlyPropertyHandle(table.focusedIndexProperty)
+  val focusedItem                     = new ReadOnlyPropertyHandle(table.focusedItemProperty)
+  def focusIndex(index: Double): Unit =
+    table.focusModel.focus(if (validIndex(index)) index.toInt else -1)
+  def focusNext(): Unit     = table.focusModel.focusNext()
+  def focusPrevious(): Unit = table.focusModel.focusPrevious()
+  val columnWidths = new ReadOnlyPropertyHandle(table.renderedWidthsProperty.map(_.toJSArray))
   def autoFitColumn(index: Double): Boolean =
     validIndex(index) && table.autoFitColumn(table.getVisibleLeafColumn(index.toInt))
   def moveColumn(from: Double, to: Double): Boolean =

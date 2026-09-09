@@ -38,9 +38,16 @@ class TableCell[S, T] extends AbstractComponent {
   override final def compose(cursor: Cursor): Unit =
     DslLayer.render(this, cursor) {
       addClass("jfx-table-cell")
+      setAttribute("role", "gridcell")
       classIf("jfx-table-cell-empty", emptyProperty)
       for (column <- Option(boundColumn); table <- Option(tableView)) {
         table.registerCell(this)
+        addDisposable(
+          table.visibleLeafColumns.observe(_ =>
+            if (!isDisposed)
+              setAttribute("aria-colindex", (table.getVisibleLeafIndex(column) + 1).toString)
+          )
+        )
         classIf("jfx-table-cell-last", table.visibleLeafColumns.map(_.lastOption.contains(column)))
         if (emptyProperty.get) addClass("jfx-table-cell-loading-placeholder")
         val widthProperty = table.renderedWidthsProperty.map { widths =>

@@ -330,8 +330,38 @@ virtualList(source, (item, index) => text(item === null ? `Loading ${index}` : i
 ```
 
 `crawlable` and `crawlId` render a deterministic server slice with ordinary pager links.
-Table selection, row navigation and refresh are available through its handle;
+Table selection, logical row focus, navigation and refresh are available through its handle;
 data-grid/list selection handles are not projected by this facade yet.
+
+### Row focus and keyboard navigation
+
+`table.focusIndex(index)`, `focusNext()` and `focusPrevious()` update `focusedIndex` and
+`focusedItem` independently of selection. These are logical model operations: they do not scroll,
+fetch remote data or take DOM focus. Invalid indices clear focus (`-1`/null); unloaded known
+positions have an index and null item until loaded. Previous at the beginning does nothing;
+next from no focus chooses the first row. Operations are inert after disposal.
+
+The grid is a native tab stop. On focus it restores logical focus, or starts at the selected row /
+first row. A background row click focuses the grid and selects the row. Embedded inputs, buttons,
+links, contenteditable and other focusable controls keep their own interaction; header, resize
+and menu controls also retain their own keys. Logical focus survives leaving the grid, but the
+row outline is shown only while the grid itself has DOM focus.
+
+- Up/Down, Home/End, PageUp/PageDown move focus, select the destination and reveal it.
+- Ctrl/Cmd with navigation moves focus without changing selection.
+- Shift extends the anchored selection; Ctrl/Cmd+Shift adds the range to the selection.
+- Space selects; Ctrl/Cmd+Space toggles. Ctrl/Cmd+A selects all in multiple-selection mode.
+- Tab retains native navigation. Alt-modified, canceled and IME-composition keys are ignored.
+
+Page movement uses the measured viewport height with one row of overlap (minimum one row).
+Paging remains paging; remote targets load through normal row navigation. Structural list edits
+rebase focused occurrences; removal clears focus. A reset preserves only unique reference identity;
+an accepted remote query replacement clears focus. `row.focused` exposes logical row state to
+custom renderers. Native focus stays on the grid as virtual rows enter/leave; `aria-activedescendant`
+only references mounted rows, with browser IDs installed after hydration without stealing focus.
+Grid/row/cell/header roles, row/column counts and indices accompany this first accessibility layer.
+Cell focus/selection, replaceable focus models, sort announcements and full screenreader/IME
+acceptance are still pending. Runtime-managed row IDs are reserved for active-descendant ownership.
 
 `table.scrollToIndex(499)` reveals the 500th row in absolute view coordinates;
 `table.scrollToItem(item)` reveals the first matching loaded item. Neither changes selection,

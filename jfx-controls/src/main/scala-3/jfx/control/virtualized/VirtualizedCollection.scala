@@ -296,7 +296,7 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
   ): Unit =
     anchor(label) { link ?=>
       classes = Seq("jfx-virtualized-page-button")
-      setAttribute("role", "button")
+      link.setAttribute("role", "button")
 
       var browserEnhanced = false
 

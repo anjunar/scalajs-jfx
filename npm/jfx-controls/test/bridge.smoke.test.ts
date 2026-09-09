@@ -687,6 +687,187 @@ describe("table-view", () => {
     return viewport;
   }
 
+  it("keeps logical focus independent and navigates/selects rows with keyboard modifiers", async () => {
+    const root = document.createElement("div"); document.body.appendChild(root);
+    let table!: TableViewHandle<number>;
+    const app = mount(root, () => {
+      table = tableView(listProperty(Array.from({ length: 100 }, (_, index) => index)),
+        [valueColumn("ID", row => row)], { paging: false, rowHeight: 20, selectionMode: "multiple" });
+    });
+    try {
+      const viewport = measureTable(root);
+      window.dispatchEvent(new Event("resize"));
+      await new Promise(resolve => setTimeout(resolve, 40));
+      const grid = root.querySelector<HTMLElement>("[role=grid]")!;
+      const key = (value: string, options: KeyboardEventInit = {}): KeyboardEvent => {
+        const event = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: value, ...options });
+        grid.dispatchEvent(event); return event;
+      };
+      table.selectIndex(2); table.focusIndex(4);
+      expect(table.focusedItem.get).toBe(4); expect(table.selectedIndex.get).toBe(2);
+      expect(viewport.scrollTop).toBe(0); expect(document.activeElement).not.toBe(grid);
+      grid.focus(); expect(table.focusedIndex.get).toBe(4);
+      expect(key("ArrowDown").defaultPrevented).toBe(true);
+      expect(table.focusedIndex.get).toBe(5); expect(table.selectedIndices.get).toEqual([5]);
+      key("ArrowDown", { ctrlKey: true });
+      expect(table.focusedIndex.get).toBe(6); expect(table.selectedIndices.get).toEqual([5]);
+      key("ArrowDown", { shiftKey: true }); expect(table.selectedIndices.get).toEqual([5, 6, 7]);
+      key("ArrowUp", { shiftKey: true }); expect(table.selectedIndices.get).toEqual([5, 6]);
+      key("End", { metaKey: true }); expect(table.focusedIndex.get).toBe(99);
+      expect(table.selectedIndices.get).toEqual([5, 6]);
+      key(" ", { ctrlKey: true }); expect(table.selectedIndices.get).toEqual([5, 6, 99]);
+      key("Home"); expect(table.focusedIndex.get).toBe(0); expect(table.selectedIndices.get).toEqual([0]);
+      key("PageDown"); expect(table.focusedIndex.get).toBe(4);
+      key("PageUp"); expect(table.focusedIndex.get).toBe(0);
+      key("a", { ctrlKey: true }); expect(table.selectedIndices.get).toHaveLength(100);
+      expect(grid.getAttribute("aria-rowcount")).toBe("101");
+      expect(grid.getAttribute("aria-colcount")).toBe("1");
+      const active = document.getElementById(grid.getAttribute("aria-activedescendant")!);
+      expect(active?.getAttribute("aria-rowindex")).toBe("2");
+      expect(active?.classList.contains("jfx-table-row-focused")).toBe(true);
+      expect(document.activeElement).toBe(grid);
+      table.focusIndex(90); // Offscreen logical focus does not leave a stale ARIA reference.
+      expect(grid.hasAttribute("aria-activedescendant")).toBe(false);
+      for (const invalid of [-1, 0.5, NaN, Infinity, 2 ** 32]) {
+        table.focusIndex(invalid); expect(table.focusedIndex.get).toBe(-1);
+      }
+      table.focusNext(); expect(table.focusedIndex.get).toBe(0);
+      table.focusPrevious(); expect(table.focusedIndex.get).toBe(0);
+      app.dispose(); table.focusIndex(9); expect(table.focusedIndex.get).toBe(0);
+    } finally { app.dispose(); root.remove(); }
+  });
+
+  it("anchors Shift from focus, respects single selection and clears focus when data becomes empty", () => {
+    const rows = listProperty([0, 1, 2]);
+    const root = document.createElement("div"); document.body.appendChild(root);
+    let table!: TableViewHandle<number>;
+    const app = mount(root, () => {
+      table = tableView(rows, [valueColumn("ID", row => row)], {
+        paging: true, selectionMode: "multiple", row: row => {
+          attr("data-focused", row.focused.map(String)); row.renderCells();
+        },
+      });
+    });
+    try {
+      const grid = root.querySelector<HTMLElement>("[role=grid]")!; grid.focus();
+      grid.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "ArrowDown", shiftKey: true }));
+      expect(table.selectedIndices.get).toEqual([0, 1]);
+      expect(root.querySelectorAll('[data-focused="true"]')).toHaveLength(1);
+      table.setSelectionMode("single");
+      grid.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "End", shiftKey: true }));
+      expect(table.selectedIndices.get).toEqual([2]);
+      expect(grid.getAttribute("aria-multiselectable")).toBe("false");
+      rows.clear();
+      expect(table.focusedIndex.get).toBe(-1); expect(table.focusedItem.get).toBeNull();
+      expect(grid.hasAttribute("aria-activedescendant")).toBe(false);
+      expect(grid.getAttribute("aria-rowcount")).toBe("1");
+      const key = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "ArrowDown" });
+      grid.dispatchEvent(key); expect(key.defaultPrevented).toBe(false);
+      expect(table.focusedIndex.get).toBe(-1);
+    } finally { app.dispose(); root.remove(); }
+  });
+
+  it("leaves editors, nested controls, headers, composition and canceled keys alone", () => {
+    const root = document.createElement("div"); document.body.appendChild(root);
+    let table!: TableViewHandle<number>;
+    const app = mount(root, () => {
+      table = tableView(listProperty([0, 1, 2]), [{ text: "Editor", cell: () => {
+        element("input")(() => attr("value", "Ada"));
+        element("button")(() => text("Action"));
+      } }], { paging: true });
+    });
+    try {
+      const grid = root.querySelector<HTMLElement>("[role=grid]")!;
+      const editor = root.querySelector<HTMLInputElement>("input")!;
+      editor.focus(); editor.setSelectionRange(0, 2, "backward"); editor.click();
+      const key = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "ArrowDown" });
+      editor.dispatchEvent(key);
+      expect(key.defaultPrevented).toBe(false);
+      expect(table.focusedIndex.get).toBe(-1); expect(table.selectedIndex.get).toBe(-1);
+      expect(document.activeElement).toBe(editor);
+      expect(editor.selectionDirection).toBe("backward");
+      root.querySelector<HTMLButtonElement>(".jfx-table-cell button")!.click();
+      expect(table.focusedIndex.get).toBe(-1);
+      const headerKey = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "ArrowDown" });
+      root.querySelector(".jfx-table-header-cell")!.dispatchEvent(headerKey);
+      expect(headerKey.defaultPrevented).toBe(false);
+      grid.focus();
+      for (const options of [{ isComposing: true }, { altKey: true }]) {
+        const event = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "ArrowDown", ...options });
+        grid.dispatchEvent(event); expect(event.defaultPrevented).toBe(false);
+      }
+      const canceled = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "ArrowDown" });
+      canceled.preventDefault(); grid.dispatchEvent(canceled);
+      expect(table.focusedIndex.get).toBe(0);
+      editor.dispatchEvent(new CompositionEvent("compositionstart", { bubbles: true }));
+      grid.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "End" }));
+      expect(table.focusedIndex.get).toBe(0);
+      editor.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true }));
+      root.querySelectorAll<HTMLElement>(".jfx-table-cell")[2]!.click();
+      expect(table.focusedIndex.get).toBe(2); expect(document.activeElement).toBe(grid);
+    } finally { app.dispose(); root.remove(); }
+  });
+
+  it("focuses remote gaps without fetching and uses paging navigation to materialize the focused row", async () => {
+    type Query = { offset: number; limit: number };
+    const requests: { query: Query; resolve: (page: RemotePage<string, Query>) => void }[] = [];
+    const source = remoteSource<string, Query>({
+      initialQuery: { offset: 0, limit: 10 }, initial: Array.from({ length: 10 }, (_, i) => `Row ${i}`),
+      totalCount: 100, rangeQuery: (query, offset, limit) => ({ offset, limit }),
+      load: query => new Promise(resolve => requests.push({ query, resolve })),
+    });
+    const root = document.createElement("div"); document.body.appendChild(root);
+    let table!: TableViewHandle<string>;
+    const app = mount(root, () => {
+      table = tableView(source, [valueColumn("ID", row => row)], { paging: true, pageSize: 10, rowHeight: 20 });
+    });
+    try {
+      measureTable(root);
+      table.focusIndex(55);
+      expect(table.focusedIndex.get).toBe(55); expect(table.focusedItem.get).toBeNull();
+      expect(table.selectedIndex.get).toBe(-1); expect(requests).toHaveLength(0);
+      const grid = root.querySelector<HTMLElement>("[role=grid]")!;
+      grid.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "End" }));
+      expect(table.focusedIndex.get).toBe(99); expect(table.focusedItem.get).toBeNull();
+      expect(table.selectedIndex.get).toBe(99);
+      await vi.waitFor(() => expect(requests.some(r => r.query.offset <= 99 && r.query.offset + r.query.limit > 99)).toBe(true));
+      for (const request of requests.slice()) request.resolve({
+        items: Array.from({ length: request.query.limit }, (_, i) => `Row ${request.query.offset + i}`),
+        offset: request.query.offset, totalCount: 100,
+      });
+      await vi.waitFor(() => expect(table.focusedItem.get).toBe("Row 99"));
+      const active = document.getElementById(grid.getAttribute("aria-activedescendant")!);
+      expect(active?.textContent).toBe("Row 99");
+      expect(root.textContent).toContain("Page 10 of 10");
+      expect(root.querySelector(".jfx-table-viewport")!.getAttribute("style")).toContain("overflow-y: hidden");
+    } finally { app.dispose(); root.remove(); }
+  });
+
+  it("hydrates logical focus without stealing DOM focus and maintains unique active row IDs", async () => {
+    let table!: TableViewHandle<number>;
+    const build = (): void => {
+      table = tableView(listProperty([0, 1, 2]), [valueColumn("ID", row => row)], { paging: true });
+      table.focusIndex(1);
+    };
+    const rendered = await renderToString(build);
+    const root = document.createElement("div"); root.innerHTML = rendered.html; document.body.appendChild(root);
+    const grid = root.querySelector<HTMLElement>("[role=grid]")!;
+    const row = root.querySelectorAll(".jfx-table-row")[1];
+    expect(grid.hasAttribute("aria-activedescendant")).toBe(false);
+    const previousFocus = document.activeElement;
+    const app = await hydrate(root, build);
+    const second = document.createElement("div"); document.body.appendChild(second);
+    const other = mount(second, build);
+    try {
+      expect(root.querySelector("[role=grid]")).toBe(grid);
+      expect(root.querySelectorAll(".jfx-table-row")[1]).toBe(row);
+      expect(document.activeElement).toBe(previousFocus);
+      expect(document.getElementById(grid.getAttribute("aria-activedescendant")!)).toBe(row);
+      expect(second.querySelector("[role=grid]")!.getAttribute("aria-activedescendant"))
+        .not.toBe(grid.getAttribute("aria-activedescendant"));
+    } finally { app.dispose(); other.dispose(); root.remove(); second.remove(); }
+  });
+
   it("reveals visible columns using current widths/order without changing rows, editors or selection", () => {
     const root = document.createElement("div"); document.body.appendChild(root);
     const visible = property(true);
@@ -1215,6 +1396,7 @@ describe("table-view", () => {
     });
     try {
       table.selectIndex(55);
+      table.focusIndex(55);
       const selected = table.selectedItem.get;
       await vi.waitFor(() => expect(requests.some(({ query }) => query.offset === 0)).toBe(true));
       // Query objects are application-defined; multiple initial range requests may be in flight.
@@ -1226,6 +1408,7 @@ describe("table-view", () => {
       expect(table.selectedIndex.get).toBe(55);
       expect(table.selectedItem.get).toBe(selected);
       const beforeSort = requests.length;
+      expect(table.focusedIndex.get).toBe(55); expect(table.focusedItem.get).toBe(selected);
       root.querySelector(".jfx-table-header-cell")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
       await vi.waitFor(() => expect(requests.length).toBeGreaterThan(beforeSort));
       expect(table.selectedItem.get).toBe(selected);
@@ -1235,6 +1418,7 @@ describe("table-view", () => {
       await vi.waitFor(() => expect(root.textContent).toContain("Sorted"));
       expect(table.selectedIndex.get).toBe(-1);
       expect(table.selectedItem.get).toBeNull();
+      expect(table.focusedIndex.get).toBe(-1); expect(table.focusedItem.get).toBeNull();
     } finally {
       app.dispose();
     }

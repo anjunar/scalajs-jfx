@@ -73,6 +73,8 @@ export interface TableRowContext<T> {
   readonly index: ReadOnlyProperty<number>;
   readonly empty: ReadOnlyProperty<boolean>;
   readonly selected: ReadOnlyProperty<boolean>;
+  /** Logical row focus; independent of selection and whether the grid owns DOM focus. */
+  readonly focused: ReadOnlyProperty<boolean>;
   /** Optional standard cells. Call at most once, synchronously in this row body or a nested element. */
   renderCells(): void;
 }
@@ -113,8 +115,17 @@ export interface TableViewOptions<T = unknown> {
   readonly placeholder?: () => void;
 }
 
-/** Runtime-owned row selection, row navigation and refresh. Cell selection and focus remain pending. */
+/** Runtime-owned row selection, row focus, navigation and refresh. Cell coordinates remain pending. */
 export interface TableViewHandle<T = unknown> {
+  /** Logical row focus. A known unloaded position has a null focusedItem. */
+  readonly focusedIndex: ReadOnlyProperty<number>;
+  readonly focusedItem: ReadOnlyProperty<T | null>;
+  /** Changes only logical focus: no selection, scrolling, DOM focus or remote fetch.
+   * Invalid indices clear focus; all focus operations are no-ops after disposal.
+   */
+  focusIndex(index: number): void;
+  focusNext(): void;
+  focusPrevious(): void;
   /** Rendered widths in visible-column order; independent read-only snapshots. */
   readonly columnWidths: ReadOnlyProperty<readonly number[]>;
   /** Resizes a visible column by a pixel delta; true if any movement was possible. */
@@ -191,7 +202,7 @@ export function tableView<T, Q = unknown>(
       row: options.row
         ? (row: Omit<TableRowContext<T>, "renderCells">, self: ComponentHandle, scope: ScopeHandle,
            cells: (scope: ScopeHandle) => void) => withScope(scope, self, () => options.row!({
-             item: row.item, index: row.index, empty: row.empty, selected: row.selected,
+             item: row.item, index: row.index, empty: row.empty, selected: row.selected, focused: row.focused,
              renderCells: () => cells(currentScope()),
            }))
         : undefined,

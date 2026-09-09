@@ -1,6 +1,8 @@
 import { catalogEntry, i18n, type CatalogEntry } from "@anjunar/jfx-core";
 
 export const entries: readonly CatalogEntry[] = [
+  catalogEntry(i18n`Focus the table: arrows, Home/End and PageUp/PageDown navigate rows. Shift extends selection; Ctrl/Cmd moves focus only; Space selects.`, { de: "Tabelle fokussieren: Pfeile, Pos1/Ende und Bild auf/ab navigieren. Shift erweitert die Auswahl; Ctrl/Cmd bewegt nur den Fokus; Leertaste wählt aus." }),
+  catalogEntry(i18n`Focused row`, { de: "Fokussierte Zeile" }),
   catalogEntry(i18n`For horizontal navigation, use free widths and widen the columns.`, { de: "Für horizontale Navigation auf freie Breiten umschalten und die Spalten verbreitern." }),
   catalogEntry(i18n`Show first column`, { de: "Erste Spalte anzeigen" }),
   catalogEntry(i18n`Show last column`, { de: "Letzte Spalte anzeigen" }),

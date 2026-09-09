@@ -88,12 +88,17 @@ final class TableSelectionModel[S] private[table] (table: TableView[S]) {
     if (valid(previous)) select(previous)
   }
 
-  private[table] def click(index: Int, toggle: Boolean, extend: Boolean): Unit = {
+  private[table] def click(
+      index: Int,
+      toggle: Boolean,
+      extend: Boolean,
+      fallbackAnchor: Int = -1
+  ): Unit = {
     if (table.isDisposed || !valid(index)) return
+    val anchor = if (valid(state.get.anchor)) state.get.anchor else fallbackAnchor
     if (selectionMode == TableSelectionMode.Single) clearAndSelect(index)
-    else if (extend && valid(state.get.anchor)) {
-      val anchor = state.get.anchor
-      val range  = math.min(anchor, index) to math.max(anchor, index)
+    else if (extend && valid(anchor)) {
+      val range = math.min(anchor, index) to math.max(anchor, index)
       publish(if (toggle) state.get.indices ++ range else range, index, anchor)
     } else if (toggle && isSelected(index)) {
       publish(state.get.indices.filterNot(_ == index), state.get.lead, index)

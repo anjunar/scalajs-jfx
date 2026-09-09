@@ -5,7 +5,7 @@ import jfx.core.dsl.ClassDsl.{addClass, classIf}
 import jfx.core.dsl.DslLayer
 import jfx.core.dsl.EventDsl.{onClick, onDoubleClick}
 import jfx.core.dsl.StyleDsl.*
-import jfx.core.render.Cursor
+import jfx.core.render.{Cursor, DomHostElement}
 import jfx.core.state.{Property, ReadOnlyProperty}
 import jfx.core.statement.DynamicComponentRenderer.dynamic
 import org.scalajs.dom
@@ -21,6 +21,8 @@ class TableRow[S] private[control] (
   private val indexState                          = Property(-1)
   private val emptyState                          = Property(true)
   private val selectedState                       = Property(false)
+  private val focusedState                        = Property(false)
+  val focusedProperty: ReadOnlyProperty[Boolean]  = focusedState
   val itemProperty: ReadOnlyProperty[S | Null]    = itemState
   val indexProperty: ReadOnlyProperty[Int]        = indexState
   val emptyProperty: ReadOnlyProperty[Boolean]    = emptyState
@@ -37,6 +39,18 @@ class TableRow[S] private[control] (
 
     DslLayer.render(this, cursor) {
       addClass("jfx-table-row")
+      setAttribute("role", "row")
+      val owner = requireTableView()
+      addDisposable(
+        owner.showHeaderProperty.observe(show =>
+          setAttribute("aria-rowindex", (indexProperty.get.toLong + (if (show) 2 else 1)).toString)
+        )
+      )
+      addDisposable(
+        owner.focusedIndexProperty.observe(index => focusedState.set(index == indexProperty.get))
+      )
+      classIf("jfx-table-row-focused", focusedProperty)
+      if (cursor.isBrowser) owner.registerRow(this)
       if (indexProperty.get % 2 == 0) addClass("jfx-table-row-even")
       else addClass("jfx-table-row-odd")
 
@@ -64,12 +78,16 @@ class TableRow[S] private[control] (
 
         onClick { event =>
           if (cursor.isBrowser && event.raw != null) {
-            val mouse = event.raw.asInstanceOf[dom.MouseEvent]
-            table.selectionModel.click(
-              indexProperty.get,
-              mouse.ctrlKey || mouse.metaKey,
-              mouse.shiftKey
-            )
+            val mouse   = event.raw.asInstanceOf[dom.MouseEvent]
+            val element = host.asInstanceOf[DomHostElement].node.asInstanceOf[dom.Element]
+            if (TableRowKeyboard.isRowBackground(mouse, element) && table.canMoveColumns) {
+              table.selectionModel.click(
+                indexProperty.get,
+                mouse.ctrlKey || mouse.metaKey,
+                mouse.shiftKey
+              )
+              table.focusRowFromPointer(indexProperty.get)
+            }
           } else table.selectionModel.click(indexProperty.get, toggle = false, extend = false)
         }
         onDoubleClick { _ =>

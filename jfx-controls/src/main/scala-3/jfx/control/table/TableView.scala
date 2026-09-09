@@ -64,9 +64,12 @@ final class TableView[S] private (
   val columnResizePolicyProperty: Property[ColumnResizePolicy] = Property(
     ColumnResizePolicy.FlexLastColumn
   )
-  private val userColumnWidths                     = mutable.Map.empty[TableColumn[S, ?], Double]
-  val selectionModel                               = new TableSelectionModel(this)
-  val selectedIndexProperty: ReadOnlyProperty[Int] = selectionModel.selectedIndexProperty
+  private val userColumnWidths                        = mutable.Map.empty[TableColumn[S, ?], Double]
+  val selectionModel                                  = new TableSelectionModel(this)
+  val focusModel                                      = new TableFocusModel(this)
+  val focusedIndexProperty: ReadOnlyProperty[Int]     = focusModel.focusedIndexProperty
+  val focusedItemProperty: ReadOnlyProperty[S | Null] = focusModel.focusedItemProperty
+  val selectedIndexProperty: ReadOnlyProperty[Int]    = selectionModel.selectedIndexProperty
   val selectedItemProperty: ReadOnlyProperty[S | Null]       = selectionModel.selectedItemProperty
   val selectedIndicesProperty: ReadOnlyProperty[Vector[Int]] =
     selectionModel.selectedIndicesProperty
@@ -86,10 +89,12 @@ final class TableView[S] private (
   private var placeholderBody: Option[AbstractComponent ?=> Cursor ?=> Unit]   = None
   private var contentHeaderComponent: Div | Null                               = null
   private var scrollNavigationMounted                                          = false
-  private var pendingScrollIndex: Option[Int]                                  = None
-  private var pendingScrollColumn: Option[TableColumn[S, ?]]                   = None
-  private var pendingColumnMove: Option[(TableColumn[S, ?], Int)]              = None
-  private var pendingAutoFit: Option[TableColumn[S, ?]]                        = None
+  private val mountedRows                                    = mutable.Map.empty[Int, TableRow[S]]
+  private var rowFocusPrefix: Option[String]                 = None
+  private var pendingScrollIndex: Option[Int]                = None
+  private var pendingScrollColumn: Option[TableColumn[S, ?]] = None
+  private var pendingColumnMove: Option[(TableColumn[S, ?], Int)] = None
+  private var pendingAutoFit: Option[TableColumn[S, ?]]           = None
   private val mountedCells                      = mutable.LinkedHashSet.empty[TableCell[S, ?]]
   private var composingTarget: Option[dom.Node] = None
   private var headerViewport: Div | Null        = null
@@ -103,6 +108,35 @@ final class TableView[S] private (
   private[table] def registerCell(cell: TableCell[S, ?]): Unit = {
     mountedCells.add(cell)
     cell.addDisposable(Disposable { mountedCells.remove(cell) })
+  }
+
+  private[table] def registerRow(row: TableRow[S]): Unit = {
+    val index = row.indexProperty.get
+    mountedRows.update(index, row)
+    rowFocusPrefix.foreach(prefix => row.setAttribute("id", s"$prefix$index"))
+    updateActiveRow()
+    row.addDisposable(Disposable {
+      if (mountedRows.get(index).contains(row)) mountedRows.remove(index)
+      updateActiveRow()
+    })
+  }
+
+  private def updateActiveRow(): Unit = if (browserRendering && !isDisposed) {
+    val id = for {
+      prefix <- rowFocusPrefix
+      row    <- mountedRows.get(focusModel.focusedIndex) if !row.isDisposed
+    } yield s"$prefix${row.indexProperty.get}"
+    id match {
+      case Some(value) => setAttribute("aria-activedescendant", value)
+      case None        => removeAttribute("aria-activedescendant")
+    }
+  }
+
+  private[table] def focusRowFromPointer(index: Int): Unit = if (canMoveColumns) {
+    focusModel.focus(index)
+    domElement(this).foreach(
+      _.asInstanceOf[js.Dynamic].focus(js.Dynamic.literal(preventScroll = true))
+    )
   }
 
   /** Browser-only intrinsic sizing of the header and at most 100 mounted, loaded cells. No remote
@@ -286,6 +320,7 @@ final class TableView[S] private (
     * following rows.
     */
   override protected def handleLocalItemsChange(change: ListProperty.Change[S]): Unit = {
+    focusModel.reconcile(change)
     selectionModel.reconcile(change)
     change match {
       case ListProperty.Reset(_) => refresh()
@@ -295,9 +330,10 @@ final class TableView[S] private (
 
   override protected def handleRemoteItemsChange(change: RemoteListChange[S]): Unit = {
     change match {
-      case RemoteListChange.Reset()            => clearSelection()
-      case RemoteListChange.Structural(change) => selectionModel.reconcile(change)
-      case RemoteListChange.RangeLoaded(_, _)  => ()
+      case RemoteListChange.Reset()            => clearSelection(); focusModel.focus(-1)
+      case RemoteListChange.Structural(change) =>
+        selectionModel.reconcile(change); focusModel.reconcile(change)
+      case RemoteListChange.RangeLoaded(_, _) => ()
     }
     super.handleRemoteItemsChange(change)
   }
@@ -431,8 +467,50 @@ final class TableView[S] private (
 
     DslLayer.render(this, cursor) {
       addClass("jfx-table-view")
+      setAttribute("role", "grid")
+      setAttribute("tabindex", "0")
+      addDisposable(focusedIndexProperty.observe(_ => updateActiveRow()))
+      addDisposable(
+        selectionModel.selectionModeProperty.observe(mode =>
+          setAttribute("aria-multiselectable", (mode == TableSelectionMode.Multiple).toString)
+        )
+      )
+      def updateCounts(): Unit = {
+        setAttribute(
+          "aria-rowcount",
+          (renderableCount.toLong + (if (showHeaderProperty.get) 1 else 0)).toString
+        )
+        setAttribute("aria-colcount", visibleColumns.length.toString)
+      }
+      addDisposable(itemStateRevisionProperty.observe(_ => updateCounts()))
+      addDisposable(visibleLeafColumns.observe(_ => updateCounts()))
+      addDisposable(showHeaderProperty.observe(_ => updateCounts()))
       resolvedCrawlId.foreach(setAttribute("id", _))
       if (browserRendering) {
+        on("focusin") { event =>
+          event.raw match {
+            case raw: dom.FocusEvent
+                if domElement(this).exists(_ == raw.target) && scrollNavigationMounted =>
+              if (focusModel.focusedIndex < 0)
+                focusModel.focus(
+                  if (selectedIndexProperty.get >= 0) selectedIndexProperty.get else 0
+                )
+              scrollTo(focusModel.focusedIndex)
+            case _ => ()
+          }
+        }
+        on("keydown") { event =>
+          event.raw match {
+            case key: dom.KeyboardEvent
+                if domElement(this).exists(_ == key.target) && scrollNavigationMounted =>
+              val pageRows = math.max(
+                1,
+                (viewportHeightProperty.get / math.max(1.0, rowHeightProperty.get)).toInt - 1
+              )
+              TableRowKeyboard.handle(this, key, pageRows)
+            case _ => ()
+          }
+        }
         on("compositionstart") { event =>
           event.raw match {
             case raw: dom.Event =>
@@ -483,6 +561,8 @@ final class TableView[S] private (
 
           div {
             classes = Seq("jfx-table-header-content")
+            summon[Div].setAttribute("role", "row")
+            summon[Div].setAttribute("aria-rowindex", "1")
             style {
               display = "flex"
               width = totalColumnWidthProperty.map(value => s"${value}px")
@@ -497,6 +577,17 @@ final class TableView[S] private (
                 column => {
                   val typedColumn = column.asInstanceOf[TableColumn[S, Any]]
                   val headerCell  = div {
+                    val cell = summon[Div]
+                    cell.setAttribute("role", "columnheader")
+                    cell.addDisposable(
+                      visibleLeafColumns.observe(_ =>
+                        if (!cell.isDisposed)
+                          cell.setAttribute(
+                            "aria-colindex",
+                            (getVisibleLeafIndex(column) + 1).toString
+                          )
+                      )
+                    )
                     classes = Seq("jfx-table-header-cell")
                     classIf(
                       "jfx-table-header-cell-last",
@@ -679,6 +770,11 @@ final class TableView[S] private (
       observeViewportSize()
       cursor.afterHydration { () =>
         scrollNavigationMounted = true
+        rowFocusPrefix = Some(TableRowKeyboard.nextRowPrefix())
+        mountedRows.foreach { (index, row) =>
+          row.setAttribute("id", s"${rowFocusPrefix.get}$index")
+        }
+        updateActiveRow()
         val move = pendingColumnMove
         pendingColumnMove = None
         move.foreach { case (column, index) => moveColumn(column, index) }
@@ -782,7 +878,10 @@ final class TableView[S] private (
     refreshSelectedItem()
   }
 
-  private def refreshSelectedItem(): Unit = selectionModel.refresh()
+  private def refreshSelectedItem(): Unit = {
+    selectionModel.refresh()
+    focusModel.refresh()
+  }
 
   private def contentHeightProperty: ReadOnlyProperty[String] =
     itemStateRevisionProperty.flatMap(_ =>

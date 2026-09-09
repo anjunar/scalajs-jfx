@@ -1,6 +1,6 @@
 # TableView: Feature-Stand und Implementierungsplan
 
-Stand: 09.09.2026 · Ausgangsanalyse: `7295d92` · einschließlich Grundlagenpaket, Spaltensichtbarkeit, Auswahl-/Remote-Vertrag, RowFactory, Mehrfachauswahl, Zeilen-/Spaltennavigation, Spalten-Resizing, Drag-Reordering, Auto-Fit und Spaltenmenü · Referenz: JavaFX 26.
+Stand: 09.09.2026 · Ausgangsanalyse: `7295d92` · einschließlich Grundlagenpaket, Spaltensichtbarkeit, Auswahl-/Remote-Vertrag, RowFactory, Mehrfachauswahl, Zeilen-/Spaltennavigation, Spalten-Resizing, Drag-Reordering, Auto-Fit, Spaltenmenü sowie Zeilenfokus/Tastaturbedienung · Referenz: JavaFX 26.
 
 Dieses Dokument beschreibt, welche Funktionen unsere TableView bereits unterstützt und wie wir die fehlenden Fähigkeiten der JavaFX-TableView ergänzen. Es ist ein Implementierungsplan; als **geplant** bezeichnete Modelle, Methoden und Dateien existieren noch nicht.
 
@@ -65,7 +65,7 @@ Paging, SSR, Hydration, Crawl-Zustand und Remote-Nachladen sind vorhandene JFX-E
 
 **Randfälle/Migration:** Wechsel auf Single behält nur den führenden Eintrag. Ein ungültiges `select(index)`/`selectIndex` löscht weiterhin wie bisher die Auswahl (JFX-Kompatibilitätsregel); `selectIndices` ignoriert ungültige/duplizierte Indizes, Bereiche werden auf den gültigen Indexraum begrenzt. Ungültige JavaScript-Bereichsgrenzen wie Brüche/NaN werden ignoriert. `selectAll` ist im Single-Modus wirkungslos. Nach Unmount sind Mutationen wirkungslos. Alle abgeleiteten Properties können auch bei unverändertem Einzelwert benachrichtigen; Beobachter lesen stets einen kohärenten Modellzustand.
 
-**Weiter offen:** Austausch eigener SelectionModels, Zell-/Rechteckauswahl, eigenständiges FocusModel, Scroll-Events, Tastaturnavigation und vollständiger zugänglicher Grid-Vertrag. Maus-Mehrfachauswahl ist nicht gleichbedeutend mit abgeschlossener Accessibility-Abnahme. Referenz für Ergebnislisten und Bereichsoperationen: [MultipleSelectionModel, JavaFX 26](https://openjfx.io/javadoc/26/javafx.controls/javafx/scene/control/MultipleSelectionModel.html).
+**Weiter offen:** Austausch eigener SelectionModels, Zell-/Rechteckauswahl, Zellfokus/FocusModel-Austausch, Scroll-Events und vollständiger zugänglicher Grid-Vertrag. Maus-Mehrfachauswahl ist nicht gleichbedeutend mit abgeschlossener Accessibility-Abnahme. Referenz für Ergebnislisten und Bereichsoperationen: [MultipleSelectionModel, JavaFX 26](https://openjfx.io/javadoc/26/javafx.controls/javafx/scene/control/MultipleSelectionModel.html).
 
 ### Implementiert: programmatische Zeilennavigation
 
@@ -170,8 +170,8 @@ Referenzen: [TableViewSelectionModel](https://openjfx.io/javadoc/26/javafx.contr
 | S01 | Einzelauswahl, selectedIndex/selectedItem | Teilweise | Zentrales `TableSelectionModel`, kohärenter lesbarer Zustand und Scala-/TypeScript-Operationen vorhanden. Austauschbarkeit des Modells bleibt offen. M2. |
 | S02 | Mehrfachauswahl und beobachtbare Ergebnislisten | Vorhanden | Single/Multiple, selectedIndices/selectedItems, clear/selectAll/selectIndices/selectRange sowie erste/letzte/nächste/vorige Auswahl. Remote-Index-/Item-Semantik ausdrücklich dokumentiert. M2. |
 | S03 | Zellselektion und Bereiche | Offen | `TablePosition`, selectedCells, cellSelectionEnabled, Richtungsoperationen und Rechteckauswahl. M2. |
-| S04 | Eigenständiges FocusModel | Offen | Fokusposition, fokussierter Index/Datensatz, Richtungsnavigation und Modellaustausch; Fokus und Auswahl unabhängig. M2. |
-| S05 | Maus-/Tastaturbedienung mit Modifikatoren | Teilweise | Klick, Ctrl/Cmd-Toggle und Shift-Ankerbereiche vorhanden. Tastatur-/Fokusnavigation, Home/End und PageUp/PageDown bleiben offen. M2. |
+| S04 | Eigenständiges FocusModel | Teilweise | Unabhängiges TableFocusModel für Zeilen mit fokussiertem Index/Item, Next/Previous und Datenabgleich vorhanden. Zellpositionen und Modellaustausch fehlen. M2. |
+| S05 | Maus-/Tastaturbedienung mit Modifikatoren | Teilweise | Zeilen: Klick, Pfeile, Home/End, PageUp/PageDown, Ctrl/Cmd-Fokus, Shift-Ankerbereiche, Space und SelectAll vorhanden. Zellnavigation und umfassende Accessibility-Abnahme fehlen. M2. |
 | S06 | Konsistenz bei Daten-/Spaltenänderungen | Teilweise | Einzel-/Mehrfachauswahl und Shift-Anker folgen Strukturänderungen; Reset, Duplikate, ungeladene Positionen und akzeptierter Querywechsel geregelt. Keys, Quellen-/Modellwechsel und Zellselektion bleiben offen. M0/M2/M3. |
 
 ### 3.3 Spalten und Header
@@ -223,8 +223,8 @@ Referenzen: [Cell-Editierablauf](https://openjfx.io/javadoc/26/javafx.controls/j
 | V02 | Variable Zeilenhöhen/fixedCellSize-Semantik | Teilweise | Heutiger Alias setzt nur rowHeight. Gemessene Zeilen ergänzen; positive feste Höhe von variabler Höhe unterscheiden. M6. |
 | V03 | `scrollTo(index/item)`, `onScrollTo` | Teilweise | Zeilennavigation in Scala und TypeScript, bekannte ungeladene Remote-Positionen, Paging, Header und Hydration vorhanden. `onScrollTo` bleibt offen. M2. |
 | V04 | Horizontales Scrollen und Spaltennavigation | Teilweise | Header-Synchronisation, Policy-abhängiges overflow und `scrollToColumn`/`scrollToColumnIndex` in Scala bzw. Index-API in TypeScript vorhanden. `onScrollToColumn` und RTL fehlen. M2/M5. |
-| V05 | Zeilen-/Zellzustände und CSS-Anpassung | Teilweise | selected/odd/even/loading vorhanden; focused/editing/disabled und Spaltenstil ergänzen. M2/M4/M6. |
-| V06 | Zugänglicher Tabellen-/Grid-Vertrag | Teilweise | Zeilen setzen aria-selected. Rollen, Indizes, Zähler, aktiver Fokus und Sortierinformation fehlen. M2/M5/M6. |
+| V05 | Zeilen-/Zellzustände und CSS-Anpassung | Teilweise | selected/odd/even/loading und Zeilen-focused vorhanden; Zellzustände, editing/disabled und Spaltenstil ergänzen. M2/M4/M6. |
+| V06 | Zugänglicher Tabellen-/Grid-Vertrag | Teilweise | Grid-/Zeilen-/Zell-/Headerrollen, Indizes/Zähler, aria-selected und aktiver Zeilenfokus vorhanden. Sortierinformation, Zellnavigation und umfassende Screenreader-Abnahme fehlen. M2/M5/M6. |
 | V07 | Angepasste Darstellung, Menüs, Tooltips, RTL | Teilweise | Eigene Zellkomposition vorhanden. Zeilen-/Header-Slots, spiegelbare Navigation und Overlay-Integration vervollständigen. M5/M6. |
 
 ## 4. Wie wir es implementieren
@@ -327,6 +327,20 @@ Das bestehende `observeChanges` bleibt aus Kompatibilitätsgründen dicht und is
 Bei Quellentausch eigene Listener/Requests entkoppeln, Modelle normalisieren und neue Quelle anbinden. Eine vom Aufrufer gelieferte Quelle wird nicht einfach mit der Tabelle entsorgt. Bei Sortieren/Reload sind alte Positionen ungültig; bekannte Keys können als noch nicht aufgelöste Auswahl erhalten werden, sofern die Datenquelle deren Wiederauflösung ermöglicht. Ohne solche Identität Auswahl nachvollziehbar zurücksetzen.
 
 ### 4.4 Auswahl, Fokus und Bedienung
+
+**Umgesetzt im zwölften Ausbau – Zeilenfokus und Tastatur:** `TableFocusModel` veröffentlicht Index und geladenes Item aus einem kohärenten Snapshot, unabhängig vom SelectionModel. Scala `table.focusModel.focus(index)`/`focusNext()`/`focusPrevious()` und TypeScript `focusIndex`/`focusNext`/`focusPrevious` ändern nur logischen Fokus: kein Scrollen, DOM-Fokus oder Fetch. Startwert/ungültige Position ist -1/null; bekannte Remote-Lücken behalten den Index mit null-Item. Einfügen/Entfernen/Patches verschieben Vorkommen, Entfernen des Ziels löscht Fokus, Updates aktualisieren das Item; Reset erhält nur eindeutige Referenzidentität. Akzeptierter Remote-Querywechsel löscht Fokus. Disposal friert den letzten Modellstand ein.
+
+Der Grid-Tabstopp stellt beim Eintritt bestehenden logischen Fokus bzw. Auswahl/erste Zeile her. Pfeile auf/ab, Home/End und PageUp/PageDown fokussieren, wählen und verwenden die bestehende Zeilennavigation inklusive Paging/Remote-Laden. Ctrl/Cmd bewegt nur Fokus; Shift erweitert den Ankerbereich, Ctrl/Cmd+Shift addiert ihn. Space wählt, Ctrl/Cmd+Space toggelt, Ctrl/Cmd+A wählt im Mehrfachmodus alle. Page-Schritte nutzen die gemessene Viewporthöhe mit einer Zeile Überlappung, mindestens eine Zeile. Native Tab-Navigation bleibt erhalten; Alt, bereits konsumierte Events und Composition werden ignoriert. Nur Events direkt am Grid werden behandelt. Zeilenhintergrund-Klicks nehmen DOM-Fokus; eingebettete interaktive/fokussierbare Controls bleiben Eigentümer ihrer Maus-/Tastaturbedienung.
+
+`TableRow.focusedProperty` bzw. TypeScript `row.focused` bezeichnet logischen Fokus. Die Kontur erscheint nur bei DOM-Fokus des Grids. Der native Fokus bleibt beim Wechsel virtueller Zeilen am stabilen Grid; `aria-activedescendant` referenziert ausschließlich gemountete Zeilen. Eindeutige Laufzeit-Zeilen-IDs werden nach Hydration installiert, ohne DOM-Fokus zu übernehmen. Grid/row/gridcell/columnheader, absolute Zeilenindizes (plus optionalem Header), sichtbare Spaltenindizes und Zähler sind angebunden. Ein bestehender Paging-Fehler wurde dabei korrigiert: Die Button-Rolle gehört auf den Pager-Link, nicht auf das gesamte Collection-Control. Neue ARIA-Observer prüfen bei Spaltenprojektion den Disposal-Zustand, da bereits gestartete Benachrichtigungen entfernte Header/Zellen noch erreichen können.
+
+**Abgrenzung:** Dies ist ein Zeilen-FocusModel, noch kein vollständiges JavaFX-TableFocusModel mit Zellkoordinaten oder austauschbaren Modellen. Zell-/Rechteckauswahl, Links/Rechts-Zellnavigation, Sortieransagen und umfassende Screenreader-/IME-Abnahme bleiben offen. Die TypeScript-Demo zeigt den Fokusindex getrennt von der Auswahl. Der Vertrag unabhängigen logischen Fokus orientiert sich an [JavaFX FocusModel](https://openjfx.io/javadoc/17/javafx.controls/javafx/scene/control/TableView.TableViewFocusModel.html#focus(int)); SSR/Hydration und virtuelle DOM-Zeilen sind JFX-spezifisch.
+
+**Abnahme am 09.09.2026:** Vollständiger Scala-Testlauf (`Test/testOnly *`), Bridge-Full-Link und Scala-Demo-Fast-Link grün. Vier neue Scala-Fokustests; Controls jetzt 65 Integrationstests + 3 Paket-Consumer, Core 114 + 8, Demo-Typecheck/Client/SSR/Eine-Runtime-Nachweis/31 Routen grün. Die neuen Browser-Integrationstests prüfen Modifikatoren, Paging/Remote-Lücken, Einzel-/Mehrfachauswahl, leere Quellen, Custom-Row-Fokus, virtuelle aktive Zeilen, eindeutige IDs, SSR/Hydration ohne Fokusübernahme, Editor-/Header-/Composition-Abgrenzung und Disposal. Der bestehende Remote-Sortiertest prüft zusätzlich den Fokus-Reset.
+
+Echte Browserprüfung mit explizitem Startbereich `?books.offset=0&books.limit=50`: Pfeile, Ctrl-Fokus ohne Auswahländerung, Shift-Bereich auf/ab, Ctrl+End bis Zeile 1.000 mit Nachladen, PageUp, Space und Tab zum Spaltenmenü funktionieren. DOM-Fokus bleibt bei virtuellen Zeilenwechseln am Grid, fokussierte Zeile hat eine 2-px-Kontur; keine Fehler in diesem Lauf.
+
+**Offener Nebenfund bei der Browserabnahme:** Ein normaler Reload der TypeScript-Demo mit gespeichertem `jfx-crawl-books`-Offset außerhalb der ersten 50 Datensätze kann bereits beim Claim mit `Hydration fault` abbrechen. `npm/jfx-demo/server.mjs` reicht nur URL/Assets an `src/entry-server.ts` weiter; dessen SSR-Aufruf hat keinen Cookie-Request-Kontext. `CrawlCookieState` liest serverseitig `RequestContext`, clientseitig jedoch `document.cookie`: Server und Client komponieren unterschiedliche Ausschnitte. Der explizite Startbereich dient nur zur isolierten Fokusprüfung, ist keine Fehlerbehebung. Als Nächstes den Request-Kontext durch die SSR-Fassade/den Demo-Server führen und Reload mit gespeichertem Remote-Offset als Regression prüfen; keine pauschale fehlerfreie Hydration für diesen Fall behaupten.
 
 Geplant ist `TablePosition[S]` mit Ansichtszeile und Spaltenreferenz; der Blattspaltenindex wird abgeleitet. Eine separate interne Identität schützt vor Spalten-Reordering und lokalen Listenverschiebungen.
 
