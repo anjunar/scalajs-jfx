@@ -11,8 +11,8 @@
  * options the way `converter`/`itemRenderer` are elsewhere in this family --
  * `plugins` is a name list instead, and `EditorFactories.installPlugin` (in
  * `jfx-bridge`) calls the matching zero-argument plugin function for each
- * one. Every plugin is self-contained with its default body: `imagePlugin()`
- * reads a local file into a data URL itself, no upload hook required.
+ * one. The image plugin uses the application's MediaUploader for file input,
+ * paste and drop. Existing references remain readable without an uploader.
  *
  * `link` and `image` open their dialogs as `@anjunar/jfx-viewport` windows
  * (`DefaultDialogService`), so an editor using either plugin needs a
@@ -27,6 +27,37 @@ import { defined } from "./internal.js";
 
 /** The only public value representation of an editor document. */
 export type Markdown = string;
+
+/** A permanent internal media URL. No data URLs, blob URLs or external hosts. */
+export interface MediaReference {
+  readonly src: string;
+  readonly mediaId?: string;
+}
+
+export interface ImageReference extends MediaReference {
+  readonly alt: string;
+  readonly title?: string;
+  readonly widthPx?: number;
+}
+
+export interface UploadedMediaReference extends MediaReference {
+  readonly mediaId: string;
+}
+
+/** Resolve only after the media is persisted and its internal URL is usable. */
+export interface MediaUploader {
+  upload(file: File, signal: AbortSignal): Promise<UploadedMediaReference>;
+}
+
+/** Must be deterministic and synchronous: also called during SSR. */
+export interface MediaUrlPolicy {
+  resolve(src: string): MediaReference | null;
+}
+
+export interface MediaUploadStatus {
+  readonly pending: number;
+  readonly error: string | null;
+}
 
 /**
  * One of the eight `jfx.editor.plugins` bundled with the Scala component.
@@ -50,6 +81,12 @@ export type EditorPluginName =
 export type EditorToolbarMode = "ribbon" | "menu" | "floating";
 
 export interface EditorOptions {
+  /** Used by the image plugin for picker, clipboard and dropped files. */
+  readonly mediaUploader?: MediaUploader;
+  /** Optional additional restrictions on internal URLs and stable ID lookup. */
+  readonly mediaUrlPolicy?: MediaUrlPolicy;
+  /** Upload state is separate from Markdown; use pending to govern application saves. */
+  readonly onMediaStatus?: (status: MediaUploadStatus) => void;
   /** Initial Markdown for a standalone editor; a form binding takes precedence. */
   readonly value?: Markdown;
   readonly placeholder?: string;

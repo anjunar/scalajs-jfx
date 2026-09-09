@@ -30,10 +30,10 @@ enum EditorToolbarMode:
 /** A Markdown-valued editor.
   *
   * Markdown is the public value in every environment. On the server, readonly mode produces
-  * semantic HTML and editable mode produces a textarea. In the browser both server
-  * representations are progressively enhanced to Lexical after compose; its own editable state
-  * then decides whether the mounted surface is interactive. Lexical imports and exports Markdown
-  * at the component boundary.
+  * semantic HTML and editable mode produces a textarea. In the browser both server representations
+  * are progressively enhanced to Lexical after compose; its own editable state then decides whether
+  * the mounted surface is interactive. Lexical imports and exports Markdown at the component
+  * boundary.
   */
 final class Editor private[editor] (
     val name: String,
@@ -47,8 +47,12 @@ final class Editor private[editor] (
 
   override val valueProperty: Property[String] = Property("")
 
-  private val placeholderProperty = Property("")
-  private val plugins             = mutable.ArrayBuffer.empty[EditorPlugin]
+  private val placeholderProperty                      = Property("")
+  private val plugins                                  = mutable.ArrayBuffer.empty[EditorPlugin]
+  var mediaUploader: Option[MediaUploader]             = None
+  var mediaUrlPolicy: MediaUrlPolicy                   = MediaUrlPolicy.internal
+  var onMediaStatus: MediaUploadStatus => Unit         = _ => ()
+  val mediaStatusProperty: Property[MediaUploadStatus] = Property(MediaUploadStatus())
 
   private var toolbarModeValue: EditorToolbarMode         = EditorToolbarMode.Ribbon
   private var dialogServiceValue: Option[DialogService]   = None
@@ -72,6 +76,11 @@ final class Editor private[editor] (
       // claim a different subtree than SSR produced.
       installControlObservers()
       registerWithForm()
+      valueProperty.set(MarkdownImages.discardEmbedded(valueProperty.get))
+      validators += new jfx.forms.validators.Validator[String] {
+        def validate(value: String): Option[String] =
+          MarkdownImages.validationError(value, mediaUrlPolicy)
+      }
       installConfiguredEditable()
       initializeUrlMode()
 
@@ -93,6 +102,24 @@ final class Editor private[editor] (
             classes = Seq("jfx-editor__toolbar")
             setDslAttribute("aria-label", "Editor toolbar")
             style { display = "none" }
+          }
+
+          div {
+            classes = Seq("jfx-editor__media-status")
+            setDslAttribute("role", "status")
+            setDslAttribute("aria-live", "polite")
+            style {
+              display = mediaStatusProperty.map(status =>
+                if (status.pending > 0 || status.error.nonEmpty) "" else "none"
+              )
+            }
+            text(
+              mediaStatusProperty.map(status =>
+                status.error.getOrElse(
+                  if (status.pending > 0) s"Uploading ${status.pending} image(s)…" else ""
+                )
+              )
+            ) {}
           }
 
           div {
@@ -129,7 +156,7 @@ final class Editor private[editor] (
                     publishMarkdown,
                     updateFocus
                   )
-                else new MarkdownReadonly(valueProperty)
+                else new MarkdownReadonly(valueProperty, mediaUrlPolicy)
               })
             }
 
@@ -167,7 +194,14 @@ final class Editor private[editor] (
   }
 
   override def afterCompose(cursor: Cursor): Unit =
-    if (cursor.isBrowser) mountLexical()
+    if (cursor.isBrowser) {
+      domElement[HTMLElement](fallbackHost)
+        .flatMap(host => Option(host.querySelector("textarea")))
+        .collect { case input: org.scalajs.dom.HTMLTextAreaElement => input }
+        .filter(input => input.value != input.textContent)
+        .foreach(input => publishMarkdown(input.value))
+      mountLexical()
+    }
 
   override protected def setPlaceholder(value: String): Unit =
     placeholderProperty.set(Option(value).getOrElse(""))
@@ -217,7 +251,7 @@ final class Editor private[editor] (
 
   private def installConfiguredEditable(): Unit =
     configuredEditable.foreach {
-      case Left(value) => editableProperty.set(value)
+      case Left(value)  => editableProperty.set(value)
       case Right(value) =>
         addDisposable(Property.subscribeBidirectional(value, editableProperty))
     }
@@ -273,6 +307,9 @@ final class Editor private[editor] (
           configuredDialogService = dialogServiceValue.orElse(
             Editor.DialogServiceContext.inject(using this)
           ),
+          mediaUploader = mediaUploader,
+          mediaUrlPolicy = mediaUrlPolicy,
+          onMediaStatus = status => { mediaStatusProperty.set(status); onMediaStatus(status) },
           onMarkdownChanged = publishMarkdown,
           onFocusChanged = updateFocus
         )
@@ -310,7 +347,8 @@ final class Editor private[editor] (
 
   private def publishMarkdown(markdown: String): Unit = {
     dirtyProperty.set(true)
-    if (valueProperty.get != markdown) valueProperty.set(markdown)
+    val value = MarkdownImages.discardEmbedded(markdown)
+    if (valueProperty.get != value) valueProperty.set(value)
   }
 
   private def syncExternalValue(value: String): Unit =
@@ -349,6 +387,15 @@ object Editor {
       standalone: Boolean = false
   )(body: Editor ?=> Cursor ?=> Unit = {})(using AbstractComponent, Cursor): Editor =
     DslLayer.child(new Editor(name, standalone, body)) {}
+
+  def mediaUploader_=(uploader: MediaUploader)(using editor: Editor): Unit = editor.mediaUploader =
+    Some(uploader)
+  def mediaUrlPolicy_=(policy: MediaUrlPolicy)(using editor: Editor): Unit = editor.mediaUrlPolicy =
+    policy
+  def mediaUploader(using editor: Editor): Option[MediaUploader]             = editor.mediaUploader
+  def mediaUrlPolicy(using editor: Editor): MediaUrlPolicy                   = editor.mediaUrlPolicy
+  def mediaStatusProperty(using editor: Editor): Property[MediaUploadStatus] =
+    editor.mediaStatusProperty
 
   def value(using editor: Editor): String = editor.valueProperty.get
 

@@ -32,7 +32,11 @@ private[editor] object LexicalMarkdownCodec {
       markdown: String,
       transformers: js.Array[js.Any],
       node: ElementNode | Null = null
-  ): Unit = LexicalMarkdownRuntime.fromMarkdown(markdown, transformers, node)
+  ): Unit = LexicalMarkdownRuntime.fromMarkdown(
+    MarkdownImages.expandReferences(markdown),
+    transformers,
+    node
+  )
 
   def toMarkdown(transformers: js.Array[js.Any], node: LexicalNode | Null = null): String =
     LexicalMarkdownRuntime.toMarkdown(transformers, node)
@@ -41,11 +45,13 @@ private[editor] object LexicalMarkdownCodec {
     * image-width extension documented by the editor. The standard Lexical transformers are kept
     * last so the project transformers can claim the nodes they own first.
     */
-  def transformers: js.Array[js.Any] =
+  def transformers: js.Array[js.Any] = transformersFor(MediaUrlPolicy.internal)
+
+  def transformersFor(policy: MediaUrlPolicy): js.Array[js.Any] =
     js.Array(
+      imageTransformer(policy),
       safeLinkTransformer,
-      imageTransformer,
-      tableTransformer,
+      tableTransformer(policy),
       codeMirrorTransformer,
       horizontalRuleTransformer,
       underlineTransformer
@@ -99,51 +105,29 @@ private[editor] object LexicalMarkdownCodec {
       )
   }
 
-  private val imageTransformer: js.Any = {
-    val exportImage: js.Function3[
-      LexicalNode,
-      js.Function1[ElementNode, String],
-      BaseSelection | Null,
-      String | Null
-    ] = (node, exportChildren, _) =>
-      if (node.getType() == "image") {
-        val image = node.asInstanceOf[ImageNode]
-        val src   = MarkdownSecurity.safeImageUrl(image.src)
-        if (src.isEmpty) null
-        else {
-          val alt   = escapeImageAlt(image.altText)
-          val width =
-            if (image.maxWidth > 0 && image.maxWidth != 680) s"{width=${image.maxWidth}}" else ""
-          s"![$alt]($src)$width"
-        }
-      } else null
-
-    val replaceImage: js.Function2[TextNode, js.Array[String], Unit] = (textNode, matches) => {
-      val src = MarkdownSecurity.safeImageUrl(matches(2))
-      src match {
-        case Some(safeSrc) =>
-          val width =
-            if (matches.length > 3 && matches(3) != null) matches(3).toIntOption.getOrElse(680)
-            else 680
-          textNode.replace(new ImageNode(safeSrc, matches(1), math.max(1, width)), false)
-        case None => textNode.replace(Lexical.$createTextNode(matches(1)), false)
+  private def imageTransformer(policy: MediaUrlPolicy): js.Any = {
+    val exportImage: js.Function3[LexicalNode, js.Function1[
+      ElementNode,
+      String
+    ], BaseSelection | Null, String | Null] =
+      (node, _, _) =>
+        if (node.getType() == "image")
+          MarkdownImages.format(node.asInstanceOf[ImageNode].reference, policy)
+        else null
+    val replaceImage: js.Function2[TextNode, js.Array[String], Unit] = (node, matches) =>
+      MarkdownImages.parse(matches(0), policy) match {
+        case Some(image) => node.replace(new ImageNode(image), false)
+        case None        => node.replace(Lexical.$createTextNode(matches(1)), false)
       }
-    }
-
-    js.Dynamic
-      .literal(
-        dependencies = js.Array[js.Any](js.constructorOf[ImageNode]),
-        `export` = exportImage,
-        importRegExp = new js.RegExp(
-          "!\\[([^\\]]*)\\]\\(([^)\\s]+)\\)(?:\\{width=([1-9][0-9]*)\\})?"
-        ),
-        regExp = new js.RegExp(
-          "!\\[([^\\]]*)\\]\\(([^)\\s]+)\\)(?:\\{width=([1-9][0-9]*)\\})?$"
-        ),
-        replace = replaceImage,
-        trigger = ")",
-        `type` = "text-match"
-      )
+    js.Dynamic.literal(
+      dependencies = js.Array[js.Any](js.constructorOf[ImageNode]),
+      `export` = exportImage,
+      importRegExp = new js.RegExp(MarkdownImages.pattern),
+      regExp = new js.RegExp(MarkdownImages.pattern + "$"),
+      replace = replaceImage,
+      trigger = ")",
+      `type` = "text-match"
+    )
   }
 
   private val horizontalRuleTransformer: js.Any = {
@@ -233,7 +217,7 @@ private[editor] object LexicalMarkdownCodec {
     )
   }
 
-  private val tableTransformer: js.Any = {
+  private def tableTransformer(policy: MediaUrlPolicy): js.Any = {
     val exportTable: js.Function3[
       LexicalNode,
       js.Function1[ElementNode, String],
@@ -276,7 +260,7 @@ private[editor] object LexicalMarkdownCodec {
             val headerState = if (rowIndex == 0) 1 else 0
             val cell        = createTableCellNode(headerState)
             val value       = values.lift(columnIndex).getOrElse("")
-            fromMarkdown(value, inlineTransformers, cell)
+            fromMarkdown(value, inlineTransformers(policy), cell)
             if (cell.getChildrenSize() == 0) {
               cell.append(Lexical.$createParagraphNode().append(Lexical.$createTextNode("")))
             }
@@ -317,10 +301,10 @@ private[editor] object LexicalMarkdownCodec {
     )
   }
 
-  private def inlineTransformers: js.Array[js.Any] =
+  private def inlineTransformers(policy: MediaUrlPolicy): js.Array[js.Any] =
     js.Array(
+      imageTransformer(policy),
       safeLinkTransformer,
-      imageTransformer,
       underlineTransformer
     ) ++ LexicalMarkdownRuntime.standardTransformers
 
@@ -368,9 +352,6 @@ private[editor] object LexicalMarkdownCodec {
 
   private def unescapeTableCell(value: String): String =
     value.replace("\\|", "|").replace("\\\\", "\\")
-
-  private def escapeImageAlt(value: String): String =
-    Option(value).getOrElse("").replace("\\", "\\\\").replace("]", "\\]")
 
   private def escapeLinkTitle(value: String): String =
     Option(value).getOrElse("").replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", " ")

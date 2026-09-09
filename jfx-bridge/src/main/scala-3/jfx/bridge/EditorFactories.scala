@@ -17,6 +17,9 @@ import jfx.editor.plugins.{
 import org.scalajs.dom
 
 import scala.scalajs.js
+import scala.scalajs.js.Thenable.Implicits.*
+import scala.concurrent.ExecutionContext
+import jfx.editor.{MediaUploader, MediaUrlPolicy, MediaReference, UploadedMediaReference}
 
 /** Step 6 of JAVASCRIPT_API.md §9, the editor half -- the trigger was FINAL.md Priorität 4
   * ("`jfx-editor` veröffentlichen oder bewusst ausklammern"), settled as: veröffentlichen, with a
@@ -30,13 +33,9 @@ import scala.scalajs.js
   *
   * The one thing this factory does that no other does: `jfx.editor.plugins.basePlugin()`/
   * `headingPlugin()`/... are Scala functions, not values, so a JS `plugins` list is turned into
-  * calls rather than into constructor arguments. Each of the eight plugins is self-contained with
-  * its default, no-argument body -- `imagePlugin()`'s upload dialog reads a local file into a data
-  * URL itself, no `MediaLike`/upload hook required (that FINAL.md item is about
-  * `jfx.forms.ImageCropper`, a different control). Per-plugin configuration
-  * (`ImagePlugin.dialogTitle`, `defaultWidthPx`, ...), `dialogService` overriding the default
-  * `Viewport`-window one, and per-plugin bodies are not projected -- each has an obvious trigger to
-  * add later, the same deferral shape as `ComboBoxFactory`'s `valueRenderer`/`identityBy`.
+  * calls rather than into constructor arguments. MediaUploader and MediaUrlPolicy are projected
+  * independently of the plugin list; Scala Future and JavaScript Promise cross only at this factory
+  * boundary. The generic forms Media/Cropper payload is deliberately not involved.
   *
   * Like `ComboBox`, `linkPlugin()`/`imagePlugin()` need a `viewport` ancestor: their dialogs are
   * `Viewport.WindowConf`s (`DefaultDialogService`, `jfx-editor`'s own doc comment).
@@ -51,6 +50,55 @@ private[bridge] object EditorFactory extends ComponentFactory {
 
     Editor.editor(name, standalone) {
       val self = summon[Editor]
+
+      options.get("mediaUploader").foreach { value =>
+        val facade = value.asInstanceOf[js.Dynamic]
+        self.mediaUploader = Some(new MediaUploader {
+          def upload(file: dom.File, signal: dom.AbortSignal) = {
+            given ExecutionContext = scala.scalajs.concurrent.JSExecutionContext.queue
+            facade.upload(file, signal).asInstanceOf[js.Promise[js.Dynamic]].toFuture.map {
+              result =>
+                require(
+                  result != null && js.typeOf(result.src) == "string" && js
+                    .typeOf(result.mediaId) == "string",
+                  "Media upload must return src and mediaId strings"
+                )
+                UploadedMediaReference(
+                  result.src.asInstanceOf[String],
+                  result.mediaId.asInstanceOf[String]
+                )
+            }
+          }
+        })
+      }
+      options.get("mediaUrlPolicy").foreach { value =>
+        val facade = value.asInstanceOf[js.Dynamic]
+        self.mediaUrlPolicy = new MediaUrlPolicy {
+          def resolve(src: String): Option[MediaReference] = {
+            val result = facade.resolve(src)
+            if (result == null || js.isUndefined(result)) None
+            else {
+              require(
+                js.typeOf(result.src) == "string",
+                "Media URL policy must return a src string"
+              )
+              val id = result.mediaId
+              require(js.isUndefined(id) || js.typeOf(id) == "string", "Media ID must be a string")
+              Some(
+                MediaReference(
+                  result.src.asInstanceOf[String],
+                  if (js.isUndefined(id)) None else Some(id.asInstanceOf[String])
+                )
+              )
+            }
+          }
+        }
+      }
+      options.get("onMediaStatus").foreach { value =>
+        val callback = value.asInstanceOf[js.Function1[js.Object, Unit]]
+        self.onMediaStatus = status =>
+          callback(js.Dynamic.literal(pending = status.pending, error = status.error.orNull))
+      }
 
       options.get("value").foreach(value => self.valueProperty.set(ControlFactories.str(value)))
       options.get("placeholder").foreach(value => self.placeholder(ControlFactories.strProp(value)))

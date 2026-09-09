@@ -29,7 +29,7 @@ final class EditorSpec extends AnyFlatSpec with Matchers {
         |1. First
         |2. Second
         |
-        |![Preview](https://example.test/image.png)
+        |![Preview](/media/image.png)
         |
         || Name | Value |
         || --- | --- |
@@ -298,7 +298,7 @@ final class EditorSpec extends AnyFlatSpec with Matchers {
                   |
                   |- unordered
                   |
-                  |![Sized](https://example.test/image.png){width=37}
+                  |![Sized](/media/image.png){width=37}
                   |""".stripMargin
               editable = false
             }

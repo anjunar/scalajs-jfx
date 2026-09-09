@@ -17,12 +17,18 @@ import scala.util.matching.Regex
   * by the normal renderer and Markdown cannot smuggle executable markup into SSR output. It covers
   * the complete public Markdown contract documented by the editor module.
   */
-private[editor] final class MarkdownRenderer(source: String) extends AbstractComponent {
+private[editor] final class MarkdownRenderer(
+    source: String,
+    policy: MediaUrlPolicy = MediaUrlPolicy.internal
+) extends AbstractComponent {
   override val tagName: String = ""
 
   override def compose(cursor: Cursor): Unit =
     render(this, cursor) {
-      MarkdownRenderer.parseBlocks(source).foreach(MarkdownRenderer.renderBlock)
+      given MediaUrlPolicy = policy
+      MarkdownRenderer
+        .parseBlocks(MarkdownImages.expandReferences(source))
+        .foreach(MarkdownRenderer.renderBlock)
     }
 }
 
@@ -48,7 +54,7 @@ private object MarkdownRenderer {
   private val tableSeparatorCell: Regex    = "^:?-{3,}:?$".r
 
   private val inlineTokens: Seq[(String, Regex)] = Seq(
-    "image"               -> "!\\[([^\\]]*)\\]\\(([^) ]+)\\)(?:\\{width=([1-9][0-9]*)\\})?".r,
+    "image"               -> MarkdownImages.regex,
     "link"                -> "\\[([^\\]]+)\\]\\(([^) ]+)(?:\\s+\"[^\"]*\")?\\)".r,
     "code"                -> "`([^`\\n]+)`".r,
     "strong-star"         -> "\\*\\*(.+?)\\*\\*".r,
@@ -206,7 +212,7 @@ private object MarkdownRenderer {
   private def unescapeTableCell(value: String): String =
     value.replace("\\|", "|").replace("\\\\", "\\")
 
-  private def renderBlock(block: Block)(using AbstractComponent, Cursor): Unit =
+  private def renderBlock(block: Block)(using AbstractComponent, Cursor, MediaUrlPolicy): Unit =
     block match {
       case Heading(level, value) =>
         element(s"h$level") {
@@ -261,7 +267,7 @@ private object MarkdownRenderer {
       case HorizontalRule => element("hr") { classes = Seq(EditorStyles.horizontalRule) }
     }
 
-  private def renderInline(value: String)(using AbstractComponent, Cursor): Unit = {
+  private def renderInline(value: String)(using AbstractComponent, Cursor, MediaUrlPolicy): Unit = {
     var remaining = value
     while (remaining.nonEmpty) {
       val next = inlineTokens
@@ -276,13 +282,12 @@ private object MarkdownRenderer {
           if (matched.start > 0) text(remaining.substring(0, matched.start)) {}
           kind match {
             case "image" =>
-              MarkdownSecurity.safeImageUrl(matched.group(2)).foreach { src =>
+              MarkdownImages.parse(matched.matched, summon[MediaUrlPolicy]).foreach { image =>
                 element("img") {
-                  setAttribute("src", src)
-                  setAttribute("alt", matched.group(1))
-                  Option(matched.group(3)).flatMap(_.toIntOption).foreach { width =>
-                    setAttribute("width", math.max(1, width).toString)
-                  }
+                  setAttribute("src", image.src)
+                  setAttribute("alt", image.alt)
+                  image.title.foreach(setAttribute("title", _))
+                  image.widthPx.foreach(value => setAttribute("width", value.toString))
                 }
               }
             case "link" =>

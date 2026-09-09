@@ -36,4 +36,8 @@ app.use(async (req, res, next) => {
     res.type("html").send(html);
   } catch (error) { vite?.ssrFixStacktrace(error); next(error); }
 });
-const server = app.listen(Number(process.env.PORT ?? 3316), "127.0.0.1", () => console.log(`http://127.0.0.1:${process.env.PORT ?? 3316}`));
+const server = app.listen(Number(process.env.PORT ?? 3316), "127.0.0.1", () => {
+  // PORT=0 requests an available port; clients need the actual assigned address.
+  const address = server.address();
+  console.log(`http://127.0.0.1:${address.port}`);
+});

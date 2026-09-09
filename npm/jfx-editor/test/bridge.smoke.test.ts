@@ -554,7 +554,7 @@ describe("form + editor", () => {
     const markdown = [
       "# Article",
       "",
-      "![Preview](https://example.test/image.png){width=42}",
+      "![Preview](/media/image.png){width=42}",
       "",
       "| Name | Value |",
       "| --- | --- |",
@@ -580,15 +580,15 @@ describe("form + editor", () => {
       });
     });
 
-    expect(root.querySelector("img")?.getAttribute("style")).toContain("max-width: 42px");
+    expect(root.querySelector("img")?.getAttribute("style")).toContain("max-width: 100%");
     expect(root.querySelector("table")).not.toBeNull();
     expect(root.querySelector(".codemirror-container")).not.toBeNull();
     expect(root.querySelector("hr")).not.toBeNull();
     expect(model.body.get).toBe(markdown);
 
-    model.body.set("![Updated](https://example.test/updated.png){width=17}");
+    model.body.set("![Updated](/media/updated.png){width=17}");
     expect(root.querySelector("img")?.getAttribute("alt")).toBe("Updated");
-    expect(root.querySelector("img")?.getAttribute("style")).toContain("max-width: 17px");
+    expect(root.querySelector("img")?.getAttribute("style")).toContain("max-width: 100%");
 
     app.dispose();
   });

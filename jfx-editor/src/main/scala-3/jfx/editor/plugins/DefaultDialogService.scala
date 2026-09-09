@@ -10,7 +10,9 @@ import jfx.core.layout.Button.{button, buttonType}
 import jfx.core.layout.Div
 import jfx.core.layout.Div.div
 import jfx.core.render.{Cursor, DomHostElement}
-import jfx.core.state.Disposable
+import jfx.core.state.{Disposable, Property}
+import scala.concurrent.{Future, ExecutionContext}
+import scala.util.{Try, Success, Failure}
 import jfx.viewport.Viewport
 import lexical.DialogService
 import org.scalajs.dom.HTMLElement
@@ -22,6 +24,13 @@ final class DefaultDialogService(owner: AbstractComponent) extends DialogService
       title: String,
       contentProvider: () => HTMLElement,
       onConfirm: HTMLElement => Unit
+  ): Unit =
+    showAsync(title, contentProvider, content => Future.fromTry(Try(onConfirm(content))))
+
+  override def showAsync(
+      title: String,
+      contentProvider: () => HTMLElement,
+      onConfirm: HTMLElement => Future[Unit]
   ): Unit = {
     close()
 
@@ -35,7 +44,9 @@ final class DefaultDialogService(owner: AbstractComponent) extends DialogService
             onCancel = () => closeWindow(conf),
             onConfirm = () => {
               onConfirm(content)
-              closeWindow(conf)
+            },
+            onSuccess = () => {
+              if (activeWindow eq conf) closeWindow(conf)
             }
           )
         ) {}
@@ -64,11 +75,15 @@ final class DefaultDialogService(owner: AbstractComponent) extends DialogService
 private final class DialogBody(
     content: HTMLElement,
     onCancel: () => Unit,
-    onConfirm: () => Unit
+    onConfirm: () => Future[Unit],
+    onSuccess: () => Unit
 ) extends AbstractComponent {
   override val tagName: String = "div"
 
-  private var contentHost: Div = null
+  private var contentHost: Div   = null
+  private val busy               = Property(false)
+  private val error              = Property("")
+  private given ExecutionContext = scala.scalajs.concurrent.JSExecutionContext.queue
 
   override def compose(cursor: Cursor): Unit =
     render(this, cursor) {
@@ -92,6 +107,11 @@ private final class DialogBody(
       }
 
       div {
+        setAttribute("role", "alert")
+        jfx.core.layout.TextComponent.text(error) {}
+      }
+
+      div {
         classes = Seq("jfx-dialog__actions", "jfx-editor-dialog__actions")
 
         button("Cancel") {
@@ -103,7 +123,25 @@ private final class DialogBody(
         button("Confirm") {
           classes = Seq("jfx-dialog__button", "jfx-dialog__button--primary")
           buttonType("button")
-          onClick { _ => onConfirm() }
+          val confirmButton = summon[jfx.core.layout.Button]
+          addDisposable(busy.observe(value => confirmButton.setProperty("disabled", value)))
+          onClick { _ =>
+            if (!busy.get) {
+              busy.set(true)
+              error.set("")
+              def completed(outcome: scala.util.Try[Unit]): Unit = outcome match {
+                case Success(_)       => busy.set(false); onSuccess()
+                case Failure(failure) =>
+                  busy.set(false);
+                  error.set(Option(failure.getMessage).getOrElse("Image upload failed"))
+              }
+              val result = Try(onConfirm()).fold(Future.failed, identity)
+              result.value match {
+                case Some(outcome) => completed(outcome)
+                case None          => result.onComplete(completed)
+              }
+            }
+          }
         }
       }
 

@@ -10,27 +10,21 @@ import jfx.core.dsl.StyleDsl.*
 import jfx.core.layout.TextComponent.text
 import jfx.core.render.{Cursor, DomHostElement}
 import jfx.core.state.Disposable
-import jfx.editor.{Editor, MarkdownSecurity}
+import jfx.editor.{Editor, MediaCoordinator}
+import lexical.media.ImageReference
+import scala.concurrent.{Future, ExecutionContext}
+import scala.util.Try
 import jfx.editor.plugins.DialogElement.element
 import lexical.{
   COMMAND_PRIORITY,
-  EditorUpdateOptions,
   ImageModule,
   ImageNode,
-  ImagePayload,
   Lexical,
   LexicalEditor,
   ToolbarElement,
   getDialogService
 }
-import org.scalajs.dom.{
-  Event,
-  FileReader,
-  HTMLElement,
-  HTMLImageElement,
-  HTMLInputElement,
-  MouseEvent
-}
+import org.scalajs.dom.{HTMLElement, HTMLImageElement, HTMLInputElement, MouseEvent}
 
 import scala.scalajs.js
 
@@ -44,7 +38,8 @@ final class ImagePlugin extends EditorPlugin {
   var selectImageLabel: String  = "Click to select an image"
   var replaceImageLabel: String = "Click to replace the image"
 
-  private var activeReader: FileReader | Null = null
+  private[editor] var media: Option[MediaCoordinator] = None
+  private given ExecutionContext = scala.scalajs.concurrent.JSExecutionContext.queue
 
   override val toolbarElements: Seq[ToolbarElement] = Seq(new ImageModule())
   override val nodes: Seq[js.Any]                   = Seq(js.constructorOf[ImageNode])
@@ -62,26 +57,30 @@ final class ImagePlugin extends EditorPlugin {
     () => {
       unregisterDoubleClick()
       unregisterCommand()
-      Option(activeReader).foreach { reader =>
-        reader.onload = null
-        if (reader.readyState == FileReader.LOADING) reader.abort()
-      }
-      activeReader = null
     }
   }
 
   private def openImageEditor(editor: LexicalEditor): Unit =
     showImageEditor(editor, None)
 
-  private def showImageEditor(
-      editor: LexicalEditor,
-      current: Option[ImageDialogState]
-  ): Unit =
-    editor.getDialogService.show(
-      current.fold(dialogTitle)(_ => editDialogTitle),
-      () => buildDialogContent(current),
-      content => current.fold(insertImage(editor, content))(updateImage(editor, _, content))
-    )
+  private def showImageEditor(editor: LexicalEditor, current: Option[ImageDialogState]): Unit =
+    media.foreach { coordinator =>
+      if (editor.isEditable()) {
+        val destination = coordinator.target()
+        val dialog      = new ImageDialogContent(current)
+        editor.getDialogService.showAsync(
+          current.fold(dialogTitle)(_ => editDialogTitle),
+          () => DialogContent.mount(dialog),
+          _ =>
+            dialog.confirm(coordinator).map { reference =>
+              current match {
+                case Some(image) => destination.replace(image.key, reference)
+                case None        => destination.insert(Seq(reference))
+              }
+            }
+        )
+      }
+    }
 
   private def registerDoubleClick(editor: LexicalEditor): js.Function0[Unit] = {
     val root = editor.getRootElement()
@@ -118,25 +117,66 @@ final class ImagePlugin extends EditorPlugin {
               key = current.getKey(),
               src = current.src,
               altText = current.altText,
-              maxWidth = current.maxWidth
+              maxWidth = current.maxWidth,
+              title = current.reference.title,
+              mediaId = current.reference.mediaId
             )
           }
         })
       )
 
-  private def buildDialogContent(current: Option[ImageDialogState]): HTMLElement = {
-    DialogContent.mount(createDialogContent(current))
-  }
-
   private[plugins] def createDialogContent(current: Option[ImageDialogState]): DialogContent =
     new ImageDialogContent(current)
 
   private final class ImageDialogContent(current: Option[ImageDialogState]) extends DialogContent {
-    private var fileInput: DialogElement          = null
-    private var previewShell: DialogElement       = null
-    private var preview: DialogElement            = null
-    private var previewPlaceholder: DialogElement = null
-    private var reader: FileReader | Null         = null
+    private var fileInput: DialogElement               = null
+    private var previewShell: DialogElement            = null
+    private var preview: DialogElement                 = null
+    private var previewPlaceholder: DialogElement      = null
+    private var selected: Option[org.scalajs.dom.File] = None
+    private var previewUrl: Option[String]             = None
+    private val abort                                  = new org.scalajs.dom.AbortController()
+    private var active                                 = true
+
+    def confirm(coordinator: MediaCoordinator): Future[ImageReference] = Future
+      .fromTry(Try {
+        require(active, "Image dialog was closed")
+        def field(id: String): String =
+          htmlElement.querySelector(id).asInstanceOf[HTMLInputElement].value.trim
+        val widthText = field("#image-width-input")
+        val width     = Option.when(widthText.nonEmpty)(
+          widthText.toIntOption
+            .filter(_ > 0)
+            .getOrElse(throw new IllegalArgumentException("Width must be a positive pixel integer"))
+        )
+        (
+          field("#image-alt-input"),
+          Option(field("#image-title-input")).filter(_.nonEmpty),
+          width,
+          selected
+        )
+      })
+      .flatMap { case (alt, title, width, file) =>
+        val reference = file match {
+          case Some(value) =>
+            coordinator
+              .upload(value, abort.signal)
+              .map(ref => ImageReference(ref.src, alt, title, width, Some(ref.mediaId)))
+          case None =>
+            Future.fromTry(Try {
+              val image =
+                current.getOrElse(throw new IllegalArgumentException("Select an image first"))
+              ImageReference(image.src, alt, title, width, image.mediaId)
+            })
+        }
+        reference.map { image =>
+          require(
+            active && !abort.signal.aborted && selected == file,
+            "Image selection changed during upload"
+          )
+          image.validated
+        }
+      }
 
     override def compose(contentCursor: Cursor): Unit =
       render(this, contentCursor) {
@@ -146,7 +186,8 @@ final class ImagePlugin extends EditorPlugin {
           setDslAttribute("type", "file")
           setDslAttribute("accept", "image/*")
           classes = Seq("image-plugin-dialog__file-input")
-          on("change") { _ => selectedFile.foreach(readFile) }
+          on("change") { _ => selectedFile.foreach(selectFile) }
+          if (!media.exists(_.available)) setDslAttribute("disabled", "disabled")
         }
 
         previewShell = element("button") {
@@ -205,6 +246,18 @@ final class ImagePlugin extends EditorPlugin {
         }
 
         element("label") {
+          setDslAttribute("for", "image-title-input")
+          text("Title (optional)") {}
+        }
+        element("input") {
+          setDslAttribute("id", "image-title-input")
+          setDslProperty("value", current.flatMap(_.title).getOrElse(""))
+        }
+        if (!media.exists(_.available)) element("p") {
+          text("No media uploader is configured. Existing image metadata can still be edited.") {}
+        }
+
+        element("label") {
           setDslAttribute("for", "image-width-input")
           text("Width (px)") {}
         }
@@ -212,10 +265,19 @@ final class ImagePlugin extends EditorPlugin {
           setDslAttribute("type", "number")
           setDslAttribute("id", "image-width-input")
           setDslAttribute("min", "1")
-          setDslProperty("value", math.max(1, current.fold(defaultWidthPx)(_.maxWidth)).toString)
+          setDslProperty(
+            "value",
+            current.fold(math.max(1, defaultWidthPx).toString)(image =>
+              if (image.maxWidth > 0) image.maxWidth.toString else ""
+            )
+          )
         }
 
-        addDisposable(Disposable(cancelReader()))
+        addDisposable(Disposable {
+          active = false
+          abort.abort()
+          previewUrl.foreach(org.scalajs.dom.URL.revokeObjectURL)
+        })
       }
 
     private def selectedFile =
@@ -224,30 +286,12 @@ final class ImagePlugin extends EditorPlugin {
     private def inputElement: Option[HTMLInputElement] =
       domElement(fileInput).collect { case input: HTMLInputElement => input }
 
-    private def readFile(file: org.scalajs.dom.File): Unit = {
-      cancelReader()
-      Option(activeReader).foreach { currentReader =>
-        currentReader.onload = null
-        if (currentReader.readyState == FileReader.LOADING) currentReader.abort()
-      }
-      val nextReader = new FileReader()
-      reader = nextReader
-      activeReader = nextReader
-      nextReader.onload = (_: Event) => {
-        showPreview(Option(nextReader.result).fold("")(_.toString))
-        if (reader eq nextReader) reader = null
-        if (activeReader eq nextReader) activeReader = null
-      }
-      nextReader.readAsDataURL(file)
+    private def selectFile(file: org.scalajs.dom.File): Unit = {
+      selected = Some(file)
+      previewUrl.foreach(org.scalajs.dom.URL.revokeObjectURL)
+      previewUrl = Some(org.scalajs.dom.URL.createObjectURL(file))
+      showPreview(previewUrl.get)
     }
-
-    private def cancelReader(): Unit =
-      Option(reader).foreach { currentReader =>
-        currentReader.onload = null
-        if (currentReader.readyState == FileReader.LOADING) currentReader.abort()
-        if (activeReader eq currentReader) activeReader = null
-        reader = null
-      }
 
     private def showPreview(src: String): Unit = {
       val normalized = Option(src).map(_.trim).getOrElse("")
@@ -280,70 +324,16 @@ final class ImagePlugin extends EditorPlugin {
       }
   }
 
-  private def insertImage(editor: LexicalEditor, content: HTMLElement): Unit = {
-    imagePayload(content).foreach { data =>
-      val payload = js.Dynamic
-        .literal(
-          src = data.src,
-          altText = data.altText,
-          maxWidth = data.maxWidth
-        )
-        .asInstanceOf[ImagePayload]
-      editor.dispatchCommand(ImageNode.INSERT_IMAGE_COMMAND, payload)
-    }
-  }
-
-  private def updateImage(
-      editor: LexicalEditor,
-      current: ImageDialogState,
-      content: HTMLElement
-  ): Unit =
-    imagePayload(content).foreach { payload =>
-      editor.update(
-        () => {
-          val node = Lexical.$getNodeByKey(current.key)
-          if (node != null && node.getType() == "image") {
-            val writable = node.asInstanceOf[ImageNode].getWritable()
-            writable.src = payload.src
-            writable.altText = payload.altText
-            writable.maxWidth = payload.maxWidth
-            writable.markDirty()
-          }
-        },
-        js.Dynamic.literal().asInstanceOf[EditorUpdateOptions]
-      )
-    }
-
-  private def imagePayload(content: HTMLElement): Option[ImageDialogPayload] = {
-    val preview = content.querySelector("#image-preview").asInstanceOf[HTMLImageElement | Null]
-    val alt     = content.querySelector("#image-alt-input").asInstanceOf[HTMLInputElement | Null]
-    val width   = content.querySelector("#image-width-input").asInstanceOf[HTMLInputElement | Null]
-    val src     = Option(preview)
-      .flatMap(element => Option(element.getAttribute("src")))
-      .map(_.trim)
-      .getOrElse("")
-
-    MarkdownSecurity.safeImageUrl(src).map { safeSrc =>
-      ImageDialogPayload(
-        src = safeSrc,
-        altText = Option(alt).map(_.value.trim).filter(_.nonEmpty).orNull,
-        maxWidth = math.max(
-          1,
-          Option(width).flatMap(_.value.toIntOption).getOrElse(defaultWidthPx)
-        )
-      )
-    }
-  }
 }
 
 private[plugins] final case class ImageDialogState(
     key: String,
     src: String,
     altText: String,
-    maxWidth: Int
+    maxWidth: Int,
+    title: Option[String] = None,
+    mediaId: Option[String] = None
 )
-
-private final case class ImageDialogPayload(src: String, altText: String, maxWidth: Int)
 
 object ImagePlugin {
   def imagePlugin(body: ImagePlugin ?=> Unit = {})(using editor: Editor): ImagePlugin = {

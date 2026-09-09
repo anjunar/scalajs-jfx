@@ -36,7 +36,38 @@ editor("body") {
 
 The public value is CommonMark-shaped Markdown with the implemented project extensions: headings, paragraphs, block quotes, ordered and unordered lists, emphasis, strong, strike-through, highlight (`==text==`), inline code, links with optional titles, underline (`++text++`), fenced code blocks, images, horizontal rules, and basic GFM pipe tables. Image width can use `![alt](url){width=320}`.
 
-Raw HTML is rendered as text. Links and images apply the same URL policy in SSR and the browser: HTTP(S), mailto, tel, and relative URLs are allowed; executable and unknown schemes are rejected. Table alignment, captions, multiline cells, nested tables, and arbitrary HTML are not represented.
+Raw HTML is rendered as text. Images require permanent internal paths beginning with a single `/`;
+external, data and blob URLs are rejected. Links retain their separate HTTP(S), mailto, tel and
+relative URL policy. Table alignment, captions, multiline cells, nested tables, and arbitrary
+HTML are not represented.
+
+## Media contract
+
+The image plugin accepts `Editor.mediaUploader`, a `MediaUploader` whose
+`upload(file, signal): Future[UploadedMediaReference]` completes after durable storage. The
+result contains an internal `src` and a stable `mediaId`. `Editor.mediaUrlPolicy` can further
+restrict paths and synchronously resolve IDs for imported Markdown. The pure
+`lexical.media.ImageReference` holds src, alt, optional title, widthPx and mediaId; it contains
+no storage or form state. `Editor.mediaStatusProperty` exposes pending uploads and errors.
+
+The picker, file paste and drop share one upload coordinator. It inserts nodes after upload,
+invalidates pending work when the document or lifecycle changes and retains the dialog on
+failure. Object URLs are local dialog previews only. No FileReader/Base64 insertion path remains.
+Without an uploader, existing internal images and their metadata remain usable.
+
+`![alt](/media/4711 "title"){width=320}` preserves title and explicit width, including the former
+680px default. Width is a positive integer in CSS pixels; omission means natural responsive
+width. Browser and SSR share the image grammar and URL policy. Existing embedded images are
+discarded on load; externally assigned invalid image content fails document validation.
+
+Storage, backend validation, orphan cleanup and a future multipart HTML POST handler belong to
+the application. The TypeScript [media integration guide](../npm/jfx-editor/README.md) documents
+the complete adapter and backend contract.
+
+This development change depends on the companion `scalajs-lexical` 1.4.0-SNAPSHOT library.
+Build/publish it locally with `sbt --server "scalajs-lexical/publishLocal"` in that repository.
+A published Maven version is required before distributing this JFX change independently;
+no registry release is performed by the implementation.
 
 ## SSR and non-JavaScript behavior
 

@@ -23,12 +23,16 @@ private[editor] final class LexicalEditorAdapter(
     plugins: Seq[EditorPlugin],
     toolbarMode: EditorToolbarMode,
     configuredDialogService: Option[DialogService],
+    mediaUploader: Option[MediaUploader],
+    mediaUrlPolicy: MediaUrlPolicy,
+    onMediaStatus: MediaUploadStatus => Unit,
     onMarkdownChanged: String => Unit,
     onFocusChanged: Boolean => Unit
 ) extends AutoCloseable {
 
   private val registrations = mutable.ArrayBuffer.empty[js.Function0[Unit]]
 
+  private var media: MediaCoordinator | Null                  = null
   private var editor: LexicalEditor | Null                    = null
   private var ownedDialogService: DefaultDialogService | Null = null
   private var updateUnregister: js.Function0[Unit] | Null     = null
@@ -69,6 +73,17 @@ private[editor] final class LexicalEditorAdapter(
       if (hasListNodes(nodes)) register(LexicalList.registerList(mountedEditor))
       modules.distinct.foreach(module => register(module.register(mountedEditor)))
       registerDecoratorMounting(mountedEditor)
+      val coordinator = new MediaCoordinator(
+        mountedEditor,
+        mediaUploader.filter(_ => plugins.exists(_.name == "image")),
+        mediaUrlPolicy,
+        onMediaStatus
+      )
+      media = coordinator
+      coordinator.install()
+      plugins
+        .collect { case image: jfx.editor.plugins.ImagePlugin => image }
+        .foreach(_.media = Some(coordinator))
 
       applyMarkdown(mountedEditor, markdown)
       updateUnregister = mountedEditor.registerUpdateListener { (_: js.Dynamic) =>
@@ -89,6 +104,7 @@ private[editor] final class LexicalEditorAdapter(
 
   def setEditable(editable: Boolean): Unit =
     Option(editor).foreach { mountedEditor =>
+      if (!editable) Option(media).foreach(_.invalidate())
       mountedEditor.setEditable(editable)
       surface.setAttribute("contenteditable", editable.toString)
       surface.setAttribute("aria-readonly", (!editable).toString)
@@ -106,6 +122,8 @@ private[editor] final class LexicalEditorAdapter(
   override def close(): Unit =
     if (!closed) {
       closed = true
+      Option(media).foreach(_.close())
+      media = null
       onFocusChanged(false)
 
       Option(updateUnregister).foreach(safely)
@@ -192,7 +210,9 @@ private[editor] final class LexicalEditorAdapter(
 
   private def publishMarkdown(mountedEditor: LexicalEditor): Unit = {
     val markdown =
-      mountedEditor.read(() => LexicalMarkdownCodec.toMarkdown(LexicalMarkdownCodec.transformers))
+      mountedEditor.read(() =>
+        LexicalMarkdownCodec.toMarkdown(LexicalMarkdownCodec.transformersFor(mediaUrlPolicy))
+      )
     if (lastMarkdown != markdown) {
       lastMarkdown = markdown
       onMarkdownChanged(markdown)
@@ -202,9 +222,12 @@ private[editor] final class LexicalEditorAdapter(
   private def applyMarkdown(mountedEditor: LexicalEditor, markdown: String): Unit =
     try {
       val normalized = normalize(markdown)
+      Option(media).foreach(_.invalidate())
       applyingMarkdown = true
       mountedEditor.update(
-        () => LexicalMarkdownCodec.fromMarkdown(normalized, LexicalMarkdownCodec.transformers),
+        () =>
+          LexicalMarkdownCodec
+            .fromMarkdown(normalized, LexicalMarkdownCodec.transformersFor(mediaUrlPolicy)),
         js.Dynamic.literal(discrete = true).asInstanceOf[EditorUpdateOptions]
       )
       lastMarkdown = normalized
@@ -212,7 +235,7 @@ private[editor] final class LexicalEditorAdapter(
       case NonFatal(error) => dom.console.error("Could not import editor Markdown", error)
     } finally applyingMarkdown = false
 
-  private def normalize(markdown: String): String = Option(markdown).getOrElse("")
+  private def normalize(markdown: String): String = MarkdownImages.discardEmbedded(markdown)
 
   private def hasTableNodes(nodes: js.Array[js.Any]): Boolean =
     Seq(LexicalTable.TableNode, LexicalTable.TableRowNode, LexicalTable.TableCellNode)

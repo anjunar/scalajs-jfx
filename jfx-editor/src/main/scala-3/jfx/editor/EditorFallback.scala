@@ -15,7 +15,8 @@ import org.scalajs.dom
 import org.scalajs.dom.HTMLTextAreaElement
 
 /** The readonly SSR/no-JavaScript presentation owned by [[Editor]]. */
-private final class MarkdownReadonly(valueProperty: Property[String]) extends AbstractComponent {
+private final class MarkdownReadonly(valueProperty: Property[String], policy: MediaUrlPolicy)
+    extends AbstractComponent {
   override val tagName: String = "div"
 
   override def compose(cursor: Cursor): Unit =
@@ -24,7 +25,7 @@ private final class MarkdownReadonly(valueProperty: Property[String]) extends Ab
       div {
         classes = Seq("jfx-editor__preview", "jfx-editor-readonly")
         setDslAttribute("aria-readonly", "true")
-        dynamic(valueProperty.map[AbstractComponent](value => new MarkdownRenderer(value)))
+        dynamic(valueProperty.map[AbstractComponent](value => new MarkdownRenderer(value, policy)))
       }
     }
 }
@@ -64,7 +65,9 @@ private final class MarkdownTextArea(
       on("blur") { _ => onFocusChanged(false) }
 
       if (cursor.isBrowser)
-        addDisposable(valueProperty.observe(value => setProperty("value", value)))
+        // The text child already initializes the value. An eager property write would erase
+        // edits made to the server-rendered textarea before hydration.
+        addDisposable(valueProperty.observeWithoutInitial(value => setProperty("value", value)))
     }
 }
 
