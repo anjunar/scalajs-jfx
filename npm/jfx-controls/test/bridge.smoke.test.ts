@@ -169,6 +169,163 @@ describe("carousel", () => {
 });
 
 describe("table-view", () => {
+  function measureTable(root: HTMLElement, height = 100): HTMLElement {
+    const viewport = root.querySelector<HTMLElement>(".jfx-table-viewport")!;
+    Object.defineProperties(viewport, {
+      clientHeight: { configurable: true, value: height },
+      clientWidth: { configurable: true, value: 800 },
+    });
+    return viewport;
+  }
+
+  it("reveals rows and items with minimal movement, without changing selection or mode", () => {
+    const records = Array.from({ length: 100 }, (_, id) => ({ id }));
+    const root = document.createElement("div");
+    let table!: TableViewHandle<{ id: number }>;
+    const app = mount(root, () => {
+      table = tableView(listProperty(records), [valueColumn("ID", row => row.id)], {
+        paging: false, rowHeight: 20, headerRows: 2, header: () => text("Content header"),
+      });
+    });
+    try {
+      const viewport = measureTable(root);
+      table.selectIndex(3);
+      table.scrollToIndex(50);
+      expect(viewport.scrollTop).toBe(960); // 40 header + 51 * 20 - 100 viewport
+      expect(root.querySelector(".jfx-table-cell")!.textContent).not.toBe("0");
+      table.scrollToIndex(49);
+      expect(viewport.scrollTop).toBe(960);
+      for (const invalid of [-1, 100, 0.5, NaN, Infinity, 2 ** 32]) table.scrollToIndex(invalid);
+      table.scrollToItem({ id: 0 }); // A different object is not the loaded record.
+      expect(viewport.scrollTop).toBe(960);
+      table.scrollToItem(records[99]!);
+      expect(viewport.scrollTop).toBe(1940);
+      table.scrollToIndex(0);
+      expect(viewport.scrollTop).toBe(40);
+      expect(table.selectedIndex.get).toBe(3);
+      expect(viewport.style.overflow).toBe("auto");
+      app.dispose();
+      table.scrollToIndex(90);
+      expect(viewport.scrollTop).toBe(40);
+    } finally { app.dispose(); }
+  });
+
+  it("reveals the containing page and its clipped rows while keeping paging enabled", () => {
+    const root = document.createElement("div");
+    let table!: TableViewHandle<number>;
+    const app = mount(root, () => {
+      table = tableView(listProperty(Array.from({ length: 100 }, (_, id) => id)),
+        [valueColumn("ID", row => row)], { paging: true, pageSize: 10, rowHeight: 20 });
+    });
+    try {
+      const viewport = measureTable(root);
+      table.scrollToIndex(57);
+      expect(Array.from(root.querySelectorAll(".jfx-table-cell"), cell => cell.textContent))
+        .toEqual(Array.from({ length: 10 }, (_, id) => String(50 + id)));
+      expect(viewport.scrollTop).toBe(60);
+      expect(viewport.style.overflow).toBe("hidden");
+      table.scrollToIndex(0);
+      expect(viewport.scrollTop).toBe(0);
+      expect(root.querySelector(".jfx-table-cell")!.textContent).toBe("0");
+      expect(table.selectedIndex.get).toBe(-1);
+    } finally { app.dispose(); }
+  });
+
+  it.each([true, false, undefined])("defers render-time navigation until strict hydration completes (paging=%s)", async (paging) => {
+    let table!: TableViewHandle<number>;
+    const build = (): void => {
+      table = tableView(listProperty(Array.from({ length: 100 }, (_, id) => id)),
+        [valueColumn("ID", row => row)], {
+          ...(paging === undefined ? {} : { paging }), rowHeight: 20, crawlable: true, crawlId: `scroll-probe-${paging}`,
+        });
+      table.scrollToIndex(80);
+      table.scrollToIndex(60); // The last valid request wins.
+      div(() => text("Sibling after table"));
+    };
+    const rendered = await renderToString(build);
+    const root = document.createElement("div");
+    root.innerHTML = rendered.html;
+    expect(root.querySelector(".jfx-table-cell")!.textContent).toBe("0");
+    const viewport = measureTable(root);
+    const sibling = root.lastElementChild;
+    const app = await hydrate(root, build);
+    try {
+      expect(root.querySelector(".jfx-table-viewport")).toBe(viewport);
+      expect(root.lastElementChild).toBe(sibling);
+      expect(root.textContent).toContain("60");
+      expect(viewport.scrollTop).toBe(paging === true ? 0 : 1120);
+      expect(viewport.style.overflow).toBe(paging === true ? "hidden" : "auto");
+      await new Promise(resolve => setTimeout(resolve, 40));
+      expect(viewport.scrollTop).toBe(paging === true ? 0 : 1120); // No late restore overrides it.
+    } finally { app.dispose(); }
+  });
+
+  it.each([true, false])("loads a remote target range without selecting it (paging=%s)", async (paging) => {
+    type Query = { offset: number; limit: number };
+    const load = vi.fn(async (query: Query) => ({
+      items: Array.from({ length: query.limit }, (_, i) => `Row ${query.offset + i}`),
+      offset: query.offset, totalCount: 1000,
+    }));
+    const source = remoteSource<string, Query>({
+      load, initialQuery: { offset: 0, limit: 20 },
+      initial: Array.from({ length: 20 }, (_, i) => `Row ${i}`), totalCount: 1000,
+      rangeQuery: (query, offset, limit) => ({ ...query, offset, limit }),
+    });
+    const root = document.createElement("div");
+    let table!: TableViewHandle<string>;
+    const app = mount(root, () => {
+      table = tableView(source, [valueColumn("Value", row => row)], { paging, rowHeight: 20 });
+    });
+    try {
+      const viewport = measureTable(root);
+      table.scrollToIndex(700);
+      await vi.waitFor(() => expect(root.textContent).toContain("Row 700"));
+      expect(load.mock.calls.some(([query]) => query.offset <= 700 && query.offset + query.limit > 700)).toBe(true);
+      expect(table.selectedIndex.get).toBe(-1);
+      const previous = viewport.scrollTop;
+      const calls = load.mock.calls.length;
+      table.scrollToItem("Not loaded anywhere");
+      expect(viewport.scrollTop).toBe(previous);
+      expect(load).toHaveBeenCalledTimes(calls);
+    } finally { app.dispose(); }
+  });
+
+  it("keeps hidden-layout requests pending and drops them on disposal", async () => {
+    const root = document.createElement("div");
+    let table!: TableViewHandle<number>;
+    const app = mount(root, () => {
+      table = tableView(listProperty(Array.from({ length: 100 }, (_, id) => id)),
+        [valueColumn("ID", row => row)], { paging: false, rowHeight: 20 });
+      table.scrollToIndex(90);
+    });
+    const viewport = measureTable(root, 0);
+    expect(viewport.scrollTop).toBe(0);
+    app.dispose();
+    Object.defineProperty(viewport, "clientHeight", { value: 100 });
+    await new Promise(resolve => setTimeout(resolve, 40));
+    expect(viewport.scrollTop).toBe(0);
+  });
+
+  it("applies the latest hidden-layout request when the viewport becomes measurable", async () => {
+    const root = document.createElement("div");
+    let table!: TableViewHandle<number>;
+    const app = mount(root, () => {
+      table = tableView(listProperty(Array.from({ length: 100 }, (_, id) => id)),
+        [valueColumn("ID", row => row)], { paging: false, rowHeight: 20 });
+      table.scrollToIndex(90);
+      table.scrollToIndex(70);
+      table.scrollToIndex(-1);
+    });
+    try {
+      const viewport = measureTable(root, 0);
+      await new Promise(resolve => setTimeout(resolve, 40));
+      expect(viewport.scrollTop).toBe(0);
+      measureTable(root, 100);
+      window.dispatchEvent(new Event("resize"));
+      await vi.waitFor(() => expect(viewport.scrollTop).toBe(1320));
+    } finally { app.dispose(); }
+  });
+
   it("exposes atomic multi-selection operations, independent snapshots and reactive modes", () => {
     const source = listProperty([{ name: "a" }, { name: "b" }, { name: "c" }, { name: "d" }]);
     const mode = property<TableSelectionMode>("multiple");

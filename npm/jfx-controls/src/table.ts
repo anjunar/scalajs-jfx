@@ -97,7 +97,7 @@ export interface TableViewOptions<T = unknown> {
   readonly placeholder?: () => void;
 }
 
-/** Runtime-owned row selection and refresh. Cell selection, focus and scrolling APIs remain pending. */
+/** Runtime-owned row selection, row navigation and refresh. Cell selection and focus remain pending. */
 export interface TableViewHandle<T = unknown> {
   readonly selectionMode: ReadOnlyProperty<TableSelectionMode>;
   /** Sorted unique absolute positions. Item snapshots omit unloaded positions (no remote fetch). */
@@ -125,6 +125,13 @@ export interface TableViewHandle<T = unknown> {
   selectLast(): void;
   selectNext(): void;
   selectPrevious(): void;
+  /** Reveals an absolute row without selecting it or changing paging/scrolling mode.
+   * Invalid/unknown positions are ignored. Known remote gaps load through the normal viewport.
+   * Browser-only; during hydration/hidden layout the latest valid request waits for a measurable viewport.
+   */
+  scrollToIndex(index: number): void;
+  /** Reveals the first loaded matching item; absent items are ignored, searching never fetches data. */
+  scrollToItem(item: T): void;
   /** Rebuilds visible cell content to pick up snapshot mutations. Does not request a remote reload. */
   refresh(): void;
   readonly isDisposed: boolean;

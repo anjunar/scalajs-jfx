@@ -79,6 +79,56 @@ final class TableView[S] private (
   private var contentHeaderBody: Option[AbstractComponent ?=> Cursor ?=> Unit] = None
   private var placeholderBody: Option[AbstractComponent ?=> Cursor ?=> Unit]   = None
   private var contentHeaderComponent: Div | Null                               = null
+  private var scrollNavigationMounted                                          = false
+  private var pendingScrollIndex: Option[Int]                                  = None
+
+  /** Makes an absolute view position visible without selecting it or changing the display mode.
+    * Browser-only: requests during composition/hydration wait for the mounted viewport. Unknown
+    * positions are ignored; unloaded positions inside the known remote extent are supported.
+    */
+  def scrollTo(index: Int): Unit =
+    if (!isDisposed && browserRendering && index >= 0 && index < renderableCount) {
+      pendingScrollIndex = Some(index)
+      flushScrollRequest()
+    }
+
+  /** Finds the first loaded matching item. Searching does not fetch missing remote items. */
+  def scrollTo(item: S): Unit =
+    if (!isDisposed && browserRendering)
+      (0 until renderableCount).find(index => itemAt(index).contains(item)).foreach(scrollTo)
+
+  private def flushScrollRequest(): Unit =
+    if (!isDisposed && scrollNavigationMounted && visibleColumns.nonEmpty)
+      domElement(viewportComponent).filter(_.clientHeight > 0).foreach { viewport =>
+        pendingScrollIndex.foreach { index =>
+          pendingScrollIndex = None
+          if (index < renderableCount) {
+            // An explicit request supersedes cookie/URL restoration, including a jump to row 0.
+            initialScrollIndex = -1
+            hydrating = false
+            domElement(contentHeaderComponent)
+              .foreach(header => contentHeaderHeightProperty.set(header.offsetHeight.toDouble))
+            applyViewportSize(viewport.clientWidth.toDouble, viewport.clientHeight.toDouble)
+            if (isPaging) pageIndexProperty.set(pageIndexForOffset(index))
+            val next = TableScrollPosition.reveal(
+              topForIndex(layoutIndex(index)),
+              math.max(1.0, rowHeightProperty.get),
+              scrollTopProperty.get,
+              viewportHeightProperty.get,
+              geometry.headerOffset + geometry.contentHeight(layoutCount(displayItemCount))
+            )
+            scrollTopProperty.set(next)
+            recomputeVisible() // Also loads a missing range when the offset did not change.
+            viewport.scrollTop = next
+            scrollTopProperty.set(viewport.scrollTop) // Keep the model in sync with DOM clamping.
+          }
+        }
+      }
+
+  override protected def onViewportMeasured(): Unit = {
+    super.onViewportMeasured()
+    flushScrollRequest()
+  }
 
   /** Fixed row height, one column. This is all that distinguishes TableView from DataGrid and
     * VirtualListView -- column widths are a presentation concern, not a virtualization concern.
@@ -180,6 +230,7 @@ final class TableView[S] private (
     bumpColumnState()
     placeholderVisibleProperty.set(renderableCount == 0 || visibleColumns.isEmpty)
     recomputeVisible()
+    if (pendingScrollIndex.nonEmpty && scrollNavigationMounted) scheduleViewportMeasure()
   }
 
   /** Re-evaluates visible cells, including unobserved mutable data, without reloading the source.
@@ -431,6 +482,10 @@ final class TableView[S] private (
       scheduleViewportMeasure()
       observeHeaderHeight(contentHeaderComponent, contentHeaderHeightProperty)
       observeViewportSize()
+      cursor.afterHydration { () =>
+        scrollNavigationMounted = true
+        flushScrollRequest()
+      }
     }
 
   private def installObservers(): Unit = {

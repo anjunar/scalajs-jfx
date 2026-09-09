@@ -1,6 +1,6 @@
 # TableView: Feature-Stand und Implementierungsplan
 
-Stand: 09.09.2026 · Ausgangsanalyse: `7295d92` · einschließlich Grundlagenpaket, Spaltensichtbarkeit, Auswahl-/Remote-Vertrag, RowFactory und Mehrfachauswahl · Referenz: JavaFX 26.
+Stand: 09.09.2026 · Ausgangsanalyse: `7295d92` · einschließlich Grundlagenpaket, Spaltensichtbarkeit, Auswahl-/Remote-Vertrag, RowFactory, Mehrfachauswahl und Zeilennavigation · Referenz: JavaFX 26.
 
 Dieses Dokument beschreibt, welche Funktionen unsere TableView bereits unterstützt und wie wir die fehlenden Fähigkeiten der JavaFX-TableView ergänzen. Es ist ein Implementierungsplan; als **geplant** bezeichnete Modelle, Methoden und Dateien existieren noch nicht.
 
@@ -65,7 +65,17 @@ Paging, SSR, Hydration, Crawl-Zustand und Remote-Nachladen sind vorhandene JFX-E
 
 **Randfälle/Migration:** Wechsel auf Single behält nur den führenden Eintrag. Ein ungültiges `select(index)`/`selectIndex` löscht weiterhin wie bisher die Auswahl (JFX-Kompatibilitätsregel); `selectIndices` ignoriert ungültige/duplizierte Indizes, Bereiche werden auf den gültigen Indexraum begrenzt. Ungültige JavaScript-Bereichsgrenzen wie Brüche/NaN werden ignoriert. `selectAll` ist im Single-Modus wirkungslos. Nach Unmount sind Mutationen wirkungslos. Alle abgeleiteten Properties können auch bei unverändertem Einzelwert benachrichtigen; Beobachter lesen stets einen kohärenten Modellzustand.
 
-**Weiter offen:** Austausch eigener SelectionModels, Zell-/Rechteckauswahl, eigenständiges FocusModel, Scroll-API, Tastaturnavigation und vollständiger zugänglicher Grid-Vertrag. Maus-Mehrfachauswahl ist nicht gleichbedeutend mit abgeschlossener Accessibility-Abnahme. Referenz für Ergebnislisten und Bereichsoperationen: [MultipleSelectionModel, JavaFX 26](https://openjfx.io/javadoc/26/javafx.controls/javafx/scene/control/MultipleSelectionModel.html).
+**Weiter offen:** Austausch eigener SelectionModels, Zell-/Rechteckauswahl, eigenständiges FocusModel, Scroll-Events/Spaltennavigation, Tastaturnavigation und vollständiger zugänglicher Grid-Vertrag. Maus-Mehrfachauswahl ist nicht gleichbedeutend mit abgeschlossener Accessibility-Abnahme. Referenz für Ergebnislisten und Bereichsoperationen: [MultipleSelectionModel, JavaFX 26](https://openjfx.io/javadoc/26/javafx.controls/javafx/scene/control/MultipleSelectionModel.html).
+
+### Implementiert: programmatische Zeilennavigation
+
+- Scala: `table.scrollTo(index)` / `table.scrollTo(item)`; TypeScript: `scrollToIndex(index)` / `scrollToItem(item)`. Absolute Ansichtskoordinaten, unabhängig von Auswahl und DOM-Fokus. Bereits vollständig sichtbare Zeilen bleiben stehen, ansonsten wird nur die nötige Strecke gescrollt. Content-Header, übergroße Zeilen und das Inhaltsende werden berücksichtigt.
+- Paging bleibt Paging: Die Seite des Zielindex wird angezeigt; auch innerhalb einer höheren Seite wird die Zielzeile sichtbar gemacht. Scrollmodus bleibt Scrollmodus. Die gemeinsame Geometrie und die vorhandenen Ladepfade werden wiederverwendet; DataGrid/VirtualListView erhalten dadurch keine neue öffentliche API.
+- Bekannte ungeladene Remote-Positionen lösen normales Range-Loading aus. Quellen ohne Random-Access behalten ihren sequenziellen Ladepfad. Unbekannte Positionen außerhalb des aktuellen Umfangs, negative/ungültige Indizes und fehlende Items werden ignoriert. Item-Suche prüft das erste gleiche geladene Item, ohne Such-Fetch; sie kann den gesamten Indexraum durchlaufen.
+- SSR verändert seinen deterministischen Ausschnitt nicht. Browser-Aufrufe während Komposition/Hydration warten auf abgeschlossene Hydration und einen messbaren Viewport mit sichtbaren Spalten. Die letzte gültige Anforderung gewinnt, wird vor Ausführung gegen den aktuellen Umfang geprüft und überschreibt die anfängliche Cookie-/URL-Scrollwiederherstellung. Unmount verhindert spätere Ausführung.
+- Die Demo bietet Sprünge zur 500. Zeile, zur ersten und zur führenden ausgewählten Zeile. Ein Sprung wählt nicht automatisch das Ziel aus.
+
+**Abgrenzung:** Kein `onScrollTo`-Event, kein Ladeabschluss-Promise und keine horizontale Spaltennavigation. V03 bleibt deshalb teilweise offen. Der Sichtbarkeitsvertrag orientiert sich an [JavaFX `scrollTo`](https://openjfx.io/javadoc/26/javafx.controls/javafx/scene/control/TableView.html#scrollTo(int)); SSR, Paging und Remote-Lücken sind JFX-spezifische Ergänzungen. Ein ausstehender Index ist eine Position der dann aktuellen Ansicht, kein stabiler Datensatz-Key.
 
 ## 2. Bestandsaufnahme im Repository
 
@@ -200,7 +210,7 @@ Referenzen: [Cell-Editierablauf](https://openjfx.io/javadoc/26/javafx.controls/j
 | --- | --- | --- | --- |
 | V01 | Virtuelle Zeilen mit fester Höhe | Vorhanden | Überlappende absolute Slots mit derselben Item-Instanz bleiben erhalten. Datensatzbewegungen sind nicht Bestandteil dieses Vertrags. M1. |
 | V02 | Variable Zeilenhöhen/fixedCellSize-Semantik | Teilweise | Heutiger Alias setzt nur rowHeight. Gemessene Zeilen ergänzen; positive feste Höhe von variabler Höhe unterscheiden. M6. |
-| V03 | `scrollTo(index/item)`, `onScrollTo` | Offen | Modellbasierte Sichtbarkeitsanforderung; unterstützt ungeladene Positionen sowie Paging. M2. |
+| V03 | `scrollTo(index/item)`, `onScrollTo` | Teilweise | Zeilennavigation in Scala und TypeScript, bekannte ungeladene Remote-Positionen, Paging, Header und Hydration vorhanden. `onScrollTo` bleibt offen. M2. |
 | V04 | Horizontales Scrollen und Spaltennavigation | Teilweise | Header folgt dem Scrolloffset; `scrollToColumn`, `scrollToColumnIndex`, `onScrollToColumn` und Policy-abhängiges overflow ergänzen. M2/M5. |
 | V05 | Zeilen-/Zellzustände und CSS-Anpassung | Teilweise | selected/odd/even/loading vorhanden; focused/editing/disabled und Spaltenstil ergänzen. M2/M4/M6. |
 | V06 | Zugänglicher Tabellen-/Grid-Vertrag | Teilweise | Zeilen setzen aria-selected. Rollen, Indizes, Zähler, aktiver Fokus und Sortierinformation fehlen. M2/M5/M6. |
@@ -376,7 +386,7 @@ ARIA umfasst Grid/Row/ColumnHeader/GridCell, sichtbare Spaltenindizes, absolute 
 
 ### 4.9 Scala- und TypeScript-Vertrag gemeinsam liefern
 
-Die öffentliche Tabellenfassade liegt in `npm/jfx-controls`; `tableView(...)` liefert ein `TableViewHandle<T>` für `refresh()`, `isDisposed`, lesbare Einzel-/Mehrfachauswahl und kontrollierte Auswahloperationen. `scrollTo`, `sort`, `edit` und umfassende Modell-Handles bleiben offen.
+Die öffentliche Tabellenfassade liegt in `npm/jfx-controls`; `tableView(...)` liefert ein `TableViewHandle<T>` für `refresh()`, `isDisposed`, lesbare Einzel-/Mehrfachauswahl, kontrollierte Auswahloperationen und `scrollToIndex`/`scrollToItem`. Scroll-Events, Spaltennavigation, `sort`, `edit` und umfassende Modell-Handles bleiben offen.
 
 Mit M0 den vorhandenen minimalen Handle-Vertrag um typsichere Modellzustände und kontrollierte Operationen erweitern. Die Rückgabe wird bereits nach abgeschlossenem Mount über einen internen Factory-Callback aus der Bridge an die TypeScript-Fassade übergeben. Spalten benötigen zusätzlich stabile Handles oder IDs für ihre Operationen.
 
@@ -403,6 +413,7 @@ Die Größen S/M/L bezeichnen relative Komplexität, keine Zeitversprechen. M0 i
 - [ ] M0: Quellentausch, stabile Keys und allgemeine Transformations-/Identitätsabbildung.
 - [x] M0/M2: Typisiertes TypeScript-Handle für konsistente Einzelauswahl und kontrollierte Mutationen.
 - [x] M2: Zentrales Zeilen-Auswahlmodell, Mehrfachauswahl/Ergebnislisten, Bereichsoperationen und Ctrl/Cmd-/Shift-Mausbedienung in Scala und TypeScript.
+- [x] M2: Programmatische Zeilennavigation per Index/Item, einschließlich Paging, Remote-Lücken und Hydration.
 - [x] M1: Erhalt überlappender Zeilenfenster; gebundenes Eingabefeld einschließlich Fokus/Textauswahl in den Bridge-Integrationstests absichern.
 - [ ] M1: Reale Browserabnahme für Eingabefelder/IME, nicht nur jsdom.
 - [x] M1: `cellValueFactory` vervollständigen und `TableCell` in den Renderpfad integrieren; `cell(row)` bleibt nutzbar.
@@ -414,6 +425,10 @@ Die Größen S/M/L bezeichnen relative Komplexität, keine Zeitversprechen. M0 i
 - [ ] Anschließend M2 und M3; auf dieser Basis M4 und M5 vervollständigen.
 
 ## 6. Verifikation
+
+Der sechste Ausbau ergänzt vier Scala-Geometrietests und neun TypeScript-Integrationstests für Zeilennavigation: minimale Bewegung, Inhaltsende/Header, Paging, ungültige Indizes/fehlende Items, Remote-Range-Loading, SSR-No-op, strikte Hydration mit allen drei Moduskonfigurationen, verdecktes Layout und Disposal. Die Paket-Consumer prüfen die neuen Methoden über exportierte Typen und die echte SSR-Bridge. Ein Testzwischenlauf deckte eine nicht isolierte Crawl-ID auf: Der Browser-Cookie des vorherigen Falls stimmte nicht mit dem cookie-losen SSR-Aufruf überein. Die Varianten verwenden jetzt eigene Crawl-IDs.
+
+Abnahme am 09.09.2026: vollständiges Scala-Gate und Bridge-Full-Link grün; npm-Gates für Controls (37 Integrationstests + 3 Paket-Consumer), Core (114 + 8) und Demo (Client-/SSR-Builds, Eine-Runtime-Nachweis, 31 Routen) grün. Im echten Browser wurde Zeile 500 bei aktiver Remote-Sortierung vollständig sichtbar, ohne die vorherige Auswahl zu ändern; Rücksprünge zur Auswahl und ersten Zeile funktionierten ohne Browserfehler. Dies ersetzt keine vollständige Accessibility-Abnahme.
 
 Der fünfte Ausbau ergänzt sieben Scala-Mehrfachauswahltests und vier TypeScript-Integrationstests: atomare Ergebnisse/Moduswechsel, vorwärts/rückwärts begrenzte Bereiche, Bulk-Operationen und Navigation, Duplikate und Reset-Identität, Shift-Anker-Rebasing, lückenhafte Remote-Auswahl ohne Fetch sowie Disposal. Browsernahe Tests prüfen Ctrl/Cmd-/Shift-Klicks, RowFactory-Mitgliedschaft ohne Neukomposition, Hydration mit DOM-Identität, Spaltensichtbarkeit und unabhängige Array-Snapshots. Der Paket-Consumer prüft die exportierten Typen und echte Mehrfachauswahl über die installierten Tarballs.
 

@@ -84,6 +84,9 @@ export function controlsTablePage(): void {
       onClick(() => selectionMode.set(selectionMode.get === "multiple" ? "single" : "multiple"));
     });
     div(() => text(translated("Ctrl/Cmd-click toggles rows; Shift-click selects a range.")));
+    button(translated("Go to row 500"), {}, () => onClick(() => table.scrollToIndex(499)));
+    button(translated("Go to first row"), {}, () => onClick(() => table.scrollToIndex(0)));
+    button(translated("Show selected row"), {}, () => onClick(() => table.scrollToIndex(table.selectedIndex.get)));
 
     div(() => {
       style("height", "420px");

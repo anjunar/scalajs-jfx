@@ -216,8 +216,26 @@ virtualList(source, (item, index) => text(item === null ? `Loading ${index}` : i
 ```
 
 `crawlable` and `crawlId` render a deterministic server slice with ordinary pager links.
-Table selection and refresh are available through its handle; imperative scrolling and
+Table selection, row navigation and refresh are available through its handle;
 data-grid/list selection handles are not projected by this facade yet.
+
+`table.scrollToIndex(499)` reveals the 500th row in absolute view coordinates;
+`table.scrollToItem(item)` reveals the first matching loaded item. Neither changes selection,
+DOM focus or the display mode. In paging mode the containing page is shown; if that page is
+taller than the viewport, its rows can also be revealed programmatically. In scrolling mode,
+already visible rows stay in place. Content headers are included and the last row is clamped
+to the end of the content.
+
+Invalid/unknown indices and absent items are ignored. A known but unloaded remote position
+uses the existing range loader (including its loading/error/retry behavior); item lookup never
+fetches missing items. Sources without random range access retain their sequential loading
+behavior. These methods do not discover unknown positions beyond the source's current extent.
+
+Navigation is browser-only: SSR keeps its deterministic slice. Requests made during
+composition/hydration or while the viewport has no height/visible columns wait until it can be
+measured. The latest valid request wins, is revalidated against the current extent, and
+supersedes the initial cookie/URL scroll restoration. Disposal cancels pending navigation.
+There is no load-completion promise or `onScrollTo` event yet; column navigation remains pending.
 
 Paged or scrolling content headers can declare their reserved height with `headerRows`. For
 `dataGrid`, one row is one card height and the header always spans the full responsive grid width;
