@@ -154,8 +154,12 @@ describe("typechecking a consumer", () => {
       "  return renderToString(() => {",
       "    const rows = listProperty<Row>([{ name: \"a\" }]);",
       "    tabs([tab(\"One\", () => div(() => text(\"one\")))]);",
-      "    const table: TableViewHandle = tableView(rows, columns, { crawlable: true, crawlId: \"t\" });",
+      "    const table: TableViewHandle<Row> = tableView(rows, columns, { crawlable: true, crawlId: \"t\" });",
       "    if (!table.isDisposed) table.refresh();",
+      "    table.selectIndex(0);",
+      "    const selectedName: string | undefined = table.selectedItem.get?.name;",
+      "    table.selectItem(rows.get[0]!);",
+      "    table.clearSelection();",
       "    carousel(rows, (row) => div(() => text(row.name)));",
       "    dataGrid(rows, (row) => div(() => text(row?.name ?? \"\")));",
       "    virtualList(rows, (row) => div(() => text(row?.name ?? \"\")));",
@@ -204,12 +208,15 @@ describe("rendering controls from a packed install", () => {
       'import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";',
       'import { tab, tableView, tabs } from "@anjunar/jfx-controls";',
       "installRuntime(bridgeRuntime);",
+      "let selectedTitle;",
       "const result = await renderToString(() => {",
       "  const rows = listProperty([{ title: \"Dune\" }, { title: \"Solaris\" }]);",
       "  tabs([tab(\"A\", () => div(() => text(\"panel a\"))), tab(\"B\", () => div(() => text(\"panel b\")))], { selectedIndex: 1 });",
       "  const table = tableView(rows, [{ text: \"Title\", cell: (r) => text(r.title) }, { text: \"Hidden\", visible: false, cell: () => { throw new Error(\"Hidden cell rendered\"); } }], { crawlable: true, crawlId: \"probe\" });",
       "  if (table.isDisposed) throw new Error(\"Handle disposed before unmount\");",
       "  table.refresh();",
+      "  table.selectIndex(1);",
+      "  selectedTitle = table.selectedItem.get?.title;",
       "});",
       "console.log(JSON.stringify({",
       "  status: result.status,",
@@ -217,6 +224,7 @@ describe("rendering controls from a packed install", () => {
       "  panelA: result.html.includes(\"panel a\"),",
       "  dune: result.html.includes(\"Dune\"),",
       "  solaris: result.html.includes(\"Solaris\"),",
+      "  selectedTitle,",
       "}));",
       "",
     ].join("\n");
@@ -229,6 +237,7 @@ describe("rendering controls from a packed install", () => {
       panelA: boolean;
       dune: boolean;
       solaris: boolean;
+      selectedTitle: string;
     }>(run(process.execPath, ["ssr-controls.mjs"], consumer));
 
     expect(result.status).toBe(200);
@@ -236,5 +245,6 @@ describe("rendering controls from a packed install", () => {
     expect(result.panelA).toBe(false);
     expect(result.dune).toBe(true);
     expect(result.solaris).toBe(true);
+    expect(result.selectedTitle).toBe("Solaris");
   });
 });

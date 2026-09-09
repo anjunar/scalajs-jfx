@@ -9,6 +9,8 @@ export const entries: readonly CatalogEntry[] = [
   catalogEntry(i18n`Scroll through remote ranges or sort any column; the table keeps one stable virtual surface.`, { de: "Scrolle durch Remote-Bereiche oder sortiere eine Spalte; die Tabelle behält eine stabile virtuelle Fläche." }),
   catalogEntry(i18n`Author`, { de: "Autor:in" }),
   catalogEntry(i18n`Toggle author column`, { de: "Autorenspalte ein-/ausblenden" }),
+  catalogEntry(i18n`No book selected`, { de: "Kein Buch ausgewählt" }),
+  catalogEntry(i18n`Clear book selection`, { de: "Buchauswahl aufheben" }),
   catalogEntry(i18n`Remote catalogue · visible rows load on demand`, { de: "Remote-Katalog · sichtbare Zeilen werden bei Bedarf geladen" }),
   catalogEntry(i18n`No books found.`, { de: "Keine Bücher gefunden." }),
 ];

@@ -81,8 +81,16 @@ export interface TableViewOptions {
   readonly placeholder?: () => void;
 }
 
-/** Runtime-owned operations for a mounted table. Further selection/scroll APIs are not yet projected. */
-export interface TableViewHandle {
+/** Runtime-owned single-selection and refresh operations. Multi-selection and scrolling APIs remain pending. */
+export interface TableViewHandle<T = unknown> {
+  /** Single-row selection in absolute view coordinates; unloaded positions have a null item. */
+  readonly selectedIndex: ReadOnlyProperty<number>;
+  readonly selectedItem: ReadOnlyProperty<T | null>;
+  /** Invalid positions clear selection. These methods are no-ops after unmount. */
+  selectIndex(index: number): void;
+  /** Selects the first matching item, or clears when absent. Does not fetch unloaded items. */
+  selectItem(item: T): void;
+  clearSelection(): void;
   /** Rebuilds visible cell content to pick up snapshot mutations. Does not request a remote reload. */
   refresh(): void;
   readonly isDisposed: boolean;
@@ -93,13 +101,13 @@ export function tableView<T, Q = unknown>(
   source: Source<T, Q>,
   columns: readonly ColumnDef<T>[],
   options: TableViewOptions = {}
-): TableViewHandle {
-  let handle: TableViewHandle | undefined;
+): TableViewHandle<T> {
+  let handle: TableViewHandle<T> | undefined;
   component(
     "table-view",
     defined({
       source,
-      receiveHandle: (value: TableViewHandle) => { handle = value; },
+      receiveHandle: (value: TableViewHandle<T>) => { handle = value; },
       columns: columns.map((col) => ({
         text: col.text,
         prefWidth: col.prefWidth,

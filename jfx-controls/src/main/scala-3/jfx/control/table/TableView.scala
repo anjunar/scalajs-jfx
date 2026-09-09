@@ -8,7 +8,7 @@ import jfx.control.virtualized.{
 }
 import jfx.control.table.TableRow.{placeholderRow, rowItem, tableRow}
 import jfx.core.component.AbstractComponent
-import jfx.core.remote.RemoteSort
+import jfx.core.remote.{RemoteListChange, RemoteSort}
 import jfx.core.dsl.ClassDsl.{addClass, classIf, classes}
 import jfx.core.dsl.DslLayer
 import jfx.core.dsl.EventDsl.{on, onClick}
@@ -49,16 +49,18 @@ final class TableView[S] private (
   private[table] val visibleColumns            = ListProperty[TableColumn[S, ?]]()
   val visibleLeafColumns: ReadOnlyProperty[Vector[TableColumn[S, ?]]] =
     visibleColumns.map(_.toVector)
-  private val placeholderVisibleProperty                         = Property(true)
-  val showHeaderProperty: Property[Boolean]                      = Property(true)
-  val showFooterProperty: Property[Boolean]                      = Property(true)
-  val rowHeightProperty: Property[Double]                        = Property(32.0)
-  val prefWidthProperty: Property[Option[Double]]                = Property(None)
-  val fixedHeightProperty: Property[Option[Double]]              = Property(None)
-  val scrollLeftProperty: Property[Double]                       = Property(0.0)
-  val viewportWidthProperty: Property[Double]                    = Property(800.0)
-  val selectedIndexProperty: Property[Int]                       = Property(-1)
-  val selectedItemProperty: Property[S | Null]                   = Property(null)
+  private val placeholderVisibleProperty            = Property(true)
+  val showHeaderProperty: Property[Boolean]         = Property(true)
+  val showFooterProperty: Property[Boolean]         = Property(true)
+  val rowHeightProperty: Property[Double]           = Property(32.0)
+  val prefWidthProperty: Property[Option[Double]]   = Property(None)
+  val fixedHeightProperty: Property[Option[Double]] = Property(None)
+  val scrollLeftProperty: Property[Double]          = Property(0.0)
+  val viewportWidthProperty: Property[Double]       = Property(800.0)
+  private final case class Selection(index: Int, item: S | Null)
+  private val selectionState                                     = Property(Selection(-1, null))
+  val selectedIndexProperty: ReadOnlyProperty[Int]               = selectionState.map(_.index)
+  val selectedItemProperty: ReadOnlyProperty[S | Null]           = selectionState.map(_.item)
   val rowDoubleClickHandlerProperty: Property[Option[S => Unit]] = Property(None)
   val headerRowsProperty: Property[Int]                          = Property(0)
 
@@ -93,11 +95,56 @@ final class TableView[S] private (
   /** TableView recomputes on every change -- with fixed row height, every insertion shifts all
     * following rows.
     */
-  override protected def handleLocalItemsChange(change: ListProperty.Change[S]): Unit =
+  override protected def handleLocalItemsChange(change: ListProperty.Change[S]): Unit = {
+    reconcileSelection(change)
     change match {
       case ListProperty.Reset(_) => refresh()
       case _                     => refreshItemState()
     }
+  }
+
+  override protected def handleRemoteItemsChange(change: RemoteListChange[S]): Unit = {
+    change match {
+      case RemoteListChange.Reset()            => clearSelection()
+      case RemoteListChange.Structural(change) => reconcileSelection(change)
+      case RemoteListChange.RangeLoaded(_, _)  => ()
+    }
+    super.handleRemoteItemsChange(change)
+  }
+
+  /** Structural deltas preserve the selected occurrence even when values/instances are duplicated.
+    * A Reset has no occurrence mapping: retain only an unambiguous identical instance.
+    */
+  private def reconcileSelection(change: ListDataSource.Change[S]): Unit = {
+    val selected = selectedIndexProperty.get
+    if (selected < 0) return
+    def splice(from: Int, removed: Int, inserted: Int): Int =
+      if (selected < from) selected
+      else if (selected < from + removed) -1
+      else selected + inserted - removed
+    val next = change match {
+      case ListDataSource.Insert(index, _, _)               => splice(index, 0, 1)
+      case ListDataSource.InsertAll(index, elements, _)     => splice(index, 0, elements.length)
+      case ListDataSource.RemoveAt(index, _, _)             => splice(index, 1, 0)
+      case ListDataSource.RemoveRange(index, elements, _)   => splice(index, elements.length, 0)
+      case ListDataSource.Patch(from, removed, inserted, _) =>
+        splice(from, removed.length, inserted.length)
+      case ListDataSource.Clear(_, _) => -1
+      case ListDataSource.Reset(_)    =>
+        val previous = selectedItemProperty.get
+        val matches  = (0 until renderableCount).iterator
+          .filter { index =>
+            itemAt(index).exists(value =>
+              value.asInstanceOf[AnyRef] eq previous.asInstanceOf[AnyRef]
+            )
+          }
+          .take(2)
+          .toVector
+        if (matches.size == 1) matches.head else -1
+      case _ => selected // Add at the end or an explicit UpdateAt keeps the position.
+    }
+    select(next)
+  }
 
   /** Only TableView scrolls horizontally. */
   override protected def onScrollLeftChanged(scrollLeft: Double): Unit =
@@ -449,7 +496,6 @@ final class TableView[S] private (
     addDisposable(headerRowsProperty.observeWithoutInitial(_ => refreshItemState()))
     addDisposable(crawlableProperty.observeWithoutInitial(_ => refreshConfiguredCrawlState()))
     addDisposable(crawlIdProperty.observeWithoutInitial(_ => refreshConfiguredCrawlState()))
-    addDisposable(selectedIndexProperty.observeWithoutInitial(_ => refreshSelectedItem()))
     addDisposable(contentHeaderHeightProperty.observeWithoutInitial(_ => refreshItemState()))
     installItemObservers()
   }
@@ -501,16 +547,22 @@ final class TableView[S] private (
   }
 
   override protected def refreshItemState(): Unit = {
+    if (itemsUpdateInProgress) return
     placeholderVisibleProperty.set(renderableCount == 0 || visibleColumns.isEmpty)
     super.refreshItemState()
     refreshSelectedItem()
   }
 
-  private def refreshSelectedItem(): Unit = {
-    val index = selectedIndexProperty.get
-    selectedItemProperty.set(
-      if (index >= 0 && index < renderableCount) itemAt(index).orNull else null
+  private def refreshSelectedItem(): Unit = updateSelection(selectedIndexProperty.get)
+
+  private def updateSelection(requestedIndex: Int): Unit = {
+    val index = if (requestedIndex >= 0 && requestedIndex < renderableCount) requestedIndex else -1
+    val next  = if (index >= 0) itemAt(index).orNull else null
+    val previous = selectionState.get
+    if (
+      previous.index != index || !(previous.item.asInstanceOf[AnyRef] eq next.asInstanceOf[AnyRef])
     )
+      selectionState.setAlways(Selection(index, next))
   }
 
   private def contentHeightProperty: ReadOnlyProperty[String] =
@@ -570,10 +622,15 @@ final class TableView[S] private (
       case _ => ()
     }
 
-  def select(index: Int): Unit =
-    selectedIndexProperty.set(if (index >= 0 && index < renderableCount) index else -1)
+  def select(index: Int): Unit = {
+    if (isDisposed) return
+    updateSelection(index)
+  }
+
+  def clearSelection(): Unit = select(-1)
 
   def select(item: S): Unit = {
+    if (isDisposed) return
     val index = (0 until dataSource.totalLength).find(i => itemAt(i).contains(item)).getOrElse(-1)
     select(index)
   }

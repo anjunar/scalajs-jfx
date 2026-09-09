@@ -1,6 +1,6 @@
-import { button, classes, div, onClick, property, style, text } from "@anjunar/jfx-core";
+import { button, classes, div, onClick, property, style, text, when } from "@anjunar/jfx-core";
 import { column, remoteSource, tableView } from "@anjunar/jfx-controls";
-import type { RemotePage, RemoteSource, SortSpec } from "@anjunar/jfx-controls";
+import type { RemotePage, RemoteSource, SortSpec, TableViewHandle } from "@anjunar/jfx-controls";
 import { translated } from "../../app/i18n.js";
 
 interface Book {
@@ -50,6 +50,7 @@ function loadPage(query: Query): Promise<RemotePage<Book, Query>> {
 
 export function controlsTablePage(): void {
   const showAuthors = property(true);
+  let table!: TableViewHandle<Book>;
   const initialQuery: Query = { offset: 0, limit: PAGE_SIZE, sorting: [] };
   const source: RemoteSource<Book, Query> = remoteSource({
     load: loadPage,
@@ -81,7 +82,7 @@ export function controlsTablePage(): void {
 
     div(() => {
       style("height", "420px");
-      tableView(
+      table = tableView(
         source,
         [
           column(translated("Title").get, (book) => text(book.title), { prefWidth: 280, sortable: true, sortKey: "title" }),
@@ -96,6 +97,18 @@ export function controlsTablePage(): void {
           placeholder: () => text(translated("No books found.")),
         }
       );
+    });
+    div(() => {
+      classes("showcase-result");
+      when(
+        table.selectedItem.map((book) => book === null),
+        () => text(translated("No book selected")),
+      );
+      when(
+        table.selectedItem.map((book) => book !== null),
+        () => text(table.selectedItem.map((book) => book?.title ?? "")),
+      );
+      button(translated("Clear book selection"), {}, () => onClick(() => table.clearSelection()));
     });
   });
 }

@@ -1,6 +1,6 @@
 # TableView: Feature-Stand und Implementierungsplan
 
-Stand: 09.09.2026 · Ausgangsanalyse: `7295d92` · einschließlich Grundlagenpaket und Ausbau für Spaltensichtbarkeit/Refresh-Handle · Referenz: JavaFX 26.
+Stand: 09.09.2026 · Ausgangsanalyse: `7295d92` · einschließlich Grundlagenpaket, Spaltensichtbarkeit und Auswahl-/Remote-Vertrag · Referenz: JavaFX 26.
 
 Dieses Dokument beschreibt, welche Funktionen unsere TableView bereits unterstützt und wie wir die fehlenden Fähigkeiten der JavaFX-TableView ergänzen. Es ist ein Implementierungsplan; als **geplant** bezeichnete Modelle, Methoden und Dateien existieren noch nicht.
 
@@ -35,9 +35,22 @@ Paging, SSR, Hydration, Crawl-Zustand und Remote-Nachladen sind vorhandene JFX-E
 - `tableView(...)` gibt jetzt ein `TableViewHandle` mit `refresh()` und lesbarem `isDisposed` zurück. Das Handle delegiert an Scala; nach Unmount ist Refresh wirkungslos. Es gibt keine zweite Tabellenimplementierung in TypeScript und keine neuen Core-/Forms-Abhängigkeiten.
 - In der TypeScript-Demo `/controls/table` zeigt ein Schalter das Ein-/Ausblenden der Autorenspalte. Dieser Weg wurde im In-app-Browser geprüft, einschließlich Wiederherstellung von Header/Werten und ohne gemeldete Browserfehler.
 
-**Abgrenzung:** Die Spaltenliste ist weiterhin flach. „Blatt“ bedeutet bis zum Spaltenbaum-Ausbau eine normale Spalte. Gruppenheader, `rowFactory`, umfassende Handles, Auswahlidentität und Remote-Koordinaten sind weiterhin offen. Verstecken einer sortierten Spalte ändert die bestehende Remote-Sortierung nicht. Programmatisches Spalten-Reordering garantiert noch keinen Erhalt aller verschobenen Zellen.
+**Abgrenzung dieses Ausbaus:** Die Spaltenliste ist weiterhin flach. „Blatt“ bedeutet bis zum Spaltenbaum-Ausbau eine normale Spalte. Gruppenheader, `rowFactory` und umfassende Handles bleiben offen; Auswahlidentität und Remote-Koordinaten behandelt das folgende Paket. Verstecken einer sortierten Spalte ändert die bestehende Remote-Sortierung nicht. Programmatisches Spalten-Reordering garantiert noch keinen Erhalt aller verschobenen Zellen.
 
 **Migration TypeScript:** Aufrufe dürfen den Rückgabewert weiter ignorieren. Explizit `void`-annotierte Expression-Arrows benötigen einen Block, beispielsweise `(): void => { tableView(source, columns); }`. Die Fassade erwartet die dazu passende neu gelinkte Bridge. Refresh ist für Snapshot-Änderungen gedacht und darf lokale Editorentwürfe zurücksetzen; live editierte Werte bleiben beobachtbar gebunden.
+
+### Implementiert: konsistente Einzelauswahl und absolute Remote-Ereignisse
+
+- Lokale Insert-/Remove-/Patch-Ereignisse verschieben die Auswahl mit dem ausgewählten Vorkommen, auch bei Duplikaten. Entfernen oder Ersetzen dieses Vorkommens löscht die Auswahl. `UpdateAt` behält dagegen die Position und übernimmt den ausdrücklich aktualisierten Datensatz.
+- Ein lokaler Reset erhält die Auswahl nur, wenn genau dieselbe Objektinstanz eindeutig wiedergefunden wird. Gleiche Werte in neuen Objekten oder mehrfach vorkommende identische Instanzen sind ohne Vorkommensabbildung nicht eindeutig und löschen die Auswahl. Kein `rowKey` und keine allgemeine Permutations-API.
+- Index und Item bilden einen gemeinsamen Zustand. Ungültige Indizes werden zu `-1`/`null`; ein gültiger ungeladener Remote-Index bleibt ausgewählt mit Item `null`. Nachladen dieses Bereichs löst das Item auf, ohne die Auswahl zu verschieben.
+- `RemoteListDataSource.observeIndexedChanges` unterscheidet `RangeLoaded`, `Structural` mit absoluten Indizes und `Reset`. Die gemeinsame Virtualisierung verarbeitet diese abgeschlossenen Änderungen; Zwischenstände von Cache und Paging-Metadaten lösen keine verfrühte Item-Aktualisierung aus. Erfolgreiche Antworten werden vor `loading=false` installiert.
+- Erfolgreich übernommene Remote-Replacements (Reload/Sortierung) und Clear löschen die Auswahl. Während einer laufenden oder fehlgeschlagenen Ersatzabfrage bleiben bisherige Daten und Auswahl erhalten. Veraltete Antworten veröffentlichen keine neuen Indexereignisse.
+- `TableViewHandle<T>` bietet lesbare `selectedIndex`/`selectedItem` sowie `selectIndex`, `selectItem` und `clearSelection`; nach Unmount sind Mutationen wirkungslos. Die Demo zeigt das ausgewählte Buch reaktiv an und erlaubt das Aufheben der Auswahl.
+
+**Migration Scala:** `selectedIndexProperty` und `selectedItemProperty` sind jetzt `ReadOnlyProperty`. Direkte Schreibzugriffe durch `select(index)`, `select(item)` bzw. `clearSelection()` ersetzen. Beobachter sehen stets ein zusammengehöriges Paar; abgeleitete Properties können auch bei unverändertem Einzelwert benachrichtigen. Item-Auswahl sucht das erste gleiche geladene Item, lädt nichts nach und kann den gesamten Indexraum durchsuchen. Für große Remote-Quellen deshalb einen bekannten absoluten Index verwenden.
+
+**Grenze:** Dies ist noch kein austauschbares SelectionModel, keine Mehrfach-/Zellselektion und kein FocusModel. Erhaltene Auswahl bedeutet nicht erhaltene DOM-/Editorinstanzen über Datenverschiebungen. Quellentausch und identitätsbasierte Wiederherstellung über Remote-Abfragen bleiben offen.
 
 ## 2. Bestandsaufnahme im Repository
 
@@ -52,15 +65,15 @@ Paging, SSR, Hydration, Crawl-Zustand und Remote-Nachladen sind vorhandene JFX-E
 | [ItemGeometry.scala](jfx-controls/src/main/scala-3/jfx/control/virtualized/ItemGeometry.scala) | `FixedRowGeometry` und bereits vorhandene `MeasuredRowGeometry` als Grundlage für variable Zeilenhöhen. |
 | [ListDataSource.scala](jfx-core/src/main/scala-3/jfx/core/state/ListDataSource.scala), [ListProperty.scala](jfx-core/src/main/scala-3/jfx/core/state/ListProperty.scala) | Lesender Datenquellenvertrag und veränderbare lokale Liste. |
 | [RemoteListProperty.scala](jfx-core/src/main/scala-3/jfx/core/remote/RemoteListProperty.scala) | Lückenhaft geladene Daten, Bereichsabfragen, Sortierdeskriptoren und Schutz vor veralteten Ladeantworten. |
-| [table.ts](npm/jfx-controls/src/table.ts), [ControlFactories.scala](jfx-bridge/src/main/scala-3/jfx/bridge/ControlFactories.scala), [TableViewHandleBridge.scala](jfx-bridge/src/main/scala-3/jfx/bridge/TableViewHandleBridge.scala) | Deklarative TypeScript-Tabellenoptionen, reaktive Sichtbarkeit und minimales TableView-Handle für Refresh/Lifecycle. Weitere Methoden und Modellzustände sind offen. |
+| [table.ts](npm/jfx-controls/src/table.ts), [ControlFactories.scala](jfx-bridge/src/main/scala-3/jfx/bridge/ControlFactories.scala), [TableViewHandleBridge.scala](jfx-bridge/src/main/scala-3/jfx/bridge/TableViewHandleBridge.scala) | Deklarative TypeScript-Tabellenoptionen, reaktive Sichtbarkeit und typisiertes Handle für Einzelauswahl, Refresh und Lifecycle. Weitere Modelle und Operationen sind offen. |
 
 ### Technische Voraussetzungen und Bearbeitungsstand
 
 1. **Zeilenlebensdauer – Scrollfenster behoben:** Der frühere `visibleRowsProperty.setAll(...)`-Reset wurde durch differenzielle Insert-/Remove-/Update-Ereignisse ersetzt. [Foreach.scala](jfx-core/src/main/scala-3/jfx/core/statement/Foreach.scala) behält dadurch überlappende Slots. Datensatzverschiebungen und Sortierpermutationen bleiben gesondert zu lösen.
-2. **Identität statt alleiniger Position:** Auswahl speichert heute einen Index. Bei Änderungen liest `refreshSelectedItem()` das nun an dieser Stelle stehende Objekt. Einfügen oder Sortieren kann so die ausgewählte Entität wechseln; ein entfernter Index wird nicht durchgängig normalisiert.
+2. **Einzelauswahl – korrigiert:** Strukturänderungen erhalten das ausgewählte Vorkommen; Reset erhält nur eindeutig wiedergefundene Instanzen. Index und Item werden gemeinsam normalisiert. Stabile Keys, allgemeine Permutationsabbildung und Modell-/Quellentausch bleiben offen.
 3. **Spaltenlebensdauer – behoben:** Alle Listenänderungen durchlaufen Attach/Detach; entfernte Spalten verlieren die Tabellenlistener. Mehrfachzuordnungen werden vor der Mutation abgewiesen.
 4. **Sortierberechtigung – behoben:** Darstellung und `toggleRemoteSort()` verwenden jetzt beide `isRemoteSortable()`.
-5. **Koordinatensystem der Remote-Quelle:** `itemAt(index)` verwendet absolute Positionen, Änderungsereignisse werden hingegen von der dichten `loadedItems`-Liste weitergereicht. Deren Insert-/Patch-Indizes sind keine zuverlässigen absoluten Tabellenindizes. Darauf darf kein neues Auswahl- oder Editiermodell blind aufbauen.
+5. **Remote-Koordinaten – expliziter Vertrag:** `itemAt(index)` und `observeIndexedChanges` verwenden absolute Positionen. Das ältere `observeChanges` bleibt ein dichter Cache-Ereignisstrom und darf nicht für Tabellenpositionen verwendet werden. Eigene Remote-Quellen müssen den neuen Vertrag implementieren; der Default invalidiert konservativ die Auswahl (siehe 4.3).
 6. **Datenquelle ist lesend:** `ListDataSource` verspricht weder Mutation noch Sortierung; die Basisklasse hält die Quelle derzeit als `val`. Quellentausch, lokale Sortieransichten und Schreibzugriffe benötigen explizite Verträge.
 
 Die offenen Befunde stammen aus der Quellprüfung. Tests des gelieferten Grundlagenpakets stehen in Abschnitt 6; sie ersetzen nicht die vollständige Interaktionsabnahme aller geplanten Modelle.
@@ -90,12 +103,12 @@ Referenzen: [TableViewSelectionModel](https://openjfx.io/javadoc/26/javafx.contr
 
 | ID | Funktion | Stand | Umsetzung |
 | --- | --- | --- | --- |
-| S01 | Einzelauswahl, selectedIndex/selectedItem | Teilweise | In ein austauschbares SelectionModel überführen; bestehende `select`-Aufrufe kompatibel delegieren. M2. |
+| S01 | Einzelauswahl, selectedIndex/selectedItem | Teilweise | Konsistenter lesbarer Zustand, Scala-Auswahlmethoden und typisiertes TypeScript-Handle vorhanden. Austauschbares SelectionModel ergänzen. M2. |
 | S02 | Mehrfachauswahl und beobachtbare Ergebnislisten | Offen | SINGLE/MULTIPLE, selectedIndices/selectedItems, clear/selectAll/selectIndices sowie erste/letzte/nächste/vorige Auswahl. M2. |
 | S03 | Zellselektion und Bereiche | Offen | `TablePosition`, selectedCells, cellSelectionEnabled, Richtungsoperationen und Rechteckauswahl. M2. |
 | S04 | Eigenständiges FocusModel | Offen | Fokusposition, fokussierter Index/Datensatz, Richtungsnavigation und Modellaustausch; Fokus und Auswahl unabhängig. M2. |
 | S05 | Maus-/Tastaturbedienung mit Modifikatoren | Teilweise | Einfacher Zeilenklick vorhanden. Shift-Anker, Ctrl/Cmd-Toggle, Navigation, Home/End und PageUp/PageDown ergänzen. M2. |
-| S06 | Konsistenz bei Daten-/Spaltenänderungen | Offen | Identität, Indexabbildung, gelöschte Zeilen, Duplikate und Remote-Querywechsel verbindlich behandeln. M0/M2/M3. |
+| S06 | Konsistenz bei Daten-/Spaltenänderungen | Teilweise | Einzelauswahl folgt lokalen/absoluten Remote-Deltas; Reset, Duplikate, Entfernen, ungeladene Positionen und akzeptierter Querywechsel geregelt. Keys, Quellen-/Modellwechsel und Zellselektion bleiben offen. M0/M2/M3. |
 
 ### 3.3 Spalten und Header
 
@@ -235,7 +248,17 @@ Intern drei Begriffe auseinanderhalten: **Zeilenidentität**, **Ansichtsindex** 
 
 Ein optionaler `rowKey: S => K` erlaubt stabile Entitätsidentität. Für lokale Listen ohne Key müssen Vorkommen auch bei gleichen Werten unterscheidbar sein; `equals` allein reicht nicht. Für Remote-Daten eine Abfragegeneration und ungeladene Positionen separat modellieren. `selectedItems` darf keine erfundenen Objekte für ungeladene Positionen liefern.
 
-Die Remote-Event-Semantik aus Abschnitt 2 wird in M0 geklärt: Bereich wurde geladen, Daten wurden strukturell verändert und Abfrage wurde ersetzt sind verschiedene Vorgänge. Dafür absolute Bereichs-/Invalidierungsinformationen definieren; Ereignisse aus `loadedItems` nicht als Einfügen neuer Datensätze interpretieren. `RemoteListProperty.update(idx)` ist weder ein allgemeiner absoluter Schreibzugriff noch eine Serverpersistenz-API.
+Der implementierte Vertrag in [RemoteListChange.scala](jfx-core/src/main/scala-3/jfx/core/remote/RemoteListChange.scala) trennt diese Vorgänge:
+
+| Ereignis | Bedeutung für Position/Auswahl |
+| --- | --- |
+| `RangeLoaded(from, untilExclusive)` | Bestehende absolute Positionen wurden materialisiert/aktualisiert; keine logischen Zeilen eingefügt. Ausgewählten Index beibehalten und Item neu lesen. |
+| `Structural(change)` | Tatsächliche Cache-Mutation; alle Indizes im `ListDataSource.Change` sind absolut. Vorkommen anhand des Deltas verschieben oder löschen. |
+| `Reset()` | Akzeptiertes Ersatzresultat oder nicht genauer bekannte Invalidierung; alte Positionsidentität aufgeben. |
+
+`RemoteListProperty` veröffentlicht diese Ereignisse erst nach kohärenter Aktualisierung von Bereichen, dichter Liste und Paging-Metadaten. Währenddessen ist `isUpdatingItems=true`; Item-Verbraucher warten auf das abschließende Indexereignis. Verschachtelte Cache-Mutationen in den Zwischenstands-Callbacks sind nicht zulässig. `loading=false` folgt erst nach Installation der angenommenen Seite.
+
+Das bestehende `observeChanges` bleibt aus Kompatibilitätsgründen dicht und ist kein Indexvertrag für die Ansicht. `RemoteListProperty.update(idx)` und `remove(idx)` nehmen weiterhin **dichte Cache-Indizes**, veröffentlichen aber absolute Strukturereignisse; sie sind keine Serverpersistenz-API. Eigene `RemoteListDataSource`-Implementierungen sollen `observeIndexedChanges` und bei mehrteiligen Updates `isUpdatingItems` implementieren. Der Default übersetzt alte Änderungen konservativ in `Reset`, ohne dichte Indizes als absolute Positionen auszugeben; er kann die Veröffentlichung konsistenter Quelldaten nicht selbst herstellen.
 
 Bei Quellentausch eigene Listener/Requests entkoppeln, Modelle normalisieren und neue Quelle anbinden. Eine vom Aufrufer gelieferte Quelle wird nicht einfach mit der Tabelle entsorgt. Bei Sortieren/Reload sind alte Positionen ungültig; bekannte Keys können als noch nicht aufgelöste Auswahl erhalten werden, sofern die Datenquelle deren Wiederauflösung ermöglicht. Ohne solche Identität Auswahl nachvollziehbar zurücksetzen.
 
@@ -310,7 +333,7 @@ ARIA umfasst Grid/Row/ColumnHeader/GridCell, sichtbare Spaltenindizes, absolute 
 
 ### 4.9 Scala- und TypeScript-Vertrag gemeinsam liefern
 
-Die öffentliche Tabellenfassade liegt in `npm/jfx-controls`; `tableView(...)` liefert inzwischen ein minimales `TableViewHandle` für `refresh()` und `isDisposed`. Zusätzliche Optionsfelder allein reichen für Auswahlbeobachtung, `scrollTo`, `sort` oder `edit` nicht.
+Die öffentliche Tabellenfassade liegt in `npm/jfx-controls`; `tableView(...)` liefert ein `TableViewHandle<T>` für `refresh()`, `isDisposed`, lesbare Einzelauswahl und kontrollierte Auswahloperationen. `scrollTo`, `sort`, `edit` und umfassende Modell-Handles bleiben offen.
 
 Mit M0 den vorhandenen minimalen Handle-Vertrag um typsichere Modellzustände und kontrollierte Operationen erweitern. Die Rückgabe wird bereits nach abgeschlossenem Mount über einen internen Factory-Callback aus der Bridge an die TypeScript-Fassade übergeben. Spalten benötigen zusätzlich stabile Handles oder IDs für ihre Operationen.
 
@@ -333,7 +356,9 @@ Die Größen S/M/L bezeichnen relative Komplexität, keine Zeitversprechen. M0 i
 
 ### Konkreter Startumfang und Fortschritt
 
-- [ ] M0: Ein Dokumentations-/Testvertrag für Zeilenidentität, Remote-Koordinaten und Quellentausch.
+- [x] M0: Dokumentations-/Testvertrag für Einzelauswahl nach Vorkommen, absolute Remote-Koordinaten und akzeptierte Reloads.
+- [ ] M0: Quellentausch, stabile Keys und allgemeine Transformations-/Identitätsabbildung.
+- [x] M0/M2: Typisiertes TypeScript-Handle für konsistente Einzelauswahl und kontrollierte Mutationen.
 - [x] M1: Erhalt überlappender Zeilenfenster; gebundenes Eingabefeld einschließlich Fokus/Textauswahl in den Bridge-Integrationstests absichern.
 - [ ] M1: Reale Browserabnahme für Eingabefelder/IME, nicht nur jsdom.
 - [x] M1: `cellValueFactory` vervollständigen und `TableCell` in den Renderpfad integrieren; `cell(row)` bleibt nutzbar.
@@ -344,6 +369,10 @@ Die Größen S/M/L bezeichnen relative Komplexität, keine Zeitversprechen. M0 i
 - [ ] Anschließend M2 und M3; auf dieser Basis M4 und M5 vervollständigen.
 
 ## 6. Verifikation
+
+Der dritte Ausbau ergänzt sechs Scala-Auswahltests und fünf Core-Remote-Tests: Duplikate, lokale Strukturänderungen/Reset, absolute lückenhafte Remote-Bereiche, kohärente Metadaten, Ladeabschlussreihenfolge sowie erfolgreiche, fehlgeschlagene und veraltete Ersatzantworten. Drei zusätzliche Bridge-Integrationstests prüfen den typisierten Zustand, Lebensdauer, ungültige JavaScript-Indizes und Remote-Sortierantworten. Der bestehende Follow-up-Test unterscheidet nun ausdrücklich `UpdateAt` von Reset. Vollständiges Scala-Gate: **362 erfolgreiche Tests**; Bridge-Full-Link grün.
+
+Abnahme des dritten Ausbaus: Alle npm-Gates für Controls/Core/Demo grün. Controls: 20 Integrationstests plus 3 Paket-Consumer-Tests; Core: 114 Tests plus 8 Paket-Consumer-Tests; Demo: Typecheck, Client-/SSR-Builds, Eine-Runtime-Prüfung und 31 Routen. Im echten Browser wurden Zeilenauswahl, reaktive Buchanzeige, Aufheben der Auswahl und deren Reset nach asynchroner Sortierantwort geprüft. Dabei wurde ein Render-Scope-Fehler der neuen Demo-Übersetzung korrigiert; der anschließende frische Browserlauf meldete keine Fehler. Demo-Gate danach erneut grün; Testtab und Testserver geschlossen.
 
 Der zweite Ausbau ergänzt drei Scala-Fälle (Sichtbarkeit/Instanzerhalt/Breiten/Lookups, Platzhalter/Auswahl, Reihenfolge/Detach) sowie drei Bridge-Fälle (fokussierter Editor neben versteckter Spalte, Hidden-Column-Hydration, Refresh-Handle/Lifecycle). Der Paket-Consumer prüft auch den exportierten Handle-Typ und eine wirklich nicht gerenderte versteckte Spalte. Vollständiges Scala-Gate: 351 erfolgreiche Tests. Der echte Browser-Smoke-Test deckt das Ein-/Ausblenden in der Demo ab; eine vollständige Browser-/IME-/Screenreader-Abnahme der Editorinteraktion ist damit nicht behauptet.
 

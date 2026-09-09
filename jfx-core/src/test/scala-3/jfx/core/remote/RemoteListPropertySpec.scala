@@ -406,6 +406,132 @@ class RemoteListPropertySpec extends AnyFlatSpec with Matchers {
     remote.get.toSeq.take(20) shouldBe (0 until 20).map(index => s"Member $index")
   }
 
+  "Absolute indexed changes" should "separate range materialization from structural insertion" in {
+    val remote       = pagedMembers(total = 1000, pageSize = 10)
+    val indexed      = mutable.ArrayBuffer.empty[RemoteListChange[String]]
+    val subscription = remote.observeIndexedChanges { change =>
+      remote.isUpdatingItems shouldBe false
+      remote.totalLength shouldBe 1000
+      indexed += change
+      change match {
+        case RemoteListChange.RangeLoaded(from, until) =>
+          (from until until).foreach(index => remote.itemAt(index) shouldBe Some(s"Member $index"))
+        case _ => ()
+      }
+    }
+    remote.reload()
+    remote.ensureRangeLoaded(100, 110)
+    remote.ensureRangeLoaded(50, 60)
+    indexed.toVector shouldBe Vector(
+      RemoteListChange.Reset(),
+      RemoteListChange.RangeLoaded(100, 110),
+      RemoteListChange.RangeLoaded(50, 60)
+    )
+    subscription.dispose()
+    remote.ensureRangeLoaded(80, 90)
+    indexed.size shouldBe 3
+  }
+
+  it should "publish coherent absolute mutations while preserving the dense compatibility stream" in {
+    val remote = RemoteListProperty[String, PageQuery](
+      loader = RemoteLoader(_ => Future.successful(RemotePage(items = Seq.empty))),
+      initialQuery = PageQuery(50, 2),
+      underlying = js.Array("a", "b"),
+      initialOffset = 50,
+      executionContext = ExecutionContext.parasitic
+    )
+    remote.totalCountProperty.set(Some(52))
+    val indexed = mutable.ArrayBuffer.empty[RemoteListChange[String]]
+    val dense   = recordChanges(remote)
+    remote.observeIndexedChanges { event =>
+      remote.isUpdatingItems shouldBe false
+      indexed += event
+      event match {
+        case RemoteListChange.Structural(ListDataSource.UpdateAt(index, _, item, source)) =>
+          index shouldBe 50
+          source.itemAt(index) shouldBe Some(item)
+          remote.get.toSeq shouldBe Seq("updated", "b")
+        case RemoteListChange.Structural(ListDataSource.RemoveAt(index, _, _)) =>
+          index shouldBe 50
+          remote.itemAt(50) shouldBe Some("b")
+          remote.totalLength shouldBe 51
+          remote.get.toSeq shouldBe Seq("b")
+        case RemoteListChange.Structural(ListDataSource.Insert(index, item, _)) =>
+          index shouldBe 51
+          remote.itemAt(index) shouldBe Some(item)
+          remote.totalLength shouldBe 52
+        case RemoteListChange.Reset() =>
+          remote.totalLength shouldBe 0
+          remote.get.toSeq shouldBe empty
+          remote.itemAt(50) shouldBe None
+        case other => fail(s"Unexpected event: $other")
+      }
+    }
+    remote.update(0, "updated")
+    remote.remove(0)
+    remote.addOne("appended")
+    remote.clear()
+    indexed.size shouldBe 4
+    dense.head match {
+      case ListDataSource.UpdateAt(index, _, _, _) => index shouldBe 0
+      case other                                   => fail(s"Unexpected dense event: $other")
+    }
+  }
+
+  it should "not publish stale range completions after a replacement or clear" in {
+    val loader = new ControllableLoader(100)
+    val remote = remoteWith(loader)
+    val events = mutable.ArrayBuffer.empty[RemoteListChange[String]]
+    remote.observeIndexedChanges(events += _)
+    remote.ensureRangeLoaded(50, 60)
+    remote.reload()
+    loader.completeLast()
+    events.toVector shouldBe Vector(RemoteListChange.Reset())
+    loader.completeNext()
+    events.size shouldBe 1
+    remote.ensureRangeLoaded(70, 80)
+    remote.clear()
+    events.size shouldBe 2
+    loader.completeNext()
+    events.size shouldBe 2
+  }
+
+  it should "mark intermediate metadata as updating and publish after all metadata is installed" in {
+    val remote       = pagedMembers(total = 100, pageSize = 10)
+    var intermediate = false
+    var published    = false
+    remote.totalCountProperty.observeWithoutInitial { _ =>
+      intermediate = remote.isUpdatingItems
+    }
+    remote.observeIndexedChanges { _ =>
+      remote.isUpdatingItems shouldBe false
+      remote.loadedLength shouldBe 10
+      remote.totalLength shouldBe 100
+      remote.nextQueryProperty.get shouldBe Some(PageQuery(10, 10))
+      remote.canLoadMore shouldBe true
+      published = true
+    }
+    remote.reload()
+    intermediate shouldBe true
+    published shouldBe true
+  }
+
+  it should "install a completed page before notifying that loading has finished" in {
+    val loader    = new ControllableLoader(100)
+    val remote    = remoteWith(loader)
+    var completed = 0
+    remote.loadingProperty.observeWithoutInitial { loading =>
+      if (!loading) {
+        remote.itemAt(50) shouldBe Some("Member 50")
+        remote.totalLength shouldBe 100
+        completed += 1
+      }
+    }
+    remote.ensureRangeLoaded(50, 60)
+    loader.completeNext()
+    completed shouldBe 1
+  }
+
   private def collectRejections(result: Future[?]): Promise[Seq[Throwable]] = {
     val collected = Promise[Seq[Throwable]]()
     result.onComplete {

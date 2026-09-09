@@ -80,11 +80,41 @@ book.title = "Solaris";
 table.refresh(); // Re-evaluates visible snapshots and cell bodies; no remote reload.
 ```
 
-`tableView()` now returns `TableViewHandle` with `refresh()` and read-only `isDisposed`.
+`tableView()` returns `TableViewHandle<T>` with `refresh()` and read-only `isDisposed`,
+plus the single-selection API below.
 After unmount, refresh is a no-op. Refresh recreates visible cell content and can reset local
 editor state, so use observed values for live edits. Calling code may ignore the new return
 value. An explicitly void-returning expression arrow should use a block:
 `() : void => { tableView(source, columns); }`. The matching linked bridge must be installed.
+
+### Single selection
+
+The handle exposes read-only `selectedIndex: ReadOnlyProperty<number>` and
+`selectedItem: ReadOnlyProperty<T | null>`. Both read from one coherent state:
+
+```ts
+table.selectIndex(0);
+text(table.selectedItem.map((selected) => selected?.title ?? "No selection"));
+table.selectItem(book); // First equal loaded item; does not fetch missing rows.
+table.clearSelection(); // selectedIndex = -1, selectedItem = null.
+```
+
+Local inserts/removals move the selection with its occurrence, including duplicates.
+Removing or replacing that occurrence clears it; an explicit item update retains the
+index and adopts the updated item. A list reset retains selection only when the same
+object instance occurs exactly once in the new list, not merely an equal new object.
+
+Remote indices are absolute. Loading a gap does not shift selection. Selecting a valid
+unloaded position yields a null item until it loads. Accepted reload/sort replacements
+clear selection; an in-flight or failed replacement leaves the previous selection intact.
+Invalid indices (including fractions, NaN, and infinity) clear selection. `selectItem`
+may scan the entire index space, so prefer a known index for large remote sources.
+
+After unmount, selection operations are no-ops. Reactive `text` bindings follow normal
+component lifecycle; dispose subscriptions that you create manually with `observe`.
+Derived properties may notify even when only the other selection field changes.
+Multi-selection, cell selection, and a separate focus model are not available yet.
+Selection identity does not guarantee DOM/editor identity across data reordering.
 
 ### Other controls
 
@@ -109,7 +139,9 @@ const source = remoteSource<Item, Query>({
 virtualList(source, (item, index) => text(item === null ? `Loading ${index}` : item.title));
 ```
 
-`crawlable` and `crawlId` render a deterministic server slice with ordinary pager links. Imperative control handles such as selection and scrolling are not projected by this facade.
+`crawlable` and `crawlId` render a deterministic server slice with ordinary pager links.
+Table selection and refresh are available through its handle; imperative scrolling and
+data-grid/list selection handles are not projected by this facade yet.
 
 Paged or scrolling content headers can declare their reserved height with `headerRows`. For
 `dataGrid`, one row is one card height and the header always spans the full responsive grid width;

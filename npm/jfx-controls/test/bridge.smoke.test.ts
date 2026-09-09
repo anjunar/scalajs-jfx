@@ -22,7 +22,7 @@
  */
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   hydrate,
   installRuntime,
@@ -40,6 +40,7 @@ import {
 import { div, text } from "@anjunar/jfx-core";
 import { bridgeRuntime } from "@anjunar/scalajs-jfx-bridge";
 import { carousel, dataGrid, remoteSource, tab, tableView, tabs, valueColumn, virtualList } from "../src/index.js";
+import type { TableViewHandle, RemotePage } from "../src/index.js";
 
 const linkedArtifact = resolve(process.cwd(), "../scalajs-jfx-bridge/dist/fullopt/main.js");
 
@@ -163,6 +164,111 @@ describe("carousel", () => {
 });
 
 describe("table-view", () => {
+  it("exposes coherent selection and follows a duplicate occurrence through list mutations", () => {
+    const same = { name: "Same" };
+    const rows = listProperty([same, same, { name: "Last" }]);
+    const root = document.createElement("div");
+    let table!: TableViewHandle<{ name: string }>;
+    const app = mount(root, () => {
+      table = tableView(rows, [valueColumn("Name", (row) => row.name)], { paging: true });
+    });
+    const observations: number[] = [];
+    const subscription = table.selectedIndex.observe((index) => {
+      expect(table.selectedItem.get).toBe(index < 0 ? null : rows.get[index]);
+      observations.push(index);
+    });
+    table.selectIndex(1);
+    rows.insert(0, { name: "Before" });
+    expect(table.selectedIndex.get).toBe(2);
+    expect(table.selectedItem.get).toBe(same);
+    rows.removeAt(1);
+    expect(table.selectedIndex.get).toBe(1);
+    const selectedRows = root.querySelectorAll('.jfx-table-row[aria-selected="true"]');
+    expect(selectedRows).toHaveLength(1);
+    expect(selectedRows[0]!.textContent).toBe("Same");
+    rows.removeAt(1);
+    expect(table.selectedIndex.get).toBe(-1);
+    expect(observations).toEqual([-1, 1, 2, 1, -1]);
+    subscription.dispose();
+    app.dispose();
+  });
+
+  it("supports item selection, reset identity, invalid indices and disposal through the typed handle", () => {
+    const first = { name: "Same" };
+    const second = { name: "Same" };
+    const rows = listProperty([first, second]);
+    const root = document.createElement("div");
+    let table!: TableViewHandle<{ name: string }>;
+    const app = mount(root, () => {
+      table = tableView(rows, [valueColumn("Name", (row) => row.name)], { paging: true });
+    });
+    table.selectItem(second);
+    rows.setAll([second, first]);
+    expect(table.selectedIndex.get).toBe(0);
+    expect(table.selectedItem.get).toBe(second);
+    rows.setAll([{ name: "Same" }, first]);
+    expect(table.selectedIndex.get).toBe(-1);
+    for (const index of [-2, 999, 0.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+      table.selectIndex(0);
+      table.selectIndex(index);
+      expect(table.selectedIndex.get).toBe(-1);
+    }
+    table.selectItem(first);
+    table.clearSelection();
+    expect(table.selectedItem.get).toBeNull();
+    app.dispose();
+    table.selectIndex(0);
+    table.selectItem(first);
+    expect(table.selectedIndex.get).toBe(-1);
+  });
+
+  it("keeps remote selection while filling a gap and clears it only after a successful sort reload", async () => {
+    type Row = { name: string };
+    type Query = { offset: number; limit: number };
+    const requests: { query: Query; resolve: (page: RemotePage<Row, Query>) => void }[] = [];
+    const source = remoteSource<Row, Query>({
+      initialQuery: { offset: 50, limit: 10 },
+      initial: Array.from({ length: 10 }, (_, index) => ({ name: `Member ${index + 50}` })),
+      initialOffset: 50,
+      totalCount: 100,
+      rangeQuery: (query, offset, limit) => ({ offset, limit }),
+      sortQuery: (query) => ({ ...query, offset: 0 }),
+      load: (query) => new Promise((resolve) => requests.push({ query, resolve })),
+    });
+    const root = document.createElement("div");
+    let table!: TableViewHandle<Row>;
+    const app = mount(root, () => {
+      table = tableView(source, [valueColumn("Name", (row) => row.name, {
+        sortable: true, sortKey: "name",
+      })], { paging: true, pageSize: 10 });
+    });
+    try {
+      table.selectIndex(55);
+      const selected = table.selectedItem.get;
+      await vi.waitFor(() => expect(requests.some(({ query }) => query.offset === 0)).toBe(true));
+      // Query objects are application-defined; multiple initial range requests may be in flight.
+      for (const request of requests.slice()) {
+        request.resolve({ items: Array.from({ length: request.query.limit }, (_, i) => ({ name: `Prefix ${i}` })),
+          offset: request.query.offset, totalCount: 100 });
+      }
+      await vi.waitFor(() => expect(root.textContent).toContain("Prefix 0"));
+      expect(table.selectedIndex.get).toBe(55);
+      expect(table.selectedItem.get).toBe(selected);
+      const beforeSort = requests.length;
+      root.querySelector(".jfx-table-header-cell")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      await vi.waitFor(() => expect(requests.length).toBeGreaterThan(beforeSort));
+      expect(table.selectedItem.get).toBe(selected);
+      for (const request of requests.slice(beforeSort)) {
+        request.resolve({ items: [{ name: "Sorted" }], offset: 0, totalCount: 1 });
+      }
+      await vi.waitFor(() => expect(root.textContent).toContain("Sorted"));
+      expect(table.selectedIndex.get).toBe(-1);
+      expect(table.selectedItem.get).toBeNull();
+    } finally {
+      app.dispose();
+    }
+  });
+
   it("preserves a focused editor when another column is hidden or shown", () => {
     const root = document.createElement("div");
     document.body.appendChild(root);

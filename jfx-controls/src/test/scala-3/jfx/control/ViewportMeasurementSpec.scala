@@ -332,8 +332,12 @@ class TableViewFollowUpSpec extends AnyFlatSpec with Matchers {
 
     // The data changes beneath the selection. Without refreshSelectedItem following refreshItemState,
     // selectedItemProperty would remain "b".
-    data.setAll(Seq("x", "y", "z"))
+    data.update(1, "y")
 
     control.selectedItemProperty.get shouldBe "y"
+    // A full replacement no longer silently selects an unrelated object at the same index.
+    data.setAll(Seq("x", "z"))
+    control.selectedIndexProperty.get shouldBe -1
+    control.selectedItemProperty.get shouldBe null
   }
 }

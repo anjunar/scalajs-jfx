@@ -433,8 +433,22 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
     remoteStateRevisionProperty.setAlways(remoteStateRevisionProperty.get + 1)
 
   protected def refreshItemState(): Unit = {
+    if (itemsUpdateInProgress) return
     bumpItemState()
     recomputeVisible()
+  }
+
+  protected def itemsUpdateInProgress: Boolean =
+    Option(currentRemoteItems).exists(_.isUpdatingItems)
+
+  protected def handleRemoteItemsChange(change: jfx.core.remote.RemoteListChange[T]): Unit = {
+    change match {
+      case jfx.core.remote.RemoteListChange.Reset()       => resetMeasurements()
+      case jfx.core.remote.RemoteListChange.Structural(_) => resetMeasurements()
+      case _                                              => ()
+    }
+    bumpRemoteState()
+    refreshItemState()
   }
 
   // --- observers -----------------------------------------------------------
@@ -449,17 +463,9 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
 
     val remote = currentRemoteItems
 
-    itemsObserver = dataSource.observeChanges { change =>
-      if (remote == null) handleLocalItemsChange(change)
-      else {
-        change match {
-          case ListDataSource.Reset(_) => resetMeasurements()
-          case _                       => ()
-        }
-        bumpRemoteState()
-        refreshItemState()
-      }
-    }
+    itemsObserver =
+      if (remote == null) dataSource.observeChanges(handleLocalItemsChange)
+      else remote.observeIndexedChanges(handleRemoteItemsChange)
 
     currentRemoteItems match {
       case null   => remoteItemsObserver = Disposable.empty

@@ -32,7 +32,28 @@ final class RemoteListProperty[V, Query](
 
   // Generation counter analogous to the router's renderToken: a reload invalidates everything sent
   // before it. A later old response is discarded rather than overwriting newer data.
-  private var loadGeneration = 0
+  private var loadGeneration   = 0
+  private var updatingItems    = false
+  private val indexedListeners = mutable.ArrayBuffer.empty[RemoteListChange[V] => Unit]
+
+  override def isUpdatingItems: Boolean = updatingItems
+
+  override def observeIndexedChanges(listener: RemoteListChange[V] => Unit): Disposable = {
+    indexedListeners += listener
+    Disposable { indexedListeners -= listener }
+  }
+
+  /** Legacy property callbacks may observe intermediate metadata. Indexed consumers receive one
+    * completed event instead, and must not trigger nested mutations from intermediate callbacks.
+    */
+  private def indexedUpdate[A](change: RemoteListChange[V])(body: => A): A = {
+    require(!updatingItems, "Cannot mutate remote items during an unfinished indexed update")
+    updatingItems = true
+    val result = try body
+    finally updatingItems = false
+    indexedListeners.toVector.foreach(_(change))
+    result
+  }
 
   private final case class LoadKey(query: Query, replaceExisting: Boolean, sequential: Boolean)
   private final class PendingLoad(val future: Future[js.Array[V]])
@@ -69,6 +90,8 @@ final class RemoteListProperty[V, Query](
   override def itemAt(index: Int): Option[V] =
     loadedRanges.get(index)
 
+  /** Compatibility stream over the dense loaded projection; use observeIndexedChanges for UI rows.
+    */
   override def observeChanges(listener: ListDataSource.Change[V] => Unit): Disposable =
     loadedItems.observeChanges(change => listener(ListDataSource.retarget(change, this)))
 
@@ -157,33 +180,44 @@ final class RemoteListProperty[V, Query](
         case None        => nextSequentialAbsoluteIndex
       }
 
-    loadedItems.addOne(elem)
-    loadedRanges.update(absoluteIndex, elem)
-    totalCountProperty.set(Some(previousTotalLength + 1))
+    indexedUpdate(RemoteListChange.Structural(ListDataSource.Insert(absoluteIndex, elem, this))) {
+      loadedRanges.update(absoluteIndex, elem)
+      loadedItems.addOne(elem)
+      totalCountProperty.set(Some(previousTotalLength + 1))
+    }
     this
   }
 
   def update(idx: Int, elem: V): Unit = {
     val absoluteIndex = absoluteIndexForLoadedPosition(idx)
-    loadedItems.update(idx, elem)
-    loadedRanges.update(absoluteIndex, elem)
+    val previous      = loadedItems(idx)
+    if (previous == elem) return
+    indexedUpdate(
+      RemoteListChange.Structural(ListDataSource.UpdateAt(absoluteIndex, previous, elem, this))
+    ) {
+      loadedRanges.update(absoluteIndex, elem)
+      loadedItems.update(idx, elem)
+    }
   }
 
   def remove(idx: Int): V = {
     val previousTotalLength = totalLength
     val absoluteIndex       = absoluteIndexForLoadedPosition(idx)
-    val removed             = loadedItems.remove(idx)
-
-    loadedRanges.removeAt(absoluteIndex)
-    totalCountProperty.set(Some(math.max(0, previousTotalLength - 1)))
-
-    removed
+    val removed             = loadedItems(idx)
+    indexedUpdate(
+      RemoteListChange.Structural(ListDataSource.RemoveAt(absoluteIndex, removed, this))
+    ) {
+      loadedRanges.removeAt(absoluteIndex)
+      loadedItems.remove(idx)
+      totalCountProperty.set(Some(math.max(0, previousTotalLength - 1)))
+      removed
+    }
   }
 
-  def clear(): Unit = {
+  def clear(): Unit = indexedUpdate(RemoteListChange.Reset()) {
     invalidatePendingLoads()
-    loadedItems.clear()
     loadedRanges.clear()
+    loadedItems.clear()
     totalCountProperty.set(Some(0))
     nextQueryProperty.set(None)
     hasMoreProperty.set(false)
@@ -244,7 +278,7 @@ final class RemoteListProperty[V, Query](
         loaded.onComplete { result =>
           // An old completion must not remove a newer request registered under the same key after
           // a reload.
-          pendingLoads.get(key).filter(_ eq pending).foreach { _ =>
+          def releasePending(): Unit = pendingLoads.get(key).filter(_ eq pending).foreach { _ =>
             pendingLoads.remove(key)
             refreshLoadingState()
           }
@@ -254,9 +288,13 @@ final class RemoteListProperty[V, Query](
           result match {
             case Success(page) =>
               if (isCurrent) applyPage(page, replaceExisting, expectedOffset, sequential)
+              // A loading=false observer must see the accepted page, not request the same missing
+              // range again in the interval before it is installed.
+              releasePending()
               completion.success(get)
             case Failure(error) =>
               if (isCurrent) errorProperty.set(Some(error))
+              releasePending()
               completion.failure(error)
           }
         }
@@ -290,38 +328,43 @@ final class RemoteListProperty[V, Query](
           else loadedRanges.size
         }
 
-    if (replaceExisting) {
-      // A real reload produces a different list. Reset is the correct change here, and Foreach
-      // must actually rebuild everything.
-      loadedRanges.clear()
-      loadedRanges.put(pageOffset, page.items)
-      loadedItems.setAll(loadedRanges.denseItems)
-    } else {
-      // Loading more changes only the range covered by the page.
-      //
-      // loadedRanges holds absolute indices with gaps; the underlying ListProperty is a dense
-      // list. The dense position of an absolute index is the number of loaded indices before it.
-      // Since the page range is contiguous in absolute indices, positions of entries already loaded
-      // within it are also contiguous, starting at insertPosition.
-      val pageEnd        = pageOffset + page.items.length
-      val insertPosition = loadedRanges.countBefore(pageOffset)
-      val replacedCount  = loadedRanges.countIn(pageOffset, pageEnd)
+    val indexedChange =
+      if (replaceExisting) RemoteListChange.Reset[V]()
+      else RemoteListChange.RangeLoaded[V](pageOffset, pageOffset + page.items.length)
+    indexedUpdate(indexedChange) {
+      if (replaceExisting) {
+        // A real reload produces a different list. Reset is the correct change here, and Foreach
+        // must actually rebuild everything.
+        loadedRanges.clear()
+        loadedRanges.put(pageOffset, page.items)
+        loadedItems.setAll(loadedRanges.denseItems)
+      } else {
+        // Loading more changes only the range covered by the page.
+        //
+        // loadedRanges holds absolute indices with gaps; the underlying ListProperty is a dense
+        // list. The dense position of an absolute index is the number of loaded indices before it.
+        // Since the page range is contiguous in absolute indices, positions of entries already loaded
+        // within it are also contiguous, starting at insertPosition.
+        val pageEnd        = pageOffset + page.items.length
+        val insertPosition = loadedRanges.countBefore(pageOffset)
+        val replacedCount  = loadedRanges.countIn(pageOffset, pageEnd)
 
-      loadedRanges.put(pageOffset, page.items)
+        loadedRanges.put(pageOffset, page.items)
 
-      if (replacedCount == 0) loadedItems.insertAll(insertPosition, page.items)
-      else loadedItems.patchInPlace(insertPosition, page.items, replacedCount)
-    }
+        if (replacedCount == 0) loadedItems.insertAll(insertPosition, page.items)
+        else loadedItems.patchInPlace(insertPosition, page.items, replacedCount)
+      }
 
-    // A reload redefines the list and may therefore change a previously known total to unknown.
-    // For derived range and paging loads, a missing count is not new information; an explicitly
-    // supplied count may still correct the known value.
-    if (replaceExisting) totalCountProperty.set(page.totalCount)
-    else page.totalCount.foreach(count => totalCountProperty.set(Some(count)))
+      // A reload redefines the list and may therefore change a previously known total to unknown.
+      // For derived range and paging loads, a missing count is not new information; an explicitly
+      // supplied count may still correct the known value.
+      if (replaceExisting) totalCountProperty.set(page.totalCount)
+      else page.totalCount.foreach(count => totalCountProperty.set(Some(count)))
 
-    if (sequential) {
-      nextQueryProperty.set(page.nextQuery)
-      hasMoreProperty.set(page.hasMore.getOrElse(page.nextQuery.nonEmpty))
+      if (sequential) {
+        nextQueryProperty.set(page.nextQuery)
+        hasMoreProperty.set(page.hasMore.getOrElse(page.nextQuery.nonEmpty))
+      }
     }
   }
 
