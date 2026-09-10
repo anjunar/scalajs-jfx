@@ -37,7 +37,11 @@ assert.equal(document.querySelectorAll('.header-links > a').length, 2, 'Mobile n
 assert.equal(document.querySelectorAll('.header-menu .section-links a').length, 8);
 for (const eyebrow of document.querySelectorAll('.eyebrow')) assert(!/^\d+\s*\//.test(eyebrow.textContent));
 assert(document.querySelector(".preview input[name=name][value=Mira]"));
-assert(document.querySelector(".jfx-table-view").textContent.includes("Customer portal"));
+assert(document.querySelector(".jfx-table-view").textContent.includes("The Long Route 1"));
+assert.deepEqual([...document.querySelectorAll(".jfx-table-header-cell")].map(cell => cell.textContent.trim()), ["Title", "Author", "Year"]);
+assert.equal(document.querySelectorAll(".table-highlights > div").length, 3);
+assert.equal(document.querySelector("#table-showcase").dataset.state, "ssr");
+assert(document.querySelector("#table-root").innerHTML.includes("jfx:BridgeRoot:start"));
 assert.equal(document.querySelector(".table-window").tabIndex, 0, "The TableView scroll region must be keyboard reachable.");
 assert(document.querySelector(".jfx-editor__readonly h2"));
 assert(!document.querySelector(".preview textarea"), "Readonly editor must render semantic HTML.");

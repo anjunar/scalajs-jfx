@@ -122,3 +122,36 @@ activate.addEventListener("click", async () => {
     document.querySelector("#counter-fieldset").setAttribute("aria-busy", "false");
   }
 });
+
+const tableShowcase = document.querySelector("#table-showcase");
+const tableStatus = document.querySelector("#table-status");
+let tableActivation;
+const activateTable = () => {
+  if (tableActivation) return tableActivation;
+  tableShowcase.dataset.state = "loading";
+  tableStatus.textContent = t("Loading interactive TableView…");
+  tableActivation = import("./hydrate.mjs")
+    .then(({ activateProjectTable }) => activateProjectTable())
+    .then(() => {
+      tableShowcase.dataset.state = "interactive";
+      tableStatus.textContent = t("Interactive: sort a header, select rows or resize a column.");
+    })
+    .catch(error => {
+      tableActivation = undefined;
+      tableShowcase.dataset.state = "error";
+      tableStatus.textContent = t("The interactive TableView could not load; the server-rendered rows remain available.");
+      console.error("Landing TableView hydration failed", error);
+    });
+  return tableActivation;
+};
+
+if ("IntersectionObserver" in window) {
+  const tableObserver = new IntersectionObserver(entries => {
+    if (!entries.some(entry => entry.isIntersecting)) return;
+    tableObserver.disconnect();
+    activateTable();
+  }, { rootMargin: "200px" });
+  tableObserver.observe(tableShowcase);
+} else {
+  activateTable();
+}

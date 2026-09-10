@@ -11,7 +11,7 @@ export function localizePage(html, locale) {
   function visit(node, skip = false) {
     const attrs = Object.fromEntries((node.attrs ?? []).map(a => [a.name, a.value]));
     // Keep executable/displayed code and live SSR examples identical to their sources.
-    const preserve = skip || ["script", "style", "pre", "code"].includes(node.tagName) || attrs.id === "counter-root" || ["jfx-form", "jfx-table-view", "jfx-editor"].some(c => attrs.class?.split(" ").includes(c));
+    const preserve = skip || ["script", "style", "pre", "code"].includes(node.tagName) || ["counter-root", "table-root"].includes(attrs.id) || ["jfx-form", "jfx-table-view", "jfx-editor"].some(c => attrs.class?.split(" ").includes(c));
     if (node.nodeName === "#text" && !preserve) {
       const source = node.value.trim();
       node.value = node.value.replace(source, translate(source));
