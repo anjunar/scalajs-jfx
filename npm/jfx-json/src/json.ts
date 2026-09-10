@@ -413,7 +413,7 @@ export class JsonMapper {
     } else if (schema.typeName !== undefined && "@type" in value && schema.typeName !== value["@type"]) {
       throw new Error(`Unknown @type '${String(value["@type"])}'`);
     }
-    const instance = selected.factory();
+    const instance = selected.factory() as any;
     for (const [key, field] of Object.entries(selected.fields)) {
       if (field.deserialize === false) continue;
       const jsonKey = field.name ?? key;
