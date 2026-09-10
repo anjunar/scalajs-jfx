@@ -263,14 +263,10 @@ abstract class VirtualizedCollection[T](protected val dataSource: ListDataSource
 
       when(displayModeProperty.map(_ == CollectionDisplayMode.Paging)) {
         renderPagingControl("Previous", pageDelta = -1)
-      }
-
-      div {
-        classes = Seq("jfx-virtualized-page-status")
-        text(pageStatusProperty) {}
-      }
-
-      when(displayModeProperty.map(_ == CollectionDisplayMode.Paging)) {
+        div {
+          classes = Seq("jfx-virtualized-page-status")
+          text(pageStatusProperty) {}
+        }
         renderPagingControl("Next", pageDelta = 1)
       }
 

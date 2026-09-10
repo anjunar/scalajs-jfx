@@ -34,7 +34,7 @@ class VirtualListViewSpec extends AnyFlatSpec with Matchers {
     html should not include "10:Item 10"
   }
 
-  it should "omit the previous and next links in scrolling mode" in {
+  it should "omit the paging controls and page status in scrolling mode" in {
     val items = ListProperty[String](js.Array((0 until 30).map(index => s"Item $index")*))
 
     val html = renderList(items) {
@@ -43,6 +43,7 @@ class VirtualListViewSpec extends AnyFlatSpec with Matchers {
 
     html should not include ">Previous</a>"
     html should not include ">Next</a>"
+    html should not include "jfx-virtualized-page-status"
     html should include("Switch to paging")
   }
 

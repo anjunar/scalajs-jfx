@@ -208,13 +208,14 @@ class TableViewSpec extends AnyFlatSpec with Matchers {
     html should include("overflow-y: auto")
   }
 
-  it should "omit the previous and next links in scrolling mode" in {
+  it should "omit the paging controls and page status in scrolling mode" in {
     val html = renderTable((0 until 20).map(index => s"Member $index")) {
       scrolling = true
     }
 
     html should not include ">Previous</a>"
     html should not include ">Next</a>"
+    html should not include "jfx-virtualized-page-status"
     html should include("Switch to paging")
   }
 
