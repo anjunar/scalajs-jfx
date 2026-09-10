@@ -17,14 +17,20 @@ export function accountForm() {
 
 export function projectTable() {
   const rows = listProperty([
-    { name: "Website", language: "TypeScript" },
-    { name: "Workspace", language: "Scala" },
-    { name: "Admin console", language: "TypeScript" },
+    { name: "Customer portal", owner: "Mira", language: "TypeScript", status: "Shipping", progress: "92%" },
+    { name: "Operations desk", owner: "Noah", language: "Scala", status: "Healthy", progress: "84%" },
+    { name: "Identity service", owner: "Ivy", language: "Scala", status: "Review", progress: "71%" },
+    { name: "Analytics studio", owner: "Leo", language: "TypeScript", status: "Building", progress: "63%" },
+    { name: "Inventory sync", owner: "Aya", language: "Scala", status: "At risk", progress: "48%" },
+    { name: "Support console", owner: "Sam", language: "TypeScript", status: "Planned", progress: "24%" },
   ]);
   tableView(rows, [
-    column("Project", row => text(row.name), { prefWidth: 150 }),
-    column("API", row => text(row.language), { prefWidth: 650 }),
-  ], { rowHeight: 40, showFooter: false });
+    column("Project", row => text(row.name), { prefWidth: 210 }),
+    column("Owner", row => text(row.owner), { prefWidth: 110 }),
+    column("API", row => text(row.language), { prefWidth: 150 }),
+    column("Status", row => text(row.status), { prefWidth: 140 }),
+    column("Progress", row => text(row.progress), { prefWidth: 120 }),
+  ], { rowHeight: 42, showFooter: false });
 }
 
 export function articleEditor() {

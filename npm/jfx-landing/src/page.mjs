@@ -49,12 +49,12 @@ export async function renderPage(url = "/", assets = { script: "/src/client.mjs"
     "typescript.html": host("/src/main.ts"),
   };
   const capabilities = [
-    ["Server rendering", "Render HTML on the server, then hydrate the same component model in the browser."],
-    ["Explicit reactive state", "Read, set and derive Properties. State propagation is synchronous; components own subscription lifetimes."],
-    ["Application components", "Compose typed forms, tables, virtualized collections, layouts and a Markdown-backed editor."],
-    ["Scala + TypeScript", "Choose either API. Rendering, state and component behavior come from the same Scala.js runtime."],
-    ["Source-first i18n", "Keep source messages and interpolation semantics close to code, with catalogs for translations."],
-    ["Progressive enhancement", "Serve readable content and ordinary links first. Hydration adds editing and richer interaction."],
+    ["server-rendering", "Server rendering", "Render HTML on the server, then hydrate the same component model in the browser."],
+    ["reactive-state", "Explicit reactive state", "Read, set and derive Properties. State propagation is synchronous; components own subscription lifetimes."],
+    ["application-components", "Application components", "Compose typed forms, tables, virtualized collections, layouts and a Markdown-backed editor."],
+    ["scala-typescript", "Scala + TypeScript", "Choose either API. Rendering, state and component behavior come from the same Scala.js runtime."],
+    ["source-first-i18n", "Source-first i18n", "Keep source messages and interpolation semantics close to code, with catalogs for translations."],
+    ["progressive-enhancement", "Progressive enhancement", "Serve readable content and ordinary links first. Hydration adds editing and richer interaction."],
   ];
 
   const html = `<!doctype html>
@@ -110,7 +110,7 @@ export async function renderPage(url = "/", assets = { script: "/src/client.mjs"
       <h1 id="hero-title">One runtime. <span>Two APIs.</span></h1>
       <div class="hero-intro">
         <div><p class="lead">A Scala.js UI runtime with idiomatic Scala and TypeScript APIs.</p><p class="hero-detail">SSR, hydration, routing, forms and rich components, with one implementation behind both languages.</p></div>
-        <div class="hero-actions"><a class="action primary" href="./scala/">Try Scala Demo <span aria-hidden="true">↗</span></a><a class="action" href="./typescript/">Try TypeScript Demo <span aria-hidden="true">↗</span></a><ul class="signals" aria-label="Technical highlights"><li>SSR + Hydration</li><li>Explicit Reactive State</li><li>Typed Components</li><li>Virtualized Data Views</li><li>Source-first i18n</li></ul><div class="hero-secondary"><a href="#get-started">Quick Start ↓</a><a href="${repo}">GitHub ↗</a></div></div>
+        <div class="hero-actions"><a class="action primary" href="./scala/">Try Scala Demo <span aria-hidden="true">↗</span></a><a class="action" href="./typescript/">Try TypeScript Demo <span aria-hidden="true">↗</span></a><nav class="signals" aria-label="Technical highlights"><a href="#live-title">SSR + Hydration</a><a href="#same-code">Explicit Reactive State</a><a href="#showcase">Typed Components</a><a href="#showcase-2-title">TableView</a><a href="#source-first-i18n">Source-first i18n</a></nav><div class="hero-secondary"><a href="#get-started">Quick Start ↓</a><a href="${repo}">GitHub ↗</a></div></div>
       </div>
     </section>
 
@@ -129,7 +129,7 @@ export async function renderPage(url = "/", assets = { script: "/src/client.mjs"
 
     <section data-presentation-section class="section" aria-labelledby="capabilities-title">
       <p class="eyebrow">The essentials</p><h2 id="capabilities-title">What you get</h2>
-      <div class="capabilities">${capabilities.map(([title, body], i) => `<article><span class="number">0${i + 1}</span><h3>${title}</h3><p>${body}</p></article>`).join("")}</div>
+      <div class="capabilities">${capabilities.map(([id, title, body], i) => `<article id="${id}"><span class="number">0${i + 1}</span><h3>${title}</h3><p>${body}</p></article>`).join("")}</div>
     </section>
 
     <section data-presentation-section id="showcase" class="section section-showcase" aria-labelledby="showcase-title">
@@ -144,7 +144,7 @@ export async function renderPage(url = "/", assets = { script: "/src/client.mjs"
 
     <section data-presentation-section class="section section-showcase" aria-labelledby="showcase-2-title">
       <h2 id="showcase-2-title">Data views with room to grow</h2>
-        <article class="showcase"><div class="preview"><div class="table-window" tabindex="0" role="region" aria-label="Server-rendered project table; scroll horizontally"><div class="table-preview-size">${previews.projectTable}</div></div><p class="preview-caption">JFX TableView / server-rendered rows</p></div><div class="showcase-body"><p>Tables, grids and virtual lists share collection primitives. Load remote ranges, use paging or scrolling, and expose ordinary page links when crawlability is enabled.</p><a href="./typescript/controls/remote">Try paging and remote ranges ↗</a> · <a href="./typescript/controls/virtual-list">Virtual list ↗</a></div></article>
+        <article class="showcase"><div class="preview"><div class="table-window" tabindex="0" role="region" aria-label="Server-rendered project table; scroll horizontally"><div class="table-preview-size">${previews.projectTable}</div></div><p class="preview-caption">JFX TableView / server-rendered rows</p></div><div class="showcase-body"><p>Tables, grids and virtual lists share collection primitives. Load remote ranges, use paging or scrolling, and expose ordinary page links when crawlability is enabled.</p><a href="./typescript/controls/table">Explore TableView ↗</a> · <a href="./typescript/controls/remote">Paging and remote ranges ↗</a> · <a href="./typescript/controls/virtual-list">Virtual list ↗</a></div></article>
     </section>
 
     <section data-presentation-section class="section section-showcase" aria-labelledby="showcase-3-title">

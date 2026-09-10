@@ -24,7 +24,11 @@ assert(document.querySelector("#counter-root").innerHTML.includes("jfx:BridgeRoo
 assert(document.querySelector("#counter-root > .vbox"), "Landing proof must target the VBox class emitted by SSR.");
 assert.equal(document.querySelectorAll(".hero-actions > .action.primary").length, 1, "The hero has one primary entry point.");
 assert.equal(document.querySelectorAll('.hero-actions > .action').length, 2, 'Both APIs remain directly accessible.');
-assert.equal(document.querySelector('.hero-actions > .signals').children.length, 5);
+assert.equal(document.querySelectorAll('.hero-actions > .signals a').length, 5);
+for (const link of document.querySelectorAll('.hero-actions > .signals a')) {
+  const target = new URL(link.href).hash.slice(1);
+  assert(document.getElementById(target), `Hero highlight needs a valid anchor target: ${target}`);
+}
 assert.equal(document.querySelectorAll('.capabilities article').length, 6);
 assert.equal(document.querySelectorAll('.capabilities').length, 1, 'All core capabilities share one section.');
 assert(!document.querySelector('html[data-presentation]'), 'SSR defaults to natural reading flow.');
@@ -33,7 +37,8 @@ assert.equal(document.querySelectorAll('.header-links > a').length, 2, 'Mobile n
 assert.equal(document.querySelectorAll('.header-menu .section-links a').length, 8);
 for (const eyebrow of document.querySelectorAll('.eyebrow')) assert(!/^\d+\s*\//.test(eyebrow.textContent));
 assert(document.querySelector(".preview input[name=name][value=Mira]"));
-assert(document.querySelector(".jfx-table-view").textContent.includes("Workspace"));
+assert(document.querySelector(".jfx-table-view").textContent.includes("Customer portal"));
+assert.equal(document.querySelector(".table-window").tabIndex, 0, "The TableView scroll region must be keyboard reachable.");
 assert(document.querySelector(".jfx-editor__readonly h2"));
 assert(!document.querySelector(".preview textarea"), "Readonly editor must render semantic HTML.");
 assert.deepEqual(
