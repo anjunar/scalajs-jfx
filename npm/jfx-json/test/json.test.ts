@@ -82,6 +82,78 @@ describe("JsonMapper", () => {
     });
   });
 
+  it("resolves lazy decorator model providers for nested properties and lists", () => {
+    let calls = 0;
+    class Child {
+      @JsonProperty() label = property("");
+    }
+    const childModel = () => {
+      calls += 1;
+      return Child;
+    };
+    class Parent {
+      @JsonProperty(childModel) nested = property<Child | null>(null);
+      @JsonProperty("children", childModel) children = listProperty<Child>([]);
+    }
+
+    const schema = jsonSchema(Parent);
+    expect(calls).toBe(0);
+    const restored = JsonMapper.deserialize({ nested: { label: "Ada" }, children: [{ label: "Grace" }] }, schema);
+    expect(calls).toBe(1);
+
+    restored.nested.get.label.set("Lin");
+    restored.children.add(new Child());
+    restored.children.get[1].label.set("Rosa");
+    expect(JsonMapper.serialize(restored, schema)).toEqual({
+      nested: { label: "Lin" },
+      children: [{ label: "Grace" }, { label: "Rosa" }],
+    });
+  });
+
+  it("inherits nested model providers across class hierarchies", () => {
+    class Child {
+      @JsonProperty("title") title = property("");
+    }
+    class Base {
+      @JsonProperty(() => Child) fromBase = property<Child | null>(null);
+    }
+    class Model extends Base {
+      @JsonProperty(() => Child) fromModel = property<Child | null>(null);
+    }
+
+    const schema = jsonSchema(Model);
+    const restored = JsonMapper.deserialize({ fromBase: { title: "Base" }, fromModel: { title: "Model" } }, schema);
+    expect(restored.fromBase.get).toBeInstanceOf(Child);
+    expect(restored.fromModel.get).toBeInstanceOf(Child);
+    restored.fromModel.get.title.set("Updated");
+    expect(JsonMapper.serialize(restored, schema)).toEqual({
+      fromBase: { title: "Base" },
+      fromModel: { title: "Updated" },
+    });
+  });
+
+  it("keeps explicit schema fields as highest priority over decorator models", () => {
+    class Child {
+      @JsonProperty() value = property("");
+    }
+    class Alternate {
+      @JsonProperty() label = property("");
+    }
+    class Model {
+      @JsonProperty("payload", () => Child) payload = property<Child | null>(null);
+    }
+
+    const alternateSchema = jsonSchema(Alternate);
+    const schema = jsonSchema(Model, {
+      fields: {
+        payload: jsonField({ schema: alternateSchema }),
+      },
+    });
+    const model = JsonMapper.deserialize({ payload: { label: "Explicit" } }, schema);
+    expect(model.payload.get).toBeInstanceOf(Alternate);
+    expect(JsonMapper.serialize(model, schema)).toEqual({ payload: { label: "Explicit" } });
+  });
+
   it("invokes custom property defaults with their owner", () => {
     class OwnerAwareProperty {
       value = "";

@@ -6,6 +6,8 @@ export type JsonValue = JsonPrimitive | JsonValue[] | { readonly [key: string]: 
 export interface JsonField<T = unknown> {
   /** Name written to JSON. Defaults to the model field name. */
   readonly name?: string;
+  /** Lazy model supplier for nested mappings. */
+  readonly model?: () => JsonModelConstructor<unknown>;
   readonly schema?: JsonSchema<T>;
   readonly itemSchema?: JsonSchema<unknown>;
   readonly valueSchema?: JsonSchema<unknown>;
@@ -30,6 +32,7 @@ export type JsonModelConstructor<T> = new (...args: never[]) => T;
 
 const decoratedFields = new WeakMap<Function, Map<string, JsonField>>();
 const decoratedTypes = new WeakMap<Function, string>();
+const lazilyResolvedSchemas = new WeakMap<JsonModelConstructor<unknown>, JsonSchema<unknown>>();
 
 function decorateField(target: object, propertyKey: string | symbol, field: JsonField): void {
   const constructor = (target as { constructor: Function }).constructor;
@@ -39,9 +42,65 @@ function decorateField(target: object, propertyKey: string | symbol, field: Json
   decoratedFields.set(constructor, fields);
 }
 
+function resolveModel(model: () => JsonModelConstructor<unknown>): JsonSchema<unknown> {
+  const constructor = model();
+  const cached = lazilyResolvedSchemas.get(constructor);
+  if (cached !== undefined) return cached;
+  const schema = JsonSchema.fromClass(constructor);
+  lazilyResolvedSchemas.set(constructor, schema);
+  return schema;
+}
+
+function isProperty(value: unknown): value is PropertyLike {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    "get" in value &&
+    "isDirty" in value &&
+    typeof (value as { set?: unknown }).set === "function"
+  );
+}
+
+function isListProperty(value: unknown): value is ListPropertyLike {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    "get" in value &&
+    typeof (value as { setAll?: unknown }).setAll === "function"
+  );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function resolveNestedField(field: JsonField, runtimeValue: unknown): JsonField {
+  if (field.schema !== undefined || field.itemSchema !== undefined || field.valueSchema !== undefined || field.model === undefined) {
+    return field;
+  }
+  const nested = resolveModel(field.model);
+  if (isListProperty(runtimeValue)) return { ...field, itemSchema: nested };
+  if (isProperty(runtimeValue)) return { ...field, schema: nested };
+  return { ...field, schema: nested };
+}
+
 /** TypeScript decorator equivalent of Scala's `JsonProperty`. */
-export function JsonProperty(name: string): PropertyDecorator {
-  return (target, propertyKey) => decorateField(target, propertyKey, { name });
+export function JsonProperty(): PropertyDecorator;
+export function JsonProperty(name: string): PropertyDecorator;
+export function JsonProperty<T>(model: () => JsonModelConstructor<T>): PropertyDecorator;
+export function JsonProperty<T>(name: string, model: () => JsonModelConstructor<T>): PropertyDecorator;
+export function JsonProperty(
+  firstArg?: string | (() => JsonModelConstructor<unknown>),
+  secondArg?: () => JsonModelConstructor<unknown>,
+): PropertyDecorator {
+  return (target, propertyKey) => {
+    const name = typeof firstArg === "string" ? firstArg : undefined;
+    const model = typeof firstArg === "function" ? firstArg : secondArg;
+    decorateField(target, propertyKey, {
+      ...(name === undefined ? {} : { name }),
+      ...(model === undefined ? {} : { model }),
+    });
+  };
 }
 
 /** TypeScript decorator equivalent of Scala's `JsonIgnore`. */
@@ -208,29 +267,6 @@ export function jsonId(): JsonField {
 type PropertyLike = Property<unknown>;
 type ListPropertyLike = ListProperty<unknown>;
 
-function isProperty(value: unknown): value is PropertyLike {
-  return (
-    value !== null &&
-    typeof value === "object" &&
-    "get" in value &&
-    "isDirty" in value &&
-    typeof (value as { set?: unknown }).set === "function"
-  );
-}
-
-function isListProperty(value: unknown): value is ListPropertyLike {
-  return (
-    value !== null &&
-    typeof value === "object" &&
-    "get" in value &&
-    typeof (value as { setAll?: unknown }).setAll === "function"
-  );
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === "object" && !Array.isArray(value);
-}
-
 function encodeUnknown(value: unknown): JsonValue {
   if (value === null || value === undefined) return null;
   if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") return value;
@@ -273,19 +309,20 @@ function fieldValue(value: unknown): unknown {
 }
 
 function hasDirtyPayload(value: unknown, field: JsonField): boolean {
+  const resolved = resolveNestedField(field, value);
   if (isProperty(value)) {
-    const nested: JsonField = field.schema === undefined ? {} : { schema: field.schema };
+    const nested: JsonField = resolved.schema === undefined ? {} : { schema: resolved.schema };
     return value.isDirty || hasDirtyPayload(value.get, nested);
   }
   if (isListProperty(value)) {
-    const nested: JsonField = field.itemSchema === undefined ? {} : { schema: field.itemSchema };
+    const nested: JsonField = resolved.itemSchema === undefined ? {} : { schema: resolved.itemSchema };
     // `ListProperty` deliberately exposes no `isDirty` in the JS contract. A
     // non-empty list is therefore the observable payload; nested schemas still
     // get their own dirty check below.
     return value.get.length > 0 || value.get.some((item) => hasDirtyPayload(item, nested));
   }
-  if (field.schema && value !== null && value !== undefined) {
-    return Object.entries(field.schema.fields).some(([key, child]) => {
+  if (resolved.schema && value !== null && value !== undefined) {
+    return Object.entries(resolved.schema.fields).some(([key, child]) => {
       const current = isRecord(value) ? value[key] : undefined;
       return child.id !== true && shouldSerialize(current, child);
     });
@@ -346,14 +383,15 @@ export class JsonMapper {
     for (const [key, field] of Object.entries(selected.fields)) {
       if (field.serialize === false) continue;
       const current = value[key];
+      const resolved = resolveNestedField(field, current);
       if (!shouldSerialize(current, field)) continue;
       const raw = fieldValue(current);
-      result[field.name ?? key] = field.schema
-        ? this.encode(raw, field.schema as JsonSchema<unknown>)
-        : field.itemSchema && Array.isArray(raw)
-          ? raw.map((item) => this.encode(item, field.itemSchema!))
-          : field.valueSchema && isRecord(raw)
-            ? Object.fromEntries(Object.entries(raw).map(([entryKey, item]) => [entryKey, this.encode(item, field.valueSchema!)]))
+      result[field.name ?? key] = resolved.schema
+        ? this.encode(raw, resolved.schema as JsonSchema<unknown>)
+        : resolved.itemSchema && Array.isArray(raw)
+          ? raw.map((item) => this.encode(item, resolved.itemSchema!))
+          : resolved.valueSchema && isRecord(raw)
+            ? Object.fromEntries(Object.entries(raw).map(([entryKey, item]) => [entryKey, this.encode(item, resolved.valueSchema!)]))
             : encodeUnknown(raw);
     }
     return result;
@@ -380,13 +418,15 @@ export class JsonMapper {
       if (field.deserialize === false) continue;
       const jsonKey = field.name ?? key;
       if (!(jsonKey in value)) continue;
-      const mapped = field.schema
-        ? this.decode(value[jsonKey], field.schema as JsonSchema<unknown>)
-        : field.itemSchema && Array.isArray(value[jsonKey])
-          ? value[jsonKey].map((item) => this.decode(item, field.itemSchema!))
-          : field.valueSchema && isRecord(value[jsonKey])
-            ? Object.fromEntries(Object.entries(value[jsonKey]).map(([entryKey, item]) => [entryKey, this.decode(item, field.valueSchema!)]))
-            : value[jsonKey];
+      const raw = value[jsonKey];
+      const resolved = resolveNestedField(field, instance[key]);
+      const mapped = resolved.schema
+        ? this.decode(raw, resolved.schema as JsonSchema<unknown>)
+        : resolved.itemSchema && Array.isArray(raw)
+          ? raw.map((item) => this.decode(item, resolved.itemSchema!))
+          : resolved.valueSchema && isRecord(raw)
+            ? Object.fromEntries(Object.entries(raw).map(([entryKey, item]) => [entryKey, this.decode(item, resolved.valueSchema!)]))
+            : raw;
       const target = instance as Record<string, unknown>;
       const current = target[key];
       if (isProperty(current)) {
