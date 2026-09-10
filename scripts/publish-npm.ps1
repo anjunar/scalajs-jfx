@@ -50,8 +50,18 @@ function Test-PackageVersionPublished {
         [string]$PackageVersion
     )
 
-    & npm --cache $npmCache view "$PackageName@$PackageVersion" version --json --prefer-online *> $null
-    return $LASTEXITCODE -eq 0
+    # A missing package/version makes `npm view` exit non-zero and write to
+    # stderr. Under the script-level "Stop" preference that stderr would become a
+    # terminating NativeCommandError, so relax the preference for this probe and
+    # rely solely on the exit code.
+    $previousPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        & npm --cache $npmCache view "$PackageName@$PackageVersion" version --json --prefer-online *> $null
+        return $LASTEXITCODE -eq 0
+    } finally {
+        $ErrorActionPreference = $previousPreference
+    }
 }
 
 foreach ($packageDirectory in $packageDirectories) {
