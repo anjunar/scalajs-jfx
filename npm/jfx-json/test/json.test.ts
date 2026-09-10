@@ -101,9 +101,9 @@ describe("JsonMapper", () => {
     const restored = JsonMapper.deserialize({ nested: { label: "Ada" }, children: [{ label: "Grace" }] }, schema);
     expect(calls).toBe(1);
 
-    restored.nested.get.label.set("Lin");
+    restored.nested.get!.label.set("Lin");
     restored.children.add(new Child());
-    restored.children.get[1].label.set("Rosa");
+    restored.children.get[1]!.label.set("Rosa");
     expect(JsonMapper.serialize(restored, schema)).toEqual({
       nested: { label: "Lin" },
       children: [{ label: "Grace" }, { label: "Rosa" }],
@@ -125,7 +125,7 @@ describe("JsonMapper", () => {
     const restored = JsonMapper.deserialize({ fromBase: { title: "Base" }, fromModel: { title: "Model" } }, schema);
     expect(restored.fromBase.get).toBeInstanceOf(Child);
     expect(restored.fromModel.get).toBeInstanceOf(Child);
-    restored.fromModel.get.title.set("Updated");
+    restored.fromModel.get!.title.set("Updated");
     expect(JsonMapper.serialize(restored, schema)).toEqual({
       fromBase: { title: "Base" },
       fromModel: { title: "Updated" },

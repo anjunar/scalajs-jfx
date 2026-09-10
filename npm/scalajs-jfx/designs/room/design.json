@@ -1,0 +1,24 @@
+{
+  "id": "room",
+  "name": "Bewohnter Raum",
+  "version": "1.0.0",
+  "order": 2,
+  "description": "Nah, redaktionell, warm und eigenwillig.",
+  "thesis": "Nähe entsteht, wenn eine Form Ankommen und Unfertigkeit aushält.",
+  "temperament": "Zugewandt, redaktionell, gelassen, mit deutlichen typografischen Gesten.",
+  "decisions": [
+    "Große Serifentitel und eine eigenständige Leseschrift geben der einzelnen Stimme Gewicht.",
+    "Eine horizontale Navigation öffnet die gemeinsame Fläche; Zusammengehöriges erhält weich begrenzte Innenräume.",
+    "Längere Abschnittspausen und ein engeres Lesemaß lassen Rhythmus zwischen Nähe und Abstand entstehen.",
+    "Papierweiß, Rosenholz und Beerentinte; im Dunkeln ein warmer Pflaumenton mit hellen Verbindungen."
+  ],
+  "boundary": "Darf weder Wellness noch sentimentale Geborgenheitszusage werden. Fehler bleiben deutlich, Werkzeuge präzise.",
+  "supports": {
+    "light": true,
+    "dark": true
+  },
+  "styles": [
+    "tokens.css",
+    "design.css"
+  ]
+}

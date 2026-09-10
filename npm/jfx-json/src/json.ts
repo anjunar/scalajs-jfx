@@ -33,6 +33,7 @@ export type JsonModelConstructor<T> = new (...args: never[]) => T;
 const decoratedFields = new WeakMap<Function, Map<string, JsonField>>();
 const decoratedTypes = new WeakMap<Function, string>();
 const lazilyResolvedSchemas = new WeakMap<JsonModelConstructor<unknown>, JsonSchema<unknown>>();
+const resolvedModelProviders = new WeakMap<() => JsonModelConstructor<unknown>, JsonSchema<unknown>>();
 
 function decorateField(target: object, propertyKey: string | symbol, field: JsonField): void {
   const constructor = (target as { constructor: Function }).constructor;
@@ -43,11 +44,12 @@ function decorateField(target: object, propertyKey: string | symbol, field: Json
 }
 
 function resolveModel(model: () => JsonModelConstructor<unknown>): JsonSchema<unknown> {
+  const memoized = resolvedModelProviders.get(model);
+  if (memoized !== undefined) return memoized;
   const constructor = model();
-  const cached = lazilyResolvedSchemas.get(constructor);
-  if (cached !== undefined) return cached;
-  const schema = JsonSchema.fromClass(constructor);
+  const schema = lazilyResolvedSchemas.get(constructor) ?? JsonSchema.fromClass(constructor);
   lazilyResolvedSchemas.set(constructor, schema);
+  resolvedModelProviders.set(model, schema);
   return schema;
 }
 

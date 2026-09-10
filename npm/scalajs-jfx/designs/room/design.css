@@ -1,0 +1,12 @@
+/* JFX interpretation of the shared Multi-Design layout slots. */
+@layer designs {
+:root[data-design="room"] { --specimen-padding: var(--space-6); }
+:root[data-design="room"] .shell { display: block; }
+:root[data-design="room"] .rail { border-block: 1px solid var(--color-border); }
+:root[data-design="room"] .app-sidebar__nav { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); }
+:root[data-design="room"] .site-header { padding-block: var(--space-6); }
+:root[data-design="room"] .brand { font-family: var(--font-heading); font-weight: 400; }
+:root[data-design="room"] .component-showcase__render { border-color: transparent; }
+:root[data-design="room"] :is(blockquote, .docs-callout) { border: 0; padding: var(--space-5); border-radius: 0 var(--radius-surface) var(--radius-surface) 0; background: var(--color-elevated); }
+:root[data-design="room"] .showcase-section-intro__title { font-style: italic; }
+}

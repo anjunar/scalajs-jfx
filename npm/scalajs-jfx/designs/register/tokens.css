@@ -1,0 +1,84 @@
+/* Multi-Design Constitution, September 2026. JFX supports explicit light/dark. */
+@layer designs {
+:root {
+  color-scheme:light;   --color-canvas: #f2f5f8;
+  --color-surface: #ffffff;
+  --color-elevated: #e6edf5;
+  --color-text-primary: #182a40;
+  --color-text-secondary: #40536a;
+  --color-text-muted: #596b7f;
+  --color-border: #a8b7c8;
+  --color-interactive: #214ec5;
+  --color-interactive-hover: #173990;
+  --color-on-interactive: #ffffff;
+  --color-accent: #a54420;
+  --color-focus: #a54420;
+  --color-selection: #cedcff;
+  --color-success: #176044;
+  --color-warning: #825300;
+  --color-error: #ae2940;
+  --color-information: #214ec5;
+  --font-interface: 'Segoe UI', 'Trebuchet MS', Arial, sans-serif;
+  --font-reading: Georgia, 'Palatino Linotype', 'Book Antiqua', serif;
+  --font-code: Consolas, 'Liberation Mono', monospace;
+  --text-display: clamp(2.75rem, 6vw, 5.5rem);
+  --text-h1: clamp(2.1rem, 4.5vw, 3.8rem);
+  --text-h2: clamp(1.65rem, 2.8vw, 2.3rem);
+  --text-h3: 1.4rem;
+  --text-h4: 1.2rem;
+  --text-h5: 1.05rem;
+  --text-h6: 1rem;
+  --text-body: 1.0625rem;
+  --text-reading: clamp(1.125rem, 1rem + .35vw, 1.3125rem);
+  --text-ui: 1rem;
+  --text-small: .875rem;
+  --leading-body: 1.65;
+  --leading-reading: 1.82;
+  --measure-reading: 66ch;
+  --measure-prose: 68ch;
+  --layout-max: 88rem;
+  --space-1: .25rem;
+  --space-2: .5rem;
+  --space-3: .75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4.5rem;
+  --space-label: var(--space-2);
+  --space-group: var(--space-5);
+  --space-section: var(--space-8);
+  --space-paragraph: 1.2em;
+  --space-page: clamp(1.1rem, 4vw, 4rem);
+  --radius-control: .25rem;
+  --radius-surface: .4rem;
+  --shadow-overlay: 0 .7rem 2.5rem #182a4026;
+  --duration-response: 120ms;
+  --duration-orientation: 180ms;
+  --ease-response: ease-out;
+  --font-heading: var(--font-interface);
+  --heading-weight: 600;
+  --heading-tracking: -.045em;
+  --color-backdrop: #101b2b99;
+}
+:root[data-color-scheme="dark"] {
+  color-scheme:dark;   --color-canvas: #111c2b;
+  --color-surface: #192a3e;
+  --color-elevated: #243a52;
+  --color-text-primary: #e8eff8;
+  --color-text-secondary: #c0cfe0;
+  --color-text-muted: #9daec3;
+  --color-border: #667e98;
+  --color-interactive: #a8c0ff;
+  --color-interactive-hover: #cfddff;
+  --color-on-interactive: #111c2b;
+  --color-accent: #f0b46d;
+  --color-focus: #f0b46d;
+  --color-selection: #344e76;
+  --color-success: #8bd7b1;
+  --color-warning: #edc477;
+  --color-error: #ffa0af;
+  --color-information: #a8c0ff;
+  --shadow-overlay: 0 .7rem 2.5rem #0005;
+}
+}
