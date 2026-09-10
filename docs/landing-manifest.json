@@ -1,6 +1,6 @@
 {
   "src/client.mjs": {
-    "file": "assets/client-BRPrzQb8.js",
+    "file": "assets/client-Dwa2F1o2.js",
     "name": "client",
     "src": "src/client.mjs",
     "isEntry": true,
@@ -8,11 +8,11 @@
       "src/hydrate.mjs"
     ],
     "css": [
-      "assets/client-C5__36-W.css"
+      "assets/client-C0wW2MDG.css"
     ]
   },
   "src/hydrate.mjs": {
-    "file": "assets/hydrate-DuIlqhLR.js",
+    "file": "assets/hydrate-qmPGxVEO.js",
     "name": "hydrate",
     "src": "src/hydrate.mjs",
     "isDynamicEntry": true

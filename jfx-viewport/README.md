@@ -9,7 +9,7 @@ The global UI layer for JFX 3: movable windows, anchor-following overlays, and t
 ## Installation
 
 ```scala
-libraryDependencies += "com.anjunar" %% "scalajs-jfx-viewport" % "3.0.4"
+libraryDependencies += "com.anjunar" %% "scalajs-jfx-viewport" % "3.0.5"
 ```
 
 ## Quick start

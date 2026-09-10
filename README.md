@@ -52,7 +52,7 @@ Add JFX 3 in `build.sbt` (sbt 2 uses `%%` for the Scala.js platform suffix):
 enablePlugins(ScalaJSPlugin)
 scalaVersion := "3.3.8"
 scalaJSUseMainModuleInitializer := true
-libraryDependencies += "com.anjunar" %% "scalajs-jfx-core" % "3.0.4"
+libraryDependencies += "com.anjunar" %% "scalajs-jfx-core" % "3.0.5"
 ```
 
 Add a host element to `index.html`:
@@ -184,7 +184,7 @@ npm run verify --workspace npm/jfx-core
 
 ## Project status and license
 
-The repository is on the `3.0.4` release line and under active development. The complete Scala suite and every npm workspace verification run in CI for pushes and pull requests. Source, releases, and issue tracking live in the [GitHub repository](https://github.com/anjunar/scalajs-jfx).
+The repository is on the `3.0.5` release line and under active development. The complete Scala suite and every npm workspace verification run in CI for pushes and pull requests. Source, releases, and issue tracking live in the [GitHub repository](https://github.com/anjunar/scalajs-jfx).
 
 JFX 3 is available under the [MIT License](LICENSE).
 

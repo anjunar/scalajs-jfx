@@ -1,6 +1,6 @@
 {
   "name": "@anjunar/jfx-webauthn",
-  "version": "3.0.4",
+  "version": "3.0.5",
   "description": "The browser-side WebAuthn and passkey API for JFX 3, with strict JSON codecs and JSON-safe credential payloads.",
   "type": "module",
   "types": "./dist/index.d.ts",
