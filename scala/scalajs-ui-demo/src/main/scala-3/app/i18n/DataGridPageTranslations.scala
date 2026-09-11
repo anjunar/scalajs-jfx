@@ -22,7 +22,7 @@ object DataGridPageTranslations {
     de(i18n"Remote card grid", "Entferntes Karten-Grid"),
     de(
       i18n"The scrolling header and every card are composed through contextual Scala JS UI 1.0 DSL renderers.",
-      "Der mitscrollende Header und jede Karte werden durch kontextbezogene UI-3-DSL-Renderer aufgebaut."
+      "Der mitscrollende Header und jede Karte werden durch kontextbezogene Scala JS UI 1.0-DSL-Renderer aufgebaut."
     ),
     de(
       i18n"180 remote cards · the header scrolls with the virtual surface",
