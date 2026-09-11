@@ -63,7 +63,7 @@ if (-not $Version) {
 }
 
 if (-not $DeploymentName) {
-    $DeploymentName = "com.anjunar:scalajs-jfx:$Version"
+    $DeploymentName = "com.anjunar:scalajs-ui:$Version"
 }
 
 $bundleDir = Join-Path $repoRoot "target\sona-staging"

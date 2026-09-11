@@ -1,11 +1,11 @@
-import jfx.core.component.{AbstractComponent, Runtime}
-import jfx.core.dsl.EventDsl.onClick
-import jfx.core.dsl.DslLayer.render
-import jfx.core.layout.Button.button
-import jfx.core.layout.TextComponent.text
-import jfx.core.layout.VBox.vbox
-import jfx.core.render.{Cursor, DomCursor}
-import jfx.core.state.Property
+import ui.core.component.{AbstractComponent, Runtime}
+import ui.core.dsl.EventDsl.onClick
+import ui.core.dsl.DslLayer.render
+import ui.core.layout.Button.button
+import ui.core.layout.TextComponent.text
+import ui.core.layout.VBox.vbox
+import ui.core.render.{Cursor, DomCursor}
+import ui.core.state.Property
 import org.scalajs.dom
 
 final class Counter extends AbstractComponent {

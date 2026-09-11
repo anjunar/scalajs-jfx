@@ -4,7 +4,7 @@ import { runInNewContext } from "node:vm";
 /** Execute the actual SSR script; a dark OS preference must never affect the result. */
 export function verifyThemeBootstrap(html) {
   const script = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)]
-    .map(match => match[1]).find(body => body.includes("jfx-preferences"));
+    .map(match => match[1]).find(body => body.includes("ui-preferences"));
   assert.ok(script, "SSR must include the preference bootstrap");
   for (const stored of [null, "light", "dark", "auto", "system", "invalid", new Error("storage denied")]) {
     const attrs = new Map();
@@ -13,8 +13,8 @@ export function verifyThemeBootstrap(html) {
     runInNewContext(script, {
       URL, document: { documentElement: root },
       window: {
-        location: { href: "http://jfx.local/" },
-        localStorage: { getItem(key) { if (stored instanceof Error) throw stored; return key === "jfx.design" ? "flora" : stored; } },
+        location: { href: "http://ui.local/" },
+        localStorage: { getItem(key) { if (stored instanceof Error) throw stored; return key === "ui.design" ? "flora" : stored; } },
         matchMedia() { systemReads++; return { matches: true }; },
       },
     });

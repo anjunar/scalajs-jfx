@@ -78,7 +78,7 @@ if [[ -z "$VERSION" ]]; then
 fi
 
 if [[ -z "$DEPLOYMENT_NAME" ]]; then
-  DEPLOYMENT_NAME="com.anjunar:scalajs-jfx:${VERSION}"
+  DEPLOYMENT_NAME="com.anjunar:scalajs-ui:${VERSION}"
 fi
 
 if [[ "$PUBLISHING_TYPE" != "AUTOMATIC" && "$PUBLISHING_TYPE" != "USER_MANAGED" ]]; then

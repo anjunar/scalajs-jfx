@@ -1,0 +1,221 @@
+package ui.forms
+
+import ui.core.component.AbstractComponent
+import ui.core.dsl.DslLayer
+import ui.core.dsl.DslLayer.render
+import ui.core.render.Cursor
+import ui.core.state.{ListProperty, Property}
+import ui.core.statement.Foreach
+import ui.forms.Form.FormContext
+
+import scala.collection.mutable
+import scala.scalajs.js
+
+class ArrayForm[V](
+    val name: String,
+    val standalone: Boolean = false,
+    initialRenderer: Option[ArrayForm.Renderer] = None
+) extends AbstractComponent,
+      Control[js.Array[V]],
+      FormController {
+
+  import ArrayForm.Renderer
+
+  val tagName = "fieldset"
+
+  override val valueProperty: ListProperty[V] = ListProperty()
+
+  private val mountedByIndex        = mutable.Map.empty[Int, Control[?]]
+  private val synchronizingControls = mutable.Set.empty[Control[?]]
+  private var currentIndex          = -1
+  private var contextPrefix         = name
+  // A renderer supplied here, rather than through `controlRenderer_=`, is visible to `compose`'s
+  // very first `foreachIndexed` pass -- no `valueProperty.notified()` retrigger needed. That
+  // retrigger is exactly right for a live, already-mounted form (the `controlRenderer_=` setter
+  // below), but wrong during SSR/hydration: `compose` always runs to completion *before*
+  // `DslLayer.child`'s trailing body block (where `controlRenderer_=` is normally called) does, so a
+  // renderer set that way renders zero items on the first pass and a second, later pass has to
+  // insert them into a `HydratingCursor` that already walked past an empty range -- a real hydration
+  // fault, not hypothetical (found through `scalajs-ui-bridge`'s `ArrayFormFactory`, which needs the
+  // renderer available from construction).
+  private var renderer: Option[Renderer] = initialRenderer
+
+  override def prefix: String = contextPrefix
+
+  def controlRenderer: Option[Renderer] = renderer
+
+  def controlRenderer_=(value: Renderer): Unit = {
+    renderer = Some(value)
+    if (isBound) valueProperty.notified()
+  }
+
+  def itemControls: Seq[Control[?]] =
+    mountedByIndex.toSeq.sortBy(_._1).map(_._2)
+
+  /** The control mounted for `index`, if the renderer has run for it. A bridge-facing renderer
+    * (`scalajs-ui-bridge`'s `ArrayFormFactory`) mounts its item through the DSL rather than building and
+    * returning a `Control[?]` value directly -- self-registration during that mount already
+    * populates `mountedByIndex`, so this is how the renderer function recovers what it just built.
+    */
+  def itemControlAt(index: Int): Option[Control[?]] = mountedByIndex.get(index)
+
+  override def register(control: Control[?]): Unit =
+    if (currentIndex >= 0) mountedByIndex.put(currentIndex, control)
+
+  override def unregister(control: Control[?]): Unit =
+    mountedByIndex
+      .collectFirst { case (index, current) if current eq control => index }
+      .foreach(mountedByIndex.remove)
+
+  override def validate(forceVisible: Boolean): Seq[String] =
+    super.validate(forceVisible) ++ itemControls.flatMap(_.validate(forceVisible))
+
+  override def clearErrors(): Unit = {
+    errors.clear()
+    itemControls.foreach { control =>
+      control.setErrors(Nil)
+      control match {
+        case nested: FormController => nested.clearErrors()
+        case _                      => ()
+      }
+    }
+  }
+
+  override def resetInteractionState(): Unit = {
+    setDirty(false)
+    setFocused(false)
+    clearErrors()
+    itemControls.foreach { control =>
+      control.setDirty(false)
+      control.setFocused(false)
+      control match {
+        case nested: FormController => nested.resetInteractionState()
+        case _                      => ()
+      }
+    }
+  }
+
+  def validateBindings(): Seq[String] =
+    itemControls.flatMap {
+      case nested: FormController => nested.validateBindings()
+      case _                      => Seq.empty
+    }
+
+  def setErrorResponses(responses: Seq[ErrorResponse]): Unit =
+    responses
+      .filter(_.path.nonEmpty)
+      .groupBy(_.path.head.toIntOption)
+      .foreach {
+        case (Some(index), itemErrors) =>
+          mountedByIndex.get(index).foreach { control =>
+            val nestedErrors = itemErrors.map(_.withoutHead)
+            control match {
+              case nested: FormController => nested.setErrorResponses(nestedErrors)
+              case _                      => control.setErrors(nestedErrors.map(_.message))
+            }
+          }
+        case (None, _) => ()
+      }
+
+  override def compose(cursor: Cursor): Unit =
+    render(this, cursor) {
+      val parentController =
+        if (standalone) None
+        else
+          Some(
+            FormContext.inject.getOrElse(
+              throw new IllegalStateException(s"ArrayForm '$name' requires a Form context.")
+            )
+          )
+
+      parentController.foreach { parent =>
+        contextPrefix = s"${parent.prefix}.$name"
+        parent.register(this)
+        addDisposable(() => parent.unregister(this))
+      }
+
+      setProperty("disabled", !editableProperty.get)
+      addDisposable(editableProperty.observe { editable =>
+        setProperty("disabled", !editable)
+        itemControls.foreach(_.editableProperty.set(editable))
+      })
+
+      FormContext.provide(this)
+
+      Foreach.foreachIndexedPreservingUpdates(valueProperty) { (item, index) =>
+        renderer.foreach { build =>
+          currentIndex = index
+          try {
+            val control = build(index)
+            mountedByIndex.put(index, control)
+            control.editableProperty.set(editableProperty.get)
+            setControlValue(control, item)
+            bindControlValue(control, index)
+          } finally currentIndex = -1
+        }
+      }
+
+      addDisposable(valueProperty.observeChanges {
+        case ListProperty.UpdateAt(index, _, value, _) =>
+          mountedByIndex.get(index).foreach { control =>
+            synchronizingControls += control
+            try setControlValue(control, value)
+            finally synchronizingControls -= control
+          }
+        case _ => ()
+      })
+    }
+
+  private def setControlValue(control: Control[?], value: V): Unit =
+    control.valueProperty match {
+      case property: Property[Any @unchecked]     => property.set(value)
+      case property: ListProperty[Any @unchecked] =>
+        value match {
+          case values: js.Array[?] => property.setAll(values.asInstanceOf[js.Array[Any]].toSeq)
+          case _                   => ()
+        }
+      case _ => ()
+    }
+
+  /** An array item is a real form value, not just an initial value for its control. */
+  private def bindControlValue(control: Control[?], index: Int): Unit =
+    control.valueProperty match {
+      case property: Property[Any @unchecked] =>
+        control.addDisposable(property.observeWithoutInitial { value =>
+          if (
+            !synchronizingControls.contains(control) &&
+            mountedByIndex.get(index).contains(control) && index < valueProperty.length
+          )
+            valueProperty.update(index, value.asInstanceOf[V])
+        })
+      case property: ListProperty[Any @unchecked] =>
+        control.addDisposable(property.observeChanges { _ =>
+          if (
+            !synchronizingControls.contains(control) &&
+            mountedByIndex.get(index).contains(control) && index < valueProperty.length
+          )
+            valueProperty.update(index, property.get.asInstanceOf[V])
+        })
+      case _ => ()
+    }
+}
+
+object ArrayForm {
+  type Renderer = Int => AbstractComponent ?=> Cursor ?=> Control[?]
+
+  export Editable.{editable, editable_=, editableProperty}
+
+  def arrayForm[V](
+      name: String,
+      standalone: Boolean = false
+  )(body: ArrayForm[V] ?=> Cursor ?=> Unit)(using AbstractComponent, Cursor): ArrayForm[V] =
+    DslLayer.child(new ArrayForm[V](name, standalone)) {
+      body
+    }
+
+  def controlRenderer[V](using form: ArrayForm[V]): Option[Renderer] =
+    form.controlRenderer
+
+  def controlRenderer_=[V](value: Renderer)(using form: ArrayForm[V]): Unit =
+    form.controlRenderer = value
+}

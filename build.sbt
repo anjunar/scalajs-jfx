@@ -27,23 +27,23 @@ val siteConfigUrlOverride = settingKey[Option[String]](
 // 3. Slash-Syntax ist Pflicht, 0.13-Syntax ist entfernt. War hier schon so.
 // ---------------------------------------------------------------------------
 
-version              := "3.0.5"
+version              := "1.0.0"
 organization         := "com.anjunar"
 organizationName     := "Anjunar"
 organizationHomepage := Some(url("https://github.com/anjunar"))
 
 scalaVersion := "3.3.8"
 
-homepage := Some(url("https://github.com/anjunar/scalajs-jfx"))
+homepage := Some(url("https://github.com/anjunar/scalajs-ui"))
 description := "Reactive UI framework for Scala.js with lifecycle control, typed forms, routing, tables, and a composable DSL."
 
 licenses := Seq("MIT" -> url("https://opensource.org/licenses/MIT"))
 
 scmInfo := Some(
   ScmInfo(
-    url("https://github.com/anjunar/scalajs-jfx"),
-    "scm:git:https://github.com/anjunar/scalajs-jfx.git",
-    Some("scm:git:git@github.com:anjunar/scalajs-jfx.git")
+    url("https://github.com/anjunar/scalajs-ui"),
+    "scm:git:https://github.com/anjunar/scalajs-ui.git",
+    Some("scm:git:git@github.com:anjunar/scalajs-ui.git")
   )
 )
 
@@ -90,8 +90,8 @@ publishTo := {
 // dann `Files.move`. Ergebnis war reproduzierbar
 //
 //   java.nio.file.AccessDeniedException:
-//     ...\scalajs-jfx-core_sjs1_3-3.0.5.jar.151b4332.tmp
-//       -> ...\scalajs-jfx-core_sjs1_3-3.0.5.jar
+//     ...\scalajs-ui-core_sjs1_3-1.0.0.jar.151b4332.tmp
+//       -> ...\scalajs-ui-core_sjs1_3-1.0.0.jar
 //
 // bei *jedem* Lauf nach dem ersten im selben Server -- auch ohne Quelltext-
 // aenderung, weil packageBin jedes Mal laeuft. Nur ein Serverneustart half.
@@ -122,9 +122,9 @@ lazy val commonJsSettings = Seq(
   //   `scalaJSLinkerConfig.value` umgeht diese Delegation und liest den
   //   unskopierten Projektwert -- ohne optimierte Semantik, ohne Minifizierung.
   //   `fullLinkJS` lieferte dadurch ein zu `fastLinkJS` *byteidentisches* Bundle,
-  //   fuer alle neun Module, inklusive der application.
+  //   fuer alle neun Module, inklusive scalajs-ui-demo.
   //
-  // Gemessen an scalajs-jfx-bridge: 1 705 389 -> 981 614 B roh, 217 700 ->
+  // Gemessen an scalajs-ui-bridge: 1 705 389 -> 981 614 B roh, 217 700 ->
   // 155 380 B gzip. Wer diese Zeilen anfasst, prueft das mit einem md5-Vergleich
   // von fastopt/main.js und fullopt/main.js -- sind sie gleich, ist es wieder da.
   Compile / fastLinkJS / scalaJSLinkerConfig :=
@@ -161,53 +161,53 @@ lazy val commonLibrarySettings = Seq(
 // Central nie existiert, und das Modul ist fuer externe Konsumenten unaufloesbar.
 // Publiziert: core, router, viewport, json, controls, forms, editor, webauthn.
 // Nicht publiziert (`publish / skip := true`): demo.
-// FINAL.md Prioritaet 4 ("jfx-editor veroeffentlichen oder bewusst ausklammern")
-// ist damit entschieden: veroeffentlichen, mit einer @anjunar/jfx-editor-Fassade
-// wie jedes andere npm/jfx-*-Paket (npm-Modularisierung, Lauf 7).
+// FINAL.md Prioritaet 4 ("scalajs-ui-editor veroeffentlichen oder bewusst ausklammern")
+// ist damit entschieden: veroeffentlichen, mit einer @anjunar/scalajs-ui-editor-Fassade
+// wie jedes andere npm/scalajs-ui-*-Paket (npm-Modularisierung, Lauf 7).
 
-lazy val jfxCore = Project(id = "scalajs-jfx-core", base = file("jfx-core"))
+lazy val uiCore = Project(id = "scalajs-ui-core", base = file("scalajs-ui-core"))
   .enablePlugins(ScalaJSPlugin)
   .settings(
-    name                                 := "scalajs-jfx-core",
-    moduleName                           := "scalajs-jfx-core",
+    name                                 := "scalajs-ui-core",
+    moduleName                           := "scalajs-ui-core",
     libraryDependencies += "com.anjunar" %% "scala-reflect" % "1.1.3"
   )
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
 
-lazy val jfxRouter = Project(id = "scalajs-jfx-router", base = file("jfx-router"))
+lazy val uiRouter = Project(id = "scalajs-ui-router", base = file("scalajs-ui-router"))
   .enablePlugins(ScalaJSPlugin)
-  .dependsOn(jfxCore)
+  .dependsOn(uiCore)
   .settings(
-    name       := "scalajs-jfx-router",
-    moduleName := "scalajs-jfx-router"
+    name       := "scalajs-ui-router",
+    moduleName := "scalajs-ui-router"
   )
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
 
-lazy val jfxViewport = Project(id = "scalajs-jfx-viewport", base = file("jfx-viewport"))
+lazy val uiViewport = Project(id = "scalajs-ui-viewport", base = file("scalajs-ui-viewport"))
   .enablePlugins(ScalaJSPlugin)
-  .dependsOn(jfxCore)
+  .dependsOn(uiCore)
   .settings(
-    name       := "scalajs-jfx-viewport",
-    moduleName := "scalajs-jfx-viewport"
+    name       := "scalajs-ui-viewport",
+    moduleName := "scalajs-ui-viewport"
   )
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
 
-lazy val jfxJson = Project(id = "scalajs-jfx-json", base = file("jfx-json"))
+lazy val uiJson = Project(id = "scalajs-ui-json", base = file("scalajs-ui-json"))
   .enablePlugins(ScalaJSPlugin)
-  .dependsOn(jfxCore)
+  .dependsOn(uiCore)
   .settings(
-    name                                 := "scalajs-jfx-json",
-    moduleName                           := "scalajs-jfx-json",
+    name                                 := "scalajs-ui-json",
+    moduleName                           := "scalajs-ui-json",
     libraryDependencies += "com.anjunar" %% "scala-reflect" % "1.1.3"
   )
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
 
-// The JavaScript boundary described in JAVASCRIPT_API.md. Depends on jfx-core, jfx-router,
-// jfx-controls and jfx-viewport: step 5 of §9 there wires the router facade (`router`, `router-outlet`,
+// The JavaScript boundary described in JAVASCRIPT_API.md. Depends on scalajs-ui-core, scalajs-ui-router,
+// scalajs-ui-controls and scalajs-ui-viewport: step 5 of §9 there wires the router facade (`router`, `router-outlet`,
 // `router-link`) into the registry, step 6 the controls facade (`tabs`, `carousel`, `table-view`,
 // `data-grid`, `virtual-list-view`), step 7 the viewport facade (`viewport`, `window`, `overlay`,
 // `notification`). A wider `dependsOn` edge costs zero bytes on its own (CLAUDE_REVIEW_3.md §2.1,
@@ -215,20 +215,20 @@ lazy val jfxJson = Project(id = "scalajs-jfx-json", base = file("jfx-json"))
 //
 // Controls also uses Viewport in production for the optional TableView column menu.
 // The bridge retains its explicit edge because it registers viewport factories itself.
-lazy val jfxBridge = Project(id = "scalajs-jfx-bridge", base = file("jfx-bridge"))
+lazy val uiBridge = Project(id = "scalajs-ui-bridge", base = file("scalajs-ui-bridge"))
   .enablePlugins(ScalaJSPlugin)
-  .dependsOn(jfxCore, jfxRouter, jfxControls, jfxViewport, jfxForms, jfxEditor)
+  .dependsOn(uiCore, uiRouter, uiControls, uiViewport, uiForms, uiEditor)
   .settings(
-    name       := "scalajs-jfx-bridge",
-    moduleName := "scalajs-jfx-bridge",
+    name       := "scalajs-ui-bridge",
+    moduleName := "scalajs-ui-bridge",
     // "gelinktes ES-Modul" (JAVASCRIPT_API.md §7) -- linked straight into the npm package that
     // ships it, the same way the app's fullLinkJS lands in target/vite for Vite to pick up.
     // fastLinkJS is what a TypeScript consumer's dev loop uses; fullLinkJS is step 4 of §9
     // ("Bundle-Größe messen"), not yet wired into a production build of its own.
     Compile / fastLinkJS / scalaJSLinkerOutputDirectory :=
-      (LocalRootProject / baseDirectory).value / "npm" / "scalajs-jfx-bridge" / "dist" / "fastopt",
+      (LocalRootProject / baseDirectory).value / "npm" / "scalajs-ui-bridge" / "dist" / "fastopt",
     Compile / fullLinkJS / scalaJSLinkerOutputDirectory :=
-      (LocalRootProject / baseDirectory).value / "npm" / "scalajs-jfx-bridge" / "dist" / "fullopt"
+      (LocalRootProject / baseDirectory).value / "npm" / "scalajs-ui-bridge" / "dist" / "fullopt"
   )
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
@@ -243,61 +243,61 @@ lazy val jfxBridge = Project(id = "scalajs-jfx-bridge", base = file("jfx-bridge"
     Compile / fullLinkJS / scalaJSLinkerConfig ~= (_.withSourceMap(false))
   )
 
-lazy val jfxControls = Project(id = "scalajs-jfx-controls", base = file("jfx-controls"))
+lazy val uiControls = Project(id = "scalajs-ui-controls", base = file("scalajs-ui-controls"))
   .enablePlugins(ScalaJSPlugin)
-  // Kein jfxRouter: eine generische Tabelle darf nicht wissen, dass es Routing
-  // gibt. Den aktuellen Pfad liefert jfx.core.context.CrawlScope, den der Router
+  // Kein uiRouter: eine generische Tabelle darf nicht wissen, dass es Routing
+  // gibt. Den aktuellen Pfad liefert ui.core.context.CrawlScope, den der Router
   // in seiner compose bereitstellt. Siehe CLAUDE_REVIEW_1.md P1-4.
-  .dependsOn(jfxCore, jfxViewport)
+  .dependsOn(uiCore, uiViewport)
   .settings(
-    name       := "scalajs-jfx-controls",
-    moduleName := "scalajs-jfx-controls"
+    name       := "scalajs-ui-controls",
+    moduleName := "scalajs-ui-controls"
   )
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
 
-lazy val jfxForms = Project(id = "scalajs-jfx-forms", base = file("jfx-forms"))
+lazy val uiForms = Project(id = "scalajs-ui-forms", base = file("scalajs-ui-forms"))
   .enablePlugins(ScalaJSPlugin)
-  .dependsOn(jfxCore, jfxControls, jfxViewport)
+  .dependsOn(uiCore, uiControls, uiViewport)
   .settings(
-    name                                       := "scalajs-jfx-forms",
-    moduleName                                 := "scalajs-jfx-forms",
+    name                                       := "scalajs-ui-forms",
+    moduleName                                 := "scalajs-ui-forms",
     libraryDependencies += "io.github.cquiroz" %% "scala-java-time" % "2.6.0"
   )
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
 
-lazy val jfxEditor = Project(id = "scalajs-jfx-editor", base = file("jfx-editor"))
+lazy val uiEditor = Project(id = "scalajs-ui-editor", base = file("scalajs-ui-editor"))
   .enablePlugins(ScalaJSPlugin)
-  .dependsOn(jfxForms)
+  .dependsOn(uiForms)
   .settings(
-    name                                 := "scalajs-jfx-editor",
-    moduleName                           := "scalajs-jfx-editor",
+    name                                 := "scalajs-ui-editor",
+    moduleName                           := "scalajs-ui-editor",
     libraryDependencies += "com.anjunar" %% "scalajs-lexical" % "1.4.0"
   )
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
 
-lazy val jfxWebAuthn = Project(id = "scalajs-jfx-webauthn", base = file("jfx-webAuthn"))
+lazy val uiWebAuthn = Project(id = "scalajs-ui-webauthn", base = file("scalajs-ui-webauthn"))
   .enablePlugins(ScalaJSPlugin)
   .settings(
-    name       := "scalajs-jfx-webauthn",
-    moduleName := "scalajs-jfx-webauthn"
+    name       := "scalajs-ui-webauthn",
+    moduleName := "scalajs-ui-webauthn"
   )
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
 
-lazy val app = Project(id = "scalajs-jfx-demo", base = file("application"))
+lazy val app = Project(id = "scalajs-ui-demo", base = file("scalajs-ui-demo"))
   .enablePlugins(ScalaJSPlugin)
   .dependsOn(
-    jfxCore,
-    jfxRouter,
-    jfxViewport,
-    jfxJson,
-    jfxControls,
-    jfxForms,
-    jfxEditor,
-    jfxWebAuthn
+    uiCore,
+    uiRouter,
+    uiViewport,
+    uiJson,
+    uiControls,
+    uiForms,
+    uiEditor,
+    uiWebAuthn
   )
   .settings(
     scalaJSUseMainModuleInitializer := false,
@@ -308,8 +308,8 @@ lazy val app = Project(id = "scalajs-jfx-demo", base = file("application"))
     // site.config.json ist die einzige Quelle fuer Deploy-Pfad und Site-Metadaten.
     // Sie speist sitemap.xml/robots.txt (tools/) und ueber diesen Generator den
     // Scala-Code, der das vollstaendige Dokument inklusive Head rendert.
-    siteConfigBasePathOverride := sys.env.get("JFX_BASE_PATH"),
-    siteConfigUrlOverride := sys.env.get("JFX_SITE_URL"),
+    siteConfigBasePathOverride := sys.env.get("UI_BASE_PATH"),
+    siteConfigUrlOverride := sys.env.get("UI_SITE_URL"),
     Compile / sourceGenerators += Def.task {
       SiteConfigGenerator(
         (LocalRootProject / baseDirectory).value / "site.config.json",
@@ -331,9 +331,9 @@ lazy val app = Project(id = "scalajs-jfx-demo", base = file("application"))
 
 // Isolated test application: exercises the public Scala core API in real browsers. Never published
 // or linked into the production bridge; no editor implementation belongs to this repository.
-lazy val jfxCoreBrowserTests = Project(id = "scalajs-jfx-core-browser-tests", base = file("jfx-core-browser-tests"))
+lazy val uiCoreBrowserTests = Project(id = "scalajs-ui-core-browser-tests", base = file("scalajs-ui-core-browser-tests"))
   .enablePlugins(ScalaJSPlugin)
-  .dependsOn(jfxCore)
+  .dependsOn(uiCore)
   .settings(commonJsSettings)
   .settings(
     publish / skip := true,
@@ -341,18 +341,18 @@ lazy val jfxCoreBrowserTests = Project(id = "scalajs-jfx-core-browser-tests", ba
       (LocalRootProject / baseDirectory).value / "target" / "core-browser-tests"
   )
 
-lazy val root = Project(id = "scalajs-jfx-root", base = file("."))
+lazy val root = Project(id = "scalajs-ui-root", base = file("."))
   .aggregate(
-    jfxCore,
-    jfxCoreBrowserTests,
-    jfxRouter,
-    jfxViewport,
-    jfxJson,
-    jfxBridge,
-    jfxControls,
-    jfxForms,
-    jfxEditor,
-    jfxWebAuthn,
+    uiCore,
+    uiCoreBrowserTests,
+    uiRouter,
+    uiViewport,
+    uiJson,
+    uiBridge,
+    uiControls,
+    uiForms,
+    uiEditor,
+    uiWebAuthn,
     app
   )
   .settings(

@@ -1,0 +1,318 @@
+import type {
+  ComponentHandle,
+  Disposable,
+  DocumentHeadHandle,
+  Reactive,
+  ReadOnlyProperty,
+  RuntimeMessage,
+  ScopeHandle,
+  UiEvent,
+} from "./contract.js";
+import { t } from "./i18n.js";
+import { capture, currentComponent, currentScope, withScope } from "./scope.js";
+
+/** The body of an element: composes children and configures the element itself. */
+export type Body = () => void;
+
+const noBody: Body = () => {};
+
+/* ------------------------------------------------------------------ elements */
+
+/**
+ * Builds an element builder for `tagName`.
+ *
+ * `div(() => { ... })` is the TypeScript spelling of Scala's
+ * `div { ... }` -- same nesting, same order, same lifecycle.
+ */
+export function element(tagName: string): (body?: Body) => ComponentHandle {
+  return (body = noBody) =>
+    currentScope().child(tagName, (self, scope) =>
+      withScope(scope, self, body)
+    );
+}
+
+export const div = element("div");
+export const span = element("span");
+export const section = element("section");
+export const article = element("article");
+export const paragraph = element("p");
+export const nav = element("nav");
+export const ul = element("ul");
+export const li = element("li");
+export const pre = element("pre");
+export const code = element("code");
+/** Mirrors `ui.core.layout.Anchor.anchor`. Set the target with `attr("href", ...)`. */
+export const anchor = element("a");
+
+export function heading(level: 1 | 2 | 3 | 4 | 5 | 6, body?: Body): ComponentHandle {
+  return element(`h${level}`)(body);
+}
+
+/**
+ * A string, a reactive one, or an i18n message. Mirrors what Scala's `TextValue[T]` accepts
+ * wherever it is summoned -- `text()`'s argument, a `button()` label, and (on the Scala side only
+ * so far; nothing here wraps `Anchor`/`Image` yet) an anchor's label or an image's `alt`.
+ */
+export type TextLike = Reactive<string> | RuntimeMessage;
+
+function isRuntimeMessage(value: TextLike): value is RuntimeMessage {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "key" in value &&
+    typeof (value as RuntimeMessage).key?.fingerprint === "string"
+  );
+}
+
+/** Resolves a `RuntimeMessage` through `t()`; passes anything else through unchanged. */
+function resolveTextLike(value: TextLike): Reactive<string> {
+  return isRuntimeMessage(value) ? t(value) : value;
+}
+
+/** Mounts a text node. Accepts a constant, a property, or an i18n message (`i18n\`...\``). */
+export function text(value: TextLike): ComponentHandle {
+  return currentScope().text(resolveTextLike(value));
+}
+
+/**
+ * Mounts the `<head>` element. `TypeScript`'s spelling of `head { ... }` in
+ * `ui.core.layout.Head`. What goes into it -- title, meta, links -- is
+ * registered from anywhere in the tree via `documentHead()`, not composed as
+ * children here; see that function's doc comment.
+ */
+export function head(body: Body = noBody): ComponentHandle {
+  return currentScope().head((self, scope) => withScope(scope, self, body));
+}
+
+/**
+ * The request-scoped head registry, or `null` outside a document tree that
+ * mounted a `head()` element. Mirrors `ui.core.document.DocumentHead.current`.
+ *
+ * Components register entries through it from wherever they compose, not
+ * necessarily inside `head()` itself -- the same registry-not-a-tree design
+ * as the Scala side, since a page far below `<head>` is what knows its title.
+ */
+export function documentHead(): DocumentHeadHandle | null {
+  return currentScope().documentHead();
+}
+
+/* -------------------------------------------------------- library components */
+
+/**
+ * Mounts a component from the runtime's registry.
+ *
+ * The typed wrappers below are thin: they exist so that `vbox()` reads like the
+ * Scala DSL and so option objects are checked. Adding a component to the library
+ * means one registry entry in `scalajs-ui-bridge` and one wrapper here.
+ */
+export function component(
+  name: string,
+  options: Record<string, unknown> = {},
+  body: Body = noBody
+): ComponentHandle {
+  return currentScope().component(name, options, (self, scope) =>
+    withScope(scope, self, body)
+  );
+}
+
+export const vbox = (body?: Body): ComponentHandle => component("vbox", {}, body);
+export const hbox = (body?: Body): ComponentHandle => component("hbox", {}, body);
+
+export interface ButtonOptions {
+  readonly type?: "button" | "submit" | "reset";
+  readonly disabled?: Reactive<boolean>;
+}
+
+export function button(
+  label: TextLike,
+  options: ButtonOptions = {},
+  body: Body = noBody
+): ComponentHandle {
+  return component("button", { label: resolveTextLike(label), ...options }, body);
+}
+
+/** Imperative view of the nearest Drawer, handed to its composition body. */
+export interface DrawerHandle {
+  isOpen(): boolean;
+  setOpen(value: boolean): void;
+  toggle(): void;
+}
+
+export interface DrawerOptions {
+  readonly open?: boolean;
+  readonly side?: "start" | "end";
+  readonly drawerWidth?: string;
+  readonly closeOnScrimClick?: boolean;
+}
+
+export type DrawerBody = (drawer: DrawerHandle) => void;
+
+/**
+ * Mounts a Drawer. Its navigation and content slots are filled with
+ * {@link drawerNavigation} and {@link drawerContent} from inside `body`.
+ */
+export function drawer(body: DrawerBody): ComponentHandle;
+export function drawer(options: DrawerOptions, body: DrawerBody): ComponentHandle;
+export function drawer(
+  optionsOrBody: DrawerOptions | DrawerBody,
+  maybeBody?: DrawerBody
+): ComponentHandle {
+  const options = typeof optionsOrBody === "function" ? {} : optionsOrBody;
+  const body = typeof optionsOrBody === "function" ? optionsOrBody : maybeBody;
+  if (body === undefined) throw new Error("drawer() needs a composition body.");
+
+  const projected: Record<string, unknown> = {
+    compose: (
+      handle: DrawerHandle,
+      self: ComponentHandle,
+      scope: ScopeHandle
+    ): void => withScope(scope, self, () => body(handle)),
+  };
+  if (options.open !== undefined) projected["open"] = options.open;
+  if (options.side !== undefined) projected["side"] = options.side;
+  if (options.drawerWidth !== undefined) projected["drawerWidth"] = options.drawerWidth;
+  if (options.closeOnScrimClick !== undefined) {
+    projected["closeOnScrimClick"] = options.closeOnScrimClick;
+  }
+
+  return component("drawer", projected);
+}
+
+/** Fills the current Drawer's navigation slot. */
+export function drawerNavigation(body: Body): void {
+  component("drawer-navigation", {}, body);
+}
+
+/** Fills the current Drawer's content slot. */
+export function drawerContent(body: Body): void {
+  component("drawer-content", {}, body);
+}
+
+/* ---------------------------------------------------------- element settings */
+
+/** The element currently being composed. */
+export function self(): ComponentHandle {
+  return currentComponent();
+}
+
+/** Replaces this element's class list. Mirrors `classes = Seq(...)`. */
+export function classes(...names: readonly string[]): void {
+  currentComponent().setClasses(names);
+}
+
+/** Adds one class without touching the others. */
+export function addClass(name: string): void {
+  currentComponent().addClass(name);
+}
+
+/** Mirrors `ClassDsl.classIf`. */
+export function classIf(name: string, condition: ReadOnlyProperty<boolean>): void {
+  currentComponent().classIf(name, condition);
+}
+
+export function attr(name: string, value: Reactive<string>): void {
+  const component = currentComponent();
+  bind(component, value, (resolved) => component.setAttribute(name, resolved));
+}
+
+export function style(name: string, value: Reactive<string>): void {
+  const component = currentComponent();
+  bind(component, value, (resolved) => component.setStyle(name, resolved));
+}
+
+export function domProperty(name: string, value: unknown): void {
+  currentComponent().setDomProperty(name, value);
+}
+
+export function on(eventName: string, handler: (event: UiEvent) => void): void {
+  const restore = capture();
+  currentComponent().on(eventName, (event) => restore(() => handler(event)));
+}
+
+export const onClick = (handler: (event: UiEvent) => void): void =>
+  on("click", handler);
+
+export const onDoubleClick = (handler: (event: UiEvent) => void): void =>
+  on("dblclick", handler);
+
+export const onInput = (handler: (event: UiEvent) => void): void =>
+  on("input", handler);
+
+/** Ties a subscription to this component's lifetime. */
+export function disposeWith(disposable: Disposable): void {
+  currentComponent().addDisposable(disposable);
+}
+
+/* -------------------------------------------------------------- control flow */
+
+/** Mounts `body` while `active` holds. Mirrors `Condition.when`. */
+export function when(
+  active: ReadOnlyProperty<boolean>,
+  body: Body
+): void {
+  currentScope().when(active, (scope) => withScope(scope, null, body));
+}
+
+/** Mounts `body` per item and reconciles on change. Mirrors `Foreach`. */
+export function forEach<T>(
+  items: ReadOnlyProperty<readonly T[]>,
+  body: (item: T, index: number) => void
+): void {
+  currentScope().forEach(items, (item, index, scope) =>
+    withScope(scope, null, () => body(item, index))
+  );
+}
+
+/**
+ * Renders asynchronously loaded data in place.
+ *
+ * The promise is registered with the render's async context, so SSR waits for it
+ * and hydration tolerates it still being in flight. The callbacks run with this
+ * position restored -- that is what makes them look synchronous.
+ */
+export function fetchInto<T>(
+  load: () => Promise<T>,
+  onLoaded: (value: T) => void,
+  onFailed: (error: unknown) => void = defaultOnFailed
+): void {
+  currentScope().fetch(
+    load,
+    (value, scope) => withScope(scope, null, () => onLoaded(value)),
+    (error, scope) => withScope(scope, null, () => onFailed(error))
+  );
+}
+
+function defaultOnFailed(error: unknown): void {
+  text(`Could not load: ${String(error)}`);
+}
+
+/* -------------------------------------------------------------------- render */
+
+/** True while rendering in a browser. */
+export const isBrowser = (): boolean => currentScope().isBrowser;
+
+/** True while claiming server-rendered nodes. */
+export const isHydrating = (): boolean => currentScope().isHydrating;
+
+/* ------------------------------------------------------------------ internal */
+
+function bind<T>(
+  component: ComponentHandle,
+  value: Reactive<T>,
+  apply: (resolved: T) => void
+): void {
+  if (isProperty(value)) {
+    component.addDisposable(value.observe(apply));
+  } else {
+    apply(value);
+  }
+}
+
+export function isProperty<T>(value: Reactive<T>): value is ReadOnlyProperty<T> {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "observe" in (value as object) &&
+    typeof (value as ReadOnlyProperty<T>).observe === "function"
+  );
+}

@@ -2,14 +2,14 @@
 // Entwurf -- Schritt 7 aus JAVASCRIPT_API.md §9, das TypeScript-Gegenstueck zu dem, was
 // `I18nInterpolator.scala`s Makro fuer Scala zur Compilezeit erledigt.
 //
-// `npm/jfx-core/src/i18n.ts`s `i18n`/`i18nc` sind reine Laufzeitfunktionen: ohne Makro gibt es
+// `npm/scalajs-ui-core/src/i18n.ts`s `i18n`/`i18nc` sind reine Laufzeitfunktionen: ohne Makro gibt es
 // keinen Compilefehler, wenn ein Platzhalter kein `named("name", value)` ist -- das faellt sonst
 // erst beim ersten Rendern auf, per `I18nError`. Dieses Skript findet solche Stellen vorher, indem
 // es den TypeScript-AST liest statt die App auszufuehren, und schreibt dabei gleich den Katalog-
 // Entwurf, den ein Uebersetzer sonst von Hand aus jedem Aufruf abtippen muesste.
 //
 // Aufruf: node tools/i18n-extract.mjs <verzeichnis>... [--out <datei.json>]
-// Ohne Argumente: npm/jfx-demo/src, kein --out (nur Bericht auf stdout, Exitcode bei Fehlern).
+// Ohne Argumente: npm/scalajs-ui-demo/src, kein --out (nur Bericht auf stdout, Exitcode bei Fehlern).
 
 import { readFileSync, readdirSync, statSync, writeFileSync } from "node:fs"
 import { dirname, extname, join, relative, resolve } from "node:path"
@@ -17,7 +17,7 @@ import { fileURLToPath } from "node:url"
 
 import ts from "typescript"
 
-import { fingerprintOf } from "../npm/jfx-core/dist/i18n.js"
+import { fingerprintOf } from "../npm/scalajs-ui-core/dist/i18n.js"
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 
@@ -159,7 +159,7 @@ function parseArgs(argv) {
       roots.push(argv[i])
     }
   }
-  return { roots: roots.length > 0 ? roots : ["npm/jfx-demo/src"], out }
+  return { roots: roots.length > 0 ? roots : ["npm/scalajs-ui-demo/src"], out }
 }
 
 const { roots, out } = parseArgs(process.argv.slice(2))

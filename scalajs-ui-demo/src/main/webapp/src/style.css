@@ -1,0 +1,7 @@
+@layer theme, base, reset, components, patterns, designs, utilities, invariants;
+/* UI supplies the design roles and component CSS. Demo styles own composition. */
+@import "tailwindcss";
+@import "@anjunar/scalajs-lexical/index.css" layer(patterns);
+@import "@anjunar/scalajs-ui/index.css";
+@import "./base.css" layer(patterns);
+@import "./app/index.css" layer(patterns);

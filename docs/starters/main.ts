@@ -1,7 +1,7 @@
-import "@anjunar/scalajs-jfx-bridge";
-import "@anjunar/scalajs-jfx/index.css";
-import { mount } from "@anjunar/jfx-core";
-import { button, onClick, property, text, vbox } from "@anjunar/jfx-core";
+import "@anjunar/scalajs-ui-bridge";
+import "@anjunar/scalajs-ui/index.css";
+import { mount } from "@anjunar/scalajs-ui-core";
+import { button, onClick, property, text, vbox } from "@anjunar/scalajs-ui-core";
 
 function counter() {
   const count = property(0);

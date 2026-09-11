@@ -1,0 +1,26 @@
+import { catalogEntry, i18n, type CatalogEntry } from "@anjunar/scalajs-ui-core";
+
+export const entries: readonly CatalogEntry[] = [
+  catalogEntry(i18n`Overview`, { de: "Übersicht" }),
+  catalogEntry(i18n`What @anjunar/scalajs-ui-* is and where to start.`, { de: "Was @anjunar/scalajs-ui-* ist und wo du startest." }),
+  catalogEntry(i18n`A TypeScript facade over Scala JS UI 1.0 -- one route per capability, the running component next to the source that produced it.`, { de: "Eine TypeScript-Fassade über Scala JS UI 1.0 – eine Route pro Fähigkeit, die laufende Komponente neben ihrem Quelltext." }),
+  catalogEntry(i18n`The ambient-scope DSL: reactive state, control flow, elements, lifecycle.`, { de: "Die DSL mit Ambient-Scope: reaktiver Zustand, Kontrollfluss, Elemente und Lebenszyklus." }),
+  catalogEntry(i18n`Tabs, tables, carousels, a virtualized grid and list, remote data sources.`, { de: "Tabs, Tabellen, Karussells, virtualisiertes Grid und Listen sowie entfernte Datenquellen." }),
+  catalogEntry(i18n`Validated forms, sub-forms, repeating fields, a combo box, an image cropper.`, { de: "Validierte Formulare, Unterformulare, wiederholende Felder, eine ComboBox und ein Bildzuschnitt." }),
+  catalogEntry(i18n`A Lexical-backed rich-text field, bound by name like input.`, { de: "Ein Lexical-basiertes Rich-Text-Feld, wie input per Namen gebunden." }),
+  catalogEntry(i18n`Notifications, floating windows and overlays, mounted above the routed page.`, { de: "Benachrichtigungen, schwebende Fenster und Overlays über der gerouteten Seite." }),
+  catalogEntry(i18n`Client-side routing: links, a nested outlet, params, constraints, async loaders.`, { de: "Clientseitiges Routing: Links, ein verschachteltes Outlet, Parameter, Bedingungen und asynchrone Loader." }),
+  catalogEntry(i18n`Schema-driven JSON mapping for TypeScript models, including IDs and nested state.`, { de: "Schema-basiertes JSON-Mapping für TypeScript-Modelle mit IDs und verschachteltem Zustand." }),
+  catalogEntry(i18n`Explore →`, { de: "Entdecken →" }),
+  catalogEntry(i18n`@anjunar/scalajs-ui`, { de: "@anjunar/scalajs-ui" }),
+  catalogEntry(i18n`@anjunar/scalajs-ui-core`, { de: "@anjunar/scalajs-ui-core" }),
+  catalogEntry(i18n`@anjunar/scalajs-ui-controls`, { de: "@anjunar/scalajs-ui-controls" }),
+  catalogEntry(i18n`@anjunar/scalajs-ui-forms`, { de: "@anjunar/scalajs-ui-forms" }),
+  catalogEntry(i18n`@anjunar/scalajs-ui-editor`, { de: "@anjunar/scalajs-ui-editor" }),
+  catalogEntry(i18n`@anjunar/scalajs-ui-viewport`, { de: "@anjunar/scalajs-ui-viewport" }),
+  catalogEntry(i18n`@anjunar/scalajs-ui-router`, { de: "@anjunar/scalajs-ui-router" }),
+  catalogEntry(i18n`@anjunar/scalajs-ui-json`, { de: "@anjunar/scalajs-ui-json" }),
+  catalogEntry(i18n`Search`, { de: "Suche" }),
+  catalogEntry(i18n`Light mode`, { de: "Heller Modus" }),
+  catalogEntry(i18n`Dark mode`, { de: "Dunkler Modus" }),
+];

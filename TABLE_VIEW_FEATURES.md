@@ -10,11 +10,11 @@ Ziel ist funktionale Parität für Datenbindung, Zellen und Zeilen, Auswahl, Fok
 
 **Vereinbarte Abgrenzung:** Sortierung und Filterung laufen ausschließlich über die RemoteDataList (im Repository `RemoteListProperty`/`RemoteListDataSource`). Lokale Sortier-/Filteransichten, Comparatoren und Mutation-Policies sind aus dem Zielumfang entfernt. Die Tabelle liefert Sortierschlüssel und Richtungen; Filter gehören zur Remote-Abfrage der Anwendung. Bereits unterstützte lokale Listen, deren Strukturänderungen und eingebettete Editoren bleiben unverändert unterstützt.
 
-Die öffentliche [TableView-API von JavaFX 26](https://openjfx.io/javadoc/26/javafx.controls/javafx/scene/control/TableView.html) bildet den Referenzumfang. Zell- und Spaltenverträge werden zusätzlich gegen deren eigene APIs geprüft. Geerbte Darstellungsfunktionen werden auf DOM, Komponenten-Slots und Web-CSS abgebildet.
+Die öffentliche [TableView-API von JavaFX 26](https://openui.io/javadoc/26/javafx.controls/javafx/scene/control/TableView.html) bildet den Referenzumfang. Zell- und Spaltenverträge werden zusätzlich gegen deren eigene APIs geprüft. Geerbte Darstellungsfunktionen werden auf DOM, Komponenten-Slots und Web-CSS abgebildet.
 
 **Editierbare Inhalte sind bereits möglich.** `TableColumn.cell { row => … }` komponiert beliebige Komponenten. Darin können Eingabefelder stehen, die über die vorhandene Property-/Form-Bindung das Zeilenmodell ändern. Dieser Weg bleibt unterstützt. Davon getrennt ist der noch fehlende, von der Tabelle verwaltete JavaFX-Editierablauf mit Editierposition, Start/Commit/Cancel und typisierten Ereignissen. „Editing fehlt“ wäre daher eine falsche Beschreibung des heutigen Stands.
 
-Paging, SSR, Hydration, Crawl-Zustand und Remote-Nachladen sind vorhandene JFX-Erweiterungen. Sie bleiben Bestandteil aller neuen Funktionen. Insbesondere erscheinen Previous/Next nur im Paging-Modus.
+Paging, SSR, Hydration, Crawl-Zustand und Remote-Nachladen sind vorhandene UI-Erweiterungen. Sie bleiben Bestandteil aller neuen Funktionen. Insbesondere erscheinen Previous/Next nur im Paging-Modus.
 
 ### Implementiert: erstes Grundlagenpaket
 
@@ -65,9 +65,9 @@ Paging, SSR, Hydration, Crawl-Zustand und Remote-Nachladen sind vorhandene JFX-E
 - `selectAll` wirkt nur im Mehrfachmodus auf den **aktuell bekannten Indexraum**, einschließlich ungeladener Positionen. Es lädt nichts und ist keine serverseitige „alle Treffer“-Auswahl. `selectedItems` enthält nur geladene Werte; deshalb dürfen die beiden Ergebnislisten bei lückenhaften Quellen nicht einfach positionsweise verknüpft werden. Die explizite Indexauswahl benötigt Speicher proportional zur Anzahl gewählter Positionen.
 - Eigene und normale Rows beziehen `selected`/CSS/`aria-selected` jetzt aus der Mitgliedschaft, nicht aus dem führenden Index. Die Demo startet bewusst im Mehrfachmodus, zeigt die Anzahl und erlaubt einen Moduswechsel. Allgemeiner Tabellen-Default und ComboBox-Verhalten bleiben Einzelauswahl.
 
-**Randfälle/Migration:** Wechsel auf Single behält nur den führenden Eintrag. Ein ungültiges `select(index)`/`selectIndex` löscht weiterhin wie bisher die Auswahl (JFX-Kompatibilitätsregel); `selectIndices` ignoriert ungültige/duplizierte Indizes, Bereiche werden auf den gültigen Indexraum begrenzt. Ungültige JavaScript-Bereichsgrenzen wie Brüche/NaN werden ignoriert. `selectAll` ist im Single-Modus wirkungslos. Nach Unmount sind Mutationen wirkungslos. Alle abgeleiteten Properties können auch bei unverändertem Einzelwert benachrichtigen; Beobachter lesen stets einen kohärenten Modellzustand.
+**Randfälle/Migration:** Wechsel auf Single behält nur den führenden Eintrag. Ein ungültiges `select(index)`/`selectIndex` löscht weiterhin wie bisher die Auswahl (UI-Kompatibilitätsregel); `selectIndices` ignoriert ungültige/duplizierte Indizes, Bereiche werden auf den gültigen Indexraum begrenzt. Ungültige JavaScript-Bereichsgrenzen wie Brüche/NaN werden ignoriert. `selectAll` ist im Single-Modus wirkungslos. Nach Unmount sind Mutationen wirkungslos. Alle abgeleiteten Properties können auch bei unverändertem Einzelwert benachrichtigen; Beobachter lesen stets einen kohärenten Modellzustand.
 
-**Weiter offen:** Austausch eigener SelectionModels, Zell-/Rechteckauswahl, Zellfokus/FocusModel-Austausch, Scroll-Events und vollständiger zugänglicher Grid-Vertrag. Maus-Mehrfachauswahl ist nicht gleichbedeutend mit abgeschlossener Accessibility-Abnahme. Referenz für Ergebnislisten und Bereichsoperationen: [MultipleSelectionModel, JavaFX 26](https://openjfx.io/javadoc/26/javafx.controls/javafx/scene/control/MultipleSelectionModel.html).
+**Weiter offen:** Austausch eigener SelectionModels, Zell-/Rechteckauswahl, Zellfokus/FocusModel-Austausch, Scroll-Events und vollständiger zugänglicher Grid-Vertrag. Maus-Mehrfachauswahl ist nicht gleichbedeutend mit abgeschlossener Accessibility-Abnahme. Referenz für Ergebnislisten und Bereichsoperationen: [MultipleSelectionModel, JavaFX 26](https://openui.io/javadoc/26/javafx.controls/javafx/scene/control/MultipleSelectionModel.html).
 
 ### Implementiert: programmatische Zeilennavigation
 
@@ -77,11 +77,11 @@ Paging, SSR, Hydration, Crawl-Zustand und Remote-Nachladen sind vorhandene JFX-E
 - SSR verändert seinen deterministischen Ausschnitt nicht. Browser-Aufrufe während Komposition/Hydration warten auf abgeschlossene Hydration und einen messbaren Viewport mit sichtbaren Spalten. Die letzte gültige Anforderung gewinnt, wird vor Ausführung gegen den aktuellen Umfang geprüft und überschreibt die anfängliche Cookie-/URL-Scrollwiederherstellung. Unmount verhindert spätere Ausführung.
 - Die Demo bietet Sprünge zur 500. Zeile, zur ersten und zur führenden ausgewählten Zeile. Ein Sprung wählt nicht automatisch das Ziel aus.
 
-**Abgrenzung:** Kein `onScrollTo`-Event und kein Ladeabschluss-Promise. V03 bleibt deshalb teilweise offen. Der Sichtbarkeitsvertrag orientiert sich an [JavaFX `scrollTo`](https://openjfx.io/javadoc/26/javafx.controls/javafx/scene/control/TableView.html#scrollTo(int)); SSR, Paging und Remote-Lücken sind JFX-spezifische Ergänzungen. Ein ausstehender Index ist eine Position der dann aktuellen Ansicht, kein stabiler Datensatz-Key.
+**Abgrenzung:** Kein `onScrollTo`-Event und kein Ladeabschluss-Promise. V03 bleibt deshalb teilweise offen. Der Sichtbarkeitsvertrag orientiert sich an [JavaFX `scrollTo`](https://openui.io/javadoc/26/javafx.controls/javafx/scene/control/TableView.html#scrollTo(int)); SSR, Paging und Remote-Lücken sind UI-spezifische Ergänzungen. Ein ausstehender Index ist eine Position der dann aktuellen Ansicht, kein stabiler Datensatz-Key.
 
 ### Implementiert: horizontale Spaltennavigation (elfter Ausbau)
 
-- Scala: `scrollToColumn(column)` und `scrollToColumnIndex(index)`; TypeScript: `scrollToColumnIndex(index)`. Indizes beziehen sich auf die aktuelle sichtbare Blattspaltenfolge. Versteckte Spalten zählen nicht mit. Referenz: [JavaFX-Spaltennavigation](https://openjfx.io/javadoc/26/javafx.controls/javafx/scene/control/TableView.html#scrollToColumn(javafx.scene.control.TableColumn)).
+- Scala: `scrollToColumn(column)` und `scrollToColumnIndex(index)`; TypeScript: `scrollToColumnIndex(index)`. Indizes beziehen sich auf die aktuelle sichtbare Blattspaltenfolge. Versteckte Spalten zählen nicht mit. Referenz: [JavaFX-Spaltennavigation](https://openui.io/javadoc/26/javafx.controls/javafx/scene/control/TableView.html#scrollToColumn(javafx.scene.control.TableColumn)).
 - Minimalbewegung über dieselbe reine Geometrie wie Zeilennavigation; überbreite Spalten richten sich am Anfang aus. Aktuelle Benutzerbreiten/Reihenfolge werden berücksichtigt. Der native Scrolloffset wird zurückgelesen und der Header unmittelbar synchronisiert. Auswahl, DOM-Fokus, Editorzustand, vertikaler Scrolloffset und Resize-Policy bleiben unverändert; kein Remote-Nachladen durch die horizontale API. Auch ohne Zeilen oder sichtbaren Header nutzbar.
 - SSR ist ein No-op. Bei Hydration/verdecktem Layout wartet der letzte gültige Auftrag auf einen messbaren Viewport. Er speichert eine Spaltenreferenz und folgt ihr bei Reordering; vor Ausführung werden Sichtbarkeit und Zugehörigkeit erneut geprüft. Ungültige Aufrufe überschreiben keinen gültigen Auftrag, Disposal löscht ihn. Zeilen- und Spaltenaufträge sind unabhängig.
 - Die TypeScript-Demo bietet Schalter für erste/letzte sichtbare Spalte. Für sichtbares horizontales Scrollen freie Breiten wählen und Spalten über die Tabellenbreite hinaus verbreitern. Die Navigation erzwingt keinen Policy-Wechsel.
@@ -115,27 +115,27 @@ rowFactory = _ => new TableRow[Person] {
 }
 ```
 
-Für eigene Inhalte `renderCells` ersetzen oder ergänzen. TypeScript-Beispiel und Scope-Regeln stehen im [Paket-README](npm/jfx-controls/README.md#custom-rows). Das entspricht dem Erweiterungszweck der [JavaFX-RowFactory](https://openjfx.io/javadoc/26/javafx.controls/javafx/scene/control/TableView.html#rowFactoryProperty()), nicht einer Portierung des JavaFX-Skins.
+Für eigene Inhalte `renderCells` ersetzen oder ergänzen. TypeScript-Beispiel und Scope-Regeln stehen im [Paket-README](npm/scalajs-ui-controls/README.md#custom-rows). Das entspricht dem Erweiterungszweck der [JavaFX-RowFactory](https://openui.io/javadoc/26/javafx.controls/javafx/scene/control/TableView.html#rowFactoryProperty()), nicht einer Portierung des JavaFX-Skins.
 
 ### Bausteine
 
 | Baustein | Heutige Verantwortung und Befund |
 | --- | --- |
-| [TableView.scala](jfx-controls/src/main/scala-3/jfx/control/table/TableView.scala) | Spaltenliste, feste Zeilenhöhe, Zeilenfenster, einfache Auswahl, Remote-Header-Sortierung und automatische Breitenverteilung. |
-| [TableColumn.scala](jfx-controls/src/main/scala-3/jfx/control/table/TableColumn.scala) | Text, bevorzugte Breite, bestehender Zeilenrenderer, beobachtbare Zellwerte, Zellfactory, Tabellenzuordnung, `sortable` und `sortKey`. [TableColumnList.scala](jfx-controls/src/main/scala-3/jfx/control/table/TableColumnList.scala) validiert Listenänderungen vor ihrer Veröffentlichung. |
-| [TableRow.scala](jfx-controls/src/main/scala-3/jfx/control/table/TableRow.scala) | Integrierte RowFactory, lesbarer Zeilenkontext und überschreibbares `renderContent`; optionale Standardzellen reagieren auf Spalten-/Rendereränderungen. Auswahl/Klick, Doppelklick und Lifecycle bleiben zentral. |
-| [TableCell.scala](jfx-controls/src/main/scala-3/jfx/control/table/TableCell.scala) | Integrierter Zellkontext, beobachteter Wert, Default-Text oder eigener Inhalt über `renderContent`, Breitenbindung und Disposal. |
-| [VirtualizedCollection.scala](jfx-controls/src/main/scala-3/jfx/control/virtualized/VirtualizedCollection.scala) | Gemeinsame Paging-/Scroll-, URL-, Viewport- und Remote-Logik für TableView, DataGrid und VirtualListView. |
-| [CrawlableCollection.scala](jfx-controls/src/main/scala-3/jfx/control/virtualized/CrawlableCollection.scala) | Crawl-Cookies und Wiederherstellung rund um SSR/Hydration. |
-| [ItemGeometry.scala](jfx-controls/src/main/scala-3/jfx/control/virtualized/ItemGeometry.scala) | `FixedRowGeometry` und bereits vorhandene `MeasuredRowGeometry` als Grundlage für variable Zeilenhöhen. |
-| [ListDataSource.scala](jfx-core/src/main/scala-3/jfx/core/state/ListDataSource.scala), [ListProperty.scala](jfx-core/src/main/scala-3/jfx/core/state/ListProperty.scala) | Lesender Datenquellenvertrag und veränderbare lokale Liste. |
-| [RemoteListProperty.scala](jfx-core/src/main/scala-3/jfx/core/remote/RemoteListProperty.scala) | Lückenhaft geladene Daten, Bereichsabfragen, Sortierdeskriptoren und Schutz vor veralteten Ladeantworten. |
-| [TableSelectionModel.scala](jfx-controls/src/main/scala-3/jfx/control/table/TableSelectionModel.scala) | Zentrales Einzel-/Mehrfachauswahlmodell mit kohärenten Ergebnislisten, führendem Eintrag, Shift-Anker und absoluter Datenänderungsabbildung. |
-| [table.ts](npm/jfx-controls/src/table.ts), [ControlFactories.scala](jfx-bridge/src/main/scala-3/jfx/bridge/ControlFactories.scala), [TableViewHandleBridge.scala](jfx-bridge/src/main/scala-3/jfx/bridge/TableViewHandleBridge.scala) | Deklarative TypeScript-Tabellenoptionen, reaktive Sichtbarkeit/Modus und typisiertes Handle für Einzel-/Mehrfachauswahl, Refresh und Lifecycle. Weitere Modelle und Operationen sind offen. |
+| [TableView.scala](scalajs-ui-controls/src/main/scala-3/ui/control/table/TableView.scala) | Spaltenliste, feste Zeilenhöhe, Zeilenfenster, einfache Auswahl, Remote-Header-Sortierung und automatische Breitenverteilung. |
+| [TableColumn.scala](scalajs-ui-controls/src/main/scala-3/ui/control/table/TableColumn.scala) | Text, bevorzugte Breite, bestehender Zeilenrenderer, beobachtbare Zellwerte, Zellfactory, Tabellenzuordnung, `sortable` und `sortKey`. [TableColumnList.scala](scalajs-ui-controls/src/main/scala-3/ui/control/table/TableColumnList.scala) validiert Listenänderungen vor ihrer Veröffentlichung. |
+| [TableRow.scala](scalajs-ui-controls/src/main/scala-3/ui/control/table/TableRow.scala) | Integrierte RowFactory, lesbarer Zeilenkontext und überschreibbares `renderContent`; optionale Standardzellen reagieren auf Spalten-/Rendereränderungen. Auswahl/Klick, Doppelklick und Lifecycle bleiben zentral. |
+| [TableCell.scala](scalajs-ui-controls/src/main/scala-3/ui/control/table/TableCell.scala) | Integrierter Zellkontext, beobachteter Wert, Default-Text oder eigener Inhalt über `renderContent`, Breitenbindung und Disposal. |
+| [VirtualizedCollection.scala](scalajs-ui-controls/src/main/scala-3/ui/control/virtualized/VirtualizedCollection.scala) | Gemeinsame Paging-/Scroll-, URL-, Viewport- und Remote-Logik für TableView, DataGrid und VirtualListView. |
+| [CrawlableCollection.scala](scalajs-ui-controls/src/main/scala-3/ui/control/virtualized/CrawlableCollection.scala) | Crawl-Cookies und Wiederherstellung rund um SSR/Hydration. |
+| [ItemGeometry.scala](scalajs-ui-controls/src/main/scala-3/ui/control/virtualized/ItemGeometry.scala) | `FixedRowGeometry` und bereits vorhandene `MeasuredRowGeometry` als Grundlage für variable Zeilenhöhen. |
+| [ListDataSource.scala](scalajs-ui-core/src/main/scala-3/ui/core/state/ListDataSource.scala), [ListProperty.scala](scalajs-ui-core/src/main/scala-3/ui/core/state/ListProperty.scala) | Lesender Datenquellenvertrag und veränderbare lokale Liste. |
+| [RemoteListProperty.scala](scalajs-ui-core/src/main/scala-3/ui/core/remote/RemoteListProperty.scala) | Lückenhaft geladene Daten, Bereichsabfragen, Sortierdeskriptoren und Schutz vor veralteten Ladeantworten. |
+| [TableSelectionModel.scala](scalajs-ui-controls/src/main/scala-3/ui/control/table/TableSelectionModel.scala) | Zentrales Einzel-/Mehrfachauswahlmodell mit kohärenten Ergebnislisten, führendem Eintrag, Shift-Anker und absoluter Datenänderungsabbildung. |
+| [table.ts](npm/scalajs-ui-controls/src/table.ts), [ControlFactories.scala](scalajs-ui-bridge/src/main/scala-3/ui/bridge/ControlFactories.scala), [TableViewHandleBridge.scala](scalajs-ui-bridge/src/main/scala-3/ui/bridge/TableViewHandleBridge.scala) | Deklarative TypeScript-Tabellenoptionen, reaktive Sichtbarkeit/Modus und typisiertes Handle für Einzel-/Mehrfachauswahl, Refresh und Lifecycle. Weitere Modelle und Operationen sind offen. |
 
 ### Technische Voraussetzungen und Bearbeitungsstand
 
-1. **Zeilenlebensdauer – Scrollfenster behoben:** Der frühere `visibleRowsProperty.setAll(...)`-Reset wurde durch differenzielle Insert-/Remove-/Update-Ereignisse ersetzt. [Foreach.scala](jfx-core/src/main/scala-3/jfx/core/statement/Foreach.scala) behält dadurch überlappende Slots. Datensatzverschiebungen und Sortierpermutationen bleiben gesondert zu lösen.
+1. **Zeilenlebensdauer – Scrollfenster behoben:** Der frühere `visibleRowsProperty.setAll(...)`-Reset wurde durch differenzielle Insert-/Remove-/Update-Ereignisse ersetzt. [Foreach.scala](scalajs-ui-core/src/main/scala-3/ui/core/statement/Foreach.scala) behält dadurch überlappende Slots. Datensatzverschiebungen und Sortierpermutationen bleiben gesondert zu lösen.
 2. **Einzelauswahl – korrigiert:** Strukturänderungen erhalten das ausgewählte Vorkommen; Reset erhält nur eindeutig wiedergefundene Instanzen. Index und Item werden gemeinsam normalisiert. Stabile Keys, allgemeine Permutationsabbildung und Modell-/Quellentausch bleiben offen.
 3. **Spaltenlebensdauer – behoben:** Alle Listenänderungen durchlaufen Attach/Detach; entfernte Spalten verlieren die Tabellenlistener. Mehrfachzuordnungen werden vor der Mutation abgewiesen.
 4. **Sortierberechtigung – behoben:** Darstellung und `toggleRemoteSort()` verwenden jetzt beide `isRemoteSortable()`.
@@ -150,7 +150,7 @@ Status: **Vorhanden** = nutzbarer aktueller Pfad; **Teilweise** = Teilfunktion o
 
 ### 3.1 Daten, Zellwerte und Rendering
 
-Referenzen: [TableColumn](https://openjfx.io/javadoc/26/javafx.controls/javafx/scene/control/TableColumn.html), [TableCell](https://openjfx.io/javadoc/26/javafx.controls/javafx/scene/control/TableCell.html), [TableRow](https://openjfx.io/javadoc/26/javafx.controls/javafx/scene/control/TableRow.html).
+Referenzen: [TableColumn](https://openui.io/javadoc/26/javafx.controls/javafx/scene/control/TableColumn.html), [TableCell](https://openui.io/javadoc/26/javafx.controls/javafx/scene/control/TableCell.html), [TableRow](https://openui.io/javadoc/26/javafx.controls/javafx/scene/control/TableRow.html).
 
 | ID | Funktion | Stand | Umsetzung |
 | --- | --- | --- | --- |
@@ -165,7 +165,7 @@ Referenzen: [TableColumn](https://openjfx.io/javadoc/26/javafx.controls/javafx/s
 
 ### 3.2 Auswahl und Fokus
 
-Referenzen: [TableViewSelectionModel](https://openjfx.io/javadoc/26/javafx.controls/javafx/scene/control/TableView.TableViewSelectionModel.html), [MultipleSelectionModel](https://openjfx.io/javadoc/26/javafx.controls/javafx/scene/control/MultipleSelectionModel.html), [TableViewFocusModel](https://openjfx.io/javadoc/25/javafx.controls/javafx/scene/control/TableView.TableViewFocusModel.html). Für die separat nicht abrufbare FocusModel-Seite wurde die JavaFX-25-Dokumentation ergänzend verwendet; ihre Details sind vor Abschluss von M2 gegen Version 26 zu bestätigen.
+Referenzen: [TableViewSelectionModel](https://openui.io/javadoc/26/javafx.controls/javafx/scene/control/TableView.TableViewSelectionModel.html), [MultipleSelectionModel](https://openui.io/javadoc/26/javafx.controls/javafx/scene/control/MultipleSelectionModel.html), [TableViewFocusModel](https://openui.io/javadoc/25/javafx.controls/javafx/scene/control/TableView.TableViewFocusModel.html). Für die separat nicht abrufbare FocusModel-Seite wurde die JavaFX-25-Dokumentation ergänzend verwendet; ihre Details sind vor Abschluss von M2 gegen Version 26 zu bestätigen.
 
 | ID | Funktion | Stand | Umsetzung |
 | --- | --- | --- | --- |
@@ -178,14 +178,14 @@ Referenzen: [TableViewSelectionModel](https://openjfx.io/javadoc/26/javafx.contr
 
 ### 3.3 Spalten und Header
 
-Referenzen: [TableColumnBase](https://openjfx.io/javadoc/26/javafx.controls/javafx/scene/control/TableColumnBase.html), [TableColumnHeader](https://openjfx.io/javadoc/26/javafx.controls/javafx/scene/control/skin/TableColumnHeader.html).
+Referenzen: [TableColumnBase](https://openui.io/javadoc/26/javafx.controls/javafx/scene/control/TableColumnBase.html), [TableColumnHeader](https://openui.io/javadoc/26/javafx.controls/javafx/scene/control/skin/TableColumnHeader.html).
 
 | ID | Funktion | Stand | Umsetzung |
 | --- | --- | --- | --- |
 | C01 | Dynamische Spaltenliste und Ownership | Vorhanden | Validierung vor Mutation, Attach/Detach und wiederverwendbare entfernte Spalten; neue/ersetzte Zellen werden verwaltet. Baumstruktur bleibt C03. M1. |
 | C02 | Sichtbarkeit und sichtbare Blattspalten | Teilweise | Flache Spalten: `visible`, beobachtbare Projektion, Index-Lookups und gemeinsamer Render-/Breitenpfad vorhanden. Spaltenbaum und spätere Auswahl-/Fokusmodelle noch anbinden. M1/M5. |
 | C03 | Verschachtelte Spalten/Gruppenheader | Offen | Kindspalten, parentColumn/tableView, rekursive Header; Gruppenbreite aus Blattspalten. `headerRows` bleibt ein separater Inhaltsheader. M1/M5. |
-| C04 | minWidth/prefWidth/maxWidth/width/resizable | Vorhanden | Getrennte bevorzugte/Benutzer-/Ergebnisbreite, Min-/Max-Grenzen, resizable und lesbare Breiten; JFX-Defaults dokumentiert. M5. |
+| C04 | minWidth/prefWidth/maxWidth/width/resizable | Vorhanden | Getrennte bevorzugte/Benutzer-/Ergebnisbreite, Min-/Max-Grenzen, resizable und lesbare Breiten; UI-Defaults dokumentiert. M5. |
 | C05 | Resize-Policies und `resizeColumn` | Teilweise | Sieben eingebaute Strategien, reine Breitenberechnung und Scala-/TS-API vorhanden. Eigene Policy-Callbacks und Gruppenspalten fehlen. M5. |
 | C06 | Interaktives Resize und Anpassung an Inhalt | Vorhanden | Pointer/Pfeiltasten, Doppelklick/Enter und autoFitColumn; Header plus maximal 100 gemountete geladene Zellen, vorhandene Grenzen/Policy. M5. |
 | C07 | Drag-Reordering und reorderable | Vorhanden | Flache Spalten: Pointer-Drag mit Einfügemarkierung, Alt+Shift+Links/Rechts, reaktives reorderable und moveColumn. Maßgebliche Liste und stabile Runtime-Projektion; Gruppen/Drag-Autoscroll bleiben offen. M5. |
@@ -206,7 +206,7 @@ Sortierung und Filterung werden ausschließlich an die Remote-Datenquelle delegi
 
 ### 3.5 Editing
 
-Referenzen: [Cell-Editierablauf](https://openjfx.io/javadoc/26/javafx.controls/javafx/scene/control/Cell.html), [vorgefertigte Zellen](https://openjfx.io/javadoc/26/javafx.controls/javafx/scene/control/cell/package-summary.html).
+Referenzen: [Cell-Editierablauf](https://openui.io/javadoc/26/javafx.controls/javafx/scene/control/Cell.html), [vorgefertigte Zellen](https://openui.io/javadoc/26/javafx.controls/javafx/scene/control/cell/package-summary.html).
 
 | ID | Funktion | Stand | Umsetzung |
 | --- | --- | --- | --- |
@@ -245,13 +245,13 @@ Die folgenden Bausteine beschreiben die Zielarchitektur. `TableSelectionModel`, 
 | `TableHeader[S]` / `TableBehavior[S]` | Headerdarstellung und Übersetzung von Pointer-/Keyboard-Eingaben in Modelloperationen. |
 | Weiterentwickelte `TableRow` / `TableCell` | Bindbare Darstellung mit klarer Lebensdauer; keine eigene konkurrierende Auswahl-/Sortierlogik. |
 
-Diese tabellenspezifischen Bausteine gehören nach `jfx.control.table`. Quellentausch, allgemeine Datenansichten oder generische Geometrie gehören bei tatsächlichem gemeinsamen Bedarf in `jfx-core` bzw. `jfx.control.virtualized`.
+Diese tabellenspezifischen Bausteine gehören nach `ui.control.table`. Quellentausch, allgemeine Datenansichten oder generische Geometrie gehören bei tatsächlichem gemeinsamen Bedarf in `scalajs-ui-core` bzw. `ui.control.virtualized`.
 
 [build.sbt](build.sbt) legt seit dem zehnten Ausbau fest: Controls hängen produktiv an Core und Viewport; Forms hängen an Controls und Viewport. Das Spaltenmenü verwendet auf ausdrücklichen Wunsch den bestehenden Viewport-/Overlay-Pfad, statt eine zweite Popup-Implementierung einzuführen. Ein aktiviertes Menü benötigt einen umgebenden Viewport; Tabellen ohne Menü weiterhin nicht. **Controls dürfen nicht für Zell-Editoren von Forms abhängig werden**, da sonst ein Zyklus entsteht. Die Editorverträge bleiben in Controls; Standardeditoren auf Basis der vorhandenen Input-/ComboBox-Controls und ihrer Bindings gehören nach Forms oder in ein Integrationsmodul.
 
 ### 4.2 Zellbindung und Erhalt bestehender Editoren
 
-Der bisherige `cell(row)`-Renderer bleibt ein unterstützter Weg, besonders für bereits dauerhaft eingebettete Eingabefelder. Die vorhandenen [Input-Controls](jfx-forms/src/main/scala-3/jfx/forms/Input.scala) übertragen Eingaben in ihr `valueProperty`; [Property.subscribeBidirectional](jfx-core/src/main/scala-3/jfx/core/state/Property.scala) verbindet dieses mit dem Zeilenmodell. Die automatische [Formularbindung](jfx-forms/src/main/scala-3/jfx/forms/Formular.scala) verwendet denselben Mechanismus.
+Der bisherige `cell(row)`-Renderer bleibt ein unterstützter Weg, besonders für bereits dauerhaft eingebettete Eingabefelder. Die vorhandenen [Input-Controls](scalajs-ui-forms/src/main/scala-3/ui/forms/Input.scala) übertragen Eingaben in ihr `valueProperty`; [Property.subscribeBidirectional](scalajs-ui-core/src/main/scala-3/ui/core/state/Property.scala) verbindet dieses mit dem Zeilenmodell. Die automatische [Formularbindung](scalajs-ui-forms/src/main/scala-3/ui/forms/Formular.scala) verwendet denselben Mechanismus.
 
 Beispiel aus diesen bestehenden APIs, innerhalb einer Tabelle über `Person` mit `name: Property[String]` und den entsprechenden DSL-Imports:
 
@@ -283,11 +283,11 @@ Ein Snapshot-Accessor `S => T` ist ebenfalls sinnvoll, muss aber als nicht autom
 Der implementierte Scala-Pfad sieht beispielsweise so aus (innerhalb einer TableView-DSL, `Person.name: Property[String]`):
 
 ```scala
-import jfx.control.table.{TableCell, TableColumn}
-import jfx.control.table.TableColumn.*
-import jfx.core.component.AbstractComponent
-import jfx.core.layout.TextComponent.text
-import jfx.core.render.Cursor
+import ui.control.table.{TableCell, TableColumn}
+import ui.control.table.TableColumn.*
+import ui.core.component.AbstractComponent
+import ui.core.layout.TextComponent.text
+import ui.core.render.Cursor
 
 column[Person, String]("Name") {
   cellValueFactory = features => features.value.name
@@ -299,7 +299,7 @@ column[Person, String]("Name") {
 }
 ```
 
-Ohne `cellFactory` übernimmt die Default-Zelle die Textdarstellung. Für Scala-Snapshots kann die Value-Factory eine neue `Property(snapshot)` zurückgeben; ein späteres `table.refresh()` liest den Snapshot erneut. Die TypeScript-Entsprechung mit `valueColumn` steht im [Paket-README](npm/jfx-controls/README.md#observed-table-values).
+Ohne `cellFactory` übernimmt die Default-Zelle die Textdarstellung. Für Scala-Snapshots kann die Value-Factory eine neue `Property(snapshot)` zurückgeben; ein späteres `table.refresh()` liest den Snapshot erneut. Die TypeScript-Entsprechung mit `valueColumn` steht im [Paket-README](npm/scalajs-ui-controls/README.md#observed-table-values).
 
 **Factory-Vertrag:** Jede Ausführung liefert eine frische, ungemountete Zelle. `compose` ist jetzt final; eigene TableCell-Unterklassen überschreiben `renderContent` und verwenden das beobachtbare `itemProperty`, damit Wertänderungen ohne erneute Komposition sichtbar werden. Das ist eine Migrationsänderung für Unterklassen des früher isolierten TableCell-Grundgerüsts, nicht für den bisherigen `cell(row)`-Renderer. Ein geladener null-Zellwert ist leerer Text, aber keine ungeladene Zeile; für ungeladene Zeilen wird die Value-Factory nicht aufgerufen. Der item-basierte Lookup bestimmt den ersten passenden Quellindex (oder `-1`) und kann dafür die Quelle durchsuchen; im Renderpfad wird direkt der bekannte absolute Index verwendet.
 
@@ -313,7 +313,7 @@ Intern **Zeilenidentität** und **Index im aktuellen Abfrageergebnis** auseinand
 
 Ein optionaler `rowKey: S => K` erlaubt stabile Entitätsidentität. Für lokale Listen ohne Key müssen Vorkommen auch bei gleichen Werten unterscheidbar sein; `equals` allein reicht nicht. Für Remote-Daten eine Abfragegeneration und ungeladene Positionen separat modellieren. `selectedItems` darf keine erfundenen Objekte für ungeladene Positionen liefern.
 
-Der implementierte Vertrag in [RemoteListChange.scala](jfx-core/src/main/scala-3/jfx/core/remote/RemoteListChange.scala) trennt diese Vorgänge:
+Der implementierte Vertrag in [RemoteListChange.scala](scalajs-ui-core/src/main/scala-3/ui/core/remote/RemoteListChange.scala) trennt diese Vorgänge:
 
 | Ereignis | Bedeutung für Position/Auswahl |
 | --- | --- |
@@ -335,13 +335,13 @@ Der Grid-Tabstopp stellt beim Eintritt bestehenden logischen Fokus bzw. Auswahl/
 
 `TableRow.focusedProperty` bzw. TypeScript `row.focused` bezeichnet logischen Fokus. Die Kontur erscheint nur bei DOM-Fokus des Grids. Der native Fokus bleibt beim Wechsel virtueller Zeilen am stabilen Grid; `aria-activedescendant` referenziert ausschließlich gemountete Zeilen. Eindeutige Laufzeit-Zeilen-IDs werden nach Hydration installiert, ohne DOM-Fokus zu übernehmen. Grid/row/gridcell/columnheader, absolute Zeilenindizes (plus optionalem Header), sichtbare Spaltenindizes und Zähler sind angebunden. Ein bestehender Paging-Fehler wurde dabei korrigiert: Die Button-Rolle gehört auf den Pager-Link, nicht auf das gesamte Collection-Control. Neue ARIA-Observer prüfen bei Spaltenprojektion den Disposal-Zustand, da bereits gestartete Benachrichtigungen entfernte Header/Zellen noch erreichen können.
 
-**Abgrenzung:** Dies ist ein Zeilen-FocusModel, noch kein vollständiges JavaFX-TableFocusModel mit Zellkoordinaten oder austauschbaren Modellen. Zell-/Rechteckauswahl, Links/Rechts-Zellnavigation, Sortieransagen und umfassende Screenreader-/IME-Abnahme bleiben offen. Die TypeScript-Demo zeigt den Fokusindex getrennt von der Auswahl. Der Vertrag unabhängigen logischen Fokus orientiert sich an [JavaFX FocusModel](https://openjfx.io/javadoc/17/javafx.controls/javafx/scene/control/TableView.TableViewFocusModel.html#focus(int)); SSR/Hydration und virtuelle DOM-Zeilen sind JFX-spezifisch.
+**Abgrenzung:** Dies ist ein Zeilen-FocusModel, noch kein vollständiges JavaFX-TableFocusModel mit Zellkoordinaten oder austauschbaren Modellen. Zell-/Rechteckauswahl, Links/Rechts-Zellnavigation, Sortieransagen und umfassende Screenreader-/IME-Abnahme bleiben offen. Die TypeScript-Demo zeigt den Fokusindex getrennt von der Auswahl. Der Vertrag unabhängigen logischen Fokus orientiert sich an [JavaFX FocusModel](https://openui.io/javadoc/17/javafx.controls/javafx/scene/control/TableView.TableViewFocusModel.html#focus(int)); SSR/Hydration und virtuelle DOM-Zeilen sind UI-spezifisch.
 
 **Abnahme am 09.09.2026:** Vollständiger Scala-Testlauf (`Test/testOnly *`), Bridge-Full-Link und Scala-Demo-Fast-Link grün. Vier neue Scala-Fokustests; Controls jetzt 65 Integrationstests + 3 Paket-Consumer, Core 114 + 8, Demo-Typecheck/Client/SSR/Eine-Runtime-Nachweis/31 Routen grün. Die neuen Browser-Integrationstests prüfen Modifikatoren, Paging/Remote-Lücken, Einzel-/Mehrfachauswahl, leere Quellen, Custom-Row-Fokus, virtuelle aktive Zeilen, eindeutige IDs, SSR/Hydration ohne Fokusübernahme, Editor-/Header-/Composition-Abgrenzung und Disposal. Der bestehende Remote-Sortiertest prüft zusätzlich den Fokus-Reset.
 
 Echte Browserprüfung mit explizitem Startbereich `?books.offset=0&books.limit=50`: Pfeile, Ctrl-Fokus ohne Auswahländerung, Shift-Bereich auf/ab, Ctrl+End bis Zeile 1.000 mit Nachladen, PageUp, Space und Tab zum Spaltenmenü funktionieren. DOM-Fokus bleibt bei virtuellen Zeilenwechseln am Grid, fokussierte Zeile hat eine 2-px-Kontur; keine Fehler in diesem Lauf.
 
-**Behoben – SSR-Request-Kontext bei Remote-Crawl-Wiederherstellung:** Ein normaler Seitenaufruf der TypeScript-Demo mit gespeichertem `jfx-crawl-books`-Offset außerhalb der ersten 50 Datensätze brach beim Claim mit `Hydration fault` ab. Der Server komponierte ohne Cookie die erste Seite, der Browser den gespeicherten Ausschnitt. `SsrOptions.requestHeaders` führt jetzt eingehende Header über die Bridge in einen eigenen `RequestContext` pro Komponentenbaum; `npm/jfx-demo/server.mjs` reicht dafür `req.headers` an `src/entry-server.ts` weiter. Headernamen werden normalisiert, Mehrfachwerte und fehlende Werte unterstützt. Keine globale Request-Variable, keine automatische Serialisierung der Header ins HTML, keine Übernahme als Response-Header. Statische Renderer dürfen die Option weglassen.
+**Behoben – SSR-Request-Kontext bei Remote-Crawl-Wiederherstellung:** Ein normaler Seitenaufruf der TypeScript-Demo mit gespeichertem `ui-crawl-books`-Offset außerhalb der ersten 50 Datensätze brach beim Claim mit `Hydration fault` ab. Der Server komponierte ohne Cookie die erste Seite, der Browser den gespeicherten Ausschnitt. `SsrOptions.requestHeaders` führt jetzt eingehende Header über die Bridge in einen eigenen `RequestContext` pro Komponentenbaum; `npm/scalajs-ui-demo/server.mjs` reicht dafür `req.headers` an `src/entry-server.ts` weiter. Headernamen werden normalisiert, Mehrfachwerte und fehlende Werte unterstützt. Keine globale Request-Variable, keine automatische Serialisierung der Header ins HTML, keine Übernahme als Response-Header. Statische Renderer dürfen die Option weglassen.
 
 Regression: Ein Scala-Bridge-Test prüft getrennte parallele SSR-Requests einschließlich asynchroner Kinder, Header-Normalisierung und den anschließenden Render ohne Header. Ein TypeScript-Integrationstest hydriert Offset 60 bei nur fünf initial geladenen Zeilen mit erhaltenen Platzhalter-Nodes und lädt anschließend den richtigen Remote-Bereich. Die Demo-HTTP-Abnahme prüft Cookie-Offset 493 und einen unabhängigen Folge-Request ohne Cookie. Browserabnahme ohne Query-Offset: gespeicherter Bereich nahe dem Listenende und anschließend um Zeile 500 samt absteigender Sortierung erfolgreich wiederhergestellt; Tastatur und Spaltensichtbarkeit bedienbar, keine Browserfehler. Es werden weder Cookies gelöscht noch Startbereiche erzwungen.
 
@@ -399,7 +399,7 @@ Enter bestätigt, Escape verwirft. Parsing-/Validierungsfehler lassen den Editor
 
 Vorgeschlagene Standardregel für integrierte Editoren: Verlässt die Zeile tatsächlich den virtuellen Bereich, wird die Sitzung mit Cancel und einem dokumentierten Grund beendet. Bleibt dieselbe Zeile sichtbar, müssen Scroll-/Messupdates den Editor erhalten. Entfernen der Zeile/Spalte und Ersetzen der Quelle brechen ebenfalls kontrolliert ab. Async-Commit-Ergebnisse dürfen nur zur zugehörigen Sitzung/Generation zurückschreiben.
 
-Die Standardfabriken decken Text, Boolean, Auswahl und Fortschritt ab. CheckBox-Zellen verdienen einen eigenen Pfad: JavaFX verwendet hier eine direkte bidirektionale Property-Bindung ohne gewöhnlichen Edit-Commit-Zyklus. Das entspricht eher unseren bereits möglichen dauerhaft eingebetteten Controls. Quelle: [CheckBoxTableCell, JavaFX 25](https://openjfx.io/javadoc/25/javafx.controls/javafx/scene/control/cell/CheckBoxTableCell.html); Detailabgleich mit JavaFX 26 bleibt Teil von M4, da diese 26-Einzelseite nicht abrufbar war.
+Die Standardfabriken decken Text, Boolean, Auswahl und Fortschritt ab. CheckBox-Zellen verdienen einen eigenen Pfad: JavaFX verwendet hier eine direkte bidirektionale Property-Bindung ohne gewöhnlichen Edit-Commit-Zyklus. Das entspricht eher unseren bereits möglichen dauerhaft eingebetteten Controls. Quelle: [CheckBoxTableCell, JavaFX 25](https://openui.io/javadoc/25/javafx.controls/javafx/scene/control/cell/CheckBoxTableCell.html); Detailabgleich mit JavaFX 26 bleibt Teil von M4, da diese 26-Einzelseite nicht abrufbar war.
 
 ### 4.7 Spaltenbaum, Breiten und Header
 
@@ -419,7 +419,7 @@ Der Browser-Befehl liefert true bei tatsächlich geänderter Breite oder akzepti
 
 **Abnahme am 09.09.2026:** Vollständiger Scala-Testlauf und Bridge-Full-Link grün; npm-Gates Controls (50 Integrationstests + 3 Paket-Consumer), Core (114 + 8) und Demo (Client/SSR, Eine-Runtime-Nachweis, 31 Routen) grün. Auto-Fit-Tests decken Vergrößern/Verkleinern, Header-Maximum, Rundung, Min/Max, Resize-Policy, Reordering, Sichtbarkeits-/Disposal-Lifecycle, SSR/Hydration, Fokus/Textauswahl/Bindungen, Composition-Sperre und Wiederherstellung temporärer Styles bei Messfehlern ab. Bei 150 gemounteten Remote-Zellen wird die 100-Zellen-Grenze ohne Fetch geprüft. Die CSS-Messung ist zusätzlich im echten Browser über Enter geprüft: Titelbreite von rund 399 auf 174 px, korrekte constrained Kompensation; nach Reordering im freien Modus Author/Title/Year = 100/174/70 px. Header- und Zellpositionen/-breiten identisch, Sortierung erhalten, keine temporären Messstyles zurückgelassen und keine Browserfehler. Doppelklick ist im Integrationstest geprüft; umfassende IME-/Screenreader-Abnahme bleibt offen.
 
-**Umgesetzt im achten Ausbau – Reordering:** Header und Zeilenzellen verwenden `TableColumnProjection` mit Core-`KeyedChildren`. Stabile Spaltenreferenzen sind die Schlüssel. Ein physischer `.jfx-table-column-slot` mit `display: contents` umschließt auch virtuelle/dynamische Zellrenderer; `Runtime.move` verschiebt diesen Slot ohne Compose/Dispose. Eigene direkte CSS-Kindselektoren müssen diesen zusätzlichen Slot berücksichtigen. Die sichtbare Spaltenliste wird atomar als Snapshot abgeglichen. Factory-Wechsel ersetzen weiterhin gezielt den jeweiligen Zellrenderer; Ausblenden entsorgt nur die versteckte Spalte.
+**Umgesetzt im achten Ausbau – Reordering:** Header und Zeilenzellen verwenden `TableColumnProjection` mit Core-`KeyedChildren`. Stabile Spaltenreferenzen sind die Schlüssel. Ein physischer `.ui-table-column-slot` mit `display: contents` umschließt auch virtuelle/dynamische Zellrenderer; `Runtime.move` verschiebt diesen Slot ohne Compose/Dispose. Eigene direkte CSS-Kindselektoren müssen diesen zusätzlichen Slot berücksichtigen. Die sichtbare Spaltenliste wird atomar als Snapshot abgeglichen. Factory-Wechsel ersetzen weiterhin gezielt den jeweiligen Zellrenderer; Ausblenden entsorgt nur die versteckte Spalte.
 
 **Abnahme am 09.09.2026:** Vollständiger Scala-Lauf (`Test/testOnly *`), Bridge-Full-Link und npm-Gates für Controls (46 Integrationstests + 3 Paket-Consumer), Core (114 + 8) und Demo (Client/SSR, Eine-Runtime-Nachweis, 31 Routen) grün. Modelltests prüfen Zellinstanzen, Ownership, Breiten, Sichtbarkeit, Disposal und atomare Ablehnung geschützter Permutationen. Integrationstests prüfen zusätzlich Editorfokus/direktionale Textauswahl, Bindungen, Hydration, Composition-Sperre und Drag-Abbrüche. Im echten Browser: Title hinter Year ziehen, per Tastatur zurückbewegen und anschließend erneut resizen; Sortierung unverändert, Header-/Zellbreiten und X-Positionen identisch, keine Fehler. Dabei den bestehenden 10-px-Versatz durch `scrollbar-gutter: stable both-edges` behoben: Die Tabelle reserviert nun nur die Scrollleistenkante. Kein Ersatz für die noch offene umfassende IME-/Accessibility-Abnahme.
 
@@ -431,7 +431,7 @@ Scala `moveColumn(column, toVisibleIndex)` und TypeScript `moveColumn(fromVisibl
 
 Benutzerbreiten bleiben separat von `prefWidth`, überstehen Messungen und Aus-/Einblenden und werden beim Entfernen aus der Tabelle verworfen. Ändern von `prefWidth` verwirft den Override dieser Spalte. Versteckte/abgetrennte Spalten melden die begrenzte bevorzugte Breite; die gemeinsame Tabellenprojektion enthält nur sichtbare Breiten. Nicht resizable Spalten werden weder vom Benutzer noch zur Kompensation verändert. Ungültige Deltas/Indizes, Fremdspalten und Unmount werden ohne Änderung behandelt.
 
-**Defaults/Migration:** JFX behält 40 px Minimum und 160 px bevorzugte Breite. Maximum ist standardmäßig unbegrenzt. Der Tabellen-Default `FlexLastColumn` erhält das bisherige Fit-to-width-Verhalten; die normale Viewport-Anpassung verteilt freien Platz begrenzt proportional, während die ausgewählte Strategie Benutzer-/API-Deltas steuert. Nicht-finite Min-/Pref-Werte fallen auf Defaults zurück, negative Minima werden null, nicht-finite Maxima sind unbegrenzt; bei widersprüchlichen Grenzen gewinnt das Minimum. Unmögliche constrained Grenzen ergeben Leerraum oder Clipping statt einer Verletzung der Grenzen.
+**Defaults/Migration:** UI behält 40 px Minimum und 160 px bevorzugte Breite. Maximum ist standardmäßig unbegrenzt. Der Tabellen-Default `FlexLastColumn` erhält das bisherige Fit-to-width-Verhalten; die normale Viewport-Anpassung verteilt freien Platz begrenzt proportional, während die ausgewählte Strategie Benutzer-/API-Deltas steuert. Nicht-finite Min-/Pref-Werte fallen auf Defaults zurück, negative Minima werden null, nicht-finite Maxima sind unbegrenzt; bei widersprüchlichen Grenzen gewinnt das Minimum. Unmögliche constrained Grenzen ergeben Leerraum oder Clipping statt einer Verletzung der Grenzen.
 
 Der neue `TableColumnResizeHandle` gehört zum Header-Lifecycle. Pointer-Capture und temporäre Window-Listener erlauben Ziehen außerhalb des Griffs; Pointer-up/-cancel, Captureverlust, Blur, Policywechsel, Sperren/Verbergen/Entfernen und Unmount beenden die Geste. Bereits angewendete Breiten bleiben bei Abbruch erhalten. Griff-Klicks lösen keine Sortierung aus. Fokussierbare Separator-Griffe mit Breiten-ARIA unterstützen Links/Rechts in 10-px-, mit Shift in 1-px-Schritten. Dies ist keine vollständige Grid-/Accessibility-Abnahme. Horizontales Overflow hängt nun getrennt vom vertikalen Paging-/Scrollmodus an der Breitenpolicy. Der achte Ausbau ergänzt Drag-Reordering, der neunte Auto-Fit.
 
@@ -441,19 +441,19 @@ Breitenzustand trennt bevorzugte Breite, tatsächlich berechnete Breite, Grenzen
 
 `UNCONSTRAINED`, `ALL_COLUMNS`, `LAST_COLUMN`, `NEXT_COLUMN`, `SUBSEQUENT_COLUMNS`, `FLEX_NEXT_COLUMN`, `FLEX_LAST_COLUMN`.
 
-Bei Benutzer-Resize kompensiert ALL proportional über die anderen Spalten, SUBSEQUENT über die folgenden, NEXT nur über die nächste und LAST nur über die letzte. FLEX_NEXT setzt die Kompensation bei Grenzen nach rechts fort, FLEX_LAST von hinten nach links. UNCONSTRAINED verändert die Zielbreite und verschiebt folgende Spalten. Constrained-Policies unterdrücken horizontales Scrollen; unvereinbare Grenzen führen zu Abschneiden oder Restfläche. Die alte Bezeichnung `CONSTRAINED_RESIZE_POLICY` ist in JavaFX deprecated; ein Kompatibilitätsalias verweist auf `FLEX_LAST_COLUMN`. Quelle: [Resize-Policies](https://openjfx.io/javadoc/26/javafx.controls/javafx/scene/control/TableView.html#field-summary).
+Bei Benutzer-Resize kompensiert ALL proportional über die anderen Spalten, SUBSEQUENT über die folgenden, NEXT nur über die nächste und LAST nur über die letzte. FLEX_NEXT setzt die Kompensation bei Grenzen nach rechts fort, FLEX_LAST von hinten nach links. UNCONSTRAINED verändert die Zielbreite und verschiebt folgende Spalten. Constrained-Policies unterdrücken horizontales Scrollen; unvereinbare Grenzen führen zu Abschneiden oder Restfläche. Die alte Bezeichnung `CONSTRAINED_RESIZE_POLICY` ist in JavaFX deprecated; ein Kompatibilitätsalias verweist auf `FLEX_LAST_COLUMN`. Quelle: [Resize-Policies](https://openui.io/javadoc/26/javafx.controls/javafx/scene/control/TableView.html#field-summary).
 
 Paging betrifft die vertikale Darstellung. Horizontale Erreichbarkeit muss unabhängig davon zur Breitenpolicy passen; das heutige pauschale `overflow: hidden` im Paging-Viewport reicht hierfür nicht.
 
 Pointer-Griffe ändern das Breitenmodell; Header und Zellen übernehmen denselben Snapshot. Reordering verändert die jeweilige Spaltenliste, statt nur CSS-Reihenfolge zu verschieben. Resize-/Drag-Gesten lösen keinen Sortierklick aus. `reorderable=false` sperrt die Benutzeraktion, nicht generell jede programmatische Listenänderung.
 
-Auto-Fit berücksichtigt Header und einen dokumentiert begrenzten Satz von Zellinhalten. Remote-Daten werden dafür nicht vollständig geladen. JavaFX stellt Inhaltsanpassung im Header-Skin bereit; das ist keine bereits vorhandene öffentliche `TableView.autoSizeColumn`-Methode. Quelle: [TableColumnHeader.resizeColumnToFitContent](https://openjfx.io/javadoc/26/javafx.controls/javafx/scene/control/skin/TableColumnHeader.html#resizeColumnToFitContent(int)).
+Auto-Fit berücksichtigt Header und einen dokumentiert begrenzten Satz von Zellinhalten. Remote-Daten werden dafür nicht vollständig geladen. JavaFX stellt Inhaltsanpassung im Header-Skin bereit; das ist keine bereits vorhandene öffentliche `TableView.autoSizeColumn`-Methode. Quelle: [TableColumnHeader.resizeColumnToFitContent](https://openui.io/javadoc/26/javafx.controls/javafx/scene/control/skin/TableColumnHeader.html#resizeColumnToFitContent(int)).
 
 ### 4.8 Variable Höhen, SSR und Zugänglichkeit
 
-Variable Höhen auf `MeasuredRowGeometry` und den Messmustern in [VirtualListCell.scala](jfx-controls/src/main/scala-3/jfx/control/virtuallist/VirtualListCell.scala) aufbauen. Tabellenbreite, Spaltenvisibility, Zeilenumbruch und Editorhöhe müssen eine Neumessung auslösen. Höhen gehören zu Zeilenidentitäten; Änderungen oberhalb des Viewports müssen den sichtbaren Anker erhalten.
+Variable Höhen auf `MeasuredRowGeometry` und den Messmustern in [VirtualListCell.scala](scalajs-ui-controls/src/main/scala-3/ui/control/virtuallist/VirtualListCell.scala) aufbauen. Tabellenbreite, Spaltenvisibility, Zeilenumbruch und Editorhöhe müssen eine Neumessung auslösen. Höhen gehören zu Zeilenidentitäten; Änderungen oberhalb des Viewports müssen den sichtbaren Anker erhalten.
 
-Die aktuelle positive Standard-Zeilenhöhe kann zunächst als JFX-Default erhalten bleiben. Für explizites `fixedCellSize <= 0` muss aber die JavaFX-Fähigkeit variabler Höhen wirklich implementiert werden; ein bloßer Alias oder Clamping erfüllt sie nicht. Alte Defaults für Breiten und Sortierbarkeit sind ebenfalls ausdrücklich zu dokumentieren, bevor eine Änderung veröffentlicht wird.
+Die aktuelle positive Standard-Zeilenhöhe kann zunächst als UI-Default erhalten bleiben. Für explizites `fixedCellSize <= 0` muss aber die JavaFX-Fähigkeit variabler Höhen wirklich implementiert werden; ein bloßer Alias oder Clamping erfüllt sie nicht. Alte Defaults für Breiten und Sortierbarkeit sind ebenfalls ausdrücklich zu dokumentieren, bevor eine Änderung veröffentlicht wird.
 
 SSR und Hydration verwenden dieselben anfänglichen Spalten, Zelltypen, Werte und Zustände. Browsermessung und automatische Mode-Wechsel erfolgen nach der bestehenden Hydration-Grenze. IDs für Header, Zellen und Fokusreferenzen müssen deterministisch und tabellenlokal sein.
 
@@ -461,11 +461,11 @@ ARIA umfasst Grid/Row/ColumnHeader/GridCell, sichtbare Spaltenindizes, absolute 
 
 ### 4.9 Scala- und TypeScript-Vertrag gemeinsam liefern
 
-Die öffentliche Tabellenfassade liegt in `npm/jfx-controls`; `tableView(...)` liefert ein `TableViewHandle<T>` für `refresh()`, `isDisposed`, lesbare Einzel-/Mehrfachauswahl, kontrollierte Auswahloperationen und `scrollToIndex`/`scrollToItem`. Scroll-Events, Spaltennavigation, `sort`, `edit` und umfassende Modell-Handles bleiben offen.
+Die öffentliche Tabellenfassade liegt in `npm/scalajs-ui-controls`; `tableView(...)` liefert ein `TableViewHandle<T>` für `refresh()`, `isDisposed`, lesbare Einzel-/Mehrfachauswahl, kontrollierte Auswahloperationen und `scrollToIndex`/`scrollToItem`. Scroll-Events, Spaltennavigation, `sort`, `edit` und umfassende Modell-Handles bleiben offen.
 
 Mit M0 den vorhandenen minimalen Handle-Vertrag um typsichere Modellzustände und kontrollierte Operationen erweitern. Die Rückgabe wird bereits nach abgeschlossenem Mount über einen internen Factory-Callback aus der Bridge an die TypeScript-Fassade übergeben. Spalten benötigen zusätzlich stabile Handles oder IDs für ihre Operationen.
 
-Jeder Meilenstein liefert Scala-API, Bridge-Anbindung, TypeScript-Typen, Lifecycle und ein Beispiel gemeinsam. Forms-basierte Zellfactory-Helfer werden entsprechend im Paket `npm/jfx-forms` angeboten. Keine zweite Auswahl-/Sortier-/Editierimplementierung in TypeScript. Callbacks müssen im vorhandenen Render-Scope laufen; Handles nach Unmount dürfen keine entfernten Komponenten weiter bedienen.
+Jeder Meilenstein liefert Scala-API, Bridge-Anbindung, TypeScript-Typen, Lifecycle und ein Beispiel gemeinsam. Forms-basierte Zellfactory-Helfer werden entsprechend im Paket `npm/scalajs-ui-forms` angeboten. Keine zweite Auswahl-/Sortier-/Editierimplementierung in TypeScript. Callbacks müssen im vorhandenen Render-Scope laufen; Handles nach Unmount dürfen keine entfernten Komponenten weiter bedienen.
 
 ## 5. Umsetzungsreihenfolge und Abnahme
 
@@ -526,9 +526,9 @@ Der zweite Ausbau ergänzt drei Scala-Fälle (Sichtbarkeit/Instanzerhalt/Breiten
 
 Abnahme des zweiten Ausbaus: Bridge-Full-Link und alle drei npm-Gates für Controls/Core/Demo grün. Controls: 17 Integrationstests plus 3 Paket-Consumer-Tests; Core: 114 Tests plus 8 Paket-Consumer-Tests; Demo: Typecheck, Client-/SSR-Builds, Eine-Runtime-Prüfung und 31 Routen. Temporärer Browser-Testtab und lokaler Testserver wurden anschließend geschlossen.
 
-Das erste Grundlagenpaket ergänzt sechs Scala-Tests in [TableCellSpec.scala](jfx-controls/src/test/scala-3/jfx/control/table/TableCellSpec.scala): Wert-/Factory-Wechsel und Listener-Disposal, erhaltene Scrollfenster einschließlich Messung/Zeilenhöhe, Spalten-Attach/Detach, atomare Ablehnung ungültiger Spaltenänderungen, Refresh und spaltenlokaler Rendererwechsel. Vier zusätzliche [Bridge-Smoke-Tests](npm/jfx-controls/test/bridge.smoke.test.ts) prüfen typisierte Werte, einen gebundenen Editor im Scrollfenster, DOM-Identität nach Hydration und `sortable=false`.
+Das erste Grundlagenpaket ergänzt sechs Scala-Tests in [TableCellSpec.scala](scalajs-ui-controls/src/test/scala-3/ui/control/table/TableCellSpec.scala): Wert-/Factory-Wechsel und Listener-Disposal, erhaltene Scrollfenster einschließlich Messung/Zeilenhöhe, Spalten-Attach/Detach, atomare Ablehnung ungültiger Spaltenänderungen, Refresh und spaltenlokaler Rendererwechsel. Vier zusätzliche [Bridge-Smoke-Tests](npm/scalajs-ui-controls/test/bridge.smoke.test.ts) prüfen typisierte Werte, einen gebundenen Editor im Scrollfenster, DOM-Identität nach Hydration und `sortable=false`.
 
-Bestehende Ausgangspunkte: [TableViewSpec.scala](jfx-controls/src/test/scala-3/jfx/control/TableViewSpec.scala), [ViewportMeasurementSpec.scala](jfx-controls/src/test/scala-3/jfx/control/ViewportMeasurementSpec.scala), [CrawlCookieStateSpec.scala](jfx-controls/src/test/scala-3/jfx/control/CrawlCookieStateSpec.scala), [ComboBoxSpec.scala](jfx-forms/src/test/scala-3/jfx/forms/ComboBoxSpec.scala) und [Bridge-Smoke-Tests](npm/jfx-controls/test/bridge.smoke.test.ts).
+Bestehende Ausgangspunkte: [TableViewSpec.scala](scalajs-ui-controls/src/test/scala-3/ui/control/TableViewSpec.scala), [ViewportMeasurementSpec.scala](scalajs-ui-controls/src/test/scala-3/ui/control/ViewportMeasurementSpec.scala), [CrawlCookieStateSpec.scala](scalajs-ui-controls/src/test/scala-3/ui/control/CrawlCookieStateSpec.scala), [ComboBoxSpec.scala](scalajs-ui-forms/src/test/scala-3/ui/forms/ComboBoxSpec.scala) und [Bridge-Smoke-Tests](npm/scalajs-ui-controls/test/bridge.smoke.test.ts).
 
 Pro Feature gezielte Vertrags- und Integrationstests:
 
@@ -552,10 +552,10 @@ sbt --server "Test/testOnly *"
 Für die Bridge-/npm-Seite nach Scala-Änderungen:
 
 ```powershell
-sbt --server "scalajs-jfx-bridge/fullLinkJS"
-npm run verify --workspace npm/jfx-controls
-npm run verify --workspace npm/jfx-core
-npm run verify --workspace npm/jfx-demo
+sbt --server "scalajs-ui-bridge/fullLinkJS"
+npm run verify --workspace npm/scalajs-ui-controls
+npm run verify --workspace npm/scalajs-ui-core
+npm run verify --workspace npm/scalajs-ui-demo
 ```
 
 Die umfassende CI verwendet `npm run verify --workspaces --if-present` und baut anschließend die Pages; maßgeblich ist [.github/workflows/verify.yml](.github/workflows/verify.yml). Bei Änderungen an der gemeinsamen Virtualisierung gehören DataGrid und VirtualListView zur Regression; bei Auswahl/Zeilenbedienung auch die TableView innerhalb der ComboBox.

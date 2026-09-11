@@ -1,0 +1,51 @@
+package ui.core.request
+
+import ui.core.component.AbstractComponent
+import ui.core.context.{ClientDevice, ClientDeviceDetector}
+import ui.core.di.Context
+
+import scala.collection.immutable
+
+final case class RequestContext(headers: RequestHeaders) {
+
+  def header(name: String): Option[String] =
+    headers.get(name.toLowerCase)
+
+  lazy val clientDevice: ClientDevice = ClientDeviceDetector.detect(this)
+
+  def isMobile: Boolean =
+    clientDevice == ClientDevice.Mobile
+
+  def isDesktop: Boolean =
+    clientDevice == ClientDevice.Desktop
+}
+
+object RequestContext {
+
+  private val Value: Context[RequestContext] =
+    Context.create[RequestContext]("RequestContext")
+
+  val empty: RequestContext =
+    RequestContext(
+      headers = RequestHeaders.empty
+    )
+
+  def withUserAgent(userAgent: String): RequestContext =
+    RequestContext(
+      headers = RequestHeaders(
+        Map("user-agent" -> Vector(Option(userAgent).getOrElse("")))
+      )
+    )
+
+  def provide(value: RequestContext)(using component: AbstractComponent): Unit =
+    Value.provide(value)
+
+  def current(using component: AbstractComponent): Option[RequestContext] =
+    Value.inject
+
+  def require(using component: AbstractComponent): RequestContext =
+    current.getOrElse {
+      throw new IllegalStateException("No RequestContext found in the current component tree.")
+    }
+
+}

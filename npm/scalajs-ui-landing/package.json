@@ -1,0 +1,33 @@
+{
+  "name": "scalajs-ui-landing",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The UI product landing page: SSR previews, four shared designs, English/German and a lazy live example.",
+  "scripts": {
+    "dev": "node server.mjs",
+    "start": "cross-env NODE_ENV=production node server.mjs",
+    "build:client": "vite build --outDir dist/client",
+    "build:server": "vite build --outDir dist/server --ssr src/page.mjs",
+    "build": "npm run build:client && npm run build:server && npm run prerender",
+    "prerender": "node scripts/prerender.mjs",
+    "test": "node --test scripts/presentation.test.mjs",
+    "verify": "npm test && npm run build && node scripts/verify.mjs && node scripts/verify-server.mjs"
+  },
+  "dependencies": {
+    "@anjunar/scalajs-ui-core": "*",
+    "@anjunar/scalajs-ui-controls": "*",
+    "@anjunar/scalajs-ui-editor": "*",
+    "@anjunar/scalajs-ui-forms": "*",
+    "@anjunar/scalajs-ui": "*",
+    "@anjunar/scalajs-ui-bridge": "*",
+    "express": "^5.2.1",
+    "parse5": "^8.0.1"
+  },
+  "devDependencies": {
+    "vite": "^8.0.16",
+    "cross-env": "^10.1.0",
+    "jsdom": "^30.0.1"
+  },
+  "license": "MIT"
+}

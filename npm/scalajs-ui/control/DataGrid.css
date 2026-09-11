@@ -1,0 +1,65 @@
+.ui-data-grid-toolbar-slot,
+.ui-data-grid-header-slot {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ui-data-grid-items-surface {
+  position: relative;
+  min-width: 100%;
+}
+
+.ui-data-grid-placeholder {
+  position: absolute;
+  inset: 0;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.ui-data-grid-default-placeholder {
+  padding: 12px 16px;
+  border: 1px dashed var(--aj-line);
+  border-radius: 8px;
+  color: var(--aj-ink-muted);
+  background: var(--aj-surface-overlay);
+}
+
+.ui-data-grid-cell-loading {
+  opacity: 0.72;
+}
+
+.ui-data-grid-footer {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 8px 12px;
+  box-sizing: border-box;
+  border-top: 1px solid var(--aj-line);
+}
+
+.ui-data-grid-footer .ui-virtualized-page-button,
+.ui-data-grid-footer .ui-virtualized-mode-button {
+  appearance: none;
+  border: 1px solid var(--aj-line);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: var(--aj-ink);
+  background: var(--aj-surface);
+  cursor: pointer;
+}
+
+.ui-data-grid-footer .ui-virtualized-page-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.ui-data-grid-footer .ui-virtualized-page-status {
+  min-width: 7rem;
+  color: var(--aj-ink-soft);
+  text-align: center;
+  font-size: 13px;
+}

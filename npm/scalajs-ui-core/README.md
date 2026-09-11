@@ -1,0 +1,79 @@
+# @anjunar/scalajs-ui-core
+
+The declarative TypeScript API for UI 3. It provides the shared contract, ambient-scope DSL, reactive properties, rendering entry points, document head, and i18n helpers; the linked Scala.js runtime performs the actual rendering.
+
+## Overview
+
+This package is a typed facade, not an independent framework. `@anjunar/scalajs-ui-bridge` supplies the production runtime. The separate `@anjunar/scalajs-ui-core/stub` export is a test double for the core DSL and does not implement the Scala.js renderer.
+
+## Installation
+
+```bash
+npm install @anjunar/scalajs-ui-core @anjunar/scalajs-ui-bridge @anjunar/scalajs-ui
+```
+
+Import the bridge before rendering:
+
+```ts
+import "@anjunar/scalajs-ui-bridge";
+```
+
+## Quick start
+
+```ts
+import { button, div, onClick, property, text, vbox } from "@anjunar/scalajs-ui-core";
+import "@anjunar/scalajs-ui-bridge";
+
+export function page(): void {
+  const count = property(0);
+  vbox(() => {
+    div(() => text(count.map((value) => `Count: ${value}`)));
+    button("Increment", {}, () => onClick(() => count.set(count.get + 1)));
+  });
+}
+```
+
+## Booting and rendering
+
+```ts
+import { hydrate, mount, renderToString } from "@anjunar/scalajs-ui-core";
+
+const build = (): void => page();
+
+const result = await renderToString(build); // server
+await hydrate(document.getElementById("root")!, build); // browser, SSR output
+mount(document.getElementById("empty-root")!, build); // browser, empty host
+```
+
+`renderToString` returns `{ html, status, headers }`. Use `document: true` when the body composes a complete document with `head()` and `body` roots. Rendering bodies are synchronous. Use `fetchInto` for async work that SSR must await; use `capture` for a later callback that needs to resume a component scope. Capturing a scope does not make SSR wait.
+
+HTTP servers should pass `requestHeaders: req.headers` in the render options. These case-insensitive, request-scoped headers provide the Scala `RequestContext`, including cookies needed to render the same saved crawl window that the browser hydrates. Header values may be strings, readonly string arrays, or undefined. They are not serialized into HTML or echoed as response headers; static rendering can omit them.
+
+## Core concepts
+
+- `property` creates a synchronous `Property`; `listProperty` creates a reactive list.
+- Element builders include `div`, `span`, `section`, `article`, `paragraph`, `nav`, `ul`, `li`, `pre`, `code`, `anchor`, and `heading`.
+- `button`, `vbox`, `hbox`, and `drawer` are registered library components;
+  `drawerNavigation` and `drawerContent` fill the Drawer's two slots.
+- `classes`, `attr`, `style`, `on`, `onClick`, and `onDoubleClick` configure the current component.
+- `when`, `forEach`, and `fetchInto` compose dynamic content with lifecycle ownership.
+- `head`, `documentHead`, `i18nProvider`, `i18n`, `i18nc`, and `t` cover metadata and translations.
+
+## SSR and hydration
+
+SSR creates readable HTML. Hydration claims the same tree and adds event handlers and reactive writes. The ambient scope is valid only while a synchronous body is composing; escaped callbacks must use `capture` or a component-owned async primitive.
+
+## API overview
+
+- Runtime: `mount`, `hydrate`, `renderToString`, `installRuntime`, `runtime`.
+- State: `property`, `listProperty`, `Property`, `ListProperty`, `ReadOnlyProperty`.
+- DSL: element builders, `component`, `button`, `drawer`, `drawerNavigation`,
+  `drawerContent`, `classes`, `attr`, `style`, `onClick`.
+- Scope: `capture`, `currentComponent`, `currentScope`, `withScope`.
+- Document and i18n: `head`, `documentHead`, `title`, `meta`, `link`, `i18nProvider`, `i18n`.
+
+## Related modules
+
+- [`@anjunar/scalajs-ui-router`](../scalajs-ui-router/README.md) adds navigation.
+- [`@anjunar/scalajs-ui-forms`](../scalajs-ui-forms/README.md) adds model-bound controls.
+- [`@anjunar/scalajs-ui-controls`](../scalajs-ui-controls/README.md) adds collections and panels.

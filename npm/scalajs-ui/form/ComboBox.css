@@ -1,0 +1,135 @@
+.ui-combo-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  min-height: 28px;
+  box-sizing: border-box;
+  cursor: pointer;
+  user-select: none;
+  color: var(--aj-ink);
+  outline: none;
+}
+
+.ui-combo-box__value {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ui-combo-box__value-text {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.ui-combo-box__value-text.is-placeholder {
+  color: var(--aj-ink-muted);
+}
+
+.ui-combo-box__indicator {
+  flex: 0 0 auto;
+  color: var(--aj-ink-muted);
+  font-size: 20px;
+  line-height: 1;
+  transition: transform 160ms ease, color 160ms ease;
+}
+
+.ui-combo-box-open .ui-combo-box__indicator,
+.ui-combo-box:focus-visible .ui-combo-box__indicator {
+  color: var(--aj-accent);
+}
+
+.ui-combo-box-open .ui-combo-box__indicator {
+  transform: rotate(180deg);
+}
+
+.ui-combo-box-open .ui-combo-box__value-text:not(.is-placeholder),
+.ui-combo-box:focus-visible .ui-combo-box__value-text:not(.is-placeholder) {
+  color: var(--aj-accent);
+}
+
+.ui-combo-box__dropdown {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--aj-floating-border);
+  border-radius: var(--aj-floating-radius);
+  background: var(--aj-floating-bg);
+  backdrop-filter: blur(var(--aj-floating-blur)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--aj-floating-blur)) saturate(180%);
+  box-shadow: var(--aj-floating-shadow);
+}
+
+.ui-combo-box__table {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ui-combo-box__footer {
+  width: 100%;
+  min-width: 0;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+}
+
+.ui-combo-box__table .ui-table-body-wrapper,
+.ui-combo-box__table .ui-table-viewport,
+.ui-combo-box__table .ui-table-content {
+  background: transparent;
+}
+
+.ui-combo-box__table .ui-table-cell {
+  padding: 0 12px;
+}
+
+.ui-combo-box__item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+}
+
+.ui-combo-box__item-text {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.ui-combo-box__footer-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--aj-floating-border);
+  color: var(--aj-accent);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.ui-combo-box__footer-link:hover {
+  background: var(--aj-accent-muted);
+}
+
+.ui-combo-box__footer-link::after {
+  content: "north_east";
+  font-family: "Material Icons", sans-serif;
+  font-size: 18px;
+  line-height: 1;
+}

@@ -1,0 +1,18 @@
+import { property } from "@anjunar/scalajs-ui-core";
+import { comboBox, form } from "@anjunar/scalajs-ui-forms";
+import { translated } from "../../app/i18n.js";
+
+class ColorModel {
+  readonly color = property<string | null>(null);
+}
+
+export function formsComboBoxPage(): void {
+  const model = new ColorModel();
+
+  form(model, () => {
+    comboBox("color", {
+      items: [translated("Red").get, translated("Green").get, translated("Blue").get],
+      placeholder: translated("Choose one").get,
+    });
+  });
+}

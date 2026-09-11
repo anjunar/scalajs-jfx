@@ -1,0 +1,22 @@
+/* Showcase content, styled through the Constitution's semantic roles. */
+:is(.showcase-page, .docs-page) { width: 100%; max-width: none; padding: 0; gap: var(--space-section); }
+.docs-page > * { width: 100%; }
+.showcase-page__header { padding-bottom: var(--space-5); gap: var(--space-4); }
+.showcase-page__title { font-family: var(--font-heading); font-weight: var(--heading-weight); font-size: var(--text-h1); letter-spacing: var(--heading-tracking); line-height: 1.12; max-width: 22ch; overflow-wrap: anywhere; }
+:is(.showcase-page__subtitle, .docs-page__summary) { font-family: var(--font-reading); font-size: var(--text-reading); line-height: var(--leading-reading); max-width: var(--measure-reading); }
+.showcase-page__content { gap: var(--space-section); }
+.showcase-section-intro__title { font-family: var(--font-heading); font-weight: var(--heading-weight); font-size: var(--text-h2); letter-spacing: var(--heading-tracking); line-height: 1.25; }
+:is(.showcase-section-intro__body, .showcase-intro__text, .docs-page p) { line-height: var(--leading-body); max-width: var(--measure-prose); }
+.component-showcase { margin-block: 0; padding-block: var(--space-5); }
+:is(.component-showcase__render, .docs-example__body) { padding: var(--specimen-padding); border-radius: var(--radius-surface); background: var(--color-surface); }
+:is(.calm-action, .code-block__copy, .docs-code__copy) { border-radius: var(--radius-control); }
+.calm-action { min-height: 2.75rem; }
+:is(.code-block, .docs-code, .scalajs-ui-editor-code) { max-width: 100%; overflow: auto; border-radius: var(--radius-surface); }
+:is(.showcase-metric-strip, .showcase-insight-grid) { gap: var(--space-4); }
+:is(.showcase-page__eyebrow, .component-showcase__title, .showcase-section-intro__kicker) { color: var(--color-text-muted); }
+.scalajs-ui-editor-readonly { font-family: var(--font-reading); line-height: var(--leading-reading); }
+.scalajs-ui-editor-readonly :is(h1,h2,h3,h4,h5,h6) { font-family: var(--font-heading); font-weight: var(--heading-weight); }
+@media (max-width: 46rem) {
+  :is(.showcase-metric-strip, .showcase-insight-grid) { grid-template-columns: 1fr; }
+  :is(.component-showcase__render, .docs-example__body) { padding: var(--space-4); }
+}

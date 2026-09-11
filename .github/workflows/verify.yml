@@ -46,13 +46,13 @@ jobs:
         run: sbt --server "Test/testOnly *"
 
       - name: Link the production Scala.js bridge
-        run: sbt --server "scalajs-jfx-bridge/fullLinkJS"
+        run: sbt --server "scalajs-ui-bridge/fullLinkJS"
 
       - name: Link the core browser test application
-        run: sbt --server "scalajs-jfx-core-browser-tests/fullLinkJS"
+        run: sbt --server "scalajs-ui-core-browser-tests/fullLinkJS"
 
       - name: Install test browsers
-        run: npm exec --workspace npm/jfx-core-browser-tests -- playwright install --with-deps chromium firefox webkit
+        run: npm exec --workspace npm/scalajs-ui-core-browser-tests -- playwright install --with-deps chromium firefox webkit
 
       - name: Verify every npm package and demo
         run: npm run verify --workspaces --if-present

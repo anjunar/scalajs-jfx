@@ -1,0 +1,87 @@
+/* Multi-Design Constitution, September 2026. UI supports explicit light/dark. */
+@layer designs {
+:root[data-design="terra"] {
+  color-scheme:light;
+  --color-canvas: #f2f1ed;
+  --color-surface: #fffefb;
+  --color-elevated: #e5e3db;
+  --color-text-primary: #292b27;
+  --color-text-secondary: #464b43;
+  --color-text-muted: #5c6157;
+  --color-border: #a4a99b;
+  --color-interactive: #3d5849;
+  --color-interactive-hover: #293f34;
+  --color-on-interactive: #fffefb;
+  --color-accent: #795821;
+  --color-focus: #795821;
+  --color-selection: #d4dfcd;
+  --color-success: #315f3f;
+  --color-warning: #78501c;
+  --color-error: #a02e35;
+  --color-information: #3d5849;
+  --font-interface: 'Segoe UI', 'Trebuchet MS', Arial, sans-serif;
+  --font-reading: Georgia, 'Palatino Linotype', serif;
+  --font-code: Consolas, 'Liberation Mono', monospace;
+  --text-display: clamp(3rem, 6vw, 6rem);
+  --text-h1: clamp(2.4rem, 4.4vw, 4.5rem);
+  --text-h2: clamp(1.8rem, 2.8vw, 2.6rem);
+  --text-h3: 1.55rem;
+  --text-h4: 1.25rem;
+  --text-h5: 1.125rem;
+  --text-h6: 1.0625rem;
+  --text-body: 1.0625rem;
+  --text-reading: clamp(1.125rem, 1rem + .35vw, 1.3125rem);
+  --text-ui: 1rem;
+  --text-small: .875rem;
+  --leading-body: 1.65;
+  --leading-reading: 1.82;
+  --measure-reading: 62ch;
+  --measure-prose: 66ch;
+  --layout-max: 86rem;
+  --space-1: .25rem;
+  --space-2: .5rem;
+  --space-3: .75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 5rem;
+  --space-label: var(--space-2);
+  --space-group: var(--space-5);
+  --space-section: var(--space-8);
+  --space-paragraph: 1.25em;
+  --space-page: clamp(1.1rem, 4vw, 4rem);
+  --radius-control: .25rem;
+  --radius-surface: .5rem;
+  --shadow-overlay: 0 1rem 3rem #292b272b;
+  --duration-response: 120ms;
+  --duration-orientation: 180ms;
+  --ease-response: ease-out;
+  --font-heading: Cambria, Georgia, 'Times New Roman', serif;
+  --heading-weight: 700;
+  --heading-tracking: -.035em;
+  --color-backdrop: #171a16b3;
+}
+:root[data-design="terra"][data-color-scheme="dark"] {
+  color-scheme:dark;
+  --color-canvas: #262724;
+  --color-surface: #30322d;
+  --color-elevated: #3c3e37;
+  --color-text-primary: #f2f1e8;
+  --color-text-secondary: #d1d3c6;
+  --color-text-muted: #b3b7a7;
+  --color-border: #7f8675;
+  --color-interactive: #cad4b5;
+  --color-interactive-hover: #e8eedc;
+  --color-on-interactive: #242720;
+  --color-accent: #ddbd7d;
+  --color-focus: #edcf91;
+  --color-selection: #4f614c;
+  --color-success: #b8d3ac;
+  --color-warning: #e6c681;
+  --color-error: #efb2a6;
+  --color-information: #cad4b5;
+  --color-backdrop: #141610c2;
+  --shadow-overlay: 0 1rem 3rem #11130d80;
+}
+}

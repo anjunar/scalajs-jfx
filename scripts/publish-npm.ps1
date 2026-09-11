@@ -12,19 +12,19 @@ Set-Location $repoRoot
 $npmCache = Join-Path $repoRoot "target\npm-publish-cache"
 New-Item -ItemType Directory -Force -Path $npmCache | Out-Null
 
-# Keep the order dependency-aware. The CSS package comes first because jfx-core
-# declares its matching major as a peer dependency. jfx-demo stays private.
+# Keep the order dependency-aware. The CSS package comes first because scalajs-ui-core
+# declares its matching major as a peer dependency. scalajs-ui-demo stays private.
 $packageDirectories = @(
-    "scalajs-jfx",
-    "jfx-core",
-    "scalajs-jfx-bridge",
-    "jfx-json",
-    "jfx-router",
-    "jfx-controls",
-    "jfx-viewport",
-    "jfx-forms",
-    "jfx-editor",
-    "jfx-webauthn"
+    "scalajs-ui",
+    "scalajs-ui-core",
+    "scalajs-ui-bridge",
+    "scalajs-ui-json",
+    "scalajs-ui-router",
+    "scalajs-ui-controls",
+    "scalajs-ui-viewport",
+    "scalajs-ui-forms",
+    "scalajs-ui-editor",
+    "scalajs-ui-webauthn"
 )
 $releaseVersion = $null
 
@@ -75,9 +75,9 @@ foreach ($packageDirectory in $packageDirectories) {
         throw "Refusing to publish private package '$($manifest.name)'."
     }
     if (
-        $manifest.name -notlike "@anjunar/jfx-*" -and
-        $manifest.name -ne "@anjunar/scalajs-jfx" -and
-        $manifest.name -ne "@anjunar/scalajs-jfx-bridge"
+        $manifest.name -notlike "@anjunar/scalajs-ui-*" -and
+        $manifest.name -ne "@anjunar/scalajs-ui" -and
+        $manifest.name -ne "@anjunar/scalajs-ui-bridge"
     ) {
         throw "Unexpected package name '$($manifest.name)' in $manifestPath."
     }
@@ -90,7 +90,7 @@ foreach ($packageDirectory in $packageDirectories) {
 
 if (-not $SkipLinkBridge) {
     Write-Host "Linking the Scala.js bridge..."
-    Invoke-CheckedCommand -Command "sbt" -Arguments @("--server", "scalajs-jfx-bridge/fullLinkJS")
+    Invoke-CheckedCommand -Command "sbt" -Arguments @("--server", "scalajs-ui-bridge/fullLinkJS")
 }
 
 if ($InstallDependencies) {

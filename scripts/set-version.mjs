@@ -34,10 +34,10 @@ for (const directory of packageDirectories) {
 }
 
 const releasePackages = workspacePackages.filter(
-  ({ manifest }) => !manifest.private && isJfxPackage(manifest.name)
+  ({ manifest }) => !manifest.private && isUiPackage(manifest.name)
 );
 if (releasePackages.length === 0) {
-  throw new Error("No publishable JFX packages were found below npm/.");
+  throw new Error("No publishable UI packages were found below npm/.");
 }
 
 const releasePackageNames = new Set(releasePackages.map(({ manifest }) => manifest.name));
@@ -59,23 +59,23 @@ await updateDemos(version);
 
 if (changes.length > 0) {
   const verb = checkOnly ? "need updating" : "updated";
-  console.log(`${changes.length} files ${verb} for JFX ${version}:`);
+  console.log(`${changes.length} files ${verb} for UI ${version}:`);
   for (const path of changes) console.log(`- ${relative(repositoryRoot, path)}`);
 }
 
 if (checkOnly && changes.length > 0) process.exit(1);
-if (changes.length === 0) console.log(`All version references already match JFX ${version}.`);
+if (changes.length === 0) console.log(`All version references already match UI ${version}.`);
 
 function isSemVer(value) {
   return /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/.test(value);
 }
 
-function isJfxPackage(name) {
+function isUiPackage(name) {
   return (
     typeof name === "string" &&
-    (name.startsWith("@anjunar/jfx-") ||
-      name === "@anjunar/scalajs-jfx" ||
-      name === "@anjunar/scalajs-jfx-bridge")
+    (name.startsWith("@anjunar/scalajs-ui-") ||
+      name === "@anjunar/scalajs-ui" ||
+      name === "@anjunar/scalajs-ui-bridge")
   );
 }
 
@@ -160,7 +160,7 @@ async function updateBuild(nextVersion) {
     "build.sbt version"
   );
   next = next.replace(
-    /(scalajs-jfx-[^\s\\/]+_sjs\d+_\d+-)\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?(?=\.jar)/g,
+    /(scalajs-ui-[^\s\\/]+_sjs\d+_\d+-)\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?(?=\.jar)/g,
     `$1${nextVersion}`
   );
   await record(path, current, next);
@@ -169,7 +169,7 @@ async function updateBuild(nextVersion) {
 async function updateScalaReadmes(nextVersion) {
   const candidates = [resolve(repositoryRoot, "README.md")];
   for (const entry of await readdir(repositoryRoot, { withFileTypes: true })) {
-    if (entry.isDirectory() && entry.name.startsWith("jfx-")) {
+    if (entry.isDirectory() && entry.name.startsWith("scalajs-ui-")) {
       candidates.push(resolve(repositoryRoot, entry.name, "README.md"));
     }
   }
@@ -184,7 +184,7 @@ async function updateScalaReadmes(nextVersion) {
     }
 
     let next = current.replace(
-      /(libraryDependencies\s*\+=\s*"com\.anjunar"\s*%%\s*"scalajs-jfx-[^"]+"\s*%\s*")[^"]+("\s*)/g,
+      /(libraryDependencies\s*\+=\s*"com\.anjunar"\s*%%\s*"scalajs-ui-[^"]+"\s*%\s*")[^"]+("\s*)/g,
       `$1${nextVersion}$2`
     );
     if (path === candidates[0]) {
@@ -198,23 +198,23 @@ async function updateScalaReadmes(nextVersion) {
 }
 
 async function updateDemos(nextVersion) {
-  const scalaPath = resolve(repositoryRoot, "application/src/main/scala-3/app/App.scala");
+  const scalaPath = resolve(repositoryRoot, "scalajs-ui-demo/src/main/scala-3/app/App.scala");
   const scalaCurrent = await readFile(scalaPath, "utf8");
   const scalaNext = scalaCurrent
     .replace(/routerLink\("v\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?"\)/, `routerLink("v${nextVersion}")`)
     .replace(
-      /(repo1\.maven\.org\/maven2\/com\/anjunar\/scalajs-jfx-core_sjs1_3\/)\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?(\/)/,
+      /(repo1\.maven\.org\/maven2\/com\/anjunar\/scalajs-ui-core_sjs1_3\/)\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?(\/)/,
       `$1${nextVersion}$2`
     )
     .replace(/text\("v\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?"\)/, `text("v${nextVersion}")`);
   await record(scalaPath, scalaCurrent, scalaNext);
 
-  const typescriptPath = resolve(repositoryRoot, "npm/jfx-demo/src/app/shell.ts");
+  const typescriptPath = resolve(repositoryRoot, "npm/scalajs-ui-demo/src/app/shell.ts");
   const typescriptCurrent = await readFile(typescriptPath, "utf8");
   const typescriptNext = typescriptCurrent
     .replace(/"v\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?",/, `"v${nextVersion}",`)
     .replace(
-      /(npmjs\.com\/package\/@anjunar\/jfx-core\/v\/)\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?(?=")/,
+      /(npmjs\.com\/package\/@anjunar\/scalajs-ui-core\/v\/)\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?(?=")/,
       `$1${nextVersion}`
     );
   await record(typescriptPath, typescriptCurrent, typescriptNext);
@@ -222,7 +222,7 @@ async function updateDemos(nextVersion) {
   const starterPath = resolve(repositoryRoot, "docs/starters/build.sbt");
   const starterCurrent = await readFile(starterPath, "utf8");
   const starterNext = starterCurrent.replace(
-    /(libraryDependencies\s*\+=\s*"com\.anjunar"\s*%%\s*"scalajs-jfx-[^"]+"\s*%\s*")[^"]+("\s*)/g,
+    /(libraryDependencies\s*\+=\s*"com\.anjunar"\s*%%\s*"scalajs-ui-[^"]+"\s*%\s*")[^"]+("\s*)/g,
     `$1${nextVersion}$2`
   );
   await record(starterPath, starterCurrent, starterNext);

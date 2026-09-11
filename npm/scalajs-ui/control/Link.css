@@ -1,0 +1,17 @@
+.ui-link {
+    cursor: pointer;
+    color: var(--aj-ink);
+    text-decoration: none;
+}
+
+.ui-link:hover {
+    color: var(--aj-accent);
+}
+
+.ui-link:visited {
+    color: var(--aj-ink);
+}
+
+.ui-link:active {
+    color: var(--aj-accent);
+}

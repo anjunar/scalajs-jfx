@@ -1,10 +1,10 @@
-# JFX 3
+# UI 3
 
-JFX 3 is a Scala 3 and Scala.js UI library for server-rendered applications. It combines a component DSL, synchronous reactive state, lifecycle-aware rendering, typed forms, routing, controls, and browser integrations in one Scala.js runtime.
+UI 3 is a Scala 3 and Scala.js UI library for server-rendered applications. It combines a component DSL, synchronous reactive state, lifecycle-aware rendering, typed forms, routing, controls, and browser integrations in one Scala.js runtime.
 
 ## Overview
 
-JFX 3 keeps the component tree as the source of truth. The same component code can render HTML on the server, be claimed during browser hydration, and continue with reactive updates and event handling. Component disposal owns subscriptions, event listeners, timers, and other resources created below that component.
+UI 3 keeps the component tree as the source of truth. The same component code can render HTML on the server, be claimed during browser hydration, and continue with reactive updates and event handling. Component disposal owns subscriptions, event listeners, timers, and other resources created below that component.
 
 The runtime is available directly from Scala or through the TypeScript packages. TypeScript is a typed facade over the Scala.js runtime; it is not a second UI implementation.
 
@@ -13,7 +13,7 @@ Application
     |
     +-- Scala 3 / Scala.js DSL ------------------+
     |                                             |
-    +-- @anjunar/jfx-* TypeScript facade ---------+--> Scala.js JFX runtime
+    +-- @anjunar/scalajs-ui-* TypeScript facade ---------+--> Scala.js UI runtime
                                                   |
                                                   +--> DOM, SSR, hydration
 ```
@@ -22,11 +22,11 @@ The landing page and both demos offer four designs with independent light/dark s
 
 ## Landing page
 
-The product page is the private npm workspace [jfx-landing](npm/jfx-landing/README.md), with English/German SSR, shared designs and a live JFX example loaded on demand. Use `npm run build:landing` and `npm run preview:landing` for the standalone page. `npm run check:pages` validates the full site in `dist/pages`; `npm run preview:pages` serves it with both demos.
+The product page is the private npm workspace [scalajs-ui-landing](npm/scalajs-ui-landing/README.md), with English/German SSR, shared designs and a live UI example loaded on demand. Use `npm run build:landing` and `npm run preview:landing` for the standalone page. `npm run check:pages` validates the full site in `dist/pages`; `npm run preview:pages` serves it with both demos.
 
 ## Choose an API
 
-To run this repository’s Scala.js demo locally, use `npm run dev` from the repository root, then open `http://localhost:3000/scalajs-jfx/`. The `predev` step links the demo with `sbt --server "scalajs-jfx-demo/fastLinkJS"` before Vite loads its SSR module and sourcemap. After changing Scala sources, run that link command again (or keep it running with sbt’s `~` watch prefix).
+To run this repository’s Scala.js demo locally, use `npm run dev` from the repository root, then open `http://localhost:3000/scalajs-ui/`. The `predev` step links the demo with `sbt --server "scalajs-ui-demo/fastLinkJS"` before Vite loads its SSR module and sourcemap. After changing Scala sources, run that link command again (or keep it running with sbt’s `~` watch prefix).
 
 ### Scala / Scala.js
 
@@ -34,7 +34,7 @@ Use the Scala modules when the application, model, and server integration are wr
 
 ### TypeScript / npm
 
-Use the npm packages when the application is written in TypeScript. `@anjunar/jfx-core` contains the TypeScript contract and DSL. `@anjunar/scalajs-jfx-bridge` installs the linked Scala.js runtime that performs rendering, hydration, state propagation, and library component mounting.
+Use the npm packages when the application is written in TypeScript. `@anjunar/scalajs-ui-core` contains the TypeScript contract and DSL. `@anjunar/scalajs-ui-bridge` installs the linked Scala.js runtime that performs rendering, hydration, state propagation, and library component mounting.
 
 ## Quick start
 
@@ -46,13 +46,13 @@ Enable Scala.js in `project/plugins.sbt`:
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.22.0")
 ```
 
-Add JFX 3 in `build.sbt` (sbt 2 uses `%%` for the Scala.js platform suffix):
+Add UI 3 in `build.sbt` (sbt 2 uses `%%` for the Scala.js platform suffix):
 
 ```scala
 enablePlugins(ScalaJSPlugin)
 scalaVersion := "3.3.8"
 scalaJSUseMainModuleInitializer := true
-libraryDependencies += "com.anjunar" %% "scalajs-jfx-core" % "3.0.5"
+libraryDependencies += "com.anjunar" %% "scalajs-ui-core" % "1.0.0"
 ```
 
 Add a host element to `index.html`:
@@ -65,12 +65,12 @@ Add a host element to `index.html`:
 Compose and mount the counter:
 
 ```scala
-import jfx.core.component.{AbstractComponent, Runtime}
-import jfx.core.dsl.ClassDsl.classes
-import jfx.core.dsl.EventDsl.onClick
-import jfx.core.layout.{Button, Div, TextComponent, VBox}
-import jfx.core.render.{Cursor, DomCursor}
-import jfx.core.state.Property
+import ui.core.component.{AbstractComponent, Runtime}
+import ui.core.dsl.ClassDsl.classes
+import ui.core.dsl.EventDsl.onClick
+import ui.core.layout.{Button, Div, TextComponent, VBox}
+import ui.core.render.{Cursor, DomCursor}
+import ui.core.state.Property
 import org.scalajs.dom
 
 import Button.button
@@ -97,12 +97,12 @@ object Main {
 }
 ```
 
-Run `sbt --server fastLinkJS`, then serve the project directory with an HTTP server. For SSR, `Runtime.renderToString` and `Runtime.renderToStringAsync` use an `SsrCursor`. Browser hydration creates a `HydratingCursor.root(...)` and mounts the same component tree through `Runtime.mount`, as demonstrated by [`application/src/main/scala-3/app/Main.scala`](application/src/main/scala-3/app/Main.scala).
+Run `sbt --server fastLinkJS`, then serve the project directory with an HTTP server. For SSR, `Runtime.renderToString` and `Runtime.renderToStringAsync` use an `SsrCursor`. Browser hydration creates a `HydratingCursor.root(...)` and mounts the same component tree through `Runtime.mount`, as demonstrated by [`scalajs-ui-demo/src/main/scala-3/app/Main.scala`](scalajs-ui-demo/src/main/scala-3/app/Main.scala).
 
 ### TypeScript / npm
 
 ```bash
-npm install @anjunar/jfx-core @anjunar/scalajs-jfx-bridge @anjunar/scalajs-jfx
+npm install @anjunar/scalajs-ui-core @anjunar/scalajs-ui-bridge @anjunar/scalajs-ui
 ```
 
 Create `index.html`:
@@ -115,9 +115,9 @@ Create `index.html`:
 Create `src/main.ts`:
 
 ```ts
-import { button, div, mount, onClick, property, text, vbox } from "@anjunar/jfx-core";
-import "@anjunar/scalajs-jfx-bridge";
-import "@anjunar/scalajs-jfx/index.css";
+import { button, div, mount, onClick, property, text, vbox } from "@anjunar/scalajs-ui-core";
+import "@anjunar/scalajs-ui-bridge";
+import "@anjunar/scalajs-ui/index.css";
 
 function page(): void {
   const count = property(0);
@@ -140,18 +140,18 @@ SSR produces the initial readable HTML. Hydration claims that tree and adds brow
 
 | Area | Scala module | TypeScript package | Responsibility |
 | --- | --- | --- | --- |
-| Core | [`jfx-core`](jfx-core/README.md) | [`@anjunar/jfx-core`](npm/jfx-core/README.md) | Components, DSL, state, rendering, document head, i18n |
-| Routing | [`jfx-router`](jfx-router/README.md) | [`@anjunar/jfx-router`](npm/jfx-router/README.md) | Routes, nested outlets, links, SSR status |
-| Viewport | [`jfx-viewport`](jfx-viewport/README.md) | [`@anjunar/jfx-viewport`](npm/jfx-viewport/README.md) | Windows, overlays, notifications |
-| Controls | [`jfx-controls`](jfx-controls/README.md) | [`@anjunar/jfx-controls`](npm/jfx-controls/README.md) | Tabs, carousel, table, data grid, virtual list |
-| Forms | [`jfx-forms`](jfx-forms/README.md) | [`@anjunar/jfx-forms`](npm/jfx-forms/README.md) | Model binding, validation, nested forms, media |
-| Editor | [`jfx-editor`](jfx-editor/README.md) | [`@anjunar/jfx-editor`](npm/jfx-editor/README.md) | Markdown editor backed by Lexical |
-| JSON | [`jfx-json`](jfx-json/README.md) | [`@anjunar/jfx-json`](npm/jfx-json/README.md) | Explicit schema-based JSON mapping |
-| WebAuthn | [`jfx-webAuthn`](jfx-webAuthn/README.md) | [`@anjunar/jfx-webauthn`](npm/jfx-webauthn/README.md) | Browser WebAuthn and passkey ceremonies |
-| Bridge | [`jfx-bridge`](jfx-bridge/README.md) | [`@anjunar/scalajs-jfx-bridge`](npm/scalajs-jfx-bridge/README.md) | JavaScript runtime boundary and linked bundle |
-| CSS | — | [`@anjunar/scalajs-jfx`](npm/scalajs-jfx/README.md) | Default styles for JFX-rendered classes |
+| Core | [`scalajs-ui-core`](scalajs-ui-core/README.md) | [`@anjunar/scalajs-ui-core`](npm/scalajs-ui-core/README.md) | Components, DSL, state, rendering, document head, i18n |
+| Routing | [`scalajs-ui-router`](scalajs-ui-router/README.md) | [`@anjunar/scalajs-ui-router`](npm/scalajs-ui-router/README.md) | Routes, nested outlets, links, SSR status |
+| Viewport | [`scalajs-ui-viewport`](scalajs-ui-viewport/README.md) | [`@anjunar/scalajs-ui-viewport`](npm/scalajs-ui-viewport/README.md) | Windows, overlays, notifications |
+| Controls | [`scalajs-ui-controls`](scalajs-ui-controls/README.md) | [`@anjunar/scalajs-ui-controls`](npm/scalajs-ui-controls/README.md) | Tabs, carousel, table, data grid, virtual list |
+| Forms | [`scalajs-ui-forms`](scalajs-ui-forms/README.md) | [`@anjunar/scalajs-ui-forms`](npm/scalajs-ui-forms/README.md) | Model binding, validation, nested forms, media |
+| Editor | [`scalajs-ui-editor`](scalajs-ui-editor/README.md) | [`@anjunar/scalajs-ui-editor`](npm/scalajs-ui-editor/README.md) | Markdown editor backed by Lexical |
+| JSON | [`scalajs-ui-json`](scalajs-ui-json/README.md) | [`@anjunar/scalajs-ui-json`](npm/scalajs-ui-json/README.md) | Explicit schema-based JSON mapping |
+| WebAuthn | [`scalajs-ui-webauthn`](scalajs-ui-webauthn/README.md) | [`@anjunar/scalajs-ui-webauthn`](npm/scalajs-ui-webauthn/README.md) | Browser WebAuthn and passkey ceremonies |
+| Bridge | [`scalajs-ui-bridge`](scalajs-ui-bridge/README.md) | [`@anjunar/scalajs-ui-bridge`](npm/scalajs-ui-bridge/README.md) | JavaScript runtime boundary and linked bundle |
+| CSS | — | [`@anjunar/scalajs-ui`](npm/scalajs-ui/README.md) | Default styles for UI-rendered classes |
 
-The runnable examples are in [`application`](application) for Scala and [`npm/jfx-demo`](npm/jfx-demo) for TypeScript. The demo is a consumer and is not a library module.
+The runnable examples are in [`scalajs-ui-demo`](scalajs-ui-demo) for Scala and [`npm/scalajs-ui-demo`](npm/scalajs-ui-demo) for TypeScript. The demo is a consumer and is not a library module.
 
 Set the shared project version in the Scala build, npm workspaces, demos, lockfile, and installation examples with one command:
 
@@ -178,17 +178,17 @@ sbt --server "Test/testOnly *"
 This runs the complete Scala test suite. For the npm packages, link the bridge first and then run the package's verification command:
 
 ```bash
-sbt --server "scalajs-jfx-bridge/fullLinkJS"
-npm run verify --workspace npm/jfx-core
+sbt --server "scalajs-ui-bridge/fullLinkJS"
+npm run verify --workspace npm/scalajs-ui-core
 ```
 
 ## Project status and license
 
-The repository is on the `3.0.5` release line and under active development. The complete Scala suite and every npm workspace verification run in CI for pushes and pull requests. Source, releases, and issue tracking live in the [GitHub repository](https://github.com/anjunar/scalajs-jfx).
+The repository is on the `1.0.0` release line and under active development. The complete Scala suite and every npm workspace verification run in CI for pushes and pull requests. Source, releases, and issue tracking live in the [GitHub repository](https://github.com/anjunar/scalajs-ui).
 
-JFX 3 is available under the [MIT License](LICENSE).
+UI 3 is available under the [MIT License](LICENSE).
 
 ## Related documentation
 
-- The `jfx-controls` module README explains the virtualized collection model.
+- The `scalajs-ui-controls` module README explains the virtualized collection model.
 - [`npm/README.md`](npm/README.md) explains the TypeScript package family in more detail.

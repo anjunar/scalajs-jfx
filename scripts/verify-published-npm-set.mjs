@@ -5,16 +5,16 @@ import { fileURLToPath } from "node:url";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const packageDirectories = [
-  "scalajs-jfx",
-  "jfx-core",
-  "scalajs-jfx-bridge",
-  "jfx-json",
-  "jfx-router",
-  "jfx-controls",
-  "jfx-viewport",
-  "jfx-forms",
-  "jfx-editor",
-  "jfx-webauthn",
+  "scalajs-ui",
+  "scalajs-ui-core",
+  "scalajs-ui-bridge",
+  "scalajs-ui-json",
+  "scalajs-ui-router",
+  "scalajs-ui-controls",
+  "scalajs-ui-viewport",
+  "scalajs-ui-forms",
+  "scalajs-ui-editor",
+  "scalajs-ui-webauthn",
 ];
 
 const manifests = await Promise.all(
@@ -33,7 +33,7 @@ await mkdir(consumerDirectory, { recursive: true });
 const npmCache = resolve(consumerDirectory, ".npm-cache");
 await writeFile(
   resolve(consumerDirectory, "package.json"),
-  JSON.stringify({ name: "jfx-registry-consumer", version: "0.0.0", private: true }, null, 2),
+  JSON.stringify({ name: "ui-registry-consumer", version: "0.0.0", private: true }, null, 2),
   "utf8"
 );
 
@@ -90,7 +90,7 @@ if (result.status !== 0) {
   throw new Error(`Clean registry consumer install failed with exit code ${result.status}.`);
 }
 
-console.log(`Clean registry consumer installed ${specifications.length} JFX packages successfully.`);
+console.log(`Clean registry consumer installed ${specifications.length} UI packages successfully.`);
 
 function parseVersion(output) {
   try {

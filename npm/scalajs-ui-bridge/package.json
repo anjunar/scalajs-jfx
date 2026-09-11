@@ -1,0 +1,43 @@
+{
+  "name": "@anjunar/scalajs-ui-bridge",
+  "version": "1.0.0",
+  "description": "The Scala.js implementation of @anjunar/scalajs-ui-core's contract -- the scalajs-ui-bridge sbt module, linked to an ES module.",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "dist",
+    "types",
+    "README.md"
+  ],
+  "scripts": {
+    "verify": "node scripts/verify.mjs"
+  },
+  "sideEffects": true,
+  "license": "MIT",
+  "author": "Patrick Bittner",
+  "homepage": "https://github.com/anjunar/scalajs-ui#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anjunar/scalajs-ui.git",
+    "directory": "npm/scalajs-ui-bridge"
+  },
+  "bugs": {
+    "url": "https://github.com/anjunar/scalajs-ui/issues"
+  },
+  "types": "./types/index.d.ts",
+  "peerDependencies": {
+    "@anjunar/scalajs-ui-core": "^1.0.0"
+  },
+  "dependencies": {
+    "@anjunar/scalajs-lexical": "^1.0.10",
+    "@lexical/markdown": "^0.45.0"
+  }
+}

@@ -20,10 +20,10 @@ sbt --server "Test/testOnly *"
 Das ist der Befehl, der vor einem Commit grün sein muss (aktuell 287 Tests).
 `sbt --server test` ist für die schnelle Schleife während der Arbeit gedacht.
 
-Für die npm-Seite (`npm/jfx-core`, `npm/jfx-demo`) ist `npm run verify` das
+Für die npm-Seite (`npm/scalajs-ui-core`, `npm/scalajs-ui-demo`) ist `npm run verify` das
 Äquivalent — Typecheck, Testsuite, und je nach Paket der Tarball-Consumer-Test
 bzw. die Client-/SSR-Builds samt Eine-Runtime-Nachweis. Braucht vorher
-`sbt --server "scalajs-jfx-bridge/fullLinkJS"`. Details in `JAVASCRIPT_API.md` §15.
+`sbt --server "scalajs-ui-bridge/fullLinkJS"`. Details in `JAVASCRIPT_API.md` §15.
 
 `.github/workflows/verify.yml` fährt beide Gates bei jedem Push nach `master`
 und jedem Pull Request.

@@ -20,8 +20,8 @@ const raw = JSON.parse(readFileSync(resolve(projectRoot, "site.config.json"), "u
 // A Pages build contains two independently mounted demos. Keep the checked-in
 // site configuration as the local/default configuration and allow the build
 // orchestrator to override only the deployment values for one build.
-const configuredBasePath = process.env.JFX_BASE_PATH || raw.basePath
-const configuredSiteUrl = process.env.JFX_SITE_URL || raw.siteUrl
+const configuredBasePath = process.env.UI_BASE_PATH || raw.basePath
+const configuredSiteUrl = process.env.UI_SITE_URL || raw.siteUrl
 
 /** Fuehrender Slash, kein abschliessender Slash; Root-Deploy ist "". */
 export function normalizeBasePath(value) {

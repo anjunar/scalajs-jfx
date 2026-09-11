@@ -1,0 +1,267 @@
+/* Demo-only: how this application dresses the editor and the code blocks.
+ * These rules override `.scalajs-ui-editor*` classes from @anjunar/scalajs-ui
+ * on purpose — see that package's README on overrides.
+ */
+
+.codemirror-wrapper .cm-editor {
+    background: var(--aj-code-bg);
+    color: var(--aj-ink);
+    border: 1px solid var(--aj-line-soft);
+    border-radius: var(--radius-surface);
+    overflow: hidden;
+}
+
+.codemirror-wrapper .cm-scroller {
+    font-family: var(--font-mono);
+}
+
+.codemirror-wrapper .cm-content,
+.codemirror-wrapper .cm-gutters {
+    background: var(--aj-code-bg);
+}
+
+.codemirror-wrapper .cm-gutters {
+    color: var(--aj-ink-faint);
+    border-right: 1px solid var(--aj-line-soft);
+    background: linear-gradient(180deg, var(--aj-code-gutter-bg), transparent);
+}
+
+.codemirror-wrapper .cm-activeLine,
+.codemirror-wrapper .cm-activeLineGutter {
+    background: color-mix(in srgb, var(--aj-accent-muted) 52%, transparent);
+}
+
+.codemirror-wrapper .cm-selectionBackground,
+.codemirror-wrapper .cm-content ::selection {
+    background: var(--aj-code-selection) !important;
+}
+
+.codemirror-wrapper .cm-cursor,
+.codemirror-wrapper .cm-dropCursor {
+    border-left-color: var(--aj-code-caret) !important;
+}
+
+.codemirror-wrapper .cm-focused {
+    outline: none;
+}
+
+.codemirror-wrapper .cm-editor.cm-focused {
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--aj-accent) 36%, transparent);
+}
+
+.scalajs-ui-editor-host {
+    min-height: 220px;
+    display: block;
+    border: 1px solid color-mix(in srgb, var(--aj-accent) 28%, var(--aj-line));
+    border-radius: var(--radius-surface);
+    overflow: hidden;
+    background: var(--aj-surface-overlay);
+}
+
+.scalajs-ui-editor-host[data-scalajs-ui-editor-loading="true"] {
+    opacity: 0.78;
+}
+
+.scalajs-ui-editor__fallback {
+    min-height: 220px;
+    display: block;
+    color: var(--aj-ink-soft);
+    background:
+        linear-gradient(90deg, transparent, color-mix(in srgb, var(--aj-accent) 11%, transparent), transparent),
+        var(--aj-surface-muted);
+}
+
+.scalajs-ui-editor__readonly {
+    min-height: 220px;
+    display: grid;
+    gap: 12px;
+    padding: 18px;
+    color: var(--aj-ink);
+    background: var(--aj-surface-overlay);
+}
+
+.scalajs-ui-editor-readonly .lexical-paragraph {
+    margin: 0 0 0.9em;
+    line-height: 1.65;
+}
+
+.scalajs-ui-editor-readonly .lexical-heading-h1,
+.scalajs-ui-editor-readonly .lexical-heading-h2,
+.scalajs-ui-editor-readonly .lexical-heading-h3,
+.scalajs-ui-editor-readonly .lexical-heading-h4,
+.scalajs-ui-editor-readonly .lexical-heading-h5,
+.scalajs-ui-editor-readonly .lexical-heading-h6 {
+    margin: 1.2em 0 0.55em;
+    font-weight: 850;
+    letter-spacing: -0.04em;
+    line-height: 1.2;
+}
+
+.scalajs-ui-editor-readonly .lexical-quote {
+    border-left: 3px solid var(--aj-accent);
+    padding-left: 14px;
+    color: var(--aj-ink-soft);
+}
+
+.scalajs-ui-editor-readonly__placeholder {
+    margin: 0;
+    color: var(--aj-ink-muted);
+}
+
+.scalajs-ui-editor-code {
+    margin: 0;
+    border: 1px solid var(--aj-line-soft);
+    border-radius: var(--radius-surface);
+    padding: 14px;
+    overflow: auto;
+    color: var(--aj-ink);
+    background: var(--aj-surface-muted);
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    line-height: 1.55;
+}
+
+.scalajs-ui-editor-code__content {
+    white-space: pre;
+}
+
+.hljs-keyword {
+    color: var(--aj-code-keyword);
+    font-weight: 800;
+}
+
+.hljs-string {
+    color: var(--aj-code-string);
+}
+
+.hljs-number {
+    color: var(--aj-code-number);
+}
+
+.hljs-comment {
+    color: var(--aj-ink-muted);
+    font-style: italic;
+}
+
+.hljs-tag,
+.hljs-name,
+.hljs-attr,
+.hljs-attribute {
+    color: var(--aj-accent-strong);
+}
+
+.editor-demo__surface {
+    min-height: 240px;
+}
+
+.scalajs-ui-editor,
+.scalajs-ui-editor__shell {
+    min-height: inherit;
+    height: 100%;
+}
+
+.scalajs-ui-editor__shell {
+    display: grid;
+    grid-template-rows: auto auto 1fr;
+}
+
+.scalajs-ui-editor__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 10px;
+    padding: 10px;
+    border-bottom: 1px solid var(--aj-line-soft);
+    background: color-mix(in srgb, var(--aj-surface-muted) 72%, transparent);
+}
+
+.scalajs-ui-editor__toolbar-group {
+    display: grid;
+    gap: 5px;
+    align-content: start;
+}
+
+.scalajs-ui-editor__toolbar-group-label {
+    padding-left: 4px;
+    color: var(--aj-ink-faint);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.scalajs-ui-editor__toolbar-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.scalajs-ui-editor__toolbar-button {
+    min-height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: 1px solid var(--aj-line);
+    border-radius: var(--radius-surface);
+    padding: 0 12px;
+    color: var(--aj-ink);
+    background: var(--aj-surface-overlay);
+    cursor: pointer;
+    font: inherit;
+}
+
+.scalajs-ui-editor__toolbar-button:hover {
+    border-color: var(--aj-accent);
+    background: var(--aj-accent-muted);
+}
+
+.scalajs-ui-editor__toolbar-button.is-active,
+.scalajs-ui-editor__toolbar-button.active {
+    border-color: var(--aj-accent);
+    color: var(--aj-accent-strong);
+    background: color-mix(in srgb, var(--aj-accent-muted) 86%, transparent);
+}
+
+.scalajs-ui-editor__toolbar-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.58;
+}
+
+.scalajs-ui-editor__toolbar-icon {
+    font-size: 18px;
+}
+
+.scalajs-ui-editor__surface-wrap {
+    position: relative;
+    min-height: 180px;
+}
+
+.scalajs-ui-editor__surface {
+    min-height: 180px;
+    height: 100%;
+    padding: 18px;
+    color: var(--aj-ink);
+    outline: none;
+}
+
+.scalajs-ui-editor__surface:focus {
+    box-shadow: inset var(--aj-shadow-focus);
+}
+
+.scalajs-ui-editor__placeholder {
+    position: absolute;
+    top: 18px;
+    left: 18px;
+    right: 18px;
+    pointer-events: none;
+    color: var(--aj-ink-muted);
+}
+
+
+.editor-demo__note {
+    margin-top: 1.5rem;
+    color: var(--aj-ink-muted);
+    font-size: .92rem;
+}

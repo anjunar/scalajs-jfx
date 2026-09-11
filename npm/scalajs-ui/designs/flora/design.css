@@ -1,0 +1,9 @@
+/* UI interpretation of the shared Multi-Design layout slots. */
+@layer designs {
+:root[data-design="flora"] { --specimen-padding: var(--space-6); }
+:root[data-design="flora"] .site-header { padding-block: var(--space-6); }
+:root[data-design="flora"] .brand { font-family: var(--font-heading); font-weight: 400; }
+:root[data-design="flora"] .component-showcase__render { border-color: transparent; }
+:root[data-design="flora"] :is(blockquote, .docs-callout) { border: 0; padding: var(--space-5); border-radius: 0 var(--radius-surface) var(--radius-surface) 0; background: var(--color-elevated); }
+:root[data-design="flora"] .showcase-section-intro__title { font-style: italic; }
+}

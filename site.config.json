@@ -1,13 +1,13 @@
 {
-  "name": "scalajs-jfx",
-  "siteUrl": "https://anjunar.github.io/scalajs-jfx",
-  "basePath": "/scalajs-jfx",
-  "title": "scalajs-jfx | Scala.js UI Library",
-  "description": "scalajs-jfx is a Scala.js UI library for declarative components, SSR, hydration, typed controls, runtime metadata, and source-first I18n.",
+  "name": "scalajs-ui",
+  "siteUrl": "https://anjunar.github.io/scalajs-ui",
+  "basePath": "/scalajs-ui",
+  "title": "scalajs-ui | Scala.js UI Library",
+  "description": "scalajs-ui is a Scala.js UI library for declarative components, SSR, hydration, typed controls, runtime metadata, and source-first I18n.",
   "shortDescription": "Declarative Scala.js UI with SSR, hydration, typed controls, runtime metadata, and source-first I18n.",
   "author": "Patrick Bittner",
   "authorUrl": "https://github.com/anjunar",
-  "codeRepository": "https://github.com/anjunar/scalajs-jfx",
-  "themeStorageKey": "scalajs-jfx.theme",
+  "codeRepository": "https://github.com/anjunar/scalajs-ui",
+  "themeStorageKey": "scalajs-ui.theme",
   "localizedLanguages": ["de", "en"]
 }

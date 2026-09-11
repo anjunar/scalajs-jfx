@@ -1,0 +1,13 @@
+{
+  "name": "scalajs-ui-core-browser-tests",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "verify": "npm run test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  }
+}

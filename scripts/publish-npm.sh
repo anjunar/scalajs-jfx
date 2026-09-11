@@ -10,8 +10,8 @@ usage() {
   cat <<'EOF'
 Usage: scripts/publish-npm.sh [options]
 
-Publishes the JFX npm packages in dependency order, including the shared CSS.
-jfx-demo remains private and is not part of the release set.
+Publishes the UI npm packages in dependency order, including the shared CSS.
+scalajs-ui-demo remains private and is not part of the release set.
 
 Options:
   --install-dependencies
@@ -61,19 +61,19 @@ cd "$REPO_ROOT"
 NPM_CACHE="${REPO_ROOT}/target/npm-publish-cache"
 mkdir -p "$NPM_CACHE"
 
-# Keep the order dependency-aware. The CSS package comes first because jfx-core
-# declares its matching major as a peer dependency. jfx-demo stays private.
+# Keep the order dependency-aware. The CSS package comes first because scalajs-ui-core
+# declares its matching major as a peer dependency. scalajs-ui-demo stays private.
 PACKAGE_DIRECTORIES=(
-  scalajs-jfx
-  jfx-core
-  scalajs-jfx-bridge
-  jfx-json
-  jfx-router
-  jfx-controls
-  jfx-viewport
-  jfx-forms
-  jfx-editor
-  jfx-webauthn
+  scalajs-ui
+  scalajs-ui-core
+  scalajs-ui-bridge
+  scalajs-ui-json
+  scalajs-ui-router
+  scalajs-ui-controls
+  scalajs-ui-viewport
+  scalajs-ui-forms
+  scalajs-ui-editor
+  scalajs-ui-webauthn
 )
 release_version=""
 
@@ -90,7 +90,7 @@ for package_directory in "${PACKAGE_DIRECTORIES[@]}"; do
     echo "Refusing to publish private package '${package_name}'." >&2
     exit 1
   fi
-  if [[ "$package_name" != @anjunar/jfx-* && "$package_name" != "@anjunar/scalajs-jfx" && "$package_name" != "@anjunar/scalajs-jfx-bridge" ]]; then
+  if [[ "$package_name" != @anjunar/scalajs-ui-* && "$package_name" != "@anjunar/scalajs-ui" && "$package_name" != "@anjunar/scalajs-ui-bridge" ]]; then
     echo "Unexpected package name '${package_name}' in ${manifest_path}." >&2
     exit 1
   fi
@@ -105,7 +105,7 @@ done
 
 if [[ "$SKIP_LINK_BRIDGE" != "1" ]]; then
   echo "Linking the Scala.js bridge..."
-  sbt --server "scalajs-jfx-bridge/fullLinkJS"
+  sbt --server "scalajs-ui-bridge/fullLinkJS"
 fi
 
 if [[ "$INSTALL_DEPENDENCIES" == "1" ]]; then

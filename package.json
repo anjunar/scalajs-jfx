@@ -1,6 +1,6 @@
 {
-  "name": "scalajs-jfx",
-  "version": "3.0.5",
+  "name": "scalajs-ui",
+  "version": "1.0.0",
   "private": true,
   "workspaces": [
     "npm/*"
@@ -9,10 +9,10 @@
   "scripts": {
     "set-version": "node scripts/set-version.mjs",
     "check-version": "node scripts/set-version.mjs --check",
-    "build:landing": "npm run build --workspace npm/jfx-landing",
-    "preview:landing": "npm run start --workspace npm/jfx-landing",
-    "verify:landing": "npm run verify --workspace npm/jfx-landing",
-    "predev": "sbt --server \"scalajs-jfx-demo/fastLinkJS\"",
+    "build:landing": "npm run build --workspace npm/scalajs-ui-landing",
+    "preview:landing": "npm run start --workspace npm/scalajs-ui-landing",
+    "verify:landing": "npm run verify --workspace npm/scalajs-ui-landing",
+    "predev": "sbt --server \"scalajs-ui-demo/fastLinkJS\"",
     "dev": "node server/server.mjs",
     "build:client": "vite build",
     "build:server": "vite build --ssr src/entry-server.js",
@@ -25,7 +25,7 @@
     "preview:pages": "node tools/serve-pages.mjs"
   },
   "dependencies": {
-    "@anjunar/scalajs-jfx": "*",
+    "@anjunar/scalajs-ui": "*",
     "@anjunar/scalajs-lexical": "^1.0.10",
     "express": "^5.2.1"
   },

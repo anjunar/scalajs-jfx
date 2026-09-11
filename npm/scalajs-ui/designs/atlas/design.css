@@ -1,0 +1,7 @@
+/* UI interpretation of the shared Multi-Design layout slots. */
+@layer designs {
+:root { --specimen-padding: var(--space-5); }
+:root[data-design="atlas"] .site-header { border-bottom: 2px solid var(--color-interactive); }
+:root[data-design="atlas"] .app-nav-link[aria-current="page"] { border-inline-start: 3px solid var(--color-interactive); }
+:root[data-design="atlas"] .component-showcase { border-block-start: 1px solid var(--color-border); }
+}

@@ -90,7 +90,7 @@ app.use(async (req, res, next) => {
         )
 
         // Im Dev haengt Vite seinen HMR-Client an den Kopf. Die Head-Senke im
-        // Browser fasst nur Knoten mit data-jfx-head an, laesst ihn also stehen.
+        // Browser fasst nur Knoten mit data-ui-head an, laesst ihn also stehen.
         const html = isProduction
             ? rendered.html
             : await vite.transformIndexHtml(url, rendered.html)

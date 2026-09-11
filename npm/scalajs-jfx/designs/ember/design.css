@@ -1,9 +1,0 @@
-/* JFX interpretation of the shared Multi-Design layout slots. */
-@layer designs {
-:root[data-design="ember"] { --specimen-padding: var(--space-5); }
-:root[data-design="ember"] .brand { font-weight: 800; letter-spacing: -.05em; }
-:root[data-design="ember"] :is(.showcase-page__eyebrow, .app-sidebar__section-title) { font-family: var(--font-code); letter-spacing: .1em; }
-:root[data-design="ember"] .showcase-page__title { line-height: 1.03; }
-:root[data-design="ember"] :is(.component-showcase, .showcase-section-intro) { border-block-start: 1px solid var(--color-border); padding-top: var(--space-6); }
-:root[data-design="ember"] .component-showcase__render { box-shadow: none; }
-}

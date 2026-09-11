@@ -8,19 +8,19 @@ const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const pagesDir = resolve(projectRoot, "dist", "pages");
 const docsDir = resolve(projectRoot, "docs");
 const scalaStaticDir = resolve(projectRoot, "dist", "static");
-const typescriptRoot = resolve(projectRoot, "npm", "jfx-demo");
+const typescriptRoot = resolve(projectRoot, "npm", "scalajs-ui-demo");
 const typescriptStaticDir = resolve(typescriptRoot, "dist", "static");
 
-const scalaBasePath = "/scalajs-jfx/scala";
-const typescriptBasePath = "/scalajs-jfx/typescript";
-const siteUrl = "https://anjunar.github.io/scalajs-jfx";
+const scalaBasePath = "/scalajs-ui/scala";
+const typescriptBasePath = "/scalajs-ui/typescript";
+const siteUrl = "https://anjunar.github.io/scalajs-ui";
 
 await rm(pagesDir, { recursive: true, force: true });
 await mkdir(pagesDir, { recursive: true });
 
 const scalaEnv = pagesEnvironment(scalaBasePath, `${siteUrl}/scala`);
 await rm(scalaStaticDir, { recursive: true, force: true });
-await runSbt(["--server", "scalajs-jfx-demo/fullLinkJS"], projectRoot, scalaEnv);
+await runSbt(["--server", "scalajs-ui-demo/fullLinkJS"], projectRoot, scalaEnv);
 await runNpm(["run", "build:client"], projectRoot, scalaEnv);
 await runNpm(["run", "build:server"], projectRoot, scalaEnv);
 await runNpm(["run", "prerender"], projectRoot, scalaEnv);
@@ -31,16 +31,16 @@ await copyDirectory(scalaStaticDir, resolve(pagesDir, "scala"));
 // consume that linked artifact through the existing workspace dependencies.
 const typescriptEnv = pagesEnvironment(typescriptBasePath, `${siteUrl}/typescript`);
 await rm(typescriptStaticDir, { recursive: true, force: true });
-await runSbt(["--server", "scalajs-jfx-bridge/fullLinkJS"], projectRoot, typescriptEnv);
+await runSbt(["--server", "scalajs-ui-bridge/fullLinkJS"], projectRoot, typescriptEnv);
 await runNpm(["run", "build:pages"], typescriptRoot, typescriptEnv);
 await copyDirectory(typescriptStaticDir, resolve(pagesDir, "typescript"));
 
-await runNpm(["run", "build"], resolve(projectRoot, "npm/jfx-landing"), process.env);
-await copyDirectory(resolve(projectRoot, "npm/jfx-landing/dist/static"), pagesDir);
+await runNpm(["run", "build"], resolve(projectRoot, "npm/scalajs-ui-landing"), process.env);
+await copyDirectory(resolve(projectRoot, "npm/scalajs-ui-landing/dist/static"), pagesDir);
 await writeFile(resolve(pagesDir, "404.html"), notFoundPage(), "utf8");
 await writeFile(resolve(pagesDir, ".nojekyll"), "", "utf8");
 await validatePages();
-await run(process.execPath, ["npm/jfx-landing/scripts/verify.mjs", pagesDir, "--pages"], { cwd: projectRoot, env: process.env });
+await run(process.execPath, ["npm/scalajs-ui-landing/scripts/verify.mjs", pagesDir, "--pages"], { cwd: projectRoot, env: process.env });
 
 if (process.argv.includes("--check")) {
   console.log("Validated complete site in dist/pages; docs was not changed.");
@@ -54,8 +54,8 @@ if (process.argv.includes("--check")) {
 function pagesEnvironment(basePath, deployUrl) {
   return {
     ...process.env,
-    JFX_BASE_PATH: basePath,
-    JFX_SITE_URL: deployUrl,
+    UI_BASE_PATH: basePath,
+    UI_SITE_URL: deployUrl,
   };
 }
 
@@ -164,8 +164,8 @@ async function validatePages() {
   const missingLocalFiles = [];
   for (const file of htmlFiles) {
     const html = await readFile(file, "utf8");
-    for (const match of html.matchAll(/(?:href|src)\s*=\s*["'](\/scalajs-jfx\/(?:scala|typescript)\/[^"'?#]+\.[a-z0-9]+)(?:[?#][^"']*)?["']/gi)) {
-      const localPath = match[1].replace(/^\/scalajs-jfx\//, "");
+    for (const match of html.matchAll(/(?:href|src)\s*=\s*["'](\/scalajs-ui\/(?:scala|typescript)\/[^"'?#]+\.[a-z0-9]+)(?:[?#][^"']*)?["']/gi)) {
+      const localPath = match[1].replace(/^\/scalajs-ui\//, "");
       try {
         await readFile(resolve(pagesDir, localPath));
       } catch {
@@ -220,7 +220,7 @@ function notFoundPage() {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex">
-    <title>Page not found · JFX 3</title>
+    <title>Page not found · UI 3</title>
     <style>
       :root { color-scheme: light dark; --bg: #f4f1eb; --ink: #171918; --muted: #696761; --accent: #bc5d38; }
       @media (prefers-color-scheme: dark) { :root { --bg: #171918; --ink: #f4f1eb; --muted: #b8b3aa; --accent: #ed8a5c; } }
@@ -234,11 +234,11 @@ function notFoundPage() {
   <body>
     <main>
       <p>404</p>
-      <h1>This JFX 3 page does not exist.</h1>
+      <h1>This UI 3 page does not exist.</h1>
       <nav aria-label="Available destinations">
-        <a href="/scalajs-jfx/">Showcase home</a>
-        <a href="/scalajs-jfx/scala/">Scala.js demo</a>
-        <a href="/scalajs-jfx/typescript/">TypeScript demo</a>
+        <a href="/scalajs-ui/">Showcase home</a>
+        <a href="/scalajs-ui/scala/">Scala.js demo</a>
+        <a href="/scalajs-ui/typescript/">TypeScript demo</a>
       </nav>
     </main>
   </body>

@@ -19,13 +19,13 @@ function Invoke-CheckedCommand {
     }
 }
 
-$env:JFX_BASE_PATH = "/scalajs-jfx/scala"
-$env:JFX_SITE_URL = "https://anjunar.github.io/scalajs-jfx/scala"
+$env:UI_BASE_PATH = "/scalajs-ui/scala"
+$env:UI_SITE_URL = "https://anjunar.github.io/scalajs-ui/scala"
 Write-Host "Linking the Scala.js demo..."
-Invoke-CheckedCommand -Command "sbt" -Arguments @("--server", "scalajs-jfx-demo / Compile / fullLinkJS")
+Invoke-CheckedCommand -Command "sbt" -Arguments @("--server", "scalajs-ui-demo / Compile / fullLinkJS")
 
 Write-Host "Linking the shared Scala.js bridge..."
-Invoke-CheckedCommand -Command "sbt" -Arguments @("--server", "scalajs-jfx-bridge / Compile / fullLinkJS")
+Invoke-CheckedCommand -Command "sbt" -Arguments @("--server", "scalajs-ui-bridge / Compile / fullLinkJS")
 
 Write-Host "Building the static Pages artifact..."
 Invoke-CheckedCommand -Command "node" -Arguments @("tools/build-pages.mjs")

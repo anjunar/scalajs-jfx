@@ -1,0 +1,13 @@
+@layer theme, base, reset, components, patterns, designs, utilities, invariants;
+/* Both demos consume the same UI design foundation and showcase recipes. */
+@import "tailwindcss";
+@import "@anjunar/scalajs-lexical/index.css" layer(patterns);
+@import "@anjunar/scalajs-ui/index.css";
+@import "./utilities.css";
+@import "./base.css" layer(patterns);
+@import "../../../../scalajs-ui-demo/src/main/webapp/src/app/Main.css" layer(patterns);
+@import "../../../../scalajs-ui-demo/src/main/webapp/src/app/Demo.css" layer(patterns);
+@import "../../../../scalajs-ui-demo/src/main/webapp/src/app/Showcase.css" layer(patterns);
+@import "./docs/index.css" layer(patterns);
+@import "./pages/index.css" layer(patterns);
+@import "../../../../scalajs-ui-demo/src/main/webapp/src/app/DesignPatterns.css" layer(patterns);
