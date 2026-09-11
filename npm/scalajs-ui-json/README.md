@@ -1,6 +1,6 @@
 # @anjunar/scalajs-ui-json
 
-Schema-driven JSON mapping for TypeScript models used with UI 3. It is the npm counterpart of `scalajs-ui-json` and keeps mapping explicit at the JavaScript boundary.
+Schema-driven JSON mapping for TypeScript models used with Scala JS UI 1.0. It is the npm counterpart of `scalajs-ui-json` and keeps mapping explicit at the JavaScript boundary.
 
 ## Overview
 

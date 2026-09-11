@@ -1,6 +1,6 @@
 # scalajs-ui-viewport
 
-The global UI layer for UI 3: movable windows, anchor-following overlays, and timed notifications above the routed page.
+The global UI layer for Scala JS UI 1.0: movable windows, anchor-following overlays, and timed notifications above the routed page.
 
 ## Overview
 

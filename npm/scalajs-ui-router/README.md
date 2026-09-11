@@ -1,6 +1,6 @@
 # @anjunar/scalajs-ui-router
 
-Typed route tables, nested outlets, navigation links, and route failures for UI 3 TypeScript applications.
+Typed route tables, nested outlets, navigation links, and route failures for Scala JS UI 1.0 TypeScript applications.
 
 ## Overview
 

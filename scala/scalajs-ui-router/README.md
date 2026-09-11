@@ -1,6 +1,6 @@
 # scalajs-ui-router
 
-Route matching, asynchronous route loading, nested outlets, links, localized URLs, and SSR response status for UI 3 applications.
+Route matching, asynchronous route loading, nested outlets, links, localized URLs, and SSR response status for Scala JS UI 1.0 applications.
 
 ## Overview
 

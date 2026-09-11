@@ -1,6 +1,6 @@
 # scalajs-ui-forms
 
-Model-bound forms and controls for UI 3, including inputs, validation, field groups, nested and repeating forms, combo boxes, and image cropping.
+Model-bound forms and controls for Scala JS UI 1.0, including inputs, validation, field groups, nested and repeating forms, combo boxes, and image cropping.
 
 ## Overview
 

@@ -1,6 +1,6 @@
 # @anjunar/scalajs-ui-webauthn
 
-The browser-side WebAuthn and passkey API for UI 3. It is independent of the
+The browser-side WebAuthn and passkey API for Scala JS UI 1.0. It is independent of the
 UI component runtime and is the TypeScript counterpart of
 [`scalajs-ui-webauthn`](../../scalajs-ui-webauthn/README.md).
 

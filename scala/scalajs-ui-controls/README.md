@@ -1,6 +1,6 @@
 # scalajs-ui-controls
 
-Higher-level UI 3 controls for tabs, carousels, and virtualized collections: `TableView`, `DataGrid`, and `VirtualListView`.
+Higher-level Scala JS UI 1.0 controls for tabs, carousels, and virtualized collections: `TableView`, `DataGrid`, and `VirtualListView`.
 
 ## Overview
 

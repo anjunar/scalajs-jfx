@@ -1,7 +1,7 @@
 {
   "name": "@anjunar/scalajs-ui-viewport",
   "version": "1.0.0",
-  "description": "The TypeScript viewport API of UI 3: windows, anchor-following overlays, and self-dismissing notifications, projected onto the ui.viewport components that run in the Scala.js runtime published as @anjunar/scalajs-ui-bridge.",
+  "description": "The TypeScript viewport API of Scala JS UI 1.0: windows, anchor-following overlays, and self-dismissing notifications, projected onto the ui.viewport components that run in the Scala.js runtime published as @anjunar/scalajs-ui-bridge.",
   "type": "module",
   "types": "./dist/index.d.ts",
   "main": "./dist/index.js",

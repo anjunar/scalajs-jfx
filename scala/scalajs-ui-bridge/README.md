@@ -1,6 +1,6 @@
 # scalajs-ui-bridge
 
-The Scala.js JavaScript boundary for UI 3. This module links the Scala.js runtime used by the TypeScript packages and exposes opaque handles for rendering, state, components, forms, routing, controls, viewport features, and i18n.
+The Scala.js JavaScript boundary for Scala JS UI 1.0. This module links the Scala.js runtime used by the TypeScript packages and exposes opaque handles for rendering, state, components, forms, routing, controls, viewport features, and i18n.
 
 ## Overview
 

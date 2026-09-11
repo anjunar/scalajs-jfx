@@ -1,6 +1,6 @@
 # @anjunar/scalajs-ui-viewport
 
-TypeScript access to the UI 3 viewport layer: movable windows, anchor-following overlays, and self-dismissing notifications.
+TypeScript access to the Scala JS UI 1.0 viewport layer: movable windows, anchor-following overlays, and self-dismissing notifications.
 
 ## Overview
 

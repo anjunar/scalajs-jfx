@@ -1,5 +1,5 @@
 /**
- * The routing API of UI 3 in TypeScript.
+ * The routing API of Scala JS UI 1.0 in TypeScript.
  *
  * The routing itself -- matching, forwarding, history, localized URLs, error
  * routes with their own status -- stays in `ui.router.Router`, the same Scala.js

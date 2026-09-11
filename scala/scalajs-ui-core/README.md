@@ -1,6 +1,6 @@
 # scalajs-ui-core
 
-The core Scala.js runtime and DSL for UI 3. Use it to compose DOM components, bind reactive state, render on the server, hydrate in the browser, and manage component-owned resources.
+The core Scala.js runtime and DSL for Scala JS UI 1.0. Use it to compose DOM components, bind reactive state, render on the server, hydrate in the browser, and manage component-owned resources.
 
 ## Overview
 

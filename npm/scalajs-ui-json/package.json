@@ -1,7 +1,7 @@
 {
   "name": "@anjunar/scalajs-ui-json",
   "version": "1.0.0",
-  "description": "Schema driven JSON mapping for UI 3 TypeScript models.",
+  "description": "Schema driven JSON mapping for Scala JS UI 1.0 TypeScript models.",
   "type": "module",
   "types": "./dist/index.d.ts",
   "main": "./dist/index.js",
