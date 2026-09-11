@@ -6,8 +6,8 @@ import { fileURLToPath } from "node:url"
 import { baseHref } from "./tools/site-config.mjs"
 
 const projectRoot = dirname(fileURLToPath(import.meta.url))
-const webappRoot = resolve(projectRoot, "scalajs-ui-demo", "src", "main", "webapp")
-const scalaJsOutputRoot = resolve(projectRoot, "scalajs-ui-demo", "target", "vite")
+const webappRoot = resolve(projectRoot, "scala", "scalajs-ui-demo", "src", "main", "webapp")
+const scalaJsOutputRoot = resolve(projectRoot, "scala", "scalajs-ui-demo", "target", "vite")
 const scalaJsFastOptMain = resolve(scalaJsOutputRoot, "fastopt", "main.js")
 const scalaJsFullOptMain = resolve(scalaJsOutputRoot, "fullopt", "main.js")
 const clientEntry = resolve(webappRoot, "src", "main.js")

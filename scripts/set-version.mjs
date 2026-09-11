@@ -198,7 +198,7 @@ async function updateScalaReadmes(nextVersion) {
 }
 
 async function updateDemos(nextVersion) {
-  const scalaPath = resolve(repositoryRoot, "scalajs-ui-demo/src/main/scala-3/app/App.scala");
+  const scalaPath = resolve(repositoryRoot, "scala/scalajs-ui-demo/src/main/scala-3/app/App.scala");
   const scalaCurrent = await readFile(scalaPath, "utf8");
   const scalaNext = scalaCurrent
     .replace(/routerLink\("v\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?"\)/, `routerLink("v${nextVersion}")`)

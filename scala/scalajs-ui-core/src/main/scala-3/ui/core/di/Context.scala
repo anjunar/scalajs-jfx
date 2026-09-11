@@ -1,4 +1,4 @@
-// scalajs-ui-core/src/main/scala/ui/di/Context.scala
+// scala/scalajs-ui-core/src/main/scala/ui/di/Context.scala
 package ui.core.di
 
 import ui.core.component.AbstractComponent

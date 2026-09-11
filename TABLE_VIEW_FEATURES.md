@@ -121,21 +121,21 @@ Für eigene Inhalte `renderCells` ersetzen oder ergänzen. TypeScript-Beispiel u
 
 | Baustein | Heutige Verantwortung und Befund |
 | --- | --- |
-| [TableView.scala](scalajs-ui-controls/src/main/scala-3/ui/control/table/TableView.scala) | Spaltenliste, feste Zeilenhöhe, Zeilenfenster, einfache Auswahl, Remote-Header-Sortierung und automatische Breitenverteilung. |
-| [TableColumn.scala](scalajs-ui-controls/src/main/scala-3/ui/control/table/TableColumn.scala) | Text, bevorzugte Breite, bestehender Zeilenrenderer, beobachtbare Zellwerte, Zellfactory, Tabellenzuordnung, `sortable` und `sortKey`. [TableColumnList.scala](scalajs-ui-controls/src/main/scala-3/ui/control/table/TableColumnList.scala) validiert Listenänderungen vor ihrer Veröffentlichung. |
-| [TableRow.scala](scalajs-ui-controls/src/main/scala-3/ui/control/table/TableRow.scala) | Integrierte RowFactory, lesbarer Zeilenkontext und überschreibbares `renderContent`; optionale Standardzellen reagieren auf Spalten-/Rendereränderungen. Auswahl/Klick, Doppelklick und Lifecycle bleiben zentral. |
-| [TableCell.scala](scalajs-ui-controls/src/main/scala-3/ui/control/table/TableCell.scala) | Integrierter Zellkontext, beobachteter Wert, Default-Text oder eigener Inhalt über `renderContent`, Breitenbindung und Disposal. |
-| [VirtualizedCollection.scala](scalajs-ui-controls/src/main/scala-3/ui/control/virtualized/VirtualizedCollection.scala) | Gemeinsame Paging-/Scroll-, URL-, Viewport- und Remote-Logik für TableView, DataGrid und VirtualListView. |
-| [CrawlableCollection.scala](scalajs-ui-controls/src/main/scala-3/ui/control/virtualized/CrawlableCollection.scala) | Crawl-Cookies und Wiederherstellung rund um SSR/Hydration. |
-| [ItemGeometry.scala](scalajs-ui-controls/src/main/scala-3/ui/control/virtualized/ItemGeometry.scala) | `FixedRowGeometry` und bereits vorhandene `MeasuredRowGeometry` als Grundlage für variable Zeilenhöhen. |
-| [ListDataSource.scala](scalajs-ui-core/src/main/scala-3/ui/core/state/ListDataSource.scala), [ListProperty.scala](scalajs-ui-core/src/main/scala-3/ui/core/state/ListProperty.scala) | Lesender Datenquellenvertrag und veränderbare lokale Liste. |
-| [RemoteListProperty.scala](scalajs-ui-core/src/main/scala-3/ui/core/remote/RemoteListProperty.scala) | Lückenhaft geladene Daten, Bereichsabfragen, Sortierdeskriptoren und Schutz vor veralteten Ladeantworten. |
-| [TableSelectionModel.scala](scalajs-ui-controls/src/main/scala-3/ui/control/table/TableSelectionModel.scala) | Zentrales Einzel-/Mehrfachauswahlmodell mit kohärenten Ergebnislisten, führendem Eintrag, Shift-Anker und absoluter Datenänderungsabbildung. |
-| [table.ts](npm/scalajs-ui-controls/src/table.ts), [ControlFactories.scala](scalajs-ui-bridge/src/main/scala-3/ui/bridge/ControlFactories.scala), [TableViewHandleBridge.scala](scalajs-ui-bridge/src/main/scala-3/ui/bridge/TableViewHandleBridge.scala) | Deklarative TypeScript-Tabellenoptionen, reaktive Sichtbarkeit/Modus und typisiertes Handle für Einzel-/Mehrfachauswahl, Refresh und Lifecycle. Weitere Modelle und Operationen sind offen. |
+| [TableView.scala](scala/scalajs-ui-controls/src/main/scala-3/ui/control/table/TableView.scala) | Spaltenliste, feste Zeilenhöhe, Zeilenfenster, einfache Auswahl, Remote-Header-Sortierung und automatische Breitenverteilung. |
+| [TableColumn.scala](scala/scalajs-ui-controls/src/main/scala-3/ui/control/table/TableColumn.scala) | Text, bevorzugte Breite, bestehender Zeilenrenderer, beobachtbare Zellwerte, Zellfactory, Tabellenzuordnung, `sortable` und `sortKey`. [TableColumnList.scala](scala/scalajs-ui-controls/src/main/scala-3/ui/control/table/TableColumnList.scala) validiert Listenänderungen vor ihrer Veröffentlichung. |
+| [TableRow.scala](scala/scalajs-ui-controls/src/main/scala-3/ui/control/table/TableRow.scala) | Integrierte RowFactory, lesbarer Zeilenkontext und überschreibbares `renderContent`; optionale Standardzellen reagieren auf Spalten-/Rendereränderungen. Auswahl/Klick, Doppelklick und Lifecycle bleiben zentral. |
+| [TableCell.scala](scala/scalajs-ui-controls/src/main/scala-3/ui/control/table/TableCell.scala) | Integrierter Zellkontext, beobachteter Wert, Default-Text oder eigener Inhalt über `renderContent`, Breitenbindung und Disposal. |
+| [VirtualizedCollection.scala](scala/scalajs-ui-controls/src/main/scala-3/ui/control/virtualized/VirtualizedCollection.scala) | Gemeinsame Paging-/Scroll-, URL-, Viewport- und Remote-Logik für TableView, DataGrid und VirtualListView. |
+| [CrawlableCollection.scala](scala/scalajs-ui-controls/src/main/scala-3/ui/control/virtualized/CrawlableCollection.scala) | Crawl-Cookies und Wiederherstellung rund um SSR/Hydration. |
+| [ItemGeometry.scala](scala/scalajs-ui-controls/src/main/scala-3/ui/control/virtualized/ItemGeometry.scala) | `FixedRowGeometry` und bereits vorhandene `MeasuredRowGeometry` als Grundlage für variable Zeilenhöhen. |
+| [ListDataSource.scala](scala/scalajs-ui-core/src/main/scala-3/ui/core/state/ListDataSource.scala), [ListProperty.scala](scala/scalajs-ui-core/src/main/scala-3/ui/core/state/ListProperty.scala) | Lesender Datenquellenvertrag und veränderbare lokale Liste. |
+| [RemoteListProperty.scala](scala/scalajs-ui-core/src/main/scala-3/ui/core/remote/RemoteListProperty.scala) | Lückenhaft geladene Daten, Bereichsabfragen, Sortierdeskriptoren und Schutz vor veralteten Ladeantworten. |
+| [TableSelectionModel.scala](scala/scalajs-ui-controls/src/main/scala-3/ui/control/table/TableSelectionModel.scala) | Zentrales Einzel-/Mehrfachauswahlmodell mit kohärenten Ergebnislisten, führendem Eintrag, Shift-Anker und absoluter Datenänderungsabbildung. |
+| [table.ts](npm/scalajs-ui-controls/src/table.ts), [ControlFactories.scala](scala/scalajs-ui-bridge/src/main/scala-3/ui/bridge/ControlFactories.scala), [TableViewHandleBridge.scala](scala/scalajs-ui-bridge/src/main/scala-3/ui/bridge/TableViewHandleBridge.scala) | Deklarative TypeScript-Tabellenoptionen, reaktive Sichtbarkeit/Modus und typisiertes Handle für Einzel-/Mehrfachauswahl, Refresh und Lifecycle. Weitere Modelle und Operationen sind offen. |
 
 ### Technische Voraussetzungen und Bearbeitungsstand
 
-1. **Zeilenlebensdauer – Scrollfenster behoben:** Der frühere `visibleRowsProperty.setAll(...)`-Reset wurde durch differenzielle Insert-/Remove-/Update-Ereignisse ersetzt. [Foreach.scala](scalajs-ui-core/src/main/scala-3/ui/core/statement/Foreach.scala) behält dadurch überlappende Slots. Datensatzverschiebungen und Sortierpermutationen bleiben gesondert zu lösen.
+1. **Zeilenlebensdauer – Scrollfenster behoben:** Der frühere `visibleRowsProperty.setAll(...)`-Reset wurde durch differenzielle Insert-/Remove-/Update-Ereignisse ersetzt. [Foreach.scala](scala/scalajs-ui-core/src/main/scala-3/ui/core/statement/Foreach.scala) behält dadurch überlappende Slots. Datensatzverschiebungen und Sortierpermutationen bleiben gesondert zu lösen.
 2. **Einzelauswahl – korrigiert:** Strukturänderungen erhalten das ausgewählte Vorkommen; Reset erhält nur eindeutig wiedergefundene Instanzen. Index und Item werden gemeinsam normalisiert. Stabile Keys, allgemeine Permutationsabbildung und Modell-/Quellentausch bleiben offen.
 3. **Spaltenlebensdauer – behoben:** Alle Listenänderungen durchlaufen Attach/Detach; entfernte Spalten verlieren die Tabellenlistener. Mehrfachzuordnungen werden vor der Mutation abgewiesen.
 4. **Sortierberechtigung – behoben:** Darstellung und `toggleRemoteSort()` verwenden jetzt beide `isRemoteSortable()`.
@@ -251,7 +251,7 @@ Diese tabellenspezifischen Bausteine gehören nach `ui.control.table`. Quellenta
 
 ### 4.2 Zellbindung und Erhalt bestehender Editoren
 
-Der bisherige `cell(row)`-Renderer bleibt ein unterstützter Weg, besonders für bereits dauerhaft eingebettete Eingabefelder. Die vorhandenen [Input-Controls](scalajs-ui-forms/src/main/scala-3/ui/forms/Input.scala) übertragen Eingaben in ihr `valueProperty`; [Property.subscribeBidirectional](scalajs-ui-core/src/main/scala-3/ui/core/state/Property.scala) verbindet dieses mit dem Zeilenmodell. Die automatische [Formularbindung](scalajs-ui-forms/src/main/scala-3/ui/forms/Formular.scala) verwendet denselben Mechanismus.
+Der bisherige `cell(row)`-Renderer bleibt ein unterstützter Weg, besonders für bereits dauerhaft eingebettete Eingabefelder. Die vorhandenen [Input-Controls](scala/scalajs-ui-forms/src/main/scala-3/ui/forms/Input.scala) übertragen Eingaben in ihr `valueProperty`; [Property.subscribeBidirectional](scala/scalajs-ui-core/src/main/scala-3/ui/core/state/Property.scala) verbindet dieses mit dem Zeilenmodell. Die automatische [Formularbindung](scala/scalajs-ui-forms/src/main/scala-3/ui/forms/Formular.scala) verwendet denselben Mechanismus.
 
 Beispiel aus diesen bestehenden APIs, innerhalb einer Tabelle über `Person` mit `name: Property[String]` und den entsprechenden DSL-Imports:
 
@@ -313,7 +313,7 @@ Intern **Zeilenidentität** und **Index im aktuellen Abfrageergebnis** auseinand
 
 Ein optionaler `rowKey: S => K` erlaubt stabile Entitätsidentität. Für lokale Listen ohne Key müssen Vorkommen auch bei gleichen Werten unterscheidbar sein; `equals` allein reicht nicht. Für Remote-Daten eine Abfragegeneration und ungeladene Positionen separat modellieren. `selectedItems` darf keine erfundenen Objekte für ungeladene Positionen liefern.
 
-Der implementierte Vertrag in [RemoteListChange.scala](scalajs-ui-core/src/main/scala-3/ui/core/remote/RemoteListChange.scala) trennt diese Vorgänge:
+Der implementierte Vertrag in [RemoteListChange.scala](scala/scalajs-ui-core/src/main/scala-3/ui/core/remote/RemoteListChange.scala) trennt diese Vorgänge:
 
 | Ereignis | Bedeutung für Position/Auswahl |
 | --- | --- |
@@ -451,7 +451,7 @@ Auto-Fit berücksichtigt Header und einen dokumentiert begrenzten Satz von Zelli
 
 ### 4.8 Variable Höhen, SSR und Zugänglichkeit
 
-Variable Höhen auf `MeasuredRowGeometry` und den Messmustern in [VirtualListCell.scala](scalajs-ui-controls/src/main/scala-3/ui/control/virtuallist/VirtualListCell.scala) aufbauen. Tabellenbreite, Spaltenvisibility, Zeilenumbruch und Editorhöhe müssen eine Neumessung auslösen. Höhen gehören zu Zeilenidentitäten; Änderungen oberhalb des Viewports müssen den sichtbaren Anker erhalten.
+Variable Höhen auf `MeasuredRowGeometry` und den Messmustern in [VirtualListCell.scala](scala/scalajs-ui-controls/src/main/scala-3/ui/control/virtuallist/VirtualListCell.scala) aufbauen. Tabellenbreite, Spaltenvisibility, Zeilenumbruch und Editorhöhe müssen eine Neumessung auslösen. Höhen gehören zu Zeilenidentitäten; Änderungen oberhalb des Viewports müssen den sichtbaren Anker erhalten.
 
 Die aktuelle positive Standard-Zeilenhöhe kann zunächst als UI-Default erhalten bleiben. Für explizites `fixedCellSize <= 0` muss aber die JavaFX-Fähigkeit variabler Höhen wirklich implementiert werden; ein bloßer Alias oder Clamping erfüllt sie nicht. Alte Defaults für Breiten und Sortierbarkeit sind ebenfalls ausdrücklich zu dokumentieren, bevor eine Änderung veröffentlicht wird.
 
@@ -526,9 +526,9 @@ Der zweite Ausbau ergänzt drei Scala-Fälle (Sichtbarkeit/Instanzerhalt/Breiten
 
 Abnahme des zweiten Ausbaus: Bridge-Full-Link und alle drei npm-Gates für Controls/Core/Demo grün. Controls: 17 Integrationstests plus 3 Paket-Consumer-Tests; Core: 114 Tests plus 8 Paket-Consumer-Tests; Demo: Typecheck, Client-/SSR-Builds, Eine-Runtime-Prüfung und 31 Routen. Temporärer Browser-Testtab und lokaler Testserver wurden anschließend geschlossen.
 
-Das erste Grundlagenpaket ergänzt sechs Scala-Tests in [TableCellSpec.scala](scalajs-ui-controls/src/test/scala-3/ui/control/table/TableCellSpec.scala): Wert-/Factory-Wechsel und Listener-Disposal, erhaltene Scrollfenster einschließlich Messung/Zeilenhöhe, Spalten-Attach/Detach, atomare Ablehnung ungültiger Spaltenänderungen, Refresh und spaltenlokaler Rendererwechsel. Vier zusätzliche [Bridge-Smoke-Tests](npm/scalajs-ui-controls/test/bridge.smoke.test.ts) prüfen typisierte Werte, einen gebundenen Editor im Scrollfenster, DOM-Identität nach Hydration und `sortable=false`.
+Das erste Grundlagenpaket ergänzt sechs Scala-Tests in [TableCellSpec.scala](scala/scalajs-ui-controls/src/test/scala-3/ui/control/table/TableCellSpec.scala): Wert-/Factory-Wechsel und Listener-Disposal, erhaltene Scrollfenster einschließlich Messung/Zeilenhöhe, Spalten-Attach/Detach, atomare Ablehnung ungültiger Spaltenänderungen, Refresh und spaltenlokaler Rendererwechsel. Vier zusätzliche [Bridge-Smoke-Tests](npm/scalajs-ui-controls/test/bridge.smoke.test.ts) prüfen typisierte Werte, einen gebundenen Editor im Scrollfenster, DOM-Identität nach Hydration und `sortable=false`.
 
-Bestehende Ausgangspunkte: [TableViewSpec.scala](scalajs-ui-controls/src/test/scala-3/ui/control/TableViewSpec.scala), [ViewportMeasurementSpec.scala](scalajs-ui-controls/src/test/scala-3/ui/control/ViewportMeasurementSpec.scala), [CrawlCookieStateSpec.scala](scalajs-ui-controls/src/test/scala-3/ui/control/CrawlCookieStateSpec.scala), [ComboBoxSpec.scala](scalajs-ui-forms/src/test/scala-3/ui/forms/ComboBoxSpec.scala) und [Bridge-Smoke-Tests](npm/scalajs-ui-controls/test/bridge.smoke.test.ts).
+Bestehende Ausgangspunkte: [TableViewSpec.scala](scala/scalajs-ui-controls/src/test/scala-3/ui/control/TableViewSpec.scala), [ViewportMeasurementSpec.scala](scala/scalajs-ui-controls/src/test/scala-3/ui/control/ViewportMeasurementSpec.scala), [CrawlCookieStateSpec.scala](scala/scalajs-ui-controls/src/test/scala-3/ui/control/CrawlCookieStateSpec.scala), [ComboBoxSpec.scala](scala/scalajs-ui-forms/src/test/scala-3/ui/forms/ComboBoxSpec.scala) und [Bridge-Smoke-Tests](npm/scalajs-ui-controls/test/bridge.smoke.test.ts).
 
 Pro Feature gezielte Vertrags- und Integrationstests:
 

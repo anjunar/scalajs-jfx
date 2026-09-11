@@ -165,7 +165,7 @@ lazy val commonLibrarySettings = Seq(
 // ist damit entschieden: veroeffentlichen, mit einer @anjunar/scalajs-ui-editor-Fassade
 // wie jedes andere npm/scalajs-ui-*-Paket (npm-Modularisierung, Lauf 7).
 
-lazy val uiCore = Project(id = "scalajs-ui-core", base = file("scalajs-ui-core"))
+lazy val uiCore = Project(id = "scalajs-ui-core", base = file("scala/scalajs-ui-core"))
   .enablePlugins(ScalaJSPlugin)
   .settings(
     name                                 := "scalajs-ui-core",
@@ -175,7 +175,7 @@ lazy val uiCore = Project(id = "scalajs-ui-core", base = file("scalajs-ui-core")
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
 
-lazy val uiRouter = Project(id = "scalajs-ui-router", base = file("scalajs-ui-router"))
+lazy val uiRouter = Project(id = "scalajs-ui-router", base = file("scala/scalajs-ui-router"))
   .enablePlugins(ScalaJSPlugin)
   .dependsOn(uiCore)
   .settings(
@@ -185,7 +185,7 @@ lazy val uiRouter = Project(id = "scalajs-ui-router", base = file("scalajs-ui-ro
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
 
-lazy val uiViewport = Project(id = "scalajs-ui-viewport", base = file("scalajs-ui-viewport"))
+lazy val uiViewport = Project(id = "scalajs-ui-viewport", base = file("scala/scalajs-ui-viewport"))
   .enablePlugins(ScalaJSPlugin)
   .dependsOn(uiCore)
   .settings(
@@ -195,7 +195,7 @@ lazy val uiViewport = Project(id = "scalajs-ui-viewport", base = file("scalajs-u
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
 
-lazy val uiJson = Project(id = "scalajs-ui-json", base = file("scalajs-ui-json"))
+lazy val uiJson = Project(id = "scalajs-ui-json", base = file("scala/scalajs-ui-json"))
   .enablePlugins(ScalaJSPlugin)
   .dependsOn(uiCore)
   .settings(
@@ -215,7 +215,7 @@ lazy val uiJson = Project(id = "scalajs-ui-json", base = file("scalajs-ui-json")
 //
 // Controls also uses Viewport in production for the optional TableView column menu.
 // The bridge retains its explicit edge because it registers viewport factories itself.
-lazy val uiBridge = Project(id = "scalajs-ui-bridge", base = file("scalajs-ui-bridge"))
+lazy val uiBridge = Project(id = "scalajs-ui-bridge", base = file("scala/scalajs-ui-bridge"))
   .enablePlugins(ScalaJSPlugin)
   .dependsOn(uiCore, uiRouter, uiControls, uiViewport, uiForms, uiEditor)
   .settings(
@@ -243,7 +243,7 @@ lazy val uiBridge = Project(id = "scalajs-ui-bridge", base = file("scalajs-ui-br
     Compile / fullLinkJS / scalaJSLinkerConfig ~= (_.withSourceMap(false))
   )
 
-lazy val uiControls = Project(id = "scalajs-ui-controls", base = file("scalajs-ui-controls"))
+lazy val uiControls = Project(id = "scalajs-ui-controls", base = file("scala/scalajs-ui-controls"))
   .enablePlugins(ScalaJSPlugin)
   // Kein uiRouter: eine generische Tabelle darf nicht wissen, dass es Routing
   // gibt. Den aktuellen Pfad liefert ui.core.context.CrawlScope, den der Router
@@ -256,7 +256,7 @@ lazy val uiControls = Project(id = "scalajs-ui-controls", base = file("scalajs-u
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
 
-lazy val uiForms = Project(id = "scalajs-ui-forms", base = file("scalajs-ui-forms"))
+lazy val uiForms = Project(id = "scalajs-ui-forms", base = file("scala/scalajs-ui-forms"))
   .enablePlugins(ScalaJSPlugin)
   .dependsOn(uiCore, uiControls, uiViewport)
   .settings(
@@ -267,7 +267,7 @@ lazy val uiForms = Project(id = "scalajs-ui-forms", base = file("scalajs-ui-form
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
 
-lazy val uiEditor = Project(id = "scalajs-ui-editor", base = file("scalajs-ui-editor"))
+lazy val uiEditor = Project(id = "scalajs-ui-editor", base = file("scala/scalajs-ui-editor"))
   .enablePlugins(ScalaJSPlugin)
   .dependsOn(uiForms)
   .settings(
@@ -278,7 +278,7 @@ lazy val uiEditor = Project(id = "scalajs-ui-editor", base = file("scalajs-ui-ed
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
 
-lazy val uiWebAuthn = Project(id = "scalajs-ui-webauthn", base = file("scalajs-ui-webauthn"))
+lazy val uiWebAuthn = Project(id = "scalajs-ui-webauthn", base = file("scala/scalajs-ui-webauthn"))
   .enablePlugins(ScalaJSPlugin)
   .settings(
     name       := "scalajs-ui-webauthn",
@@ -287,7 +287,7 @@ lazy val uiWebAuthn = Project(id = "scalajs-ui-webauthn", base = file("scalajs-u
   .settings(commonLibrarySettings)
   .settings(commonJsSettings)
 
-lazy val app = Project(id = "scalajs-ui-demo", base = file("scalajs-ui-demo"))
+lazy val app = Project(id = "scalajs-ui-demo", base = file("scala/scalajs-ui-demo"))
   .enablePlugins(ScalaJSPlugin)
   .dependsOn(
     uiCore,
@@ -331,7 +331,7 @@ lazy val app = Project(id = "scalajs-ui-demo", base = file("scalajs-ui-demo"))
 
 // Isolated test application: exercises the public Scala core API in real browsers. Never published
 // or linked into the production bridge; no editor implementation belongs to this repository.
-lazy val uiCoreBrowserTests = Project(id = "scalajs-ui-core-browser-tests", base = file("scalajs-ui-core-browser-tests"))
+lazy val uiCoreBrowserTests = Project(id = "scalajs-ui-core-browser-tests", base = file("scala/scalajs-ui-core-browser-tests"))
   .enablePlugins(ScalaJSPlugin)
   .dependsOn(uiCore)
   .settings(commonJsSettings)

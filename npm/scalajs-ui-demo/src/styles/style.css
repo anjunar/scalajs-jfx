@@ -5,9 +5,9 @@
 @import "@anjunar/scalajs-ui/index.css";
 @import "./utilities.css";
 @import "./base.css" layer(patterns);
-@import "../../../../scalajs-ui-demo/src/main/webapp/src/app/Main.css" layer(patterns);
-@import "../../../../scalajs-ui-demo/src/main/webapp/src/app/Demo.css" layer(patterns);
-@import "../../../../scalajs-ui-demo/src/main/webapp/src/app/Showcase.css" layer(patterns);
+@import "../../../../scala/scalajs-ui-demo/src/main/webapp/src/app/Main.css" layer(patterns);
+@import "../../../../scala/scalajs-ui-demo/src/main/webapp/src/app/Demo.css" layer(patterns);
+@import "../../../../scala/scalajs-ui-demo/src/main/webapp/src/app/Showcase.css" layer(patterns);
 @import "./docs/index.css" layer(patterns);
 @import "./pages/index.css" layer(patterns);
-@import "../../../../scalajs-ui-demo/src/main/webapp/src/app/DesignPatterns.css" layer(patterns);
+@import "../../../../scala/scalajs-ui-demo/src/main/webapp/src/app/DesignPatterns.css" layer(patterns);

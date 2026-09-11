@@ -18,7 +18,7 @@ package ui.control.virtualized
   * Implementations may keep state -- [[MeasuredRowGeometry]] holds measured heights and their
   * prefix sums.
   *
-  * See scalajs-ui-controls/VIRTUALIZATION.md and CHANGE.md P3-1.
+  * See scala/scalajs-ui-controls/VIRTUALIZATION.md and CHANGE.md P3-1.
   */
 trait ItemGeometry {
 

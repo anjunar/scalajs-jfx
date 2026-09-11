@@ -8,7 +8,7 @@ import { resolve } from "node:path"
 import { staticAppRoutes } from "./app-routes.mjs"
 import { canonicalUrl, projectRoot, siteConfig } from "./site-config.mjs"
 
-const publicDir = resolve(projectRoot, "scalajs-ui-demo", "src", "main", "webapp", "public")
+const publicDir = resolve(projectRoot, "scala", "scalajs-ui-demo", "src", "main", "webapp", "public")
 
 const routes = staticAppRoutes()
 const languages = siteConfig.localizedLanguages ?? []

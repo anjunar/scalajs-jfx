@@ -23,7 +23,7 @@ import scala.scalajs.js
   * Before P3-1, the three shared about 70 to 100 identically named members -- scroll state,
   * viewport measurement, remote integration, item state, revision counters, and DOM access were
   * implemented three times. Every fix had to be made three times; `requestLazyLoadIfNecessary` was
-  * not (see scalajs-ui-controls/VIRTUALIZATION.md).
+  * not (see scala/scalajs-ui-controls/VIRTUALIZATION.md).
   *
   * What actually distinguishes the three lives in [[ItemGeometry]].
   *

@@ -10,6 +10,7 @@ import { projectRoot } from "./site-config.mjs"
 
 export const appRoutesPath = resolve(
   projectRoot,
+  "scala",
   "scalajs-ui-demo",
   "src",
   "main",

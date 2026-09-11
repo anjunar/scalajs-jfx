@@ -97,7 +97,7 @@ object Main {
 }
 ```
 
-Run `sbt --server fastLinkJS`, then serve the project directory with an HTTP server. For SSR, `Runtime.renderToString` and `Runtime.renderToStringAsync` use an `SsrCursor`. Browser hydration creates a `HydratingCursor.root(...)` and mounts the same component tree through `Runtime.mount`, as demonstrated by [`scalajs-ui-demo/src/main/scala-3/app/Main.scala`](scalajs-ui-demo/src/main/scala-3/app/Main.scala).
+Run `sbt --server fastLinkJS`, then serve the project directory with an HTTP server. For SSR, `Runtime.renderToString` and `Runtime.renderToStringAsync` use an `SsrCursor`. Browser hydration creates a `HydratingCursor.root(...)` and mounts the same component tree through `Runtime.mount`, as demonstrated by [`scala/scalajs-ui-demo/src/main/scala-3/app/Main.scala`](scala/scalajs-ui-demo/src/main/scala-3/app/Main.scala).
 
 ### TypeScript / npm
 
@@ -140,18 +140,18 @@ SSR produces the initial readable HTML. Hydration claims that tree and adds brow
 
 | Area | Scala module | TypeScript package | Responsibility |
 | --- | --- | --- | --- |
-| Core | [`scalajs-ui-core`](scalajs-ui-core/README.md) | [`@anjunar/scalajs-ui-core`](npm/scalajs-ui-core/README.md) | Components, DSL, state, rendering, document head, i18n |
-| Routing | [`scalajs-ui-router`](scalajs-ui-router/README.md) | [`@anjunar/scalajs-ui-router`](npm/scalajs-ui-router/README.md) | Routes, nested outlets, links, SSR status |
-| Viewport | [`scalajs-ui-viewport`](scalajs-ui-viewport/README.md) | [`@anjunar/scalajs-ui-viewport`](npm/scalajs-ui-viewport/README.md) | Windows, overlays, notifications |
-| Controls | [`scalajs-ui-controls`](scalajs-ui-controls/README.md) | [`@anjunar/scalajs-ui-controls`](npm/scalajs-ui-controls/README.md) | Tabs, carousel, table, data grid, virtual list |
-| Forms | [`scalajs-ui-forms`](scalajs-ui-forms/README.md) | [`@anjunar/scalajs-ui-forms`](npm/scalajs-ui-forms/README.md) | Model binding, validation, nested forms, media |
-| Editor | [`scalajs-ui-editor`](scalajs-ui-editor/README.md) | [`@anjunar/scalajs-ui-editor`](npm/scalajs-ui-editor/README.md) | Markdown editor backed by Lexical |
-| JSON | [`scalajs-ui-json`](scalajs-ui-json/README.md) | [`@anjunar/scalajs-ui-json`](npm/scalajs-ui-json/README.md) | Explicit schema-based JSON mapping |
-| WebAuthn | [`scalajs-ui-webauthn`](scalajs-ui-webauthn/README.md) | [`@anjunar/scalajs-ui-webauthn`](npm/scalajs-ui-webauthn/README.md) | Browser WebAuthn and passkey ceremonies |
-| Bridge | [`scalajs-ui-bridge`](scalajs-ui-bridge/README.md) | [`@anjunar/scalajs-ui-bridge`](npm/scalajs-ui-bridge/README.md) | JavaScript runtime boundary and linked bundle |
+| Core | [`scalajs-ui-core`](scala/scalajs-ui-core/README.md) | [`@anjunar/scalajs-ui-core`](npm/scalajs-ui-core/README.md) | Components, DSL, state, rendering, document head, i18n |
+| Routing | [`scalajs-ui-router`](scala/scalajs-ui-router/README.md) | [`@anjunar/scalajs-ui-router`](npm/scalajs-ui-router/README.md) | Routes, nested outlets, links, SSR status |
+| Viewport | [`scalajs-ui-viewport`](scala/scalajs-ui-viewport/README.md) | [`@anjunar/scalajs-ui-viewport`](npm/scalajs-ui-viewport/README.md) | Windows, overlays, notifications |
+| Controls | [`scalajs-ui-controls`](scala/scalajs-ui-controls/README.md) | [`@anjunar/scalajs-ui-controls`](npm/scalajs-ui-controls/README.md) | Tabs, carousel, table, data grid, virtual list |
+| Forms | [`scalajs-ui-forms`](scala/scalajs-ui-forms/README.md) | [`@anjunar/scalajs-ui-forms`](npm/scalajs-ui-forms/README.md) | Model binding, validation, nested forms, media |
+| Editor | [`scalajs-ui-editor`](scala/scalajs-ui-editor/README.md) | [`@anjunar/scalajs-ui-editor`](npm/scalajs-ui-editor/README.md) | Markdown editor backed by Lexical |
+| JSON | [`scalajs-ui-json`](scala/scalajs-ui-json/README.md) | [`@anjunar/scalajs-ui-json`](npm/scalajs-ui-json/README.md) | Explicit schema-based JSON mapping |
+| WebAuthn | [`scalajs-ui-webauthn`](scala/scalajs-ui-webauthn/README.md) | [`@anjunar/scalajs-ui-webauthn`](npm/scalajs-ui-webauthn/README.md) | Browser WebAuthn and passkey ceremonies |
+| Bridge | [`scalajs-ui-bridge`](scala/scalajs-ui-bridge/README.md) | [`@anjunar/scalajs-ui-bridge`](npm/scalajs-ui-bridge/README.md) | JavaScript runtime boundary and linked bundle |
 | CSS | — | [`@anjunar/scalajs-ui`](npm/scalajs-ui/README.md) | Default styles for UI-rendered classes |
 
-The runnable examples are in [`scalajs-ui-demo`](scalajs-ui-demo) for Scala and [`npm/scalajs-ui-demo`](npm/scalajs-ui-demo) for TypeScript. The demo is a consumer and is not a library module.
+The runnable examples are in [`scalajs-ui-demo`](scala/scalajs-ui-demo) for Scala and [`npm/scalajs-ui-demo`](npm/scalajs-ui-demo) for TypeScript. The demo is a consumer and is not a library module.
 
 Set the shared project version in the Scala build, npm workspaces, demos, lockfile, and installation examples with one command:
 
