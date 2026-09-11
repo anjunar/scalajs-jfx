@@ -37,5 +37,9 @@ app.use(async (req, res, next) => {
   } catch (error) { vite?.ssrFixStacktrace(error); next(error); }
 });
 const server = app.listen(Number(process.env.PORT ?? 3316), "127.0.0.1", () => {
-  console.log(`http://127.0.0.1:${process.env.PORT ?? 3316}`);
+  // PORT=0 asks the OS for an ephemeral port. Report the actual bound port so
+  // health checks and local callers can connect to the listening server.
+  const address = server.address();
+  if (!address || typeof address === "string") throw new Error("Landing server did not bind to a TCP port.");
+  console.log(`http://127.0.0.1:${address.port}`);
 });
