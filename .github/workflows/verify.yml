@@ -71,5 +71,11 @@ jobs:
       - name: Verify every npm package and demo
         run: npm run verify --workspaces --if-present
 
+      # The Pages build runs two Scala.js links with different UI_BASE_PATH
+      # values. A shared sbt server keeps the environment from its first
+      # client, so restart it before the first environment-sensitive link.
+      - name: Restart sbt for Pages build
+        run: sbt --client shutdown
+
       - name: Build and validate GitHub Pages output
         run: node tools/build-pages.mjs
