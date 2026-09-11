@@ -1,6 +1,6 @@
 # @anjunar/scalajs-ui-forms
 
-Typed UI 3 forms for model-bound inputs, validators, field groups, nested and repeating forms, combo boxes, and image cropper fields.
+Typed Scala JS UI 1.0 forms for model-bound inputs, validators, field groups, nested and repeating forms, combo boxes, and image cropper fields.
 
 ## Overview
 

@@ -1,6 +1,6 @@
 # @anjunar/scalajs-ui-editor
 
-A Lexical-backed rich-text field for UI 3. Markdown is the public value; Lexical editor state remains inside the Scala.js runtime.
+A Lexical-backed rich-text field for Scala JS UI 1.0. Markdown is the public value; Lexical editor state remains inside the Scala.js runtime.
 
 ## Overview
 

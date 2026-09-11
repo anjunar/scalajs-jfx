@@ -1,6 +1,6 @@
 # @anjunar/scalajs-ui-controls
 
-Typed UI 3 controls for tabs, carousels, and virtualized table, data-grid, and list views.
+Typed Scala JS UI 1.0 controls for tabs, carousels, and virtualized table, data-grid, and list views.
 
 ## Overview
 

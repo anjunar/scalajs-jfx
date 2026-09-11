@@ -1,6 +1,6 @@
-# UI 3 TypeScript packages
+# Scala JS UI 1.0 TypeScript packages
 
-The `npm/` workspace contains the TypeScript API for UI 3. These packages provide typed, idiomatic entry points for applications written in TypeScript while the Scala.js UI runtime remains responsible for rendering, hydration, component lifecycle, and library behavior.
+The `npm/` workspace contains the TypeScript API for Scala JS UI 1.0. These packages provide typed, idiomatic entry points for applications written in TypeScript while the Scala.js UI runtime remains responsible for rendering, hydration, component lifecycle, and library behavior.
 
 ## Architecture
 

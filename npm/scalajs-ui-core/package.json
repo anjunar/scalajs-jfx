@@ -1,7 +1,7 @@
 {
   "name": "@anjunar/scalajs-ui-core",
   "version": "1.0.0",
-  "description": "The declarative TypeScript API of UI 3: the contract, the ambient-scope DSL and a stub runtime for tests. Rendering, hydration and state live in the Scala.js runtime published as @anjunar/scalajs-ui-bridge.",
+  "description": "The declarative TypeScript API of Scala JS UI 1.0: the contract, the ambient-scope DSL and a stub runtime for tests. Rendering, hydration and state live in the Scala.js runtime published as @anjunar/scalajs-ui-bridge.",
   "type": "module",
   "types": "./dist/index.d.ts",
   "main": "./dist/index.js",

@@ -1,6 +1,6 @@
 # @anjunar/scalajs-ui-bridge
 
-The linked Scala.js runtime for the UI 3 TypeScript API. Import this package once at application startup to install the runtime used by `@anjunar/scalajs-ui-core` and the feature packages.
+The linked Scala.js runtime for the Scala JS UI 1.0 TypeScript API. Import this package once at application startup to install the runtime used by `@anjunar/scalajs-ui-core` and the feature packages.
 
 ## Overview
 

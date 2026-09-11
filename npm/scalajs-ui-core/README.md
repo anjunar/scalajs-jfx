@@ -1,6 +1,6 @@
 # @anjunar/scalajs-ui-core
 
-The declarative TypeScript API for UI 3. It provides the shared contract, ambient-scope DSL, reactive properties, rendering entry points, document head, and i18n helpers; the linked Scala.js runtime performs the actual rendering.
+The declarative TypeScript API for Scala JS UI 1.0. It provides the shared contract, ambient-scope DSL, reactive properties, rendering entry points, document head, and i18n helpers; the linked Scala.js runtime performs the actual rendering.
 
 ## Overview
 

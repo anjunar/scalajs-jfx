@@ -1,5 +1,5 @@
 /**
- * The JavaScript boundary of UI 3.
+ * The JavaScript boundary of Scala JS UI 1.0.
  *
  * Everything in this file is a *contract*, not an implementation. The production
  * implementation is the Scala.js bundle published by the `scalajs-ui-bridge` module; the

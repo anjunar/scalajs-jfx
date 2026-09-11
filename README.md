@@ -1,10 +1,10 @@
-# UI 3
+# Scala JS UI 1.0
 
-UI 3 is a Scala 3 and Scala.js UI library for server-rendered applications. It combines a component DSL, synchronous reactive state, lifecycle-aware rendering, typed forms, routing, controls, and browser integrations in one Scala.js runtime.
+Scala JS UI 1.0 is a Scala 3 and Scala.js UI library for server-rendered applications. It combines a component DSL, synchronous reactive state, lifecycle-aware rendering, typed forms, routing, controls, and browser integrations in one Scala.js runtime.
 
 ## Overview
 
-UI 3 keeps the component tree as the source of truth. The same component code can render HTML on the server, be claimed during browser hydration, and continue with reactive updates and event handling. Component disposal owns subscriptions, event listeners, timers, and other resources created below that component.
+Scala JS UI 1.0 keeps the component tree as the source of truth. The same component code can render HTML on the server, be claimed during browser hydration, and continue with reactive updates and event handling. Component disposal owns subscriptions, event listeners, timers, and other resources created below that component.
 
 The runtime is available directly from Scala or through the TypeScript packages. TypeScript is a typed facade over the Scala.js runtime; it is not a second UI implementation.
 
@@ -46,7 +46,7 @@ Enable Scala.js in `project/plugins.sbt`:
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.22.0")
 ```
 
-Add UI 3 in `build.sbt` (sbt 2 uses `%%` for the Scala.js platform suffix):
+Add Scala JS UI 1.0 in `build.sbt` (sbt 2 uses `%%` for the Scala.js platform suffix):
 
 ```scala
 enablePlugins(ScalaJSPlugin)
@@ -186,7 +186,7 @@ npm run verify --workspace npm/scalajs-ui-core
 
 The repository is on the `1.0.0` release line and under active development. The complete Scala suite and every npm workspace verification run in CI for pushes and pull requests. Source, releases, and issue tracking live in the [GitHub repository](https://github.com/anjunar/scalajs-ui).
 
-UI 3 is available under the [MIT License](LICENSE).
+Scala JS UI 1.0 is available under the [MIT License](LICENSE).
 
 ## Related documentation
 
