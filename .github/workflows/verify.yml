@@ -54,6 +54,20 @@ jobs:
       - name: Install test browsers
         run: npm exec --workspace npm/scalajs-ui-core-browser-tests -- playwright install --with-deps chromium firefox webkit
 
+      # npm runs workspaces in package.json order, not dependency order. The
+      # package verification scripts typecheck consumers against the local
+      # workspace dist/*.d.ts files, so create those declarations first.
+      - name: Build TypeScript workspace declarations
+        run: |
+          npm run build --workspace npm/scalajs-ui-core
+          npm run build --workspace npm/scalajs-ui-router
+          npm run build --workspace npm/scalajs-ui-viewport
+          npm run build --workspace npm/scalajs-ui-controls
+          npm run build --workspace npm/scalajs-ui-forms
+          npm run build --workspace npm/scalajs-ui-editor
+          npm run build --workspace npm/scalajs-ui-json
+          npm run build --workspace npm/scalajs-ui-webauthn
+
       - name: Verify every npm package and demo
         run: npm run verify --workspaces --if-present
 
